@@ -102,11 +102,12 @@ Just download the file lib/PdoOne.php and save it in a folder.
 ### Start a connection
 
 ```php
-$dao=new PdoOne("127.0.0.1","root","abc.123","sakila","");
+$dao=new PdoOne("mysql","127.0.0.1","root","abc.123","sakila","");
 $dao->connect();
 ```
 
 where 
+* "mysql" is the mysql database. It also allows sqlsrv
 * 127.0.0.1 is the server where is the database.
 * root is the user   
 * abc.123 is the password of the user root.
@@ -583,44 +584,4 @@ $dao->getSequencePHP(true) // string(19) "1739032938181434311"
 
 
 ## Changelist
-* 3.28 2019-05-04 Added comments. Also ->select() allows an entire query.
-* 3.27 2019-04-21 Added new methods of encryption SIMPLE (short encryption) and INTEGER (it converts and returns an integer)
-* 3.26 2019-03-06 Now Encryption has it's own class.
-* 3.25 2019-03-06 Added getSequencePHP(), getUnpredictable() and getUnpredictableInv()
-* 3.24 2019-02-06 Added a new format of date
-* 3.22 2018-12-30 Added sequence
-* 3.21 2018-12-17 Fixed a bug with parameters, set() and insert(). There are several ways to do an insertar.  Now NULL is self:null
-* 3.20 2018-12-15 Fixed bug with parameters and insert(). 
-* 3.19 2018-12-09 Now null parameters are considered null.  We use instead PHP_INT_MAX to indicate when the value is not set. 
-* 3.18 2018-12-07 Changed minimum stability.
-* 3.17 2018-12-01 set() now allows a single value for the second argument.   
-* 3.16 2018-11-03 Added test unit and travis CI.
-* 3.15 2018-10-27
-* * Now it allows multiple select()
-* * function generateSqlFields()
-* 3.14 2018-10-16 
-* * Added field throwOnError. 
-* * Added more control on the error. 
-* * Now methods fails if the database is not open.
-* * Added a container to messages (optional). It works with the function messages()
-* * Added field isOpen
-* * Added method storeInfo()
-* 3.13 2018-10-05 Changed command eval to bind_param( ...)
-* 3.12 2018-09-29 Fixed a bug with insert() it now returns the last identity.
-* 3.11 2018-09-27 Cleaned the code. If it throws an exception, then the chain is reset.
-* 3.9 2018-09-24 Some fixes
-* 3.7 Added charset.
-* 3.6 More fixes.
-* 3.5 Small fixed.
-* 3.4 DML new features. It allows nested operations 
-    + ->from()->where()->delete()
-    + ->from()->set()->where()->update()
-    + ->from()->set()->insert()
-* 3.3 DML modified. It allows a different kind of parameters.
-* 3.2 Insert, Update,Delete
-* 3.0 Major overhaul. It adds Query Builder features.
-* 2.6.4 Better correction of error.
-* 2.6.3 Fixed transaction. Now a nested transaction is not nested (and returns a false).
-* 2.6 first public version
-
-
+* 1.0 2019-may-21 First version 
