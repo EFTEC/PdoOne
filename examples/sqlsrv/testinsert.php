@@ -10,7 +10,7 @@ include "../dBug.php";
 
 // connecting to database sakila at 127.0.0.1 with user root and password abc.123
 $dao=new PdoOne("sqlsrv","127.0.0.1","sa","abc.123","sakila","");
-$dao->logLevel=2;
+$dao->logLevel=3;
 try {
     echo "<h1>Connection. The instance {$dao->server}, base:{$dao->db}  user:{$dao->user} and password:{$dao->pwd} must exists</h1>";
     $dao->connect();
@@ -32,6 +32,7 @@ try {
     echo $dao->lastError()."-".$e->getMessage()."<br>";
 }
 echo "<h1>You should run <a href='testbuilder.php'>testbuilder</a> first</h1>";
+
 
 try {
     echo "<h1>Table insert (it's ok if it fails because it could exist):</h1>";

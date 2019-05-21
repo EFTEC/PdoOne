@@ -152,7 +152,7 @@ class PdoOne
 				$this->database_delimiter0='[';
 				$this->database_delimiter1=']';
 				break;
-				
+
 		}
 		$this->server = $server;
 		$this->user = $user;
@@ -216,9 +216,9 @@ class PdoOne
 					throw new Exception("database not defined");
 					break;
 			}
-			
+
 			$this->conn1->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-	
+
 			$this->isOpen=true;
 		} catch (Exception $ex) {
 			$this->isOpen=false;
@@ -455,7 +455,7 @@ class PdoOne
 				} else {
 					$sql=substr($sql,0,-1);
 				}
-				$sql.="$extra ) ENGINE=MyISAM DEFAULT CHARSET=".$this->charset;			
+				$sql.="$extra ) ENGINE=MyISAM DEFAULT CHARSET=".$this->charset;
 				break;
 			case 'sqlsrv':
 				$sql="set nocount on;
@@ -489,7 +489,7 @@ class PdoOne
 		switch ($this->database) {
 			case 'mysql':
 				$sql=
-				"CREATE TABLE `{$this->tableSequence}` (
+					"CREATE TABLE `{$this->tableSequence}` (
 				  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
 				  `stub` char(1) NOT NULL DEFAULT '',
 				  PRIMARY KEY (`id`),
@@ -500,7 +500,7 @@ class PdoOne
 				SET GLOBAL log_bin_trust_function_creators = 1;";
 				$this->runMultipleRawQuery($sql);
 				$sql=
-				"CREATE FUNCTION `next_{$this->tableSequence}`(node integer) RETURNS BIGINT(20)
+					"CREATE FUNCTION `next_{$this->tableSequence}`(node integer) RETURNS BIGINT(20)
 					BEGIN
 					    DECLARE epoch BIGINT(20);
 					    DECLARE current_ms BIGINT(20);
@@ -514,12 +514,12 @@ class PdoOne
 				break;
 			case 'sqlsrv':
 				$sql=
-				"CREATE SEQUENCE [{$this->tableSequence}]
+					"CREATE SEQUENCE [{$this->tableSequence}]
 				    START WITH 1  
 				    INCREMENT BY 1
 			    ;";
 				$sql.=
-				"create PROCEDURE next_{$this->tableSequence}
+					"create PROCEDURE next_{$this->tableSequence}
 					@node int
 				AS
 					BEGIN
@@ -537,7 +537,7 @@ class PdoOne
 					END";
 				break;
 			default:
-				throw new Exception("type not defined for create sequence");	
+				throw new Exception("type not defined for create sequence");
 		}
 		$this->runRawQuery($sql);
 	}
@@ -754,11 +754,11 @@ class PdoOne
 			$this->select.= implode(', ',$sql);
 		} else {
 			if ($this->select==='') {
-				$this->select= $sql;	
+				$this->select= $sql;
 			} else {
 				$this->select.=', '.$sql;
 			}
-			
+
 		}
 		return $this;
 	}
@@ -993,7 +993,7 @@ class PdoOne
 	 */
 	public function order($sql)
 	{
-		
+
 		$this->order = ($sql) ? ' order by ' . $sql : '';
 		return $this;
 	}
@@ -1024,7 +1024,7 @@ class PdoOne
 			default:
 				trigger_error("database not defined or supported");
 		}
-		
+
 		return $this;
 	}
 
@@ -1076,11 +1076,12 @@ class PdoOne
 				$reval=$reval && $stmt->bindParam($counter,$values[$k],$this->whereParamType[$k]);
 				echo "adding param {$counter} {$values[$k]} {$this->whereParamType[$k]}<br>";
 			}
-			
+
 			if (!$reval) {
 				$this->throwError("Error in bind","","type: ".json_encode($this->whereParamType)." values:".json_encode($values));
 				return false;
 			}
+
 		}
 		$this->runQuery($stmt);
 		if ($this->genSqlFields) {
@@ -1166,7 +1167,7 @@ class PdoOne
 		} else {
 			$having = '';
 		}
-		
+
 		$sql = $sql. $where . $this->group . $having . $this->order . $this->limit;
 
 		if ($resetStack) $this->builderReset();
@@ -1182,7 +1183,6 @@ class PdoOne
 	public function prepare($query)
 	{
 		if (!$this->isOpen) { $this->throwError("It's not connected to the database",""); return null; }
-		$this->lastParam=[];
 		$this->lastQuery = $query;
 		if ($this->readonly) {
 			if (stripos($query, 'insert ') === 0 || stripos($query, 'update ') === 0 || stripos($query, 'delete ') === 0) {
@@ -1338,7 +1338,7 @@ class PdoOne
 		if (!$this->isOpen) { $this->throwError("It's not connected to the database",''); return false;}
 		if ($this->readonly) {
 			if (stripos($rawSql, 'insert ') === 0 || stripos($rawSql, 'update ') === 0 || stripos($rawSql, 'delete ') === 0) {
-				// we aren't checking SQL-DCL queries. Also, "insert into" is stopped but "  insert into" not.
+				// we aren't checking SQL-DLC queries. Also, "insert into" is stopped but "  insert into" not.
 				$this->throwError("Database is in READ ONLY MODE",'');
 			}
 		}
@@ -1353,10 +1353,10 @@ class PdoOne
 				$rows = $this->conn1->query($rawSql);
 			} catch (Exception $ex) {
 				$rows=false;
-				$this->throwError("Exception raw",$rawSql);
+				$this->throwError("Exception raw",$rawSql,$this->lastParam);
 			}
 			if ($rows === false) {
-				$this->throwError("Unable to run raw query",$rawSql);
+				$this->throwError("Unable to run raw query",$rawSql,$this->lastParam);
 			}
 			if ($returnArray && $rows instanceof PDOStatement) {
 				if ($rows->columnCount()>0) {
@@ -1514,6 +1514,7 @@ class PdoOne
 			$this->constructParam($tableDef, $value, $col, $colT, $param);
 			$sql = "insert into {$this->database_delimiter0}$table{$this->database_delimiter1} (" . implode(',', $col) . ") values(" . implode(',', $colT) . ")";
 			$this->builderReset();
+
 			$this->runRawQuery($sql, $param);
 			return $this->insert_id();
 		}
@@ -1639,6 +1640,7 @@ class PdoOne
 					$param[] = $vt;
 					$param[] = $v;
 				}
+
 			} else {
 				// it uses two associative array, one for the type and another for the value
 				foreach ($array1 as $k => $v) {
@@ -1702,7 +1704,8 @@ class PdoOne
 				$vt=PDO::PARAM_INT;
 				break;
 			case (is_bool($v)):
-				$vt=PDO::PARAM_BOOL;
+
+				$vt=PDO::PARAM_INT;
 				$v=($v)?1:0;
 				break;
 			case (is_object($v) && get_class($v)=='DateTime'):
@@ -1710,7 +1713,7 @@ class PdoOne
 				$v=PdoOne::dateTimePHP2Sql($v);
 				break;
 			default:
-				$vt=PDO::PARAM_BOOL;
+				$vt=PDO::PARAM_STR;
 		}
 		return $vt;
 	}
@@ -1790,8 +1793,8 @@ class PdoOne
 			$txt.=". Last query:[{$this->lastQuery}].";
 		}
 		if ($this->logLevel>=3) {
-			$txt.=$extraParam;
-		}		
+			$txt.="Params :[".$extraParam."]";
+		}
 		$this->builderReset(); // it resets the chain if any.
 		if ($this->getMessages()===null) {
 			$this->debugFile($txt,'ERROR');
@@ -1801,7 +1804,7 @@ class PdoOne
 		}
 		if ($this->throwOnError) {
 			throw new Exception($txt);
-		} 
+		}
 	}
 	/**
 	 * Write a log line for debug, clean the command chain then throw an error (if throwOnError==true)
