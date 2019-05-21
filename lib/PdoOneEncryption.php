@@ -7,7 +7,7 @@ use Exception;
 /**
  * This class is used for encryption.  It could encrypt (two ways).
  * Class PdoOneEncryption
- * @version 1.1
+ * @version 1.2
  * @package eftec
  * @author Jorge Castro Castillo
  * @copyright (c) Jorge Castro C. MIT License  https://github.com/EFTEC/PdoOne
