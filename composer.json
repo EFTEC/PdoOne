@@ -1,0 +1,41 @@
+{
+    "name": "eftec/pdoone",
+    "description": "Procedural PDO Data access class in a single Class",
+    "version": "1.0",
+    "type": "library",
+    "keywords": [
+        "dao",
+        "php",
+        "mysqli"
+    ],
+    "homepage": "https://github.com/EFTEC/daoonepdo",
+    "authors": [
+        {
+            "name": "Jorge Castro Castillo",
+            "homepage": "https://github.com/EFTEC/"
+        }
+    ],
+    "license": "MIT",
+    "autoload": {
+      "psr-4": {
+        "eftec\\": "lib/"
+      }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "eftec\\tests\\": "tests/"
+        }
+    },
+    "require": {
+        "ext-json": "*",
+        "ext-openssl": "*",
+        "ext-pdo": "*"
+    },
+    "suggest": {
+        "eftec/validationone": "For keeping and storing the messages"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^5.7 || ^6.5"
+    }
+}
+

@@ -1,0 +1,647 @@
+2018-09-26T20:25:55-03:00	ERROR	Exception raw	CREATE TABLE `myproducts` (     `idproduct` INT NOT NULL,     `name` VARCHAR(45) NULL,     `type` VARCHAR(45) NULL,     `id_category` INT NOT NULL,     PRIMARY KEY (`idproduct`));
+2018-09-26T20:27:28-03:00	ERROR	Exception raw	CREATE TABLE `myproducts` (     `idproduct` INT NOT NULL,     `name` VARCHAR(45) NULL,     `type` VARCHAR(45) NULL,     `id_category` INT NOT NULL,     PRIMARY KEY (`idproduct`));
+2018-09-26T20:27:38-03:00	ERROR	Exception raw	CREATE TABLE `myproducts` (     `idproduct` INT NOT NULL,     `name` VARCHAR(45) NULL,     `type` VARCHAR(45) NULL,     `id_category` INT NOT NULL,     PRIMARY KEY (`idproduct`));
+2018-09-26T20:27:58-03:00	ERROR	Exception raw	CREATE TABLE `myproducts` (     `idproduct` INT NOT NULL,     `name` VARCHAR(45) NULL,     `type` VARCHAR(45) NULL,     `id_category` INT NOT NULL,     PRIMARY KEY (`idproduct`));
+2018-09-26T20:27:58-03:00	ERROR	Exception raw	CREATE TABLE `product_category` (     `idproductcategory` INT NOT NULL,     `name` VARCHAR(45) NULL,     PRIMARY KEY (`idproductcategory`));
+2018-09-26T20:30:36-03:00	ERROR	Exception raw	CREATE TABLE `myproducts` (     `idproduct` INT NOT NULL,     `name` VARCHAR(45) NULL,     `type` VARCHAR(45) NULL,     `id_category` INT NOT NULL,     PRIMARY KEY (`idproduct`));
+2018-09-26T20:31:54-03:00	ERROR	Exception raw	CREATE TABLE `myproducts` (     `idproduct` INT NOT NULL,     `name` VARCHAR(45) NULL,     `type` VARCHAR(45) NULL,     `id_category` INT NOT NULL,     PRIMARY KEY (`idproduct`));
+2018-09-26T20:31:54-03:00	ERROR	Exception raw	CREATE TABLE `product_category` (     `idproductcategory` INT NOT NULL,     `name` VARCHAR(45) NULL,     PRIMARY KEY (`idproductcategory`));
+2018-09-26T20:32:06-03:00	ERROR	Exception raw	CREATE TABLE `myproducts` (     `idproduct` INT NOT NULL,     `name` VARCHAR(45) NULL,     `type` VARCHAR(45) NULL,     `id_category` INT NOT NULL,     PRIMARY KEY (`idproduct`));
+2018-09-26T20:32:06-03:00	ERROR	Exception raw	CREATE TABLE `product_category` (     `idproductcategory` INT NOT NULL,     `name` VARCHAR(45) NULL,     PRIMARY KEY (`idproductcategory`));
+2018-09-26T20:32:27-03:00	ERROR	Exception raw	CREATE TABLE `myproducts` (     `idproduct` INT NOT NULL,     `name` VARCHAR(45) NULL,     `type` VARCHAR(45) NULL,     `id_category` INT NOT NULL,     PRIMARY KEY (`idproduct`));
+2018-09-26T20:33:46-03:00	ERROR	Exception raw	CREATE TABLE `myproducts` (     `idproduct` INT NOT NULL,     `name` VARCHAR(45) NULL,     `type` VARCHAR(45) NULL,     `id_category` INT NOT NULL,     PRIMARY KEY (`idproduct`));
+2018-09-26T20:33:46-03:00	ERROR	Exception raw	CREATE TABLE `product_category` (     `idproductcategory` INT NOT NULL,     `name` VARCHAR(45) NULL,     PRIMARY KEY (`idproductcategory`));
+2018-09-26T20:34:00-03:00	ERROR	Exception raw	CREATE TABLE `myproducts` (     `idproduct` INT NOT NULL,     `name` VARCHAR(45) NULL,     `type` VARCHAR(45) NULL,     `id_category` INT NOT NULL,     PRIMARY KEY (`idproduct`));
+2018-09-26T20:34:00-03:00	ERROR	Exception raw	CREATE TABLE `product_category` (     `idproductcategory` INT NOT NULL,     `name` VARCHAR(45) NULL,     PRIMARY KEY (`idproductcategory`));
+2018-09-26T20:34:33-03:00	ERROR	Exception raw	CREATE TABLE `myproducts` (     `idproduct` INT NOT NULL,     `name` VARCHAR(45) NULL,     `type` VARCHAR(45) NULL,     `id_category` INT NOT NULL,     PRIMARY KEY (`idproduct`));
+2018-09-26T20:34:33-03:00	ERROR	Exception raw	CREATE TABLE `product_category` (     `idproductcategory` INT NOT NULL,     `name` VARCHAR(45) NULL,     PRIMARY KEY (`idproductcategory`));
+2018-09-26T20:38:14-03:00	ERROR	Exception raw	CREATE TABLE `myproducts` (     `idproduct` INT NOT NULL,     `name` VARCHAR(45) NULL,     `type` VARCHAR(45) NULL,     `id_category` INT NOT NULL,     PRIMARY KEY (`idproduct`));
+2018-09-26T20:38:14-03:00	ERROR	Exception raw	CREATE TABLE `product_category` (     `idproductcategory` INT NOT NULL,     `name` VARCHAR(45) NULL,     PRIMARY KEY (`idproductcategory`));
+2018-09-26T20:38:43-03:00	ERROR	Exception raw	CREATE TABLE `myproducts` (     `idproduct` INT NOT NULL,     `name` VARCHAR(45) NULL,     `type` VARCHAR(45) NULL,     `id_category` INT NOT NULL,     PRIMARY KEY (`idproduct`));
+2018-09-26T20:38:43-03:00	ERROR	Exception raw	CREATE TABLE `product_category` (     `idproductcategory` INT NOT NULL,     `name` VARCHAR(45) NULL,     PRIMARY KEY (`idproductcategory`));
+2018-09-26T20:38:43-03:00	ERROR	Failed to run query	insert into `product_category` (`idproductcategory`,`name`) values (?,?) Cause:Duplicate entry '1' for key 'PRIMARY'
+2018-09-26T20:38:43-03:00	ERROR	Failed to run query	insert into `myproducts` (`idproduct`,`name`,`type`,`id_category`) values (?,?,?,?) Cause:Duplicate entry '1' for key 'PRIMARY'
+2018-09-26T20:39:38-03:00	ERROR	Exception raw	CREATE TABLE `myproducts` (     `idproduct` INT NOT NULL,     `name` VARCHAR(45) NULL,     `type` VARCHAR(45) NULL,     `id_category` INT NOT NULL,     PRIMARY KEY (`idproduct`));
+2018-09-26T20:39:38-03:00	ERROR	Exception raw	CREATE TABLE `product_category` (     `idproductcategory` INT NOT NULL,     `name` VARCHAR(45) NULL,     PRIMARY KEY (`idproductcategory`));
+2018-09-26T20:39:38-03:00	ERROR	Failed to run query	insert into `product_category` (`idproductcategory`,`name`) values (?,?) Cause:Duplicate entry '1' for key 'PRIMARY'
+2018-09-26T20:39:38-03:00	ERROR	Failed to run query	insert into `myproducts` (`idproduct`,`name`,`type`,`id_category`) values (?,?,?,?) Cause:Duplicate entry '1' for key 'PRIMARY'
+2018-09-26T20:39:47-03:00	ERROR	Exception raw	CREATE TABLE `myproducts` (     `idproduct` INT NOT NULL,     `name` VARCHAR(45) NULL,     `type` VARCHAR(45) NULL,     `id_category` INT NOT NULL,     PRIMARY KEY (`idproduct`));
+2018-09-26T20:39:47-03:00	ERROR	Exception raw	CREATE TABLE `product_category` (     `idproductcategory` INT NOT NULL,     `name` VARCHAR(45) NULL,     PRIMARY KEY (`idproductcategory`));
+2018-09-26T20:39:47-03:00	ERROR	Failed to run query	insert into `product_category` (`idproductcategory`,`name`) values (?,?) Cause:Duplicate entry '1' for key 'PRIMARY'
+2018-09-26T20:39:47-03:00	ERROR	Failed to run query	insert into `myproducts` (`idproduct`,`name`,`type`,`id_category`) values (?,?,?,?) Cause:Duplicate entry '1' for key 'PRIMARY'
+2018-09-26T20:40:01-03:00	ERROR	Exception raw	CREATE TABLE `myproducts` (     `idproduct` INT NOT NULL,     `name` VARCHAR(45) NULL,     `type` VARCHAR(45) NULL,     `id_category` INT NOT NULL,     PRIMARY KEY (`idproduct`));
+2018-09-26T20:40:01-03:00	ERROR	Exception raw	CREATE TABLE `product_category` (     `idproductcategory` INT NOT NULL,     `name` VARCHAR(45) NULL,     PRIMARY KEY (`idproductcategory`));
+2018-09-26T20:40:01-03:00	ERROR	Failed to run query	insert into `product_category` (`idproductcategory`,`name`) values (?,?) Cause:Duplicate entry '1' for key 'PRIMARY'
+2018-09-26T20:40:01-03:00	ERROR	Failed to run query	insert into `myproducts` (`idproduct`,`name`,`type`,`id_category`) values (?,?,?,?) Cause:Duplicate entry '1' for key 'PRIMARY'
+2018-09-26T20:41:18-03:00	ERROR	Exception raw	CREATE TABLE `myproducts` (     `idproduct` INT NOT NULL,     `name` VARCHAR(45) NULL,     `type` VARCHAR(45) NULL,     `id_category` INT NOT NULL,     PRIMARY KEY (`idproduct`));
+2018-09-26T20:41:18-03:00	ERROR	Exception raw	CREATE TABLE `product_category` (     `idproductcategory` INT NOT NULL,     `name` VARCHAR(45) NULL,     PRIMARY KEY (`idproductcategory`));
+2018-09-26T20:41:18-03:00	ERROR	Failed to run query	insert into `product_category` (`idproductcategory`,`name`) values (?,?) Cause:Duplicate entry '1' for key 'PRIMARY'
+2018-09-26T20:41:18-03:00	ERROR	Failed to run query	insert into `myproducts` (`idproduct`,`name`,`type`,`id_category`) values (?,?,?,?) Cause:Duplicate entry '1' for key 'PRIMARY'
+2018-09-26T20:41:29-03:00	ERROR	Exception raw	CREATE TABLE `myproducts` (     `idproduct` INT NOT NULL,     `name` VARCHAR(45) NULL,     `type` VARCHAR(45) NULL,     `id_category` INT NOT NULL,     PRIMARY KEY (`idproduct`));
+2018-09-26T20:41:29-03:00	ERROR	Exception raw	CREATE TABLE `product_category` (     `idproductcategory` INT NOT NULL,     `name` VARCHAR(45) NULL,     PRIMARY KEY (`idproductcategory`));
+2018-09-26T20:41:29-03:00	ERROR	Failed to run query	insert into `product_category` (`idproductcategory`,`name`) values (?,?) Cause:Duplicate entry '1' for key 'PRIMARY'
+2018-09-26T20:41:29-03:00	ERROR	Failed to run query	insert into `myproducts` (`idproduct`,`name`,`type`,`id_category`) values (?,?,?,?) Cause:Duplicate entry '1' for key 'PRIMARY'
+2018-09-26T20:43:33-03:00	ERROR	Exception raw	CREATE TABLE `myproducts` (     `idproduct` INT NOT NULL,     `name` VARCHAR(45) NULL,     `type` VARCHAR(45) NULL,     `id_category` INT NOT NULL,     PRIMARY KEY (`idproduct`));
+2018-09-26T20:43:33-03:00	ERROR	Exception raw	CREATE TABLE `product_category` (     `idproductcategory` INT NOT NULL,     `name` VARCHAR(45) NULL,     PRIMARY KEY (`idproductcategory`));
+2018-09-26T20:43:33-03:00	ERROR	Failed to run query	insert into `product_category` (`idproductcategory`,`name`) values (?,?) Cause:Duplicate entry '1' for key 'PRIMARY'
+2018-09-26T20:43:33-03:00	ERROR	Failed to run query	insert into `myproducts` (`idproduct`,`name`,`type`,`id_category`) values (?,?,?,?) Cause:Duplicate entry '1' for key 'PRIMARY'
+2018-09-26T20:45:47-03:00	ERROR	Exception raw	CREATE TABLE `product_category` (     `id_category` INT NOT NULL,     `catname` VARCHAR(45) NULL,     PRIMARY KEY (`idproductcategory`));
+2018-09-26T20:45:47-03:00	ERROR	Failed to prepare:Table 'sakila.product_category' doesn't exist
+2018-09-26T20:45:47-03:00	ERROR	Failed to prepare:Table 'sakila.product_category' doesn't exist
+2018-09-26T20:46:00-03:00	ERROR	Exception raw	CREATE TABLE `myproducts` (     `idproduct` INT NOT NULL,     `name` VARCHAR(45) NULL,     `type` VARCHAR(45) NULL,     `id_category` INT NOT NULL,     PRIMARY KEY (`idproduct`));
+2018-09-26T20:46:00-03:00	ERROR	Failed to run query	insert into `myproducts` (`idproduct`,`name`,`type`,`id_category`) values (?,?,?,?) Cause:Duplicate entry '1' for key 'PRIMARY'
+2018-09-26T20:46:26-03:00	ERROR	Exception raw	CREATE TABLE `myproducts` (     `idproduct` INT NOT NULL,     `name` VARCHAR(45) NULL,     `type` VARCHAR(45) NULL,     `id_category` INT NOT NULL,     PRIMARY KEY (`idproduct`));
+2018-09-26T20:46:26-03:00	ERROR	Exception raw	CREATE TABLE `product_category` (     `id_category` INT NOT NULL,     `catname` VARCHAR(45) NULL,     PRIMARY KEY (`id_category`));
+2018-09-26T20:46:26-03:00	ERROR	Failed to run query	insert into `product_category` (`id_category`,`catname`) values (?,?) Cause:Duplicate entry '1' for key 'PRIMARY'
+2018-09-26T20:46:26-03:00	ERROR	Failed to run query	insert into `myproducts` (`idproduct`,`name`,`type`,`id_category`) values (?,?,?,?) Cause:Duplicate entry '1' for key 'PRIMARY'
+2018-09-26T20:46:55-03:00	ERROR	Exception raw	CREATE TABLE `myproducts` (     `idproduct` INT NOT NULL,     `name` VARCHAR(45) NULL,     `type` VARCHAR(45) NULL,     `id_category` INT NOT NULL,     PRIMARY KEY (`idproduct`));
+2018-09-26T20:46:55-03:00	ERROR	Exception raw	CREATE TABLE `product_category` (     `id_category` INT NOT NULL,     `catname` VARCHAR(45) NULL,     PRIMARY KEY (`id_category`));
+2018-09-26T20:46:55-03:00	ERROR	Failed to run query	insert into `product_category` (`id_category`,`catname`) values (?,?) Cause:Duplicate entry '1' for key 'PRIMARY'
+2018-09-26T20:46:55-03:00	ERROR	Failed to run query	insert into `myproducts` (`idproduct`,`name`,`type`,`id_category`) values (?,?,?,?) Cause:Duplicate entry '1' for key 'PRIMARY'
+2018-09-26T20:47:15-03:00	ERROR	Exception raw	CREATE TABLE `myproducts` (     `idproduct` INT NOT NULL,     `name` VARCHAR(45) NULL,     `type` VARCHAR(45) NULL,     `id_category` INT NOT NULL,     PRIMARY KEY (`idproduct`));
+2018-09-26T20:47:15-03:00	ERROR	Exception raw	CREATE TABLE `product_category` (     `id_category` INT NOT NULL,     `catname` VARCHAR(45) NULL,     PRIMARY KEY (`id_category`));
+2018-09-26T20:47:15-03:00	ERROR	Failed to run query	insert into `product_category` (`id_category`,`catname`) values (?,?) Cause:Duplicate entry '1' for key 'PRIMARY'
+2018-09-26T20:47:15-03:00	ERROR	Failed to run query	insert into `myproducts` (`idproduct`,`name`,`type`,`id_category`) values (?,?,?,?) Cause:Duplicate entry '1' for key 'PRIMARY'
+2018-09-26T20:49:40-03:00	ERROR	Exception raw	CREATE TABLE `myproducts` (     `idproduct` INT NOT NULL,     `name` VARCHAR(45) NULL,     `type` VARCHAR(45) NULL,     `id_category` INT NOT NULL,     PRIMARY KEY (`idproduct`));
+2018-09-26T20:49:40-03:00	ERROR	Exception raw	CREATE TABLE `product_category` (     `id_category` INT NOT NULL,     `catname` VARCHAR(45) NULL,     PRIMARY KEY (`id_category`));
+2018-09-26T20:49:40-03:00	ERROR	Failed to run query	insert into `product_category` (`id_category`,`catname`) values (?,?) Cause:Duplicate entry '1' for key 'PRIMARY'
+2018-09-26T20:49:40-03:00	ERROR	Failed to run query	insert into `myproducts` (`idproduct`,`name`,`type`,`id_category`) values (?,?,?,?) Cause:Duplicate entry '1' for key 'PRIMARY'
+2018-09-26T20:50:14-03:00	ERROR	Exception raw	CREATE TABLE `myproducts` (     `idproduct` INT NOT NULL,     `name` VARCHAR(45) NULL,     `type` VARCHAR(45) NULL,     `id_category` INT NOT NULL,     PRIMARY KEY (`idproduct`));
+2018-09-26T20:50:14-03:00	ERROR	Exception raw	CREATE TABLE `product_category` (     `id_category` INT NOT NULL,     `catname` VARCHAR(45) NULL,     PRIMARY KEY (`id_category`));
+2018-09-26T20:50:14-03:00	ERROR	Failed to run query	insert into `product_category` (`id_category`,`catname`) values (?,?) Cause:Duplicate entry '1' for key 'PRIMARY'
+2018-09-26T20:50:14-03:00	ERROR	Failed to run query	insert into `myproducts` (`idproduct`,`name`,`type`,`id_category`) values (?,?,?,?) Cause:Duplicate entry '1' for key 'PRIMARY'
+2018-09-26T20:52:17-03:00	ERROR	Exception raw	CREATE TABLE `myproducts` (     `idproduct` INT NOT NULL,     `name` VARCHAR(45) NULL,     `type` VARCHAR(45) NULL,     `id_category` INT NOT NULL,     PRIMARY KEY (`idproduct`));
+2018-09-26T20:52:17-03:00	ERROR	Exception raw	CREATE TABLE `product_category` (     `id_category` INT NOT NULL,     `catname` VARCHAR(45) NULL,     PRIMARY KEY (`id_category`));
+2018-09-26T20:52:17-03:00	ERROR	Failed to run query	insert into `product_category` (`id_category`,`catname`) values (?,?) Cause:Duplicate entry '1' for key 'PRIMARY'
+2018-09-26T20:52:17-03:00	ERROR	Failed to run query	insert into `myproducts` (`idproduct`,`name`,`type`,`id_category`) values (?,?,?,?) Cause:Duplicate entry '1' for key 'PRIMARY'
+2018-09-26T20:53:49-03:00	ERROR	Exception raw	CREATE TABLE `myproducts` (     `idproduct` INT NOT NULL,     `name` VARCHAR(45) NULL,     `type` VARCHAR(45) NULL,     `id_category` INT NOT NULL,     PRIMARY KEY (`idproduct`));
+2018-09-26T20:53:49-03:00	ERROR	Exception raw	CREATE TABLE `product_category` (     `id_category` INT NOT NULL,     `catname` VARCHAR(45) NULL,     PRIMARY KEY (`id_category`));
+2018-09-26T20:53:49-03:00	ERROR	Failed to run query	insert into `product_category` (`id_category`,`catname`) values (?,?) Cause:Duplicate entry '1' for key 'PRIMARY'
+2018-09-26T20:53:49-03:00	ERROR	Failed to run query	insert into `myproducts` (`idproduct`,`name`,`type`,`id_category`) values (?,?,?,?) Cause:Duplicate entry '1' for key 'PRIMARY'
+2018-09-26T20:54:43-03:00	ERROR	Exception raw	CREATE TABLE `myproducts` (     `idproduct` INT NOT NULL,     `name` VARCHAR(45) NULL,     `type` VARCHAR(45) NULL,     `id_category` INT NOT NULL,     PRIMARY KEY (`idproduct`));
+2018-09-26T20:54:43-03:00	ERROR	Exception raw	CREATE TABLE `product_category` (     `id_category` INT NOT NULL,     `catname` VARCHAR(45) NULL,     PRIMARY KEY (`id_category`));
+2018-09-26T20:54:43-03:00	ERROR	Failed to run query	insert into `product_category` (`id_category`,`catname`) values (?,?) Cause:Duplicate entry '1' for key 'PRIMARY'
+2018-09-26T20:55:50-03:00	ERROR	Exception raw	CREATE TABLE `myproducts` (     `idproduct` INT NOT NULL,     `name` VARCHAR(45) NULL,     `type` VARCHAR(45) NULL,     `id_category` INT NOT NULL,     PRIMARY KEY (`idproduct`));
+2018-09-26T20:55:50-03:00	ERROR	Exception raw	CREATE TABLE `product_category` (     `id_category` INT NOT NULL,     `catname` VARCHAR(45) NULL,     PRIMARY KEY (`id_category`));
+2018-09-26T20:55:50-03:00	ERROR	Failed to run query	insert into `product_category` (`id_category`,`catname`) values (?,?) Cause:Duplicate entry '1' for key 'PRIMARY'
+2018-09-26T20:55:50-03:00	ERROR	Failed to run query	insert into `myproducts` (`idproduct`,`name`,`type`,`id_category`) values (?,?,?,?) Cause:Duplicate entry '1' for key 'PRIMARY'
+2018-09-26T21:03:15-03:00	ERROR	Exception raw	CREATE TABLE `myproducts` (     `idproduct` INT NOT NULL,     `name` VARCHAR(45) NULL,     `type` VARCHAR(45) NULL,     `id_category` INT NOT NULL,     PRIMARY KEY (`idproduct`));
+2018-09-26T21:03:15-03:00	ERROR	Exception raw	CREATE TABLE `product_category` (     `id_category` INT NOT NULL,     `catname` VARCHAR(45) NULL,     PRIMARY KEY (`id_category`));
+2018-09-26T21:03:15-03:00	ERROR	Failed to run query	insert into `product_category` (`id_category`,`catname`) values (?,?) Cause:Duplicate entry '1' for key 'PRIMARY'
+2018-09-26T21:03:15-03:00	ERROR	Failed to run query	insert into `myproducts` (`idproduct`,`name`,`type`,`id_category`) values (?,?,?,?) Cause:Duplicate entry '1' for key 'PRIMARY'
+2018-09-26T21:04:34-03:00	ERROR	Exception raw	CREATE TABLE `myproducts` (     `idproduct` INT NOT NULL,     `name` VARCHAR(45) NULL,     `type` VARCHAR(45) NULL,     `id_category` INT NOT NULL,     PRIMARY KEY (`idproduct`));
+2018-09-26T21:04:34-03:00	ERROR	Exception raw	CREATE TABLE `product_category` (     `id_category` INT NOT NULL,     `catname` VARCHAR(45) NULL,     PRIMARY KEY (`id_category`));
+2018-09-26T21:04:34-03:00	ERROR	Failed to run query	insert into `product_category` (`id_category`,`catname`) values (?,?) Cause:Duplicate entry '1' for key 'PRIMARY'
+2018-09-26T21:04:34-03:00	ERROR	Failed to run query	insert into `myproducts` (`idproduct`,`name`,`type`,`id_category`) values (?,?,?,?) Cause:Duplicate entry '1' for key 'PRIMARY'
+2018-09-26T21:04:48-03:00	ERROR	Exception raw	CREATE TABLE `myproducts` (     `idproduct` INT NOT NULL,     `name` VARCHAR(45) NULL,     `type` VARCHAR(45) NULL,     `id_category` INT NOT NULL,     PRIMARY KEY (`idproduct`));
+2018-09-26T21:04:48-03:00	ERROR	Exception raw	CREATE TABLE `product_category` (     `id_category` INT NOT NULL,     `catname` VARCHAR(45) NULL,     PRIMARY KEY (`id_category`));
+2018-09-26T21:04:48-03:00	ERROR	Failed to run query	insert into `product_category` (`id_category`,`catname`) values (?,?) Cause:Duplicate entry '1' for key 'PRIMARY'
+2018-09-26T21:04:48-03:00	ERROR	Failed to run query	insert into `myproducts` (`idproduct`,`name`,`type`,`id_category`) values (?,?,?,?) Cause:Duplicate entry '1' for key 'PRIMARY'
+2018-09-26T21:14:02-03:00	ERROR	Exception raw	CREATE TABLE `myproducts` (     `idproduct` INT NOT NULL,     `name` VARCHAR(45) NULL,     `type` VARCHAR(45) NULL,     `id_category` INT NOT NULL,     PRIMARY KEY (`idproduct`));
+2018-09-26T21:14:02-03:00	ERROR	Exception raw	CREATE TABLE `product_category` (     `id_category` INT NOT NULL,     `catname` VARCHAR(45) NULL,     PRIMARY KEY (`id_category`));
+2018-09-26T21:14:02-03:00	ERROR	Failed to run query	insert into `product_category` (`id_category`,`catname`) values (?,?) Cause:Duplicate entry '1' for key 'PRIMARY'
+2018-09-26T21:14:02-03:00	ERROR	Failed to run query	insert into `myproducts` (`idproduct`,`name`,`type`,`id_category`) values (?,?,?,?) Cause:Duplicate entry '1' for key 'PRIMARY'
+2018-10-05T16:32:37-03:00	ERROR	Exception raw	CREATE TABLE `typetable` (     `type` INT NOT NULL,     `name` VARCHAR(45) NULL,     PRIMARY KEY (`type`));
+2018-10-05T16:32:59-03:00	ERROR	Exception raw	CREATE TABLE `typetable` (     `type` INT NOT NULL,     `name` VARCHAR(45) NULL,     PRIMARY KEY (`type`));
+2018-10-05T16:36:24-03:00	ERROR	Exception raw	CREATE TABLE `typetable` (     `type` INT NOT NULL,     `name` VARCHAR(45) NULL,     PRIMARY KEY (`type`));
+2018-10-05T16:37:41-03:00	ERROR	Exception raw	CREATE TABLE `typetable` (     `type` INT NOT NULL,     `name` VARCHAR(45) NULL,     PRIMARY KEY (`type`));
+2018-10-05T16:40:08-03:00	ERROR	Exception raw	CREATE TABLE `typetable` (     `type` INT NOT NULL,     `name` VARCHAR(45) NULL,     PRIMARY KEY (`type`));
+2018-10-05T16:40:29-03:00	ERROR	Exception raw	CREATE TABLE `typetable` (     `type` INT NOT NULL,     `name` VARCHAR(45) NULL,     PRIMARY KEY (`type`));
+2018-10-05T16:40:29-03:00	ERROR	Error in bind
+2018-10-05T16:40:44-03:00	ERROR	Exception raw	CREATE TABLE `typetable` (     `type` INT NOT NULL,     `name` VARCHAR(45) NULL,     PRIMARY KEY (`type`));
+2018-10-05T16:40:44-03:00	ERROR	Error in bind
+2018-10-05T16:42:31-03:00	ERROR	Exception raw	CREATE TABLE `typetable` (     `type` INT NOT NULL,     `name` VARCHAR(45) NULL,     PRIMARY KEY (`type`));
+2018-10-05T16:42:31-03:00	ERROR	Error in bind
+2018-10-05T16:42:58-03:00	ERROR	Exception raw	CREATE TABLE `typetable` (     `type` INT NOT NULL,     `name` VARCHAR(45) NULL,     PRIMARY KEY (`type`));
+2018-10-05T16:42:58-03:00	ERROR	Error in bind
+2018-10-05T16:43:20-03:00	ERROR	Exception raw	CREATE TABLE `typetable` (     `type` INT NOT NULL,     `name` VARCHAR(45) NULL,     PRIMARY KEY (`type`));
+2018-10-05T16:43:20-03:00	ERROR	Error in bind
+2018-10-05T16:43:38-03:00	ERROR	Exception raw	CREATE TABLE `typetable` (     `type` INT NOT NULL,     `name` VARCHAR(45) NULL,     PRIMARY KEY (`type`));
+2018-10-05T16:43:38-03:00	ERROR	Error in bind
+2018-10-05T16:45:41-03:00	ERROR	Exception raw	CREATE TABLE `typetable` (     `type` INT NOT NULL,     `name` VARCHAR(45) NULL,     PRIMARY KEY (`type`));
+2018-10-08T19:18:53-03:00	ERROR	Exception raw	CREATE TABLE `typetable` (     `type` INT NOT NULL,     `name` VARCHAR(45) NULL,     PRIMARY KEY (`type`));
+2018-10-08T19:19:11-03:00	ERROR	Exception raw	CREATE TABLE `typetable` (     `type` INT NOT NULL,     `name` VARCHAR(45) NULL,     PRIMARY KEY (`type`));
+2018-10-08T19:20:24-03:00	ERROR	Exception raw	CREATE TABLE `typetable` (     `type` INT NOT NULL,     `name` VARCHAR(45) NULL,     PRIMARY KEY (`type`));
+2018-10-08T19:20:59-03:00	ERROR	Exception raw	CREATE TABLE `typetable` (     `type` INT NOT NULL,     `name` VARCHAR(45) NULL,     PRIMARY KEY (`type`));
+2018-10-08T19:22:42-03:00	ERROR	Exception raw	CREATE TABLE `typetable` (     `type` INT NOT NULL,     `name` VARCHAR(45) NULL,     PRIMARY KEY (`type`));
+2018-10-08T19:23:13-03:00	ERROR	Exception raw	CREATE TABLE `typetable` (     `type` INT NOT NULL,     `name` VARCHAR(45) NULL,     PRIMARY KEY (`type`));
+2018-10-08T19:23:41-03:00	ERROR	Exception raw	CREATE TABLE `typetable` (     `type` INT NOT NULL,     `name` VARCHAR(45) NULL,     PRIMARY KEY (`type`));
+2018-10-08T19:24:24-03:00	ERROR	Exception raw	CREATE TABLE `typetable` (     `type` INT NOT NULL,     `name` VARCHAR(45) NULL,     PRIMARY KEY (`type`));
+2018-10-08T19:24:41-03:00	ERROR	Exception raw	CREATE TABLE `typetable` (     `type` INT NOT NULL,     `name` VARCHAR(45) NULL,     PRIMARY KEY (`type`));
+2018-10-16T17:17:26-03:00	ERROR	Failed to connect to MySQL:	Unknown database 'sakilaxxxx'
+2018-10-16T17:17:26-03:00	ERROR	Exception raw	CREATE TABLE `product` (   `idproduct` INT NOT NULL AUTO_INCREMENT,   `name` VARCHAR(45) NULL,   PRIMARY KEY (`idproduct`));
+2018-10-16T17:17:26-03:00	ERROR	you can't execute an empty insert() without a set()
+2018-10-16T17:17:26-03:00	ERROR	you can't execute set() after a where()
+2018-10-16T17:17:26-03:00	ERROR	Failed to prepare:Table 'sakila.product11' doesn't exist
+2018-10-16T17:17:26-03:00	ERROR	Failed to run query	insert into `product`(name) values(?) Cause:Data too long for column 'name' at row 1
+2018-10-16T17:17:26-03:00	ERROR	Failed to prepare:Table 'sakila.product33' doesn't exist
+2018-10-16T17:33:35-03:00	ERROR	Failed to connect to MySQL:	Unknown database 'sakilaxxxx'
+2018-10-16T17:33:35-03:00	ERROR	Exception raw	CREATE TABLE `product` (   `idproduct` INT NOT NULL AUTO_INCREMENT,   `name` VARCHAR(45) NULL,   PRIMARY KEY (`idproduct`));
+2018-10-16T17:33:35-03:00	ERROR	you can't execute an empty insert() without a set()
+2018-10-16T17:33:35-03:00	ERROR	you can't execute set() after a where()
+2018-10-16T17:33:35-03:00	ERROR	Failed to prepare:Table 'sakila.product11' doesn't exist
+2018-10-16T17:33:35-03:00	ERROR	Failed to run query	insert into `product`(name) values(?) Cause:Data too long for column 'name' at row 1
+2018-10-16T17:33:35-03:00	ERROR	Failed to prepare:Table 'sakila.product33' doesn't exist
+2018-10-16T17:34:20-03:00	ERROR	Failed to connect to MySQL:	Unknown database 'sakilaxxxx'
+2018-10-16T17:34:20-03:00	ERROR	Exception raw	CREATE TABLE `product` (   `idproduct` INT NOT NULL AUTO_INCREMENT,   `name` VARCHAR(45) NULL,   PRIMARY KEY (`idproduct`));
+2018-10-16T17:34:20-03:00	ERROR	you can't execute an empty insert() without a set()
+2018-10-16T17:34:20-03:00	ERROR	you can't execute set() after a where()
+2018-10-16T17:34:20-03:00	ERROR	Failed to prepare:Table 'sakila.product11' doesn't exist
+2018-10-16T17:34:20-03:00	ERROR	Failed to run query	insert into `product`(name) values(?) Cause:Data too long for column 'name' at row 1
+2018-10-16T17:34:20-03:00	ERROR	Failed to prepare:Table 'sakila.product33' doesn't exist
+2018-10-16T17:34:31-03:00	ERROR	Failed to connect to MySQL:	Unknown database 'sakilaxxxx'
+2018-10-16T17:34:31-03:00	ERROR	Exception raw	CREATE TABLE `product` (   `idproduct` INT NOT NULL AUTO_INCREMENT,   `name` VARCHAR(45) NULL,   PRIMARY KEY (`idproduct`));
+2018-10-16T17:34:31-03:00	ERROR	you can't execute an empty insert() without a set()
+2018-10-16T17:34:31-03:00	ERROR	you can't execute set() after a where()
+2018-10-16T17:34:31-03:00	ERROR	Failed to prepare:Table 'sakila.product11' doesn't exist
+2018-10-16T17:34:31-03:00	ERROR	Failed to run query	insert into `product`(name) values(?) Cause:Data too long for column 'name' at row 1
+2018-10-16T17:34:31-03:00	ERROR	Failed to prepare:Table 'sakila.product33' doesn't exist
+2018-10-16T17:34:45-03:00	ERROR	Failed to connect to MySQL:	Unknown database 'sakilaxxxx'
+2018-10-16T17:34:45-03:00	ERROR	Exception raw	CREATE TABLE `product` (   `idproduct` INT NOT NULL AUTO_INCREMENT,   `name` VARCHAR(45) NULL,   PRIMARY KEY (`idproduct`));
+2018-10-16T17:34:45-03:00	ERROR	you can't execute an empty insert() without a set()
+2018-10-16T17:34:45-03:00	ERROR	you can't execute set() after a where()
+2018-10-16T17:34:45-03:00	ERROR	Failed to prepare:Table 'sakila.product11' doesn't exist
+2018-10-16T17:34:45-03:00	ERROR	Failed to run query	insert into `product`(name) values(?) Cause:Data too long for column 'name' at row 1
+2018-10-16T17:34:45-03:00	ERROR	Failed to prepare:Table 'sakila.product33' doesn't exist
+2018-10-16T17:34:58-03:00	ERROR	Failed to connect to MySQL:	Unknown database 'sakilaxxxx'
+2018-10-16T17:34:58-03:00	ERROR	Exception raw	CREATE TABLE `product` (   `idproduct` INT NOT NULL AUTO_INCREMENT,   `name` VARCHAR(45) NULL,   PRIMARY KEY (`idproduct`));
+2018-10-16T17:34:58-03:00	ERROR	you can't execute an empty insert() without a set()
+2018-10-16T17:34:58-03:00	ERROR	you can't execute set() after a where()
+2018-10-16T17:34:58-03:00	ERROR	Failed to prepare:Table 'sakila.product11' doesn't exist
+2018-10-16T17:34:58-03:00	ERROR	Failed to run query	insert into `product`(name) values(?) Cause:Data too long for column 'name' at row 1
+2018-10-16T17:34:58-03:00	ERROR	Failed to prepare:Table 'sakila.product33' doesn't exist
+2018-10-16T17:35:13-03:00	ERROR	Failed to connect to MySQL:	Unknown database 'sakilaxxxx'
+2018-10-16T17:35:13-03:00	ERROR	Exception raw	CREATE TABLE `product` (   `idproduct` INT NOT NULL AUTO_INCREMENT,   `name` VARCHAR(45) NULL,   PRIMARY KEY (`idproduct`));
+2018-10-16T17:35:13-03:00	ERROR	you can't execute an empty insert() without a set()
+2018-10-16T17:35:13-03:00	ERROR	you can't execute set() after a where()
+2018-10-16T17:35:13-03:00	ERROR	Failed to prepare:Table 'sakila.product11' doesn't exist
+2018-10-16T17:35:13-03:00	ERROR	Failed to run query	insert into `product`(name) values(?) Cause:Data too long for column 'name' at row 1
+2018-10-16T17:35:13-03:00	ERROR	Failed to prepare:Table 'sakila.product33' doesn't exist
+2018-10-16T17:39:34-03:00	ERROR	Failed to connect to MySQL:	Unknown database 'sakilaxxxx'
+2018-10-16T17:39:34-03:00	ERROR	Unable to run raw query	
+2018-10-16T17:40:23-03:00	ERROR	Failed to connect to MySQL:	Unknown database 'sakilaxxxx'
+2018-10-16T17:40:23-03:00	ERROR	Unable to run raw query	
+2018-10-16T17:40:43-03:00	ERROR	Failed to connect to MySQL:	Unknown database 'sakilaxxxx'
+2018-10-16T17:40:43-03:00	ERROR	Exception raw	CREATE TABLE `product` (   `idproduct` INT NOT NULL AUTO_INCREMENT,   `name` VARCHAR(45) NULL,   PRIMARY KEY (`idproduct`));
+2018-10-16T17:40:43-03:00	ERROR	you can't execute an empty insert() without a set()
+2018-10-16T17:40:43-03:00	ERROR	you can't execute set() after a where()
+2018-10-16T17:40:43-03:00	ERROR	Failed to prepare:Table 'sakila.product11' doesn't exist
+2018-10-16T17:40:43-03:00	ERROR	Failed to run query	insert into `product`(name) values(?) Cause:Data too long for column 'name' at row 1
+2018-10-16T17:40:43-03:00	ERROR	Failed to prepare:Table 'sakila.product33' doesn't exist
+2018-10-16T17:41:51-03:00	ERROR	Failed to connect to MySQL:	Unknown database 'sakilaxxxx'
+2018-10-16T17:41:51-03:00	ERROR	Failed to prepare:You have an error in your SQL syntax; check the manual that corresponds to your MySQL server version for the right syntax to use near '' at line 1
+2018-10-16T17:42:29-03:00	ERROR	Failed to connect to MySQL:	Unknown database 'sakilaxxxx'
+2018-10-16T17:42:29-03:00	ERROR	Exception raw	CREATE TABLE `product` (   `idproduct` INT NOT NULL AUTO_INCREMENT,   `name` VARCHAR(45) NULL,   PRIMARY KEY (`idproduct`));
+2018-10-16T17:42:29-03:00	ERROR	you can't execute an empty insert() without a set()
+2018-10-16T17:42:29-03:00	ERROR	you can't execute set() after a where()
+2018-10-16T17:42:29-03:00	ERROR	Failed to prepare:Table 'sakila.product11' doesn't exist
+2018-10-16T17:42:29-03:00	ERROR	Failed to run query	insert into `product`(name) values(?) Cause:Data too long for column 'name' at row 1
+2018-10-16T17:42:29-03:00	ERROR	Failed to prepare:Table 'sakila.product33' doesn't exist
+2018-10-16T17:43:50-03:00	ERROR	Failed to connect to MySQL:	Unknown database 'sakilaxxxx'
+2018-10-16T17:43:50-03:00	ERROR	Exception raw	CREATE TABLE `product` (   `idproduct` INT NOT NULL AUTO_INCREMENT,   `name` VARCHAR(45) NULL,   PRIMARY KEY (`idproduct`));
+2018-10-16T17:43:50-03:00	ERROR	you can't execute an empty insert() without a set()
+2018-10-16T17:43:50-03:00	ERROR	you can't execute set() after a where()
+2018-10-16T17:43:50-03:00	ERROR	Failed to prepare:Table 'sakila.product11' doesn't exist
+2018-10-16T17:43:50-03:00	ERROR	Failed to run query	insert into `product`(name) values(?) Cause:Data too long for column 'name' at row 1
+2018-10-16T17:43:50-03:00	ERROR	Failed to prepare:Table 'sakila.product33' doesn't exist
+2018-10-16T17:44:23-03:00	ERROR	Failed to connect to MySQL:	Unknown database 'sakilaxxxx'
+2018-10-16T17:45:27-03:00	ERROR	Failed to connect to MySQL:	Unknown database 'sakilaxxxx'
+2018-10-16T17:45:27-03:00	ERROR	It's not connected to the database
+2018-10-16T17:46:25-03:00	ERROR	Failed to connect to MySQL:	Unknown database 'sakilaxxxx'
+2018-10-16T17:46:25-03:00	ERROR	It's not connected to the database
+2018-10-16T17:46:55-03:00	ERROR	Failed to connect to MySQL:	Unknown database 'sakilaxxxx'
+2018-10-16T17:46:55-03:00	ERROR	It's not connected to the database
+2018-10-16T17:46:55-03:00	ERROR	Exception raw	CREATE TABLE `product` (   `idproduct` INT NOT NULL AUTO_INCREMENT,   `name` VARCHAR(45) NULL,   PRIMARY KEY (`idproduct`));
+2018-10-16T17:46:55-03:00	ERROR	you can't execute an empty insert() without a set()
+2018-10-16T17:46:55-03:00	ERROR	you can't execute set() after a where()
+2018-10-16T17:46:55-03:00	ERROR	Failed to prepare:Table 'sakila.product11' doesn't exist
+2018-10-16T17:46:55-03:00	ERROR	Failed to run query	insert into `product`(name) values(?) Cause:Data too long for column 'name' at row 1
+2018-10-16T17:46:55-03:00	ERROR	Failed to prepare:Table 'sakila.product33' doesn't exist
+2018-10-16T17:47:31-03:00	ERROR	Failed to connect to MySQL:	Unknown database 'sakilaxxxx'
+2018-10-16T17:47:31-03:00	ERROR	It's not connected to the database
+2018-10-16T17:55:40-03:00	ERROR	Failed to connect to MySQL:	Unknown database 'sakilaxxxx'
+2018-10-16T17:55:40-03:00	ERROR	It's not connected to the database
+2018-10-16T17:55:40-03:00	ERROR	Exception raw	CREATE TABLE `product` (   `idproduct` INT NOT NULL AUTO_INCREMENT,   `name` VARCHAR(45) NULL,   PRIMARY KEY (`idproduct`));
+2018-10-16T17:55:40-03:00	ERROR	you can't execute an empty insert() without a set()
+2018-10-16T17:55:40-03:00	ERROR	you can't execute set() after a where()
+2018-10-16T17:55:40-03:00	ERROR	Failed to prepare:Table 'sakila.product11' doesn't exist
+2018-10-16T17:55:40-03:00	ERROR	Failed to run query	insert into `product`(name) values(?) Cause:Data too long for column 'name' at row 1
+2018-10-16T17:55:40-03:00	ERROR	Failed to prepare:Table 'sakila.product33' doesn't exist
+2018-10-16T17:56:02-03:00	ERROR	Failed to connect to MySQL:	Unknown database 'sakilaxxxx'
+2018-10-16T17:56:02-03:00	ERROR	It's not connected to the database
+2018-10-16T17:56:02-03:00	ERROR	Exception raw	CREATE TABLE `product` (   `idproduct` INT NOT NULL AUTO_INCREMENT,   `name` VARCHAR(45) NULL,   PRIMARY KEY (`idproduct`));
+2018-10-16T17:56:02-03:00	ERROR	you can't execute an empty insert() without a set()
+2018-10-16T17:56:02-03:00	ERROR	you can't execute set() after a where()
+2018-10-16T17:56:02-03:00	ERROR	Failed to prepare:Table 'sakila.product11' doesn't exist
+2018-10-16T17:56:02-03:00	ERROR	Failed to run query	insert into `product`(name) values(?) Cause:Data too long for column 'name' at row 1
+2018-10-16T17:56:02-03:00	ERROR	Failed to prepare:Table 'sakila.product33' doesn't exist
+2018-10-16T18:02:17-03:00	ERROR	Failed to connect to MySQL:	Unknown database 'sakilaxxxx'
+2018-10-16T18:02:17-03:00	ERROR	Failed to connect to MySQL:	Unknown database 'sakilaxxxx'
+2018-10-16T18:02:17-03:00	ERROR	It's not connected to the database
+2018-10-16T18:05:58-03:00	ERROR	Failed to connect to MySQL:	Unknown database 'sakilaxxxx'
+2018-10-16T18:05:58-03:00	ERROR	Failed to connect to MySQL:	Unknown database 'sakilaxxxx'
+2018-10-16T18:05:58-03:00	ERROR	It's not connected to the database
+2018-10-16T18:06:34-03:00	ERROR	Failed to connect to MySQL:	Unknown database 'sakilaxxxx'
+2018-10-16T18:06:34-03:00	ERROR	Failed to connect to MySQL:	Unknown database 'sakilaxxxx'
+2018-10-16T18:06:34-03:00	ERROR	It's not connected to the database
+2018-10-16T18:06:34-03:00	ERROR	It's not connected to the database
+2018-10-16T18:07:02-03:00	ERROR	Failed to connect to MySQL:	Unknown database 'sakilaxxxx'
+2018-10-16T18:07:02-03:00	ERROR	Failed to connect to MySQL:	Unknown database 'sakilaxxxx'
+2018-10-16T18:07:02-03:00	ERROR	It's not connected to the database
+2018-10-16T18:07:02-03:00	ERROR	It's not connected to the database
+2018-10-16T18:08:52-03:00	ERROR	Failed to connect to MySQL:	Unknown database 'sakilaxxxx'
+2018-10-16T18:08:52-03:00	ERROR	Failed to connect to MySQL:	Unknown database 'sakilaxxxx'
+2018-10-16T18:08:52-03:00	ERROR	It's not connected to the database
+2018-10-16T18:08:52-03:00	ERROR	It's not connected to the database
+2018-10-16T18:08:52-03:00	ERROR	Exception raw	CREATE TABLE `product` (   `idproduct` INT NOT NULL AUTO_INCREMENT,   `name` VARCHAR(45) NULL,   PRIMARY KEY (`idproduct`));
+2018-10-16T18:08:52-03:00	ERROR	you can't execute an empty insert() without a set()
+2018-10-16T18:08:52-03:00	ERROR	you can't execute set() after a where()
+2018-10-16T18:08:52-03:00	ERROR	Failed to prepare:Table 'sakila.product11' doesn't exist
+2018-10-16T18:08:52-03:00	ERROR	Failed to run query	insert into `product`(name) values(?) Cause:Data too long for column 'name' at row 1
+2018-10-16T18:08:52-03:00	ERROR	Failed to prepare:Table 'sakila.product33' doesn't exist
+2018-10-16T18:29:17-03:00	ERROR	Failed to connect to MySQL:	Unknown database 'sakilaxxxx'
+2018-10-16T18:29:17-03:00	ERROR	Failed to connect to MySQL:	Unknown database 'sakilaxxxx'
+2018-10-16T18:29:17-03:00	ERROR	It's not connected to the database
+2018-10-16T18:29:17-03:00	ERROR	It's not connected to the database
+2018-10-16T18:29:17-03:00	ERROR	Exception raw	CREATE TABLE `product` (   `idproduct` INT NOT NULL AUTO_INCREMENT,   `name` VARCHAR(45) NULL,   PRIMARY KEY (`idproduct`));
+2018-10-16T18:29:17-03:00	ERROR	you can't execute an empty insert() without a set()
+2018-10-16T18:29:17-03:00	ERROR	you can't execute set() after a where()
+2018-10-16T18:29:17-03:00	ERROR	Failed to prepare:Table 'sakila.product11' doesn't exist
+2018-10-16T18:29:17-03:00	ERROR	Failed to run query	insert into `product`(name) values(?) Cause:Data too long for column 'name' at row 1
+2018-10-16T18:29:17-03:00	ERROR	Failed to prepare:Table 'sakila.product33' doesn't exist
+2018-10-16T18:31:22-03:00	ERROR	Failed to connect to MySQL:	Unknown database 'sakilaxxxx'
+2018-10-16T18:31:22-03:00	ERROR	Failed to connect to MySQL:	Unknown database 'sakilaxxxx'
+2018-10-16T18:31:22-03:00	ERROR	It's not connected to the database
+2018-10-16T18:31:22-03:00	ERROR	It's not connected to the database
+2018-10-16T18:31:22-03:00	ERROR	Exception raw	CREATE TABLE `product` (   `idproduct` INT NOT NULL AUTO_INCREMENT,   `name` VARCHAR(45) NULL,   PRIMARY KEY (`idproduct`));
+2018-10-16T18:31:22-03:00	ERROR	you can't execute an empty insert() without a set()
+2018-10-16T18:31:22-03:00	ERROR	you can't execute set() after a where()
+2018-10-16T18:31:22-03:00	ERROR	Failed to prepare:Table 'sakila.product11' doesn't exist
+2018-10-16T18:31:22-03:00	ERROR	Failed to run query	insert into `product`(name) values(?) Cause:Data too long for column 'name' at row 1
+2018-10-16T18:31:22-03:00	ERROR	Failed to prepare:Table 'sakila.product33' doesn't exist
+2018-10-16T18:32:58-03:00	ERROR	Failed to connect to MySQL:	Unknown database 'sakilaxxxx'
+2018-10-16T18:32:58-03:00	ERROR	Failed to connect to MySQL:	Unknown database 'sakilaxxxx'
+2018-10-16T18:32:58-03:00	ERROR	It's not connected to the database
+2018-10-16T18:32:58-03:00	ERROR	It's not connected to the database
+2018-10-16T18:32:58-03:00	ERROR	Exception raw	CREATE TABLE `product` (   `idproduct` INT NOT NULL AUTO_INCREMENT,   `name` VARCHAR(45) NULL,   PRIMARY KEY (`idproduct`));
+2018-10-16T18:32:58-03:00	ERROR	you can't execute an empty insert() without a set()
+2018-10-16T18:32:58-03:00	ERROR	you can't execute set() after a where()
+2018-10-16T18:32:58-03:00	ERROR	Failed to prepare:Table 'sakila.product11' doesn't exist
+2018-10-16T18:32:58-03:00	ERROR	Failed to run query	insert into `product`(name) values(?) Cause:Data too long for column 'name' at row 1
+2018-10-16T18:32:58-03:00	ERROR	Failed to prepare:Table 'sakila.product33' doesn't exist
+2018-12-15T10:30:56-03:00	ERROR	Exception raw	CREATE TABLE `myproducts` (     `idproduct` INT NOT NULL,     `name` VARCHAR(45) NULL,     `type` VARCHAR(45) NULL,     `id_category` INT NOT NULL,     PRIMARY KEY (`idproduct`));
+2018-12-15T10:30:56-03:00	ERROR	Exception raw	CREATE TABLE `product_category` (     `id_category` INT NOT NULL,     `catname` VARCHAR(45) NULL,     PRIMARY KEY (`id_category`));
+2018-12-15T10:30:56-03:00	ERROR	Failed to run query	insert into `product_category` (`id_category`,`catname`) values (?,?) Cause:No data supplied for parameters in prepared statement
+2018-12-15T10:30:56-03:00	ERROR	Failed to run query	insert into `myproducts` (`idproduct`,`name`,`type`,`id_category`) values (?,?,?,?) Cause:No data supplied for parameters in prepared statement
+2018-12-15T10:31:21-03:00	ERROR	Exception raw	CREATE TABLE `myproducts` (     `idproduct` INT NOT NULL,     `name` VARCHAR(45) NULL,     `type` VARCHAR(45) NULL,     `id_category` INT NOT NULL,     PRIMARY KEY (`idproduct`));
+2018-12-15T10:31:21-03:00	ERROR	Exception raw	CREATE TABLE `product_category` (     `id_category` INT NOT NULL,     `catname` VARCHAR(45) NULL,     PRIMARY KEY (`id_category`));
+2018-12-15T10:31:21-03:00	ERROR	Failed to run query	insert into `product_category` (`id_category`,`catname`) values (?,?) Cause:No data supplied for parameters in prepared statement
+2018-12-15T10:31:21-03:00	ERROR	Failed to run query	insert into `myproducts` (`idproduct`,`name`,`type`,`id_category`) values (?,?,?,?) Cause:No data supplied for parameters in prepared statement
+2018-12-15T10:32:08-03:00	ERROR	Exception raw	CREATE TABLE `myproducts` (     `idproduct` INT NOT NULL,     `name` VARCHAR(45) NULL,     `type` VARCHAR(45) NULL,     `id_category` INT NOT NULL,     PRIMARY KEY (`idproduct`));
+2018-12-15T10:32:08-03:00	ERROR	Exception raw	CREATE TABLE `product_category` (     `id_category` INT NOT NULL,     `catname` VARCHAR(45) NULL,     PRIMARY KEY (`id_category`));
+2018-12-15T10:32:08-03:00	ERROR	Failed to run query	insert into `product_category` (`id_category`,`catname`) values (?,?) Cause:No data supplied for parameters in prepared statement
+2018-12-15T10:32:08-03:00	ERROR	Failed to run query	insert into `myproducts` (`idproduct`,`name`,`type`,`id_category`) values (?,?,?,?) Cause:No data supplied for parameters in prepared statement
+2018-12-15T10:32:27-03:00	ERROR	Exception raw	CREATE TABLE `myproducts` (     `idproduct` INT NOT NULL,     `name` VARCHAR(45) NULL,     `type` VARCHAR(45) NULL,     `id_category` INT NOT NULL,     PRIMARY KEY (`idproduct`));
+2018-12-15T10:32:27-03:00	ERROR	Exception raw	CREATE TABLE `product_category` (     `id_category` INT NOT NULL,     `catname` VARCHAR(45) NULL,     PRIMARY KEY (`id_category`));
+2018-12-15T10:32:27-03:00	ERROR	Failed to run query	insert into `product_category` (`id_category`,`catname`) values (?,?) Cause:No data supplied for parameters in prepared statement
+2018-12-15T10:32:27-03:00	ERROR	Failed to run query	insert into `myproducts` (`idproduct`,`name`,`type`,`id_category`) values (?,?,?,?) Cause:No data supplied for parameters in prepared statement
+2018-12-15T10:33:41-03:00	ERROR	Exception raw	CREATE TABLE `myproducts` (     `idproduct` INT NOT NULL,     `name` VARCHAR(45) NULL,     `type` VARCHAR(45) NULL,     `id_category` INT NOT NULL,     PRIMARY KEY (`idproduct`));
+2018-12-15T10:33:41-03:00	ERROR	Exception raw	CREATE TABLE `product_category` (     `id_category` INT NOT NULL,     `catname` VARCHAR(45) NULL,     PRIMARY KEY (`id_category`));
+2018-12-15T10:33:41-03:00	ERROR	Failed to run query	insert into `product_category` (`id_category`,`catname`) values (?,?) Cause:No data supplied for parameters in prepared statement
+2018-12-15T10:33:41-03:00	ERROR	Failed to run query	insert into `myproducts` (`idproduct`,`name`,`type`,`id_category`) values (?,?,?,?) Cause:No data supplied for parameters in prepared statement
+2018-12-15T10:34:38-03:00	ERROR	Exception raw	CREATE TABLE `myproducts` (     `idproduct` INT NOT NULL,     `name` VARCHAR(45) NULL,     `type` VARCHAR(45) NULL,     `id_category` INT NOT NULL,     PRIMARY KEY (`idproduct`));
+2018-12-15T10:34:38-03:00	ERROR	Exception raw	CREATE TABLE `product_category` (     `id_category` INT NOT NULL,     `catname` VARCHAR(45) NULL,     PRIMARY KEY (`id_category`));
+2018-12-15T10:34:38-03:00	ERROR	Failed to run query	insert into `product_category` (`id_category`,`catname`) values (?,?) Cause:No data supplied for parameters in prepared statement
+2018-12-15T10:34:38-03:00	ERROR	Failed to run query	insert into `myproducts` (`idproduct`,`name`,`type`,`id_category`) values (?,?,?,?) Cause:No data supplied for parameters in prepared statement
+2018-12-15T10:35:36-03:00	ERROR	Exception raw	CREATE TABLE `myproducts` (     `idproduct` INT NOT NULL,     `name` VARCHAR(45) NULL,     `type` VARCHAR(45) NULL,     `id_category` INT NOT NULL,     PRIMARY KEY (`idproduct`));
+2018-12-15T10:35:36-03:00	ERROR	Exception raw	CREATE TABLE `product_category` (     `id_category` INT NOT NULL,     `catname` VARCHAR(45) NULL,     PRIMARY KEY (`id_category`));
+2018-12-15T10:35:36-03:00	ERROR	Failed to run query	insert into `product_category` (`id_category`,`catname`) values (?,?) Cause:No data supplied for parameters in prepared statement
+2018-12-15T10:35:36-03:00	ERROR	Failed to run query	insert into `myproducts` (`idproduct`,`name`,`type`,`id_category`) values (?,?,?,?) Cause:No data supplied for parameters in prepared statement
+2018-12-15T10:35:57-03:00	ERROR	Exception raw	CREATE TABLE `myproducts` (     `idproduct` INT NOT NULL,     `name` VARCHAR(45) NULL,     `type` VARCHAR(45) NULL,     `id_category` INT NOT NULL,     PRIMARY KEY (`idproduct`));
+2018-12-15T10:35:57-03:00	ERROR	Exception raw	CREATE TABLE `product_category` (     `id_category` INT NOT NULL,     `catname` VARCHAR(45) NULL,     PRIMARY KEY (`id_category`));
+2018-12-15T10:35:57-03:00	ERROR	Failed to run query	insert into `product_category` (`id_category`,`catname`) values (?,?) Cause:No data supplied for parameters in prepared statement
+2018-12-15T10:35:57-03:00	ERROR	Failed to run query	insert into `myproducts` (`idproduct`,`name`,`type`,`id_category`) values (?,?,?,?) Cause:No data supplied for parameters in prepared statement
+2018-12-15T10:37:01-03:00	ERROR	Exception raw	CREATE TABLE `myproducts` (     `idproduct` INT NOT NULL,     `name` VARCHAR(45) NULL,     `type` VARCHAR(45) NULL,     `id_category` INT NOT NULL,     PRIMARY KEY (`idproduct`));
+2018-12-15T10:37:01-03:00	ERROR	Exception raw	CREATE TABLE `product_category` (     `id_category` INT NOT NULL,     `catname` VARCHAR(45) NULL,     PRIMARY KEY (`id_category`));
+2018-12-15T10:37:01-03:00	ERROR	Failed to run query	insert into `product_category` (`id_category`,`catname`) values (?,?) Cause:No data supplied for parameters in prepared statement
+2018-12-15T10:37:01-03:00	ERROR	Failed to run query	insert into `myproducts` (`idproduct`,`name`,`type`,`id_category`) values (?,?,?,?) Cause:No data supplied for parameters in prepared statement
+2018-12-15T10:37:09-03:00	ERROR	Exception raw	CREATE TABLE `myproducts` (     `idproduct` INT NOT NULL,     `name` VARCHAR(45) NULL,     `type` VARCHAR(45) NULL,     `id_category` INT NOT NULL,     PRIMARY KEY (`idproduct`));
+2018-12-15T10:37:09-03:00	ERROR	Exception raw	CREATE TABLE `product_category` (     `id_category` INT NOT NULL,     `catname` VARCHAR(45) NULL,     PRIMARY KEY (`id_category`));
+2018-12-15T10:37:09-03:00	ERROR	Failed to run query	insert into `product_category` (`id_category`,`catname`) values (?,?) Cause:No data supplied for parameters in prepared statement
+2018-12-15T10:37:09-03:00	ERROR	Failed to run query	insert into `myproducts` (`idproduct`,`name`,`type`,`id_category`) values (?,?,?,?) Cause:No data supplied for parameters in prepared statement
+2018-12-15T10:37:48-03:00	ERROR	Exception raw	CREATE TABLE `product_category` (     `id_category` INT NOT NULL,     `catname` VARCHAR(45) NULL,     PRIMARY KEY (`id_category`));
+2018-12-15T10:37:48-03:00	ERROR	Failed to run query	insert into `product_category` (`id_category`,`catname`) values (?,?) Cause:No data supplied for parameters in prepared statement
+2018-12-15T10:37:48-03:00	ERROR	Failed to run query	insert into `myproducts` (`idproduct`,`name`,`type`,`id_category`) values (?,?,?,?) Cause:No data supplied for parameters in prepared statement
+2018-12-15T10:38:10-03:00	ERROR	Failed to run query	insert into `product_category` (`id_category`,`catname`) values (?,?) Cause:No data supplied for parameters in prepared statement
+2018-12-15T10:38:10-03:00	ERROR	Failed to run query	insert into `myproducts` (`idproduct`,`name`,`type`,`id_category`) values (?,?,?,?) Cause:No data supplied for parameters in prepared statement
+2018-12-15T10:46:09-03:00	ERROR	Failed to run query	insert into `product_category` (`id_category`,`catname`) values (?,?) Cause:No data supplied for parameters in prepared statement
+2018-12-15T10:46:09-03:00	ERROR	Failed to run query	insert into `myproducts` (`idproduct`,`name`,`type`,`id_category`) values (?,?,?,?) Cause:No data supplied for parameters in prepared statement
+2018-12-17T07:55:12-03:00	ERROR	Failed to prepare:Unknown column '0' in 'field list'
+2018-12-17T07:57:57-03:00	ERROR	Failed to prepare:Unknown column '0' in 'field list'
+2018-12-30T17:18:42-03:00	ERROR	Exception raw	CREATE TABLE `typetable` (     `type` INT NOT NULL,     `name` VARCHAR(45) NULL,     PRIMARY KEY (`type`));
+2019-03-06T18:47:01-03:00	ERROR	Failed to connect to MySQL:	Unknown database 'sakilaxxxx'
+2019-03-06T18:47:01-03:00	ERROR	Failed to connect to MySQL:	Unknown database 'sakilaxxxx'
+2019-03-06T18:47:01-03:00	ERROR	It's not connected to the database
+2019-03-06T18:47:01-03:00	ERROR	It's not connected to the database
+2019-03-06T18:47:01-03:00	ERROR	Exception raw	CREATE TABLE `product` (   `idproduct` INT NOT NULL AUTO_INCREMENT,   `name` VARCHAR(45) NULL,   PRIMARY KEY (`idproduct`));
+2019-03-06T18:47:01-03:00	ERROR	you can't execute an empty insert() without a set()
+2019-03-06T18:47:01-03:00	ERROR	you can't execute set() after a where()
+2019-03-06T18:47:01-03:00	ERROR	Failed to prepare:Table 'sakila.product11' doesn't exist
+2019-03-06T18:47:01-03:00	ERROR	Failed to run query	insert into `product`(name) values(?) Cause:Data too long for column 'name' at row 1
+2019-03-06T18:47:01-03:00	ERROR	Failed to prepare:Table 'sakila.product33' doesn't exist
+2019-05-02T12:49:52-03:00	ERROR	Exception raw	CREATE TABLE `typetable` (     `type` INT NOT NULL,     `name` VARCHAR(45) NULL,     PRIMARY KEY (`type`));
+2019-05-02T12:51:55-03:00	ERROR	Exception raw	CREATE TABLE `typetable` (     `type` INT NOT NULL,     `name` VARCHAR(45) NULL,     PRIMARY KEY (`type`));
+2019-05-02T12:51:55-03:00	ERROR	Failed to run query	select * from producttype where name=? Cause:No data supplied for parameters in prepared statement
+2019-05-02T12:52:11-03:00	ERROR	Exception raw	CREATE TABLE `typetable` (     `type` INT NOT NULL,     `name` VARCHAR(45) NULL,     PRIMARY KEY (`type`));
+2019-05-02T12:53:49-03:00	ERROR	Exception raw	CREATE TABLE `typetable` (     `type` INT NOT NULL,     `name` VARCHAR(45) NULL,     PRIMARY KEY (`type`));
+2019-05-02T12:53:54-03:00	ERROR	Exception raw	CREATE TABLE `typetable` (     `type` INT NOT NULL,     `name` VARCHAR(45) NULL,     PRIMARY KEY (`type`));
+2019-05-02T12:53:55-03:00	ERROR	Exception raw	CREATE TABLE `typetable` (     `type` INT NOT NULL,     `name` VARCHAR(45) NULL,     PRIMARY KEY (`type`));
+2019-05-02T16:21:14-03:00	ERROR	Exception raw	CREATE TABLE `typetable` (     `type` INT NOT NULL,     `name` VARCHAR(45) NULL,     PRIMARY KEY (`type`));
+2019-05-04T10:25:21-03:00	ERROR	Failed to connect to MySQL
+2019-05-04T10:25:21-03:00	ERROR	Failed to connect to MySQL
+2019-05-04T10:25:21-03:00	ERROR	It's not connected to the database
+2019-05-04T10:25:21-03:00	ERROR	It's not connected to the database
+2019-05-04T10:25:21-03:00	ERROR	Exception raw
+2019-05-04T10:25:21-03:00	ERROR	you can't execute an empty insert() without a set()
+2019-05-04T10:25:21-03:00	ERROR	you can't execute set() after a where()
+2019-05-04T10:25:21-03:00	ERROR	Failed to prepare
+2019-05-04T10:25:21-03:00	ERROR	Failed to run query
+2019-05-04T10:25:21-03:00	ERROR	Failed to prepare
+2019-05-04T10:25:48-03:00	ERROR	Failed to connect to MySQLUnknown database 'sakilaxxxx'
+2019-05-04T10:25:48-03:00	ERROR	Failed to connect to MySQLUnknown database 'sakilaxxxx'
+2019-05-04T10:25:48-03:00	ERROR	It's not connected to the database
+2019-05-04T10:25:48-03:00	ERROR	It's not connected to the database
+2019-05-04T10:25:48-03:00	ERROR	Exception raw
+2019-05-04T10:25:48-03:00	ERROR	you can't execute an empty insert() without a set()
+2019-05-04T10:25:48-03:00	ERROR	you can't execute set() after a where()
+2019-05-04T10:25:48-03:00	ERROR	Failed to prepare
+2019-05-04T10:25:48-03:00	ERROR	Failed to run query
+2019-05-04T10:25:48-03:00	ERROR	Failed to prepare
+2019-05-04T10:25:51-03:00	ERROR	Failed to connect to MySQLUnknown database 'sakilaxxxx'
+2019-05-04T10:25:51-03:00	ERROR	Failed to connect to MySQLUnknown database 'sakilaxxxx'
+2019-05-04T10:25:51-03:00	ERROR	It's not connected to the database
+2019-05-04T10:25:51-03:00	ERROR	It's not connected to the database
+2019-05-04T10:25:51-03:00	ERROR	Exception raw
+2019-05-04T10:25:51-03:00	ERROR	you can't execute an empty insert() without a set()
+2019-05-04T10:25:51-03:00	ERROR	you can't execute set() after a where()
+2019-05-04T10:25:51-03:00	ERROR	Failed to prepare
+2019-05-04T10:25:51-03:00	ERROR	Failed to run query
+2019-05-04T10:25:51-03:00	ERROR	Failed to prepare
+2019-05-04T10:28:03-03:00	ERROR	Failed to connect to MySQLUnknown database 'sakilaxxxx'. Last query:[<].
+2019-05-04T10:28:03-03:00	ERROR	Failed to connect to MySQLUnknown database 'sakilaxxxx'. Last query:[<].
+2019-05-04T10:28:03-03:00	ERROR	It's not connected to the database. Last query:[<].
+2019-05-04T10:28:03-03:00	ERROR	It's not connected to the database. Last query:[<].
+2019-05-04T10:28:03-03:00	ERROR	Exception raw
+2019-05-04T10:28:03-03:00	ERROR	you can't execute an empty insert() without a set()
+2019-05-04T10:28:03-03:00	ERROR	you can't execute set() after a where()
+2019-05-04T10:28:03-03:00	ERROR	Failed to prepare
+2019-05-04T10:28:03-03:00	ERROR	Failed to run query
+2019-05-04T10:28:03-03:00	ERROR	Failed to prepare
+2019-05-04T10:28:04-03:00	ERROR	Failed to connect to MySQLUnknown database 'sakilaxxxx'. Last query:[<].
+2019-05-04T10:28:04-03:00	ERROR	Failed to connect to MySQLUnknown database 'sakilaxxxx'. Last query:[<].
+2019-05-04T10:28:04-03:00	ERROR	It's not connected to the database. Last query:[<].
+2019-05-04T10:28:04-03:00	ERROR	It's not connected to the database. Last query:[<].
+2019-05-04T10:28:04-03:00	ERROR	Exception raw
+2019-05-04T10:28:04-03:00	ERROR	you can't execute an empty insert() without a set()
+2019-05-04T10:28:04-03:00	ERROR	you can't execute set() after a where()
+2019-05-04T10:28:04-03:00	ERROR	Failed to prepare
+2019-05-04T10:28:04-03:00	ERROR	Failed to run query
+2019-05-04T10:28:04-03:00	ERROR	Failed to prepare
+2019-05-04T10:28:40-03:00	ERROR	Failed to connect to MySQLUnknown database 'sakilaxxxx'. Last query:[].
+2019-05-04T10:28:40-03:00	ERROR	Failed to connect to MySQLUnknown database 'sakilaxxxx'. Last query:[].
+2019-05-04T10:28:40-03:00	ERROR	It's not connected to the database. Last query:[].
+2019-05-04T10:28:40-03:00	ERROR	It's not connected to the database. Last query:[].
+2019-05-04T10:28:40-03:00	ERROR	Exception raw
+2019-05-04T10:28:40-03:00	ERROR	you can't execute an empty insert() without a set()
+2019-05-04T10:28:40-03:00	ERROR	you can't execute set() after a where()
+2019-05-04T10:28:40-03:00	ERROR	Failed to prepare
+2019-05-04T10:28:40-03:00	ERROR	Failed to run query
+2019-05-04T10:28:40-03:00	ERROR	Failed to prepare
+2019-05-04T10:28:54-03:00	ERROR	Failed to connect to MySQLUnknown database 'sakilaxxxx'. Last query:[].
+2019-05-04T10:28:54-03:00	ERROR	Failed to connect to MySQLUnknown database 'sakilaxxxx'. Last query:[].
+2019-05-04T10:28:54-03:00	ERROR	It's not connected to the database. Last query:[].
+2019-05-04T10:28:54-03:00	ERROR	It's not connected to the database. Last query:[].
+2019-05-04T10:28:54-03:00	ERROR	Exception raw
+2019-05-04T10:28:54-03:00	ERROR	you can't execute an empty insert() without a set()
+2019-05-04T10:28:54-03:00	ERROR	you can't execute set() after a where()
+2019-05-04T10:28:54-03:00	ERROR	Failed to prepare
+2019-05-04T10:28:54-03:00	ERROR	Failed to run query
+2019-05-04T10:28:54-03:00	ERROR	Failed to prepare
+2019-05-04T10:29:39-03:00	ERROR	Failed to connect to MySQLUnknown database 'sakilaxxxx'. Last query:[].
+2019-05-04T10:29:39-03:00	ERROR	It's not connected to the database. Last query:[].
+2019-05-04T10:29:39-03:00	ERROR	Exception raw
+2019-05-04T10:29:39-03:00	ERROR	you can't execute an empty insert() without a set()
+2019-05-04T10:29:39-03:00	ERROR	you can't execute set() after a where()
+2019-05-04T10:29:39-03:00	ERROR	Failed to prepare
+2019-05-04T10:29:39-03:00	ERROR	Failed to run query
+2019-05-04T10:29:39-03:00	ERROR	Failed to prepare
+2019-05-04T10:30:29-03:00	ERROR	Failed to connect to MySQLUnknown database 'sakilaxxxx'. Last query:[].
+2019-05-04T10:30:29-03:00	ERROR	It's not connected to the database. Last query:[].
+2019-05-04T10:30:29-03:00	ERROR	Exception raw
+2019-05-04T10:30:29-03:00	ERROR	you can't execute an empty insert() without a set()
+2019-05-04T10:30:29-03:00	ERROR	you can't execute set() after a where()
+2019-05-04T10:30:29-03:00	ERROR	Failed to prepare
+2019-05-04T10:30:29-03:00	ERROR	Failed to run query
+2019-05-04T10:30:29-03:00	ERROR	Failed to prepare
+2019-05-04T10:31:19-03:00	ERROR	Failed to connect to MySQLUnknown database 'sakilaxxxx'. Last query:[].
+2019-05-04T10:31:19-03:00	ERROR	It's not connected to the database. Last query:[].
+2019-05-04T10:31:19-03:00	ERROR	Exception raw
+2019-05-04T10:31:19-03:00	ERROR	you can't execute an empty insert() without a set()
+2019-05-04T10:31:19-03:00	ERROR	you can't execute set() after a where()
+2019-05-04T10:31:19-03:00	ERROR	Failed to prepare
+2019-05-04T10:31:19-03:00	ERROR	Failed to run query
+2019-05-04T10:31:19-03:00	ERROR	Failed to prepare
+2019-05-04T10:33:28-03:00	ERROR	Failed to connect to MySQLUnknown database 'sakilaxxxx'. Last query:[].
+2019-05-04T10:33:28-03:00	ERROR	It's not connected to the database. Last query:[].
+2019-05-04T10:33:28-03:00	ERROR	Exception rawCREATE TABLE `product` (   `idproduct` INT NOT NULL AUTO_INCREMENT,   `name` VARCHAR(45) NULL,   PRIMARY KEY (`idproduct`));. Last query:[CREATE TABLE `product` (   `idproduct` INT NOT NULL AUTO_INCREMENT,   `name` VARCHAR(45) NULL,   PRIMARY KEY (`idproduct`));].
+2019-05-04T10:33:28-03:00	ERROR	you can't execute an empty insert() without a set(). Last query:[CREATE TABLE `product` (   `idproduct` INT NOT NULL AUTO_INCREMENT,   `name` VARCHAR(45) NULL,   PRIMARY KEY (`idproduct`));].
+2019-05-04T10:33:28-03:00	ERROR	you can't execute set() after a where(). Last query:[CREATE TABLE `product` (   `idproduct` INT NOT NULL AUTO_INCREMENT,   `name` VARCHAR(45) NULL,   PRIMARY KEY (`idproduct`));].
+2019-05-04T10:33:28-03:00	ERROR	Failed to prepareTable 'sakila.product11' doesn't exist. Last query:[insert into `product11`(name) values(?)].
+2019-05-04T10:33:28-03:00	ERROR	Failed to run queryinsert into `product`(name) values(?) Cause:Data too long for column 'name' at row 1. Last query:[insert into `product`(name) values(?)].
+2019-05-04T10:33:28-03:00	ERROR	Failed to prepareTable 'sakila.product33' doesn't exist. Last query:[select * from `product33` order by name].
+2019-05-04T10:43:28-03:00	INFO	connecting to 127.0.0.1 root/*** sakilaxxxx
+2019-05-04T10:43:28-03:00	ERROR	Failed to connect to MySQLUnknown database 'sakilaxxxx'. Last query:[].
+2019-05-04T10:43:28-03:00	ERROR	It's not connected to the database. Last query:[].
+2019-05-04T10:43:28-03:00	INFO	connecting to 127.0.0.1 root/*** sakila
+2019-05-04T10:43:28-03:00	INFO	CREATE TABLE `product` (   `idproduct` INT NOT NULL AUTO_INCREMENT,   `name` VARCHAR(45) NULL,   PRIMARY KEY (`idproduct`));
+2019-05-04T10:43:28-03:00	ERROR	Exception rawCREATE TABLE `product` (   `idproduct` INT NOT NULL AUTO_INCREMENT,   `name` VARCHAR(45) NULL,   PRIMARY KEY (`idproduct`));. Last query:[CREATE TABLE `product` (   `idproduct` INT NOT NULL AUTO_INCREMENT,   `name` VARCHAR(45) NULL,   PRIMARY KEY (`idproduct`));].
+2019-05-04T10:43:28-03:00	ERROR	you can't execute an empty insert() without a set(). Last query:[CREATE TABLE `product` (   `idproduct` INT NOT NULL AUTO_INCREMENT,   `name` VARCHAR(45) NULL,   PRIMARY KEY (`idproduct`));].
+2019-05-04T10:43:28-03:00	ERROR	you can't execute set() after a where(). Last query:[CREATE TABLE `product` (   `idproduct` INT NOT NULL AUTO_INCREMENT,   `name` VARCHAR(45) NULL,   PRIMARY KEY (`idproduct`));].
+2019-05-04T10:43:28-03:00	INFO	insert into `product11`(name) values(?)
+2019-05-04T10:43:28-03:00	ERROR	Failed to prepareTable 'sakila.product11' doesn't exist. Last query:[insert into `product11`(name) values(?)].
+2019-05-04T10:43:28-03:00	INFO	insert into `product`(name) values(?)
+2019-05-04T10:43:28-03:00	ERROR	Failed to run queryinsert into `product`(name) values(?) Cause:Data too long for column 'name' at row 1. Last query:[insert into `product`(name) values(?)].
+2019-05-04T10:43:28-03:00	INFO	select * from `product33` order by name
+2019-05-04T10:43:28-03:00	ERROR	Failed to prepareTable 'sakila.product33' doesn't exist. Last query:[select * from `product33` order by name].
+2019-05-04T10:43:28-03:00	INFO	insert into `product`(name) values(?)
+2019-05-04T10:43:29-03:00	INFO	connecting to 127.0.0.1 root/*** sakilaxxxx
+2019-05-04T10:43:29-03:00	ERROR	Failed to connect to MySQLUnknown database 'sakilaxxxx'. Last query:[].
+2019-05-04T10:43:29-03:00	ERROR	It's not connected to the database. Last query:[].
+2019-05-04T10:43:29-03:00	INFO	connecting to 127.0.0.1 root/*** sakila
+2019-05-04T10:43:29-03:00	INFO	CREATE TABLE `product` (   `idproduct` INT NOT NULL AUTO_INCREMENT,   `name` VARCHAR(45) NULL,   PRIMARY KEY (`idproduct`));
+2019-05-04T10:43:29-03:00	ERROR	Exception rawCREATE TABLE `product` (   `idproduct` INT NOT NULL AUTO_INCREMENT,   `name` VARCHAR(45) NULL,   PRIMARY KEY (`idproduct`));. Last query:[CREATE TABLE `product` (   `idproduct` INT NOT NULL AUTO_INCREMENT,   `name` VARCHAR(45) NULL,   PRIMARY KEY (`idproduct`));].
+2019-05-04T10:43:29-03:00	ERROR	you can't execute an empty insert() without a set(). Last query:[CREATE TABLE `product` (   `idproduct` INT NOT NULL AUTO_INCREMENT,   `name` VARCHAR(45) NULL,   PRIMARY KEY (`idproduct`));].
+2019-05-04T10:43:29-03:00	ERROR	you can't execute set() after a where(). Last query:[CREATE TABLE `product` (   `idproduct` INT NOT NULL AUTO_INCREMENT,   `name` VARCHAR(45) NULL,   PRIMARY KEY (`idproduct`));].
+2019-05-04T10:43:29-03:00	INFO	insert into `product11`(name) values(?)
+2019-05-04T10:43:29-03:00	ERROR	Failed to prepareTable 'sakila.product11' doesn't exist. Last query:[insert into `product11`(name) values(?)].
+2019-05-04T10:43:29-03:00	INFO	insert into `product`(name) values(?)
+2019-05-04T10:43:29-03:00	ERROR	Failed to run queryinsert into `product`(name) values(?) Cause:Data too long for column 'name' at row 1. Last query:[insert into `product`(name) values(?)].
+2019-05-04T10:43:29-03:00	INFO	select * from `product33` order by name
+2019-05-04T10:43:29-03:00	ERROR	Failed to prepareTable 'sakila.product33' doesn't exist. Last query:[select * from `product33` order by name].
+2019-05-04T10:43:29-03:00	INFO	insert into `product`(name) values(?)
+2019-05-04T10:46:21-03:00	INFO	connecting to 127.0.0.1 root/*** sakilaxxxx
+2019-05-04T10:46:21-03:00	ERROR	Failed to connect to MySQLUnknown database 'sakilaxxxx'. Last query:[].
+2019-05-04T10:46:21-03:00	ERROR	It's not connected to the database. Last query:[].
+2019-05-04T10:46:21-03:00	INFO	connecting to 127.0.0.1 root/*** sakila
+2019-05-04T10:46:21-03:00	INFO	CREATE TABLE `product` (   `idproduct` INT NOT NULL AUTO_INCREMENT,   `name` VARCHAR(45) NULL,   PRIMARY KEY (`idproduct`));
+2019-05-04T10:46:21-03:00	ERROR	Exception rawCREATE TABLE `product` (   `idproduct` INT NOT NULL AUTO_INCREMENT,   `name` VARCHAR(45) NULL,   PRIMARY KEY (`idproduct`));. Last query:[CREATE TABLE `product` (   `idproduct` INT NOT NULL AUTO_INCREMENT,   `name` VARCHAR(45) NULL,   PRIMARY KEY (`idproduct`));].
+2019-05-04T10:46:21-03:00	ERROR	you can't execute an empty insert() without a set(). Last query:[CREATE TABLE `product` (   `idproduct` INT NOT NULL AUTO_INCREMENT,   `name` VARCHAR(45) NULL,   PRIMARY KEY (`idproduct`));].
+2019-05-04T10:46:21-03:00	ERROR	you can't execute set() after a where(). Last query:[CREATE TABLE `product` (   `idproduct` INT NOT NULL AUTO_INCREMENT,   `name` VARCHAR(45) NULL,   PRIMARY KEY (`idproduct`));].
+2019-05-04T10:46:21-03:00	INFO	insert into `product11`(name) values(?)
+2019-05-04T10:46:21-03:00	ERROR	Failed to prepareTable 'sakila.product11' doesn't exist. Last query:[insert into `product11`(name) values(?)].[]
+2019-05-04T10:46:21-03:00	INFO	insert into `product`(name) values(?)
+2019-05-04T10:46:21-03:00	ERROR	Failed to run queryinsert into `product`(name) values(?) Cause:Data too long for column 'name' at row 1. Last query:[insert into `product`(name) values(?)].[]
+2019-05-04T10:46:21-03:00	INFO	select * from `product33` order by name
+2019-05-04T10:46:21-03:00	ERROR	Failed to prepareTable 'sakila.product33' doesn't exist. Last query:[select * from `product33` order by name].[]
+2019-05-04T10:46:21-03:00	INFO	insert into `product`(name) values(?)
+2019-05-04T10:46:56-03:00	INFO	connecting to 127.0.0.1 root/*** sakilaxxxx
+2019-05-04T10:46:56-03:00	ERROR	Failed to connect to MySQLUnknown database 'sakilaxxxx'. Last query:[].
+2019-05-04T10:46:56-03:00	ERROR	It's not connected to the database. Last query:[].
+2019-05-04T10:46:56-03:00	INFO	connecting to 127.0.0.1 root/*** sakila
+2019-05-04T10:46:57-03:00	INFO	CREATE TABLE `product` (   `idproduct` INT NOT NULL AUTO_INCREMENT,   `name` VARCHAR(45) NULL,   PRIMARY KEY (`idproduct`));
+2019-05-04T10:46:57-03:00	ERROR	Exception rawCREATE TABLE `product` (   `idproduct` INT NOT NULL AUTO_INCREMENT,   `name` VARCHAR(45) NULL,   PRIMARY KEY (`idproduct`));. Last query:[CREATE TABLE `product` (   `idproduct` INT NOT NULL AUTO_INCREMENT,   `name` VARCHAR(45) NULL,   PRIMARY KEY (`idproduct`));].
+2019-05-04T10:46:57-03:00	ERROR	you can't execute an empty insert() without a set(). Last query:[CREATE TABLE `product` (   `idproduct` INT NOT NULL AUTO_INCREMENT,   `name` VARCHAR(45) NULL,   PRIMARY KEY (`idproduct`));].
+2019-05-04T10:46:57-03:00	ERROR	you can't execute set() after a where(). Last query:[CREATE TABLE `product` (   `idproduct` INT NOT NULL AUTO_INCREMENT,   `name` VARCHAR(45) NULL,   PRIMARY KEY (`idproduct`));].
+2019-05-04T10:46:57-03:00	INFO	insert into `product11`(name) values(?)
+2019-05-04T10:46:57-03:00	ERROR	Failed to prepareTable 'sakila.product11' doesn't exist. Last query:[insert into `product11`(name) values(?)].[]
+2019-05-04T10:46:57-03:00	INFO	insert into `product`(name) values(?)
+2019-05-04T10:46:57-03:00	ERROR	Failed to run queryinsert into `product`(name) values(?) Cause:Data too long for column 'name' at row 1. Last query:[insert into `product`(name) values(?)].[]
+2019-05-04T10:46:57-03:00	INFO	select * from `product33` order by name
+2019-05-04T10:46:57-03:00	ERROR	Failed to prepareTable 'sakila.product33' doesn't exist. Last query:[select * from `product33` order by name].[]
+2019-05-04T10:46:57-03:00	INFO	insert into `product2`(name) values(?)
+2019-05-04T10:46:57-03:00	ERROR	Failed to prepareTable 'sakila.product2' doesn't exist. Last query:[insert into `product2`(name) values(?)].[]
+2019-05-04T10:50:15-03:00	INFO	connecting to 127.0.0.1 root/*** sakilaxxxx
+2019-05-04T10:50:15-03:00	ERROR	Failed to connect to MySQLUnknown database 'sakilaxxxx'. Last query:[].
+2019-05-04T10:50:15-03:00	ERROR	It's not connected to the database. Last query:[].
+2019-05-04T10:50:15-03:00	INFO	connecting to 127.0.0.1 root/*** sakila
+2019-05-04T10:50:15-03:00	INFO	CREATE TABLE `product` (   `idproduct` INT NOT NULL AUTO_INCREMENT,   `name` VARCHAR(45) NULL,   PRIMARY KEY (`idproduct`));
+2019-05-04T10:50:15-03:00	ERROR	Exception rawCREATE TABLE `product` (   `idproduct` INT NOT NULL AUTO_INCREMENT,   `name` VARCHAR(45) NULL,   PRIMARY KEY (`idproduct`));. Last query:[CREATE TABLE `product` (   `idproduct` INT NOT NULL AUTO_INCREMENT,   `name` VARCHAR(45) NULL,   PRIMARY KEY (`idproduct`));].
+2019-05-04T10:50:15-03:00	ERROR	you can't execute an empty insert() without a set(). Last query:[CREATE TABLE `product` (   `idproduct` INT NOT NULL AUTO_INCREMENT,   `name` VARCHAR(45) NULL,   PRIMARY KEY (`idproduct`));].
+2019-05-04T10:50:15-03:00	ERROR	you can't execute set() after a where(). Last query:[CREATE TABLE `product` (   `idproduct` INT NOT NULL AUTO_INCREMENT,   `name` VARCHAR(45) NULL,   PRIMARY KEY (`idproduct`));].
+2019-05-04T10:50:15-03:00	INFO	insert into `product11`(name) values(?)
+2019-05-04T10:50:15-03:00	ERROR	Failed to prepareTable 'sakila.product11' doesn't exist. Last query:[insert into `product11`(name) values(?)].[]
+2019-05-04T10:50:15-03:00	INFO	insert into `product`(name) values(?)
+2019-05-04T10:50:15-03:00	ERROR	Failed to run queryinsert into `product`(name) values(?) Cause:Data too long for column 'name' at row 1. Last query:[insert into `product`(name) values(?)].[]
+2019-05-04T10:50:15-03:00	INFO	select * from `product33` order by name
+2019-05-04T10:50:15-03:00	ERROR	Failed to prepareTable 'sakila.product33' doesn't exist. Last query:[select * from `product33` order by name].[]
+2019-05-04T10:50:15-03:00	INFO	select * from `product33` order by name where field=?
+2019-05-04T10:50:15-03:00	ERROR	Failed to prepareYou have an error in your SQL syntax; check the manual that corresponds to your MySQL server version for the right syntax to use near 'where field=?' at line 1. Last query:[select * from `product33` order by name where field=?].[]
+2019-05-04T10:50:15-03:00	INFO	insert into `product`(name) values(?)
+2019-05-04T10:50:37-03:00	INFO	connecting to 127.0.0.1 root/*** sakilaxxxx
+2019-05-04T10:50:37-03:00	ERROR	Failed to connect to MySQLUnknown database 'sakilaxxxx'. Last query:[].
+2019-05-04T10:50:37-03:00	ERROR	It's not connected to the database. Last query:[].
+2019-05-04T10:50:37-03:00	INFO	connecting to 127.0.0.1 root/*** sakila
+2019-05-04T10:50:37-03:00	INFO	CREATE TABLE `product` (   `idproduct` INT NOT NULL AUTO_INCREMENT,   `name` VARCHAR(45) NULL,   PRIMARY KEY (`idproduct`));
+2019-05-04T10:50:37-03:00	ERROR	Exception rawCREATE TABLE `product` (   `idproduct` INT NOT NULL AUTO_INCREMENT,   `name` VARCHAR(45) NULL,   PRIMARY KEY (`idproduct`));. Last query:[CREATE TABLE `product` (   `idproduct` INT NOT NULL AUTO_INCREMENT,   `name` VARCHAR(45) NULL,   PRIMARY KEY (`idproduct`));].
+2019-05-04T10:50:37-03:00	ERROR	you can't execute an empty insert() without a set(). Last query:[CREATE TABLE `product` (   `idproduct` INT NOT NULL AUTO_INCREMENT,   `name` VARCHAR(45) NULL,   PRIMARY KEY (`idproduct`));].
+2019-05-04T10:50:37-03:00	ERROR	you can't execute set() after a where(). Last query:[CREATE TABLE `product` (   `idproduct` INT NOT NULL AUTO_INCREMENT,   `name` VARCHAR(45) NULL,   PRIMARY KEY (`idproduct`));].
+2019-05-04T10:50:37-03:00	INFO	insert into `product11`(name) values(?)
+2019-05-04T10:50:37-03:00	ERROR	Failed to prepareTable 'sakila.product11' doesn't exist. Last query:[insert into `product11`(name) values(?)].[]
+2019-05-04T10:50:37-03:00	INFO	insert into `product`(name) values(?)
+2019-05-04T10:50:37-03:00	ERROR	Failed to run queryinsert into `product`(name) values(?) Cause:Data too long for column 'name' at row 1. Last query:[insert into `product`(name) values(?)].[]
+2019-05-04T10:50:37-03:00	INFO	select * from `product33` order by name
+2019-05-04T10:50:37-03:00	ERROR	Failed to prepareTable 'sakila.product33' doesn't exist. Last query:[select * from `product33` order by name].[]
+2019-05-04T10:50:37-03:00	INFO	select * from `product33` where field=?
+2019-05-04T10:50:37-03:00	ERROR	Failed to prepareTable 'sakila.product33' doesn't exist. Last query:[select * from `product33` where field=?].[]
+2019-05-04T10:50:37-03:00	INFO	insert into `product`(name) values(?)
+2019-05-04T10:50:53-03:00	INFO	connecting to 127.0.0.1 root/*** sakilaxxxx
+2019-05-04T10:50:53-03:00	ERROR	Failed to connect to MySQLUnknown database 'sakilaxxxx'. Last query:[].
+2019-05-04T10:50:53-03:00	ERROR	It's not connected to the database. Last query:[].
+2019-05-04T10:50:53-03:00	INFO	connecting to 127.0.0.1 root/*** sakila
+2019-05-04T10:50:53-03:00	INFO	CREATE TABLE `product` (   `idproduct` INT NOT NULL AUTO_INCREMENT,   `name` VARCHAR(45) NULL,   PRIMARY KEY (`idproduct`));
+2019-05-04T10:50:53-03:00	ERROR	Exception rawCREATE TABLE `product` (   `idproduct` INT NOT NULL AUTO_INCREMENT,   `name` VARCHAR(45) NULL,   PRIMARY KEY (`idproduct`));. Last query:[CREATE TABLE `product` (   `idproduct` INT NOT NULL AUTO_INCREMENT,   `name` VARCHAR(45) NULL,   PRIMARY KEY (`idproduct`));].
+2019-05-04T10:50:53-03:00	ERROR	you can't execute an empty insert() without a set(). Last query:[CREATE TABLE `product` (   `idproduct` INT NOT NULL AUTO_INCREMENT,   `name` VARCHAR(45) NULL,   PRIMARY KEY (`idproduct`));].
+2019-05-04T10:50:53-03:00	ERROR	you can't execute set() after a where(). Last query:[CREATE TABLE `product` (   `idproduct` INT NOT NULL AUTO_INCREMENT,   `name` VARCHAR(45) NULL,   PRIMARY KEY (`idproduct`));].
+2019-05-04T10:50:53-03:00	INFO	insert into `product11`(name) values(?)
+2019-05-04T10:50:53-03:00	ERROR	Failed to prepareTable 'sakila.product11' doesn't exist. Last query:[insert into `product11`(name) values(?)].[]
+2019-05-04T10:50:53-03:00	INFO	insert into `product`(name) values(?)
+2019-05-04T10:50:53-03:00	ERROR	Failed to run queryinsert into `product`(name) values(?) Cause:Data too long for column 'name' at row 1. Last query:[insert into `product`(name) values(?)].[]
+2019-05-04T10:50:53-03:00	INFO	select * from `product33` order by name
+2019-05-04T10:50:53-03:00	ERROR	Failed to prepareTable 'sakila.product33' doesn't exist. Last query:[select * from `product33` order by name].[]
+2019-05-04T10:50:53-03:00	INFO	select * from `product33` where field=?
+2019-05-04T10:50:53-03:00	ERROR	Failed to prepareTable 'sakila.product33' doesn't exist. Last query:[select * from `product33` where field=?].[]
+2019-05-04T10:50:53-03:00	INFO	insert into `product`(name) values(?)
+2019-05-04T10:52:08-03:00	INFO	connecting to 127.0.0.1 root/*** sakilaxxxx
+2019-05-04T10:52:08-03:00	ERROR	Failed to connect to MySQLUnknown database 'sakilaxxxx'. Last query:[].
+2019-05-04T10:52:08-03:00	ERROR	It's not connected to the database. Last query:[].
+2019-05-04T10:52:08-03:00	INFO	connecting to 127.0.0.1 root/*** sakila
+2019-05-04T10:52:08-03:00	INFO	CREATE TABLE `product` (   `idproduct` INT NOT NULL AUTO_INCREMENT,   `name` VARCHAR(45) NULL,   PRIMARY KEY (`idproduct`));
+2019-05-04T10:52:08-03:00	ERROR	Exception rawCREATE TABLE `product` (   `idproduct` INT NOT NULL AUTO_INCREMENT,   `name` VARCHAR(45) NULL,   PRIMARY KEY (`idproduct`));. Last query:[CREATE TABLE `product` (   `idproduct` INT NOT NULL AUTO_INCREMENT,   `name` VARCHAR(45) NULL,   PRIMARY KEY (`idproduct`));].
+2019-05-04T10:52:08-03:00	ERROR	you can't execute an empty insert() without a set(). Last query:[CREATE TABLE `product` (   `idproduct` INT NOT NULL AUTO_INCREMENT,   `name` VARCHAR(45) NULL,   PRIMARY KEY (`idproduct`));].
+2019-05-04T10:52:08-03:00	ERROR	you can't execute set() after a where(). Last query:[CREATE TABLE `product` (   `idproduct` INT NOT NULL AUTO_INCREMENT,   `name` VARCHAR(45) NULL,   PRIMARY KEY (`idproduct`));].
+2019-05-04T10:52:08-03:00	INFO	insert into `product11`(name) values(?)
+2019-05-04T10:52:08-03:00	ERROR	Failed to prepareTable 'sakila.product11' doesn't exist. Last query:[insert into `product11`(name) values(?)].[]
+2019-05-04T10:52:08-03:00	INFO	insert into `product`(name) values(?)
+2019-05-04T10:52:08-03:00	ERROR	Failed to run queryinsert into `product`(name) values(?) Cause:Data too long for column 'name' at row 1. Last query:[insert into `product`(name) values(?)].[]
+2019-05-04T10:52:08-03:00	INFO	select * from `product33` order by name
+2019-05-04T10:52:08-03:00	ERROR	Failed to prepareTable 'sakila.product33' doesn't exist. Last query:[select * from `product33` order by name].[]
+2019-05-04T10:52:08-03:00	INFO	select * from `product33` where field=?
+2019-05-04T10:52:08-03:00	ERROR	Failed to prepareTable 'sakila.product33' doesn't exist. Last query:[select * from `product33` where field=?].[]
+2019-05-04T10:52:08-03:00	INFO	insert into `product`(name) values(?)
+2019-05-04T10:53:50-03:00	INFO	connecting to 127.0.0.1 root/*** sakilaxxxx
+2019-05-04T10:53:50-03:00	ERROR	Failed to connect to MySQLUnknown database 'sakilaxxxx'. Last query:[].
+2019-05-04T10:53:50-03:00	ERROR	It's not connected to the database. Last query:[].
+2019-05-04T10:53:50-03:00	INFO	connecting to 127.0.0.1 root/*** sakila
+2019-05-04T10:53:50-03:00	INFO	CREATE TABLE `product` (   `idproduct` INT NOT NULL AUTO_INCREMENT,   `name` VARCHAR(45) NULL,   PRIMARY KEY (`idproduct`));
+2019-05-04T10:53:50-03:00	ERROR	Exception rawCREATE TABLE `product` (   `idproduct` INT NOT NULL AUTO_INCREMENT,   `name` VARCHAR(45) NULL,   PRIMARY KEY (`idproduct`));. Last query:[CREATE TABLE `product` (   `idproduct` INT NOT NULL AUTO_INCREMENT,   `name` VARCHAR(45) NULL,   PRIMARY KEY (`idproduct`));].
+2019-05-04T10:53:50-03:00	ERROR	you can't execute an empty insert() without a set(). Last query:[CREATE TABLE `product` (   `idproduct` INT NOT NULL AUTO_INCREMENT,   `name` VARCHAR(45) NULL,   PRIMARY KEY (`idproduct`));].
+2019-05-04T10:53:50-03:00	ERROR	you can't execute set() after a where(). Last query:[CREATE TABLE `product` (   `idproduct` INT NOT NULL AUTO_INCREMENT,   `name` VARCHAR(45) NULL,   PRIMARY KEY (`idproduct`));].
+2019-05-04T10:53:50-03:00	INFO	insert into `product11`(name) values(?)
+2019-05-04T10:53:50-03:00	ERROR	Failed to prepareTable 'sakila.product11' doesn't exist. Last query:[insert into `product11`(name) values(?)].[]
+2019-05-04T10:53:50-03:00	INFO	insert into `product`(name) values(?)
+2019-05-04T10:53:50-03:00	ERROR	Failed to run queryinsert into `product`(name) values(?) Cause:Data too long for column 'name' at row 1. Last query:[insert into `product`(name) values(?)].[]
+2019-05-04T10:53:50-03:00	INFO	select * from `product33` order by name
+2019-05-04T10:53:50-03:00	ERROR	Failed to prepareTable 'sakila.product33' doesn't exist. Last query:[select * from `product33` order by name].[]
+2019-05-04T10:53:50-03:00	INFO	select * from `product33` where field=?
+2019-05-04T10:53:50-03:00	ERROR	Failed to prepareTable 'sakila.product33' doesn't exist. Last query:[select * from `product33` where field=?].[]
+2019-05-04T10:53:50-03:00	INFO	insert into `product`(name) values(?)
+2019-05-20T21:58:05-03:00	ERROR	Error on database
+2019-05-20T21:58:28-03:00	ERROR	Error on database
+2019-05-20T22:00:54-03:00	ERROR	Error on database
+2019-05-20T22:00:55-03:00	ERROR	Error on database
+2019-05-20T22:01:59-03:00	ERROR	It's not connected to the database. Last query:[]. param:[]
+2019-05-20T22:02:27-03:00	INFO	connecting to 127.0.0.1 root/*** sakila param:[]
+2019-05-20T22:02:27-03:00	INFO	select * from producttype where name=? param:[2,"Coca-Cola"]
+2019-05-20T22:02:27-03:00	INFO	select * from producttype where name=? param:[]
+2019-05-20T22:02:59-03:00	INFO	connecting to 127.0.0.1 root/*** sakila param:[]
+2019-05-20T22:02:59-03:00	INFO	select * from producttype where name=? param:[2,"Coca-Cola"]
+2019-05-20T22:02:59-03:00	INFO	select * from producttype where name=? param:[]
+2019-05-20T22:03:33-03:00	INFO	connecting to 127.0.0.1 root/*** sakila param:[]
+2019-05-20T22:03:33-03:00	INFO	select * from producttype where name=? param:[2,"Coca-Cola"]
+2019-05-20T22:03:33-03:00	INFO	select * from producttype where name=? param:[]
+2019-05-20T22:04:38-03:00	INFO	connecting to 127.0.0.1 root/*** sakila param:[]
+2019-05-20T22:04:39-03:00	INFO	select * from producttype where name=? param:[2,"Coca-Cola"]
+2019-05-20T22:04:39-03:00	INFO	select * from producttype where name=? param:[]
+2019-05-20T22:04:56-03:00	INFO	connecting to 127.0.0.1 root/*** sakila param:[]
+2019-05-20T22:04:56-03:00	INFO	select * from producttype where name=? param:[2,"Coca-Cola"]
+2019-05-20T22:04:56-03:00	INFO	select * from producttype where name=? param:[]
+2019-05-20T22:05:13-03:00	INFO	connecting to 127.0.0.1 root/*** sakila param:[]
+2019-05-20T22:05:13-03:00	INFO	select * from producttype where name=? param:[2,"Coca-Cola"]
+2019-05-20T22:05:13-03:00	INFO	select * from producttype where name=? param:[]
+2019-05-20T22:05:14-03:00	INFO	connecting to 127.0.0.1 root/*** sakila param:[]
+2019-05-20T22:05:14-03:00	INFO	select * from producttype where name=? param:[2,"Coca-Cola"]
+2019-05-20T22:05:14-03:00	INFO	select * from producttype where name=? param:[]
+2019-05-20T22:05:36-03:00	INFO	connecting to 127.0.0.1 root/*** sakila param:[]
+2019-05-20T22:05:36-03:00	INFO	select * from producttype where name=? param:[2,"Coca-Cola"]
+2019-05-20T22:05:36-03:00	INFO	select * from producttype where name=? param:[]
+2019-05-21T08:55:19-03:00	INFO	connecting to 127.0.0.1 root/*** sakila param:[]
+2019-05-21T08:55:19-03:00	INFO	select * from producttype where name=? param:[2,"Coca-Cola"]
+2019-05-21T08:55:19-03:00	INFO	select * from producttype where name=? param:[]
+2019-05-21T08:59:39-03:00	INFO	connecting to 127.0.0.1 root/*** sakila param:[]
+2019-05-21T08:59:39-03:00	ERROR	Failed to connect to mysqlSQLSTATE[HY000] [1049] Unknown database 'sakila.'. Last query:[]. param:[]
+2019-05-21T09:00:11-03:00	INFO	connecting to 127.0.0.1 root/*** sakila param:[]
+2019-05-21T09:00:11-03:00	INFO	select * from producttype where name=? param:[2,"Coca-Cola"]
+2019-05-21T09:00:11-03:00	INFO	select * from producttype where name=? param:[]
+2019-05-21T09:14:59-03:00	INFO	connecting to 127.0.0.1 root/*** sakila param:[]
+2019-05-21T09:14:59-03:00	INFO	select * from producttype where name=? param:[2,"Coca-Cola"]
+2019-05-21T09:14:59-03:00	INFO	select * from producttype where name=? param:[]
