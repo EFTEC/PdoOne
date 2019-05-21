@@ -1,4 +1,4 @@
-<?php
+<?php /** @noinspection SqlDialectInspection */
 /** @noinspection SqlWithoutWhere */
 /** @noinspection SqlResolve */
 /** @noinspection SqlNoDataSourceInspection */
@@ -455,7 +455,8 @@ class PdoOne
 	public function createSequence() {
 		switch ($this->database) {
 			case 'mysql':
-				$sql="CREATE TABLE `{$this->tableSequence}` (
+				$sql=
+				"CREATE TABLE `{$this->tableSequence}` (
 				  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
 				  `stub` char(1) NOT NULL DEFAULT '',
 				  PRIMARY KEY (`id`),
@@ -464,8 +465,9 @@ class PdoOne
 				-- insert the firsrt value
 				INSERT INTO `{$this->tableSequence}` (`stub`) VALUES ('a');
 				SET GLOBAL log_bin_trust_function_creators = 1;";
-						$this->runMultipleRawQuery($sql);
-						$sql="CREATE FUNCTION `next_{$this->tableSequence}`(node integer) RETURNS BIGINT(20)
+				$this->runMultipleRawQuery($sql);
+				$sql=
+				"CREATE FUNCTION `next_{$this->tableSequence}`(node integer) RETURNS BIGINT(20)
 					BEGIN
 					    DECLARE epoch BIGINT(20);
 					    DECLARE current_ms BIGINT(20);
@@ -478,18 +480,20 @@ class PdoOne
 					END;";
 				break;
 			case 'sqlsrv':
-				$sql="CREATE SEQUENCE [{$this->tableSequence}]
-			    START WITH 1  
-			    INCREMENT BY 1
-			    GO";
-				$sql.="create PROCEDURE next_{$this->tableSequence}
-						@node int
-					AS
+				$sql=
+				"CREATE SEQUENCE [{$this->tableSequence}]
+				    START WITH 1  
+				    INCREMENT BY 1
+			    ;";
+				$sql.=
+				"create PROCEDURE next_{$this->tableSequence}
+					@node int
+				AS
 					BEGIN
-					
+						-- Copyright Jorge Castro https://github.com/EFTEC/PdoOne
 						SET NOCOUNT ON;
 						declare @return bigint
-						declare @current_ms bigint;
+						declare @current_ms bigint; 
 						declare @incr bigint;
 						-- 2018-01-01 is an arbitrary epoch
 						set @current_ms=cast(DATEDIFF(s, '2018-01-01 00:00:00', GETDATE()) as bigint) *cast(1000 as bigint)  + DATEPART(MILLISECOND,getutcdate());	
