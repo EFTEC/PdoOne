@@ -402,6 +402,15 @@ class PdoOne
 	}
 
 	/**
+	 * Returns true if the table exists. It uses the default schema ($this->db)
+	 * @param $tableName (without schema).
+	 * @return bool true if the table exist
+	 * @throws Exception
+	 */
+	public function tableExist($tableName) {
+		return $this->objectExist($tableName,'table');
+	}
+	/**
 	 * returns true if the object exists
 	 * Currently only works with table
 	 * @param string $objectName
@@ -409,7 +418,7 @@ class PdoOne
 	 * @return bool
 	 * @throws Exception
 	 */
-	public function objectExist($objectName,$type='table') {
+	private function objectExist($objectName,$type='table') {
 		switch ($this->database) {
 			case 'mysql':
 				$query="SELECT * FROM information_schema.tables where table_schema='{$this->db}' and table_name=?";

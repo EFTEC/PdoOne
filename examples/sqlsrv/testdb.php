@@ -37,7 +37,7 @@ ALTER TABLE dbo.product ADD CONSTRAINT
 
 $now=new DateTime();
 
-if ($dao->objectExist('product')) {
+if ($dao->tableExist('product')) {
 	echo "<h1>Table product exist!</h1>";
 } else {
 	try {
