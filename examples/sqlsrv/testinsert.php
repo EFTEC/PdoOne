@@ -1,4 +1,5 @@
-<?php /** @noinspection SqlResolve */
+<?php /** @noinspection SqlDialectInspection */
+/** @noinspection SqlResolve */
 
 /** @noinspection SqlNoDataSourceInspection */
 
