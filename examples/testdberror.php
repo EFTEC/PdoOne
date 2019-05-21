@@ -10,7 +10,7 @@ include "../vendor/autoload.php";
 
 
 
-$dao=new PdoOne("127.0.0.1","root","abc.123","sakilaxxxx","logdaoone.txt");
+$dao=new PdoOne("127.0.0.1","root","abc.123","sakilaxxxx","logpdoone.txt");
 $dao->logLevel=3;
 $dao->throwOnError=true;
 
@@ -41,7 +41,7 @@ if (!$dao->isOpen) {
 }
 
 
-$dao=new PdoOne("127.0.0.1","root","abc.123","sakila","logdaoone.txt");
+$dao=new PdoOne("127.0.0.1","root","abc.123","sakila","logpdoone.txt");
 $dao->logLevel=3;
 try {
     echo "<h1>connection</h1>";

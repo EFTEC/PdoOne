@@ -20,7 +20,7 @@ function messages() {
     return $messageList;
 }
 
-$dao=new PdoOne("127.0.0.1","root","abc.123","sakilaxxxx","logdaoone.txt");
+$dao=new PdoOne("127.0.0.1","root","abc.123","sakilaxxxx","logpdoone.txt");
 
 $dao->throwOnError=false;
 
@@ -51,7 +51,7 @@ if (!$dao->isOpen) {
 }
 
 
-$dao=new PdoOne("127.0.0.1","root","abc.123","sakila","logdaoone.txt");
+$dao=new PdoOne("127.0.0.1","root","abc.123","sakila","logpdoone.txt");
 try {
     echo "<h1>connection</h1>";
     $dao->connect();

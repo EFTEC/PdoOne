@@ -8,15 +8,15 @@ use Exception;
 use PHPUnit\Framework\TestCase;
 
 
-class DaoOneTest extends TestCase
+class PdoOneTest extends TestCase
 {
 	/** @var PdoOne */
-    protected $daoOne;
+    protected $pdoOne;
 
     public function setUp()
     {
-        $this->daoOne=new PdoOne("mysql","127.0.0.1","travis","","travisdb");
-        $this->daoOne->connect();
+        $this->pdoOne=new PdoOne("mysql","127.0.0.1","travis","","travisdb");
+        $this->pdoOne->connect();
     }
 
 
@@ -25,28 +25,28 @@ class DaoOneTest extends TestCase
 	 */
     public function test_db()
     {
-         $this->daoOne->db('travisdb');
+         $this->pdoOne->db('travisdb');
     }
 
 
     public function test_readonly()
     {
-        $this->assertEquals(false,$this->daoOne->readonly(),'the database is read only');
+        $this->assertEquals(false,$this->pdoOne->readonly(),'the database is read only');
     }
 
     public function test_connect()
     {
 	    $this->expectException(\Exception::class);
-        $this->daoOne->connect();
+        $this->pdoOne->connect();
     }
 
     public function test_open()
     {
         //$this->expectException(\Exception::class);
 
-        //$this->daoOne->open(true);
+        //$this->pdoOne->open(true);
 	    try {
-		    $r=$this->daoOne->runRawQuery('drop table product_category');
+		    $r=$this->pdoOne->runRawQuery('drop table product_category');
 		    $this->assertEquals(true,$r,"Drop failed");
 	    } catch (Exception $e) {
 		    $r=false;
@@ -60,13 +60,13 @@ class DaoOneTest extends TestCase
 	    PRIMARY KEY (`id_category`));";
 
 	    try {
-		    $r=$this->daoOne->runRawQuery($sqlT2);
+		    $r=$this->pdoOne->runRawQuery($sqlT2);
 	    } catch (Exception $e) {
 		    echo $e->getMessage()."<br>";
 	    }
 	    $this->assertEquals(true,$r,"failed to create table");
 	    // we add some values
-	    $r=$this->daoOne->set(['id_category' => 1, 'catname' => 'cheap'])
+	    $r=$this->pdoOne->set(['id_category' => 1, 'catname' => 'cheap'])
 		    ->from('product_category')->insert();
 	    $this->assertEquals(0,$r,'insert must value 0');
 
@@ -87,24 +87,24 @@ class DaoOneTest extends TestCase
 	 */
 	public function test_sequence()
 	{
-		$this->daoOne->tableSequence='testsequence';
+		$this->pdoOne->tableSequence='testsequence';
 		try {
-			$this->daoOne->createSequence();
+			$this->pdoOne->createSequence();
 		} catch(Exception $ex) {
 			
 		}
-		$this->assertLessThan(3639088446091303982,$this->daoOne->getSequence(true),"sequence must be greater than 3639088446091303982");
+		$this->assertLessThan(3639088446091303982,$this->pdoOne->getSequence(true),"sequence must be greater than 3639088446091303982");
 	}
 
 	public function test_sequence2()
 	{
-		$this->assertLessThan(3639088446091303982,$this->daoOne->getSequencePHP(false),"sequence must be greater than 3639088446091303982");
-		$s1=$this->daoOne->getSequencePHP(false);
-		$s2=$this->daoOne->getSequencePHP(false);
+		$this->assertLessThan(3639088446091303982,$this->pdoOne->getSequencePHP(false),"sequence must be greater than 3639088446091303982");
+		$s1=$this->pdoOne->getSequencePHP(false);
+		$s2=$this->pdoOne->getSequencePHP(false);
 		$this->assertTrue($s1!=$s2,"sequence must not be the same");
-		$this->daoOne->encryption->encPassword=1020304050;
-		$s1=$this->daoOne->getSequencePHP(true);
-		$s2=$this->daoOne->getSequencePHP(true);
+		$this->pdoOne->encryption->encPassword=1020304050;
+		$s1=$this->pdoOne->getSequencePHP(true);
+		$s2=$this->pdoOne->getSequencePHP(true);
 		$this->assertTrue($s1!=$s2,"sequence must not be the same");
 	}	
 	/**
@@ -112,20 +112,20 @@ class DaoOneTest extends TestCase
 	 */
     public function test_close()
     {
-        $this->daoOne->close();
+        $this->pdoOne->close();
     }
 
     public function test_getMessages()
     {
-        $this->assertEquals(null,$this->daoOne->getMessages(),'this is not a message container');
+        $this->assertEquals(null,$this->pdoOne->getMessages(),'this is not a message container');
     }
 
 
 
     public function test_startTransaction()
     {
-        $this->assertEquals(true,$this->daoOne->startTransaction());
-        $this->daoOne->commit();
+        $this->assertEquals(true,$this->pdoOne->startTransaction());
+        $this->pdoOne->commit();
 
     }
 
@@ -142,28 +142,28 @@ class DaoOneTest extends TestCase
  
     public function test_select()
     {
-        $this->assertInstanceOf(PdoOne::class,$this->daoOne->select('select 1 from DUAL'));
+        $this->assertInstanceOf(PdoOne::class,$this->pdoOne->select('select 1 from DUAL'));
     }
 
 	public function test_sqlGen()
 	{
-		$this->assertEquals("select 1 from DUAL",$this->daoOne->select('select 1 from DUAL')->sqlGen(true));
+		$this->assertEquals("select 1 from DUAL",$this->pdoOne->select('select 1 from DUAL')->sqlGen(true));
 
-		$this->assertEquals("select 1 from DUAL",$this->daoOne->select('select 1')->from('DUAL')->sqlGen(true));
+		$this->assertEquals("select 1 from DUAL",$this->pdoOne->select('select 1')->from('DUAL')->sqlGen(true));
 
-		$this->assertEquals("select 1, 2 from DUAL",$this->daoOne->select('1')->select('2')->from('DUAL')->sqlGen(true));
+		$this->assertEquals("select 1, 2 from DUAL",$this->pdoOne->select('1')->select('2')->from('DUAL')->sqlGen(true));
 
-		$this->assertEquals("select 1, 2 from DUAL",$this->daoOne->select(['1','2'])->from('DUAL')->sqlGen(true));
+		$this->assertEquals("select 1, 2 from DUAL",$this->pdoOne->select(['1','2'])->from('DUAL')->sqlGen(true));
 
 		$this->assertEquals("select 1, 2 from DUAL where field=?"
-			,$this->daoOne
+			,$this->pdoOne
 				->select(['1','2'])
 				->from('DUAL')
 				->where('field=?',[20])
 				->sqlGen(true));
 
 		$this->assertEquals("select 1, 2 from DUAL where field=? group by 2 having field2=? order by 1"
-			,$this->daoOne
+			,$this->pdoOne
 				->select(['1','2'])
 				->from('DUAL')
 				->where('field=?',[20])
@@ -175,79 +175,79 @@ class DaoOneTest extends TestCase
 
     public function test_join()
     {
-        $this->assertInstanceOf(PdoOne::class,$this->daoOne->join('tablejoin on t1.field=t2.field'));
+        $this->assertInstanceOf(PdoOne::class,$this->pdoOne->join('tablejoin on t1.field=t2.field'));
     }
 
  
 
     public function test_from()
     {
-        $this->assertInstanceOf(PdoOne::class,$this->daoOne->from('table t1'));
+        $this->assertInstanceOf(PdoOne::class,$this->pdoOne->from('table t1'));
     }
 
     public function test_left()
     {
-        $this->assertInstanceOf(PdoOne::class,$this->daoOne->left('table2 on table1.t1=table2.t2'));
+        $this->assertInstanceOf(PdoOne::class,$this->pdoOne->left('table2 on table1.t1=table2.t2'));
     }
 
     public function test_right()
     {
-        $this->assertInstanceOf(PdoOne::class,$this->daoOne->right('table2 on table1.t1=table2.t2'));
+        $this->assertInstanceOf(PdoOne::class,$this->pdoOne->right('table2 on table1.t1=table2.t2'));
     }
 
     public function test_where()
     {
-        $this->assertInstanceOf(PdoOne::class,$this->daoOne->where('field1=?,field2=?',['i',20,'s','hello']));
+        $this->assertInstanceOf(PdoOne::class,$this->pdoOne->where('field1=?,field2=?',['i',20,'s','hello']));
     }
 
     public function test_set()
     {
-        $this->assertInstanceOf(PdoOne::class,$this->daoOne->set('field1=?,field2=?',['i',20,'s','hello']));
+        $this->assertInstanceOf(PdoOne::class,$this->pdoOne->set('field1=?,field2=?',['i',20,'s','hello']));
     }
 
     public function test_group()
     {
-        $this->assertInstanceOf(PdoOne::class,$this->daoOne->group('fieldgroup'));
+        $this->assertInstanceOf(PdoOne::class,$this->pdoOne->group('fieldgroup'));
     }
 
     public function test_having()
     {
-        $this->assertInstanceOf(PdoOne::class,$this->daoOne->having('field1=?,field2=?',['i',20,'s','hello']));
+        $this->assertInstanceOf(PdoOne::class,$this->pdoOne->having('field1=?,field2=?',['i',20,'s','hello']));
     }
 
     public function test_order()
     {
-        $this->assertInstanceOf(PdoOne::class,$this->daoOne->order('name desc'));
+        $this->assertInstanceOf(PdoOne::class,$this->pdoOne->order('name desc'));
     }
 
     public function test_limit()
     {
-        $this->assertInstanceOf(PdoOne::class,$this->daoOne->limit('1,10'));
+        $this->assertInstanceOf(PdoOne::class,$this->pdoOne->limit('1,10'));
     }
 
     public function test_distinct()
     {
-        $this->assertInstanceOf(PdoOne::class,$this->daoOne->distinct());
+        $this->assertInstanceOf(PdoOne::class,$this->pdoOne->distinct());
     }
 
    
 
     public function test_generateSqlFields()
     {
-        $this->assertInstanceOf(PdoOne::class,$this->daoOne->generateSqlFields(true));
+        $this->assertInstanceOf(PdoOne::class,$this->pdoOne->generateSqlFields(true));
     }
 
    
 
     public function test_runQuery()
     {
-        $this->assertEquals(true,$this->daoOne->runQuery($this->daoOne->prepare('select 1 from dual'))); $this->assertEquals([1=>1],$this->daoOne->select('1')->from('dual')->first(),'it must runs');
+        $this->assertEquals(true,$this->pdoOne->runQuery($this->pdoOne->prepare('select 1 from dual'))); $this->assertEquals([1=>1],$this->pdoOne->select('1')->from('dual')->first(),'it must runs');
     }
 
 
     public function test_runRawQuery()
     {
-        $this->assertEquals([0=>[1=>1]],$this->daoOne->runRawQuery('select 1',null,true));
+        $this->assertEquals([0=>[1=>1]],$this->pdoOne->runRawQuery('select 1',null,true));
     }
 
 	/**
@@ -255,26 +255,26 @@ class DaoOneTest extends TestCase
 	 */
     public function test_setEncryption()
     {
-        $this->daoOne->setEncryption('123//*/*saass11___1212fgbl@#€€"','123//*/*saass11___1212fgbl@#€€"','AES-256-CTR');
-        $value=$this->daoOne->encrypt("bv `lfg+hlc ,vc´,c35'ddl ld_vcvñvc +*=/\\");
+        $this->pdoOne->setEncryption('123//*/*saass11___1212fgbl@#€€"','123//*/*saass11___1212fgbl@#€€"','AES-256-CTR');
+        $value=$this->pdoOne->encrypt("bv `lfg+hlc ,vc´,c35'ddl ld_vcvñvc +*=/\\");
         $this->assertTrue(strlen($value)>10,"Encrypted");
-        $return=$this->daoOne->decrypt($value);
+        $return=$this->pdoOne->decrypt($value);
 	    $this->assertEquals("bv `lfg+hlc ,vc´,c35'ddl ld_vcvñvc +*=/\\",$return,"decrypt correct");
 
-	    $return=$this->daoOne->decrypt("wrong".$value);
+	    $return=$this->pdoOne->decrypt("wrong".$value);
 	    $this->assertEquals(false,$return,"decrypt must fail");
-	    $return=$this->daoOne->decrypt("");
+	    $return=$this->pdoOne->decrypt("");
 	    $this->assertEquals(false,$return,"decrypt must fail");
-	    $return=$this->daoOne->decrypt(null);
+	    $return=$this->pdoOne->decrypt(null);
 	    $this->assertEquals(false,$return,"decrypt must fail");
 	    // iv =true
-	    $value1=$this->daoOne->encrypt("abc");
-	    $value2=$this->daoOne->encrypt("abc");
+	    $value1=$this->pdoOne->encrypt("abc");
+	    $value2=$this->pdoOne->encrypt("abc");
 	    $this->assertTrue($value1!=$value2,"Values must be different");
 	    // iv =true
-	    $this->daoOne->encryption->iv=false;
-	    $value1=$this->daoOne->encrypt("abc_ABC/abc*abc1234567890[]{[");
-	    $value2=$this->daoOne->encrypt("abc_ABC/abc*abc1234567890[]{[");
+	    $this->pdoOne->encryption->iv=false;
+	    $value1=$this->pdoOne->encrypt("abc_ABC/abc*abc1234567890[]{[");
+	    $value2=$this->pdoOne->encrypt("abc_ABC/abc*abc1234567890[]{[");
 	    $this->assertTrue($value1==$value2,"Values must be equals");     
     }
 	/**
@@ -282,30 +282,30 @@ class DaoOneTest extends TestCase
 	 */
 	public function test_setEncryptionINTEGER()
 	{
-		$this->daoOne->setEncryption(12345678,'','INTEGER');
+		$this->pdoOne->setEncryption(12345678,'','INTEGER');
 		// 2147483640
 		$original=2147483640;
-		$value=$this->daoOne->encrypt($original);
+		$value=$this->pdoOne->encrypt($original);
 		$this->assertTrue(strlen($value)>3
 			,"Encrypted");
 		$this->assertEquals($original
-			,$this->daoOne->decrypt($value)
+			,$this->pdoOne->decrypt($value)
 			,"decrypt correct");
 		// 1
 		$original=1;
-		$value=$this->daoOne->encrypt($original);
+		$value=$this->pdoOne->encrypt($original);
 		$this->assertTrue(strlen($value)>3
 			,"Encrypted");
 		$this->assertEquals($original
-			,$this->daoOne->decrypt($value)
+			,$this->pdoOne->decrypt($value)
 			,"decrypt correct");
 		// 0
 		$original=0;
-		$value=$this->daoOne->encrypt($original);
+		$value=$this->pdoOne->encrypt($original);
 		$this->assertTrue(strlen($value)>3
 			,"Encrypted");
 		$this->assertEquals($original
-			,$this->daoOne->decrypt($value)
+			,$this->pdoOne->decrypt($value)
 			,"decrypt correct");		
 		
 	}
@@ -314,37 +314,37 @@ class DaoOneTest extends TestCase
 	 */
 	public function test_setEncryptionSIMPLE()
 	{
-		$this->daoOne->setEncryption("Zoamelgusta",'','SIMPLE');
+		$this->pdoOne->setEncryption("Zoamelgusta",'','SIMPLE');
 		// 2147483640
 		$original="abc";
-		$value=$this->daoOne->encrypt($original);
+		$value=$this->pdoOne->encrypt($original);
 		$this->assertEquals("wrzS",$value
 			,"encrypt with problems");
 		$this->assertEquals($original
-			,$this->daoOne->decrypt($value)
+			,$this->pdoOne->decrypt($value)
 			,"decrypt with problems");
 		$original="Mary had a little lamb. Whose fleece was white as snow";
-		$value=$this->daoOne->encrypt($original);
+		$value=$this->pdoOne->encrypt($original);
 		$this->assertEquals("rrvh2o3NzcuV1JTNw-PV2cqM09bg1o96xsnc2NGH29_Zxr3UgeTG34fs293Vv4_C4IXf1eTq",$value
 			,"encrypt with problems");
 		$this->assertEquals($original
-			,$this->daoOne->decrypt($value)
+			,$this->pdoOne->decrypt($value)
 			,"decrypt with problems");		
 		// 1
 		$original=1222;
-		$value=$this->daoOne->encrypt($original);
+		$value=$this->pdoOne->encrypt($original);
 		$this->assertEquals("koyhkw==",$value
 			,"encrypt with problems");
 		$this->assertEquals($original
-			,$this->daoOne->decrypt($value)
+			,$this->pdoOne->decrypt($value)
 			,"decrypt correct");
 		// 0
 		$original=0;
-		$value=$this->daoOne->encrypt($original);
+		$value=$this->pdoOne->encrypt($original);
 		$this->assertEquals("kQ==",$value
 			,"encrypt with problems");
 		$this->assertEquals($original
-			,$this->daoOne->decrypt($value)
+			,$this->pdoOne->decrypt($value)
 			,"decrypt correct");
 
 	}

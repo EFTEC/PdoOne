@@ -5,7 +5,7 @@ include "../vendor/autoload.php";
 include "dBug.php";
 
 // connecting to database sakila at 127.0.0.1 with user root and password abc.123
-$dao=new PdoOne("127.0.0.1","root","abc.123","sakila","logdaoone.txt");
+$dao=new PdoOne("127.0.0.1","root","abc.123","sakila","logpdoone.txt");
 try {
     echo "<h1>Connection. The instance {$dao->server}, base:{$dao->db}  user:{$dao->user} and password:{$dao->pwd} must exists</h1>";
     $dao->connect();

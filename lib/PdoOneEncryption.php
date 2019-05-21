@@ -41,7 +41,7 @@ class PdoOneEncryption
 	var $encMethod = '';
 
 	/**
-	 * DaoOneEncryption constructor.
+	 * PdoOneEncryption constructor.
 	 * @param string $encPassword
 	 * @param string $encSalt
 	 * @param bool $iv if true it uses true and the each encryption is different (even for the same value) but it is not deterministic.

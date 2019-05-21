@@ -128,7 +128,7 @@ class PdoOne
 	//</editor-fold>
 
 	/**
-	 * DaoOne constructor.  It doesn't connect to the database.
+	 * PdoOne constructor.  It doesn't connect to the database.
 	 * @param string database ['mysql','sqlsrv','oracle'][$i]
 	 * @param string $server server ip. Ex. 127.0.0.1
 	 * @param string $user Ex. root
@@ -228,7 +228,7 @@ class PdoOne
 	}
 
 	/**
-	 * Alias of DaoOne::connect()
+	 * Alias of PdoOne::connect()
 	 * @param bool $failIfConnected
 	 * @throws Exception
 	 * @test exception this(false)
@@ -361,7 +361,7 @@ class PdoOne
 
 
 	/**
-	 * It uses \eftec\DaoOne::$masks0 and \eftec\DaoOne::$masks1 to flip
+	 * It uses \eftec\PdoOne::$masks0 and \eftec\PdoOne::$masks1 to flip
 	 * the number, so they are not as predictable.
 	 * This function doesn't add entrophy. However, the generation of Snowflakes id
 	 * (getSequence/getSequencePHP) generates its own entrophy. Also,
@@ -383,7 +383,7 @@ class PdoOne
 		return $string;
 	}
 	/**
-	 * it is the inverse of \eftec\DaoOne::getUnpredictable
+	 * it is the inverse of \eftec\PdoOne::getUnpredictable
 	 * @param $number
 	 * @return mixed
 	 * @see \eftec\PdoOne::$masks0
@@ -549,7 +549,7 @@ class PdoOne
 	/**
 	 * @return bool
 	 * @test equals true,this()
-	 * @posttest execution $this->daoOne->commit();
+	 * @posttest execution $this->pdoOne->commit();
 	 * @example examples/testdb.php 92,4
 	 */
 	public function startTransaction()
@@ -746,7 +746,7 @@ class PdoOne
 	 *
 	 * @param string|array $sql
 	 * @return PdoOne
-	 * @test InstanceOf DaoOne::class,this('select 1 from DUAL')
+	 * @test InstanceOf PdoOne::class,this('select 1 from DUAL')
 	 */
 	public function select($sql)
 	{
@@ -771,7 +771,7 @@ class PdoOne
 	 * @param string $sql Example "tablejoin on table1.field=tablejoin.field"
 	 * @param string $condition
 	 * @return PdoOne
-	 * @test InstanceOf DaoOne::class,this('tablejoin on t1.field=t2.field')
+	 * @test InstanceOf PdoOne::class,this('tablejoin on t1.field=t2.field')
 	 */
 	public function join($sql,$condition='')
 	{
@@ -806,7 +806,7 @@ class PdoOne
 	 *      from('table1 inner join table2 on table1.c=table2.c')
 	 * @param $sql
 	 * @return PdoOne
-	 * @test InstanceOf DaoOne::class,this('table t1')
+	 * @test InstanceOf PdoOne::class,this('table t1')
 	 */
 	public function from($sql)
 	{
@@ -817,7 +817,7 @@ class PdoOne
 	/**
 	 * @param $sql
 	 * @return PdoOne
-	 * @test InstanceOf DaoOne::class,this('table2 on table1.t1=table2.t2')
+	 * @test InstanceOf PdoOne::class,this('table2 on table1.t1=table2.t2')
 	 */
 	public function left($sql)
 	{
@@ -829,7 +829,7 @@ class PdoOne
 	/**
 	 * @param $sql
 	 * @return PdoOne
-	 * @test InstanceOf DaoOne::class,this('table2 on table1.t1=table2.t2')
+	 * @test InstanceOf PdoOne::class,this('table2 on table1.t1=table2.t2')
 	 */
 	public function right($sql)
 	{
@@ -854,7 +854,7 @@ class PdoOne
 	 * @param bool $isHaving if true then it is a having instead of a where.
 	 * @return PdoOne
 	 * @see http://php.net/manual/en/mysqli-stmt.bind-param.php for types
-	 * @test InstanceOf DaoOne::class,this('field1=?,field2=?',['i',20,'s','hello'])
+	 * @test InstanceOf PdoOne::class,this('field1=?,field2=?',['i',20,'s','hello'])
 	 */
 	public function where($sql, $param = self::NULL,$isHaving=false)
 	{
@@ -909,7 +909,7 @@ class PdoOne
 	 * @param string|array $sqlOrArray
 	 * @param array|mixed $param
 	 * @return PdoOne
-	 * @test InstanceOf DaoOne::class,this('field1=?,field2=?',['i',20,'s','hello'])
+	 * @test InstanceOf PdoOne::class,this('field1=?,field2=?',['i',20,'s','hello'])
 	 */
 	public function set($sqlOrArray, $param = self::NULL )
 	{
@@ -954,7 +954,7 @@ class PdoOne
 	/**
 	 * @param $sql
 	 * @return PdoOne
-	 * @test InstanceOf DaoOne::class,this('fieldgroup')
+	 * @test InstanceOf PdoOne::class,this('fieldgroup')
 	 */
 	public function group($sql)
 	{
@@ -979,7 +979,7 @@ class PdoOne
 	 * @param array|mixed $param
 	 * @return PdoOne
 	 * @see http://php.net/manual/en/mysqli-stmt.bind-param.php for types
-	 * @test InstanceOf DaoOne::class,this('field1=?,field2=?',['i',20,'s','hello'])
+	 * @test InstanceOf PdoOne::class,this('field1=?,field2=?',['i',20,'s','hello'])
 	 */
 	public function having($sql, $param = self::NULL)
 	{
@@ -989,7 +989,7 @@ class PdoOne
 	/**
 	 * @param $sql
 	 * @return PdoOne
-	 * @test InstanceOf DaoOne::class,this('name desc')
+	 * @test InstanceOf PdoOne::class,this('name desc')
 	 */
 	public function order($sql)
 	{
@@ -1002,7 +1002,7 @@ class PdoOne
 	 * @param $sql
 	 * @return PdoOne
 	 * @throws Exception
-	 * @test InstanceOf DaoOne::class,this('1,10')
+	 * @test InstanceOf PdoOne::class,this('1,10')
 	 */
 	public function limit($sql)
 	{
@@ -1034,7 +1034,7 @@ class PdoOne
 	 *      ->select("select *")->distinct() // distinct is ignored.
 	 * @param $sql
 	 * @return PdoOne
-	 * @test InstanceOf DaoOne::class,this()
+	 * @test InstanceOf PdoOne::class,this()
 	 */
 	public function distinct($sql = 'distinct')
 	{
@@ -1099,7 +1099,7 @@ class PdoOne
 	/**
 	 * @param bool $genSqlFields
 	 * @return $this
-	 * @test InstanceOf DaoOne::class,this(true)
+	 * @test InstanceOf PdoOne::class,this(true)
 	 */
 	public function generateSqlFields($genSqlFields=true) {
 		$this->genSqlFields=$genSqlFields;
@@ -1213,8 +1213,8 @@ class PdoOne
 	 * @param $stmt PDOStatement
 	 * @return bool returns true if the operation is correct, otherwise false
 	 * @throws Exception
-	 * @test equals true,$this->daoOne->runQuery($this->daoOne->prepare('select 1 from dual'))
-	 * @test equals [1=>1],$this->daoOne->select('1')->from('dual')->first(),'it must runs'
+	 * @test equals true,$this->pdoOne->runQuery($this->pdoOne->prepare('select 1 from dual'))
+	 * @test equals [1=>1],$this->pdoOne->select('1')->from('dual')->first(),'it must runs'
 	 */
 	public function runQuery($stmt)
 	{
@@ -1742,7 +1742,7 @@ class PdoOne
 		}
 	}
 	/**
-	 * Wrapper of DaoOneEncryption->encrypt
+	 * Wrapper of PdoOneEncryption->encrypt
 	 * @param $data
 	 * @return bool|string
 	 *@see \eftec\PdoOneEncryption::encrypt
@@ -1753,7 +1753,7 @@ class PdoOne
 	}
 
 	/**
-	 * Wrapper of DaoOneEncryption->decrypt
+	 * Wrapper of PdoOneEncryption->decrypt
 	 * @param $data
 	 * @return bool|string
 	 *@see \eftec\PdoOneEncryption::decrypt

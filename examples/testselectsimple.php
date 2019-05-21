@@ -8,7 +8,7 @@ include "Collection.php";
 include "dBug.php";
 echo "<body><div style='width:600px'>";
 // connecting to database sakila at 127.0.0.1 with user root and password abc.123
-$dao=new PdoOne("mysql","127.0.0.1","root","abc.123","sakila","logdaoone.txt");
+$dao=new PdoOne("mysql","127.0.0.1","root","abc.123","sakila","logpdoone.txt");
 $dao->logLevel=2;
 $dao->connect(true);
 

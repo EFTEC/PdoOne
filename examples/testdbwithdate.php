@@ -26,24 +26,24 @@ $sql="CREATE TABLE `productdate` (
 
 $now=new DateTime();
 echo "<h1>Date Convertion with epoch 2000-01-01:</h1>";
-echo "DaoOne::dateTimeSql2PHP(null) : ";
+echo "PdoOne::dateTimeSql2PHP(null) : ";
 var_dump(PdoOne::dateTimeSql2PHP(null));
 
-echo "<br>DaoOne::unixtime2Sql(null) : ";
+echo "<br>PdoOne::unixtime2Sql(null) : ";
 var_dump(PdoOne::unixtime2Sql(null));
 
-echo "<br>DaoOne::dateTimePHP2Sql(null) : ";
+echo "<br>PdoOne::dateTimePHP2Sql(null) : ";
 var_dump(PdoOne::dateTimePHP2Sql(null));
 
 echo "<h1>Date Convertion with epoch null:</h1>";
 PdoOne::$dateEpoch=null;
-echo "DaoOne::dateTimeSql2PHP(null) : ";
+echo "PdoOne::dateTimeSql2PHP(null) : ";
 var_dump(PdoOne::dateTimeSql2PHP(null));
 
-echo "<br>DaoOne::unixtime2Sql(null) : ";
+echo "<br>PdoOne::unixtime2Sql(null) : ";
 var_dump(PdoOne::unixtime2Sql(null));
 
-echo "<br>DaoOne::dateTimePHP2Sql(null) : ";
+echo "<br>PdoOne::dateTimePHP2Sql(null) : ";
 var_dump(PdoOne::dateTimePHP2Sql(null));
 
 

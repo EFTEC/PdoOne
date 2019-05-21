@@ -8,7 +8,7 @@
         "php",
         "mysqli"
     ],
-    "homepage": "https://github.com/EFTEC/daoonepdo",
+    "homepage": "https://github.com/EFTEC/PdoOne",
     "authors": [
         {
             "name": "Jorge Castro Castillo",
