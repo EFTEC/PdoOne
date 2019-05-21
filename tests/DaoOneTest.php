@@ -15,7 +15,7 @@ class DaoOneTest extends TestCase
 
     public function setUp()
     {
-        $this->daoOne=new PdoOne("127.0.0.1","travis","","travisdb");
+        $this->daoOne=new PdoOne("mysql","127.0.0.1","travis","","travisdb");
         $this->daoOne->connect();
     }
 

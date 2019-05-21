@@ -1325,7 +1325,7 @@ class PdoOne
 				if ($rows->columnCount()>0) {
 					return @$rows->fetchAll(PDO::FETCH_ASSOC);
 				} else {
-					return array();
+					return true;
 				}
 			} else {
 				return $rows;
