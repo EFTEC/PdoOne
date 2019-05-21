@@ -402,7 +402,31 @@ class PdoOne
 	}
 
 	/**
-	 * Create a t
+	 * returns true if the object exists
+	 * Currently only works with table
+	 * @param string $objectName
+	 * @param string $type (table)
+	 * @return bool
+	 * @throws Exception
+	 */
+	public function objectExist($objectName,$type='table') {
+		switch ($this->database) {
+			case 'mysql':
+				$query="SELECT * FROM information_schema.tables where table_schema='{$this->db}' and table_name=?";
+				break;
+			case 'sqlsrv':
+				$query="SELECT * FROM sys.objects where name=?";
+				break;
+			default:
+				trigger_error("database not defined");
+				die(1);
+		}
+		$arr=$this->runRawQuery($query,[PDO::PARAM_STR,$objectName],true);
+		return is_array($arr);
+	}
+
+	/**
+	 * Create a table
 	 * @param $tableName
 	 * @param $definition
 	 * @param null $primaryKey
@@ -1344,13 +1368,12 @@ class PdoOne
 		}
 		//$stmt->bindParam($parType, ...$values);
 		$this->runQuery($stmt);
-		
 		if ($this->genSqlFields) {
 			$this->lastSqlFields=$this->obtainSqlFields($stmt);
 		}
-		$stmt=null;
 		if ($returnArray && $stmt instanceof PDOStatement) {
 			$rows = ($stmt->columnCount()>0) ? $stmt->fetchAll(PDO::FETCH_ASSOC) : array();
+			$stmt=null;
 			return $rows;
 		} else {
 			return $stmt;

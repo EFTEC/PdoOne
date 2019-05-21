@@ -36,14 +36,23 @@ ALTER TABLE dbo.product ADD CONSTRAINT
 ";
 
 $now=new DateTime();
-// running a raw query (unprepared statement)
-try {
-    echo "<h1>Table creation:</h1>";
-    $dao->runRawQuery($sql);
-} catch (Exception $e) {
-    echo "<h2>Table creation error:</h2>";
-    echo $dao->lastError()."-".$e->getMessage()."<br>";
+
+if ($dao->objectExist('product')) {
+	echo "<h1>Table product exist!</h1>";
+} else {
+	try {
+		echo "<h1>Table creation:</h1>";
+
+		$dao->runRawQuery($sql);
+	} catch (Exception $e) {
+		echo "<h2>Table creation error:</h2>";
+		echo $dao->lastError()."-".$e->getMessage()."<br>";
+	}
+
 }
+
+
+// running a raw query (unprepared statement)
 
 
 // running a prepared statement
