@@ -9,7 +9,7 @@ include "../Collection.php";
 include "../dBug.php";
 echo "<body><div style='width:600px'>";
 // connecting to database sakila at 127.0.0.1 with user root and password abc.123
-$dao=new PdoOne("sqlsrv","127.0.0.1","sa","abc.123","sakila","");
+$dao=new PdoOne("mysql","127.0.0.1","root","abc.123","sakila","");
 $dao->logLevel=3;
 try {
     echo "<h1>Connection. The instance {$dao->server}, base:{$dao->db}  user:{$dao->user} and password:{$dao->pwd} must exists</h1>";
@@ -26,35 +26,23 @@ echo "<h1>Stat</h1>";
 echo build_table($dao->statValue('actor','actor_id'));
 
 	echo build_table($dao->columnTable('actor'));
-echo build_table($dao->foreignKeyTable('payment'));
-
-die(1);	
+	echo build_table($dao->foreignKeyTable('payment'));
+die(1);
 
 
 $sqlT1="set nocount on;
-	CREATE TABLE dbo.typetable
-	(
-	type int NOT NULL,
-	name varchar(50) NULL
-	);
-ALTER TABLE dbo.typetable ADD CONSTRAINT
-	PK_typetable PRIMARY KEY CLUSTERED 
-	(
-	type
-	) ";
+	CREATE TABLE `typetable` (
+    `type` INT NOT NULL,
+    `name` VARCHAR(45) NULL,
+    PRIMARY KEY (`type`));";
 
-$sqlT2="set nocount on;
-	CREATE TABLE dbo.producttype
-	(
-	idproducttype int NOT NULL,
-	name varchar(50) NULL,
-	type int NULL
-	);
-ALTER TABLE dbo.producttype ADD CONSTRAINT
-	PK_producttype PRIMARY KEY CLUSTERED 
-	(
-	idproducttype
-	)";
+$sqlT2="
+	set nocount on;
+	CREATE TABLE `producttype` (
+    `idproducttype` INT NOT NULL,
+    `name` VARCHAR(45) NULL,
+    `type` int not NULL,
+    PRIMARY KEY (`idproducttype`));";
 
 $now=new DateTime();
 // running a raw query (unprepared statement)

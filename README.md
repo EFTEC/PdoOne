@@ -203,6 +203,60 @@ If true (default), then it throws an error if happens an error. If false, then t
 ### isOpen=true
 It is true if the database is connected otherwise,it's false.
 
+## Custom Queries
+
+### tableExist($tableName)
+
+Returns true if the table exists (current database/schema)
+
+### statValue($tableName,$columnName)
+
+Returns the stastictic (as an array) of a column of a table. 
+
+```php
+$stats=$dao->statValue('actor','actor_id');
+```
+
+| min | max | avg      | sum   | count |
+|-----|-----|----------|-------|-------|
+| 1   | 205 | 103.0000 | 21115 | 205   |
+
+### columnTable($tablename)
+
+Returns all columns of a table
+
+```php
+$result=$dao->columnTable('actor')
+```
+
+| colname     | coltype   | colsize | colpres | colscale | iskey | isidentity |
+|-------------|-----------|---------|---------|----------|-------|------------|
+| actor_id    | smallint  |         | 5       | 0        | 1     | 1          |
+| first_name  | varchar   | 45      |         |          | 0     | 0          |
+| last_name   | varchar   | 45      |         |          | 0     | 0          |
+| last_update | timestamp |         |         |          | 0     | 0          |
+
+### foreignKeyTable($tableName)
+
+Returns all foreign keys of a table (source table)
+
+### createTable($tableName,$definition,$primaryKey=null,$extra='')
+
+Creates a table using a definition and primary key.
+
+
+
+```php
+$result=$dao->foreignKeyTable('actor')
+```
+
+| collocal    | tablerem | colrem      |
+|-------------|----------|-------------|
+| customer_id | customer | customer_id |
+| rental_id   | rental   | rental_id   |
+| staff_id    | staff    | staff_id    |
+
+
 
 ## Query Builder (DQL)
 You could also build a procedural query.
@@ -584,4 +638,8 @@ $dao->getSequencePHP(true) // string(19) "1739032938181434311"
 
 
 ## Changelist
+
+* 1.3 2019-may-23 New changes
+* 1.2 2019-may-22 New fixed.
+* 1.1 2019-may-21 Some maintenance
 * 1.0 2019-may-21 First version 

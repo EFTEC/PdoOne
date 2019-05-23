@@ -15,7 +15,7 @@ use PDOStatement;
 /**
  * Class PdoOne
  * This class wrappes PDO but it could be used for another framework/library.
- * @version 1.2 20190521
+ * @version 1.3 20190523
  * @package eftec
  * @author Jorge Castro Castillo
  * @copyright (c) Jorge Castro C. MIT License  https://github.com/EFTEC/PdoOne
@@ -45,7 +45,7 @@ class PdoOne
 	/** @var PdoOneEncryption */
 	var $encryption=null;
 	/** @var string=['mysql','sqlsrv','oracle'][$i] */
-	var $database;
+	var $databaseType;
 	var $database_delimiter0='`';
 	var $database_delimiter1='`';
 	/** @var string server ip. Ex. 127.0.0.1 */
@@ -141,8 +141,8 @@ class PdoOne
 	 */
 	public function __construct($database,$server, $user, $pwd, $db, $logFile = "",$charset=null,$nodeId=1)
 	{
-		$this->database=$database;
-		switch ($this->database) {
+		$this->databaseType=$database;
+		switch ($this->databaseType) {
 			case 'mysql':
 				$this->database_delimiter0='`';
 				$this->database_delimiter1='`';
@@ -205,12 +205,12 @@ class PdoOne
 				$this->storeInfo("connecting to {$this->server} {$this->user}/*** {$this->db}");
 			}
 			$cs=($this->charset!='')?';charset='.$this->charset:'';
-			switch ($this->database) {
+			switch ($this->databaseType) {
 				case 'mysql':
-					$this->conn1 = new PDO("{$this->database}:host={$this->server};dbname={$this->db}{$cs}", $this->user, $this->pwd);
+					$this->conn1 = new PDO("{$this->databaseType}:host={$this->server};dbname={$this->db}{$cs}", $this->user, $this->pwd);
 					break;
 				case 'sqlsrv':
-					$this->conn1 = new PDO("{$this->database}:server={$this->server};database={$this->db}{$cs}", $this->user, $this->pwd);
+					$this->conn1 = new PDO("{$this->databaseType}:server={$this->server};database={$this->db}{$cs}", $this->user, $this->pwd);
 					break;
 				default:
 					throw new Exception("database not defined");
@@ -222,7 +222,7 @@ class PdoOne
 			$this->isOpen=true;
 		} catch (Exception $ex) {
 			$this->isOpen=false;
-			$this->throwError("Failed to connect to {$this->database}", $ex->getMessage());
+			$this->throwError("Failed to connect to {$this->databaseType}", $ex->getMessage());
 		}
 
 	}
@@ -419,7 +419,7 @@ class PdoOne
 	 * @throws Exception
 	 */
 	private function objectExist($objectName,$type='table') {
-		switch ($this->database) {
+		switch ($this->databaseType) {
 			case 'mysql':
 				$query="SELECT * FROM information_schema.tables where table_schema='{$this->db}' and table_name=?";
 				break;
@@ -435,6 +435,113 @@ class PdoOne
 	}
 
 	/**
+	 * It returns the statistics (minimum,maximum,average,sum and count) of a column of a table
+	 * @param string $tableName
+	 * @param string $columnName
+	 * @return array|bool Returns an array of the type ['min','max','avg','sum','count']
+	 * @throws Exception
+	 */
+	public function statValue($tableName,$columnName) {
+		$query="select min($columnName) min
+						,max($columnName) max
+						,avg($columnName) avg
+						,sum($columnName) sum
+						,count($columnName) count
+						 from $tableName";
+		$r=$this->runRawQuery($query,null,true);
+		return $r;
+	}
+
+	/**
+	 * Returns the columns of a table
+	 * @param string $tablename
+	 * @return array|bool=['colname','coltype','colsize','colpres','colscale','iskey','isidentity']
+	 * @throws Exception
+	 */
+	public function columnTable($tablename) {
+		switch ($this->databaseType) {
+			case 'mysql':
+				$query="SELECT column_name colname
+								,data_type coltype
+								,character_maximum_length colsize
+								,numeric_precision colpres
+								,numeric_scale colscale
+								,if(column_key='PRI',1,0) iskey
+								,if(extra='auto_increment',1,0)  isidentity
+					 	FROM information_schema.columns
+						where table_schema='{$this->db}' and table_name='$tablename'";
+
+				$r=$this->runRawQuery($query,null,true);
+				
+				break;
+			case 'sqlsrv':
+				$query="SELECT col.name colname
+							,st.name coltype
+							,col.max_length colsize
+							,col.precision colpres
+							,col.scale colscale
+							,pk.is_primary_key iskey
+							,col.is_identity isidentity
+						FROM sys.COLUMNS col
+						inner join sys.objects obj on obj.object_id=col.object_id
+						inner join sys.types st on col.system_type_id=st.system_type_id		
+						left join sys.index_columns idx on obj.object_id=idx.object_id and col.column_id=idx.column_id
+						left join sys.indexes pk on obj.object_id = pk.object_id and pk.index_id=idx.index_id and pk.is_primary_key=1
+						where  obj.name='$tablename'";
+
+				$r=$this->runRawQuery($query,null,true);
+				
+				break;
+			default:
+				trigger_error("database type not defined");
+				die(1);
+		}
+		
+		return $r;
+	}
+
+	/**
+	 * Returns all the foreign keys (and relation) of a table
+	 * @param $tableName
+	 * @return array|bool
+	 * @throws Exception
+	 */
+	public function foreignKeyTable($tableName) {
+		switch ($this->databaseType) {
+			case 'mysql':
+				$query="SELECT 
+							column_name collocal,
+						    REFERENCED_TABLE_NAME tablerem,
+						    REFERENCED_COLUMN_NAME colrem
+						 FROM information_schema.KEY_COLUMN_USAGE
+						where table_name='$tableName' and constraint_schema='{$this->db}'
+						and referenced_table_name is not null;";
+		
+				$r=$this->runRawQuery($query,null,true);
+				break;
+			case 'sqlsrv':
+				$query="SELECT col.name collocal
+					,objrem.name tablerem
+					,colrem.name colrem
+					FROM sys.foreign_key_columns fk
+					inner join sys.objects obj on obj.object_id=fk.parent_object_id
+					inner join sys.COLUMNS col on obj.object_id=col.object_id and fk.parent_column_id=col.column_id
+					inner join sys.types st on col.system_type_id=st.system_type_id	
+					inner join sys.objects objrem on objrem.object_id=fk.referenced_object_id
+					inner join sys.COLUMNS colrem on fk.referenced_object_id=colrem.object_id and fk.referenced_column_id=colrem.column_id
+					where obj.name='$tableName' ";
+				$r=$this->runRawQuery($query,null,true);
+
+				break;
+			default:
+				trigger_error("database type not defined");
+				die(1);
+		}
+
+		return $r;
+	}
+
+	/**
 	 * Create a table
 	 * @param $tableName
 	 * @param $definition
@@ -444,7 +551,7 @@ class PdoOne
 	 * @throws Exception
 	 */
 	public function createTable($tableName,$definition,$primaryKey=null,$extra='') {
-		switch ($this->database) {
+		switch ($this->databaseType) {
 			case 'mysql':
 				$sql="CREATE TABLE `{$tableName}` (";
 				foreach($definition as $key=>$type) {
@@ -486,7 +593,7 @@ class PdoOne
 	 * @throws Exception
 	 */
 	public function createSequence() {
-		switch ($this->database) {
+		switch ($this->databaseType) {
 			case 'mysql':
 				$sql=
 					"CREATE TABLE `{$this->tableSequence}` (
@@ -1006,7 +1113,7 @@ class PdoOne
 	 */
 	public function limit($sql)
 	{
-		switch ($this->database) {
+		switch ($this->databaseType) {
 			case 'mysql':
 				$this->limit = ($sql) ? ' limit ' . $sql : '';
 				break;
