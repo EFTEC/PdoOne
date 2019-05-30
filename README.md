@@ -507,8 +507,10 @@ or (the type is defined, in the possible, automatically by MySql)
         ->insert();
 ```
 
-
-
+### insertObject($table,[$declarativeArray],$excludeColumn=[])
+```php
+    $dao->insertObject('table',['Id'=>1,'Name'=>'CocaCola');
+```
 
     
 Using nested chain declarative set
@@ -639,6 +641,7 @@ $dao->getSequencePHP(true) // string(19) "1739032938181434311"
 
 ## Changelist
 
+* 1.4 2019-may-30 insertobject()
 * 1.3 2019-may-23 New changes
 * 1.2 2019-may-22 New fixed.
 * 1.1 2019-may-21 Some maintenance

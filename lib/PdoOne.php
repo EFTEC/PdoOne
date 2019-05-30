@@ -15,7 +15,7 @@ use PDOStatement;
 /**
  * Class PdoOne
  * This class wrappes PDO but it could be used for another framework/library.
- * @version 1.3 20190523
+ * @version 1.4 20190530
  * @package eftec
  * @author Jorge Castro Castillo
  * @copyright (c) Jorge Castro C. MIT License  https://github.com/EFTEC/PdoOne
@@ -472,7 +472,7 @@ class PdoOne
 						where table_schema='{$this->db}' and table_name='$tablename'";
 
 				$r=$this->runRawQuery($query,null,true);
-				
+
 				break;
 			case 'sqlsrv':
 				$query="SELECT col.name colname
@@ -490,13 +490,13 @@ class PdoOne
 						where  obj.name='$tablename'";
 
 				$r=$this->runRawQuery($query,null,true);
-				
+
 				break;
 			default:
 				trigger_error("database type not defined");
 				die(1);
 		}
-		
+
 		return $r;
 	}
 
@@ -516,7 +516,7 @@ class PdoOne
 						 FROM information_schema.KEY_COLUMN_USAGE
 						where table_name='$tableName' and constraint_schema='{$this->db}'
 						and referenced_table_name is not null;";
-		
+
 				$r=$this->runRawQuery($query,null,true);
 				break;
 			case 'sqlsrv':
@@ -1180,7 +1180,10 @@ class PdoOne
 			$reval=true;
 			foreach($this->whereParamType as $k=>$v) {
 				$counter++;
-				$reval=$reval && $stmt->bindParam($counter,$values[$k],$this->whereParamType[$k]);
+				$typeP=$this->stringToPdoParam($this->whereParamType[$k]);
+				$reval=$reval && $stmt->bindParam($counter
+						,$values[$k]
+						,$typeP);
 				echo "adding param {$counter} {$values[$k]} {$this->whereParamType[$k]}<br>";
 			}
 
@@ -1480,7 +1483,10 @@ class PdoOne
 		$counter=0;
 		for ($i = 0; $i < count($param); $i += 2) {
 			$counter++;
-			$stmt->bindParam($counter,$param[$i+1],$param[$i]);
+			$typeP=$this->stringToPdoParam($param[$i]);
+			$stmt->bindParam($counter
+				,$param[$i+1]
+				,$typeP);
 		}
 		//$stmt->bindParam($parType, ...$values);
 		$this->runQuery($stmt);
@@ -1493,6 +1499,20 @@ class PdoOne
 			return $rows;
 		} else {
 			return $stmt;
+		}
+	}
+	private function stringToPdoParam($string) {
+		if (is_int($string)) return $string;
+		switch ($string) {
+			case 'i':
+				return PDO::PARAM_INT;
+			case 's':
+				return PDO::PARAM_STR;
+			case 'd':
+				return PDO::PARAM_STR;
+			default:
+				trigger_error("param type not defined [$string]");
+				return null;
 		}
 	}
 
@@ -1581,9 +1601,9 @@ class PdoOne
 	/**
 	 * Generates and execute an insert command. Example:
 	 * Example:
-	 *      insert('table',['col1','i',10,'col2','s','hello world']);
-	 *      insert('table',['col1','i','col2','s'],[10,'hello world']);
-	 *      insert('table',['col1'=>'i','col2'=>'s'],['col1'=>10,'col2'=>'hello world']);
+	 *      insert('table',['col1','i',10,'col2','s','hello world']); // ternary colname,type,value,...
+	 *      insert('table',['col1','i','col2','s'],[10,'hello world']); // definition (binary) and value
+	 *      insert('table',['col1'=>'i','col2'=>'s'],['col1'=>10,'col2'=>'hello world']); // definition declarative array)
 	 *      ->set(['col1','i',10,'col2','s','hello world'])
 	 *          ->from('table')
 	 *          ->insert();
@@ -1625,6 +1645,28 @@ class PdoOne
 			$this->runRawQuery($sql, $param);
 			return $this->insert_id();
 		}
+	}
+
+	/**
+	 * It allows to insert a declarative array. It uses "s" (string) as filetype.
+	 * <p>Example: ->insertObject('table',['field1'=>1,'field2'=>'aaa']);
+	 * @param string $table
+	 * @param array $object associative array with the colums and values
+	 * @param array $excludeColumn (optional) columns to exclude. Example ['col1','col2']
+	 * @return mixed
+	 * @throws Exception
+	 */
+	public function insertObject($table,$object,$excludeColumn=[]) {
+		$tabledef=[];
+		foreach($object as $k=>$field) {
+			if (!in_array($k,$excludeColumn)) {
+				$tabledef[$k]='s';
+			}
+		}
+		foreach($excludeColumn as $ex) {
+			unset($object[$ex]);
+		}
+		return $this->insert($table,$tabledef,$object);
 	}
 
 
