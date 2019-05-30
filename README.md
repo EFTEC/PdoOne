@@ -637,8 +637,6 @@ $dao->getSequencePHP() // string(19) "3639032938181434317"
 $dao->getSequencePHP(true) // string(19) "1739032938181434311" 
 ```
 
-
-
 ## Changelist
 
 * 1.4 2019-may-30 insertobject()
