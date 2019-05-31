@@ -17,6 +17,7 @@ class PdoOneTest extends TestCase
     {
         $this->pdoOne=new PdoOne("mysql","127.0.0.1","travis","","travisdb");
         $this->pdoOne->connect();
+        $this->pdoOne->logLevel=3;
     }
 
 
@@ -79,7 +80,7 @@ class PdoOneTest extends TestCase
 
 		$this->assertEquals('2019-02-06',PdoOne::dateSql2Text('2019-02-06'));
 		$this->assertEquals('2019-02-06T05:06:07Z',PdoOne::dateSql2Text('2019-02-06 05:06:07'));
-		$this->assertEquals('2018-02-06T05:06:07.123000Z',PdoOne::dateSql2Text('2018-02-06 05:06:07.123000'));
+		$this->assertEquals('2018-02-06T05:06:07.123000Z',PdoOne::dateSql2Text('2018-02-06 05:06:07.123'));
 	}
 
 	/**

@@ -15,7 +15,7 @@ use PDOStatement;
 /**
  * Class PdoOne
  * This class wrappes PDO but it could be used for another framework/library.
- * @version 1.4 20190530
+ * @version 1.5 20190531
  * @package eftec
  * @author Jorge Castro Castillo
  * @copyright (c) Jorge Castro C. MIT License  https://github.com/EFTEC/PdoOne
@@ -101,6 +101,12 @@ class PdoOne
 	 * @see https://secure.php.net/manual/en/function.date.php
 	 */
 	public static $dateTimeMicroFormat = 'Y-m-d\TH:i:s.u\Z';
+	/**
+	 * @var string ISO format for date
+	 */
+	public static $isoDate='';
+	public static $isoDateTimeMs='';
+	public static $isoDateTime='';
 
 	private $genSqlFields=false;
 	var $lastSqlFields='';
@@ -147,10 +153,17 @@ class PdoOne
 				$this->database_delimiter0='`';
 				$this->database_delimiter1='`';
 				$charset=($charset==null)?'utf8':$charset;
+				self::$isoDate='Y-m-d';
+				self::$isoDateTime='Y-m-d H:i:s';
+				self::$isoDateTimeMs='Y-m-d H:i:s.u';
+
 				break;
 			case 'sqlsrv':
 				$this->database_delimiter0='[';
 				$this->database_delimiter1=']';
+				self::$isoDate='Ymd';
+				self::$isoDateTime='Ymd H:i:s';
+				self::$isoDateTimeMs='Ymd H:i:s.u';
 				break;
 
 		}
@@ -213,10 +226,9 @@ class PdoOne
 					$this->conn1 = new PDO("{$this->databaseType}:server={$this->server};database={$this->db}{$cs}", $this->user, $this->pwd);
 					break;
 				default:
-					throw new Exception("database not defined");
+					$this->throwError("database not defined or supported {$this->databaseType}","");
 					break;
 			}
-
 			$this->conn1->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
 			$this->isOpen=true;
@@ -419,15 +431,32 @@ class PdoOne
 	 * @throws Exception
 	 */
 	private function objectExist($objectName,$type='table') {
+
 		switch ($this->databaseType) {
 			case 'mysql':
-				$query="SELECT * FROM information_schema.tables where table_schema='{$this->db}' and table_name=?";
+				switch ($type) {
+					case 'table':
+						$query="SELECT * FROM information_schema.tables where table_schema='{$this->db}' and table_name=?";
+						break;
+					default:
+						$this->throwError("objectExist: type [$type] not defined for {$this->databaseType}","");
+						die(1);
+						break;
+				}
 				break;
 			case 'sqlsrv':
-				$query="SELECT * FROM sys.objects where name=?";
+				switch ($type) {
+					case 'table':
+						$query="SELECT * FROM sys.objects where name=? and type_desc='USER_TABLE'";
+						break;
+					default:
+						$this->throwError("objectExist: type [$type] not defined for {$this->databaseType}","");
+						die(1);
+						break;
+				}
 				break;
 			default:
-				trigger_error("database not defined");
+				$this->throwError("database not defined or supported {$this->databaseType}","");
 				die(1);
 		}
 		$arr=$this->runRawQuery($query,[PDO::PARAM_STR,$objectName],true);
@@ -455,7 +484,7 @@ class PdoOne
 	/**
 	 * Returns the columns of a table
 	 * @param string $tablename
-	 * @return array|bool=['colname','coltype','colsize','colpres','colscale','iskey','isidentity']
+	 * @return array|bool=['colname','coltype','colsize','colpres','colscale','iskey','isidentity','isnullable']
 	 * @throws Exception
 	 */
 	public function columnTable($tablename) {
@@ -468,6 +497,7 @@ class PdoOne
 								,numeric_scale colscale
 								,if(column_key='PRI',1,0) iskey
 								,if(extra='auto_increment',1,0)  isidentity
+								,if(is_nullable='NO',1,0)  isnullable
 					 	FROM information_schema.columns
 						where table_schema='{$this->db}' and table_name='$tablename'";
 
@@ -482,6 +512,7 @@ class PdoOne
 							,col.scale colscale
 							,pk.is_primary_key iskey
 							,col.is_identity isidentity
+							,col.is_nullable isnullable
 						FROM sys.COLUMNS col
 						inner join sys.objects obj on obj.object_id=col.object_id
 						inner join sys.types st on col.system_type_id=st.system_type_id		
@@ -584,7 +615,7 @@ class PdoOne
 				}
 				break;
 			default:
-				throw new Exception("type not defined for create table");
+				$this->throwError("type not defined for create table","");
 		}
 		return $this->runRawQuery($sql,null,true);
 	}
@@ -644,7 +675,7 @@ class PdoOne
 					END";
 				break;
 			default:
-				throw new Exception("type not defined for create sequence");
+				$this->throwError("type not defined for create sequence","");
 		}
 		$this->runRawQuery($sql);
 	}
@@ -714,15 +745,16 @@ class PdoOne
 			return PdoOne::$dateEpoch;
 		}
 		if ($date->format("u")!='000000') {
-			return $date->format('Y-m-d H:i:s.u');
+			return $date->format(self::$isoDateTimeMs);
 		} else {
-			return $date->format('Y-m-d H:i:s');
+			return $date->format(self::$isoDateTime);
 		}
 
 	}
 
 	/**
-	 * Convert date from unix -> mysql
+	 * Convert date from unix timestamp -> ISO (database format).
+	 * <p>Example: ::unixtime2Sql(1558656785); // returns 2019-05-24 00:13:05
 	 * @param integer $dateNum
 	 * @return string
 	 */
@@ -732,12 +764,7 @@ class PdoOne
 		if ($dateNum == null) {
 			return PdoOne::$dateEpoch;
 		}
-		try {
-			$date2 = new DateTime(date("Y-m-d H:i:s.u", $dateNum));
-		} catch (Exception $e) {
-			return PdoOne::$dateEpoch;
-		}
-		return $date2->format('Y-m-d H:i:s.u');
+		return date(self::$isoDateTimeMs,$dateNum);
 	}
 
 	/**
@@ -752,21 +779,26 @@ class PdoOne
 		// mysql always returns the date/datetime/timestmamp in ansi format.
 		if ($sqlField === "" || $sqlField===null) {
 			if (PdoOne::$dateEpoch===null) return null;
-			return DateTime::createFromFormat('Y-m-d H:i:s.u',PdoOne::$dateEpoch);
+			
+			return DateTime::createFromFormat(self::$isoDateTimeMs,PdoOne::$dateEpoch);
 		}
+		
 		if (strpos($sqlField, '.')) {
 			// with date with time and microseconds
+			//2018-02-06 05:06:07.123
+			// Y-m-d H:i:s.v
 			$hasTime=true;
-			return DateTime::createFromFormat('Y-m-d H:i:s.u', $sqlField);
+			$x=DateTime::createFromFormat("Y-m-d H:i:s.u", "2018-02-06 05:06:07.1234");
+			return DateTime::createFromFormat(self::$isoDateTimeMs, $sqlField);
 		} else {
 			if (strpos($sqlField, ':')) {
 				// date with time
 				$hasTime=true;
-				return DateTime::createFromFormat('Y-m-d H:i:s', $sqlField);
+				return DateTime::createFromFormat(self::$isoDateTime, $sqlField);
 			} else {
 				// only date
 				$hasTime=false;
-				return DateTime::createFromFormat('Y-m-d', $sqlField);
+				return DateTime::createFromFormat(self::$isoDate, $sqlField);
 			}
 		}
 	}
@@ -833,9 +865,9 @@ class PdoOne
 			$tmpDate=null;
 		}
 		if ($hasTime) {
-			return $tmpDate->format(($hasMicroseconds!==false) ? 'Y-m-d H:i:s.u' : 'Y-m-d H:i:s');
+			return $tmpDate->format(($hasMicroseconds!==false) ? self::$isoDateTimeMs : self::$isoDateTime);
 		}  else {
-			return $tmpDate->format('Y-m-d');
+			return $tmpDate->format(self::$isoDate);
 		}
 	}
 	//</editor-fold>
@@ -1047,7 +1079,7 @@ class PdoOne
 			$p=array();
 			$this->constructParam($sqlOrArray,$param,$col,$colT,$p);
 			foreach($col as $k=>$c) {
-				$this->set[] = "{$this->database_delimiter0}$c{$this->database_delimiter1}=?";
+				$this->set[] = $this->addQuote($c)."=?";
 				$this->whereParamType[] = $p[$k*2];
 				$this->whereParamValue['i_' . $this->whereCounter] = $p[$k*2+1];
 				$this->whereCounter++;
@@ -1056,8 +1088,13 @@ class PdoOne
 		return $this;
 	}
 	private function addQuote($txt) {
-		if (strpos($txt,$this->database_delimiter0)!==false) return $txt; // it has quotes.
+		if (strpos($txt,$this->database_delimiter0)===false) {
+			return $this->database_delimiter0.$txt.$this->database_delimiter1;
+		} else {
+			return $txt;
+		}
 	}
+
 	/**
 	 * @param $sql
 	 * @return PdoOne
@@ -1119,7 +1156,7 @@ class PdoOne
 				break;
 			case 'sqlsrv':
 				if (!$this->order) {
-					throw new Exception("limit without a sort");
+					$this->throwError("limit without a sort","");
 				}
 				if (strpos($sql,',')) {
 					$arr=explode(',',$sql);
@@ -1129,7 +1166,7 @@ class PdoOne
 				}
 				break;
 			default:
-				trigger_error("database not defined or supported");
+				trigger_error("database not defined or supported {$this->databaseType}");
 		}
 
 		return $this;
@@ -1184,7 +1221,6 @@ class PdoOne
 				$reval=$reval && $stmt->bindParam($counter
 						,$values[$k]
 						,$typeP);
-				echo "adding param {$counter} {$values[$k]} {$this->whereParamType[$k]}<br>";
 			}
 
 			if (!$reval) {
@@ -1659,7 +1695,7 @@ class PdoOne
 	public function insertObject($table,$object,$excludeColumn=[]) {
 		$tabledef=[];
 		foreach($object as $k=>$field) {
-			if (!in_array($k,$excludeColumn)) {
+			if (!in_array($k,$excludeColumn,true)) { // avoid $k=0 is always valid for numeric columns
 				$tabledef[$k]='s';
 			}
 		}
@@ -1777,13 +1813,28 @@ class PdoOne
 	private function constructParam($array1,$array2,&$col,&$colT,&$param) {
 		if ($this->isAssoc($array1)) {
 			if ($array2 === self::NULL) {
-				// the type is calculated automatically. It could fails and it doesn't work with blob
+				// the type is calculated automatically. It could fails and it doesn't work with blob^
+				reset($array1);
+				$firstKey=key($array1);
+
+				$hasDelimiter=strpos($firstKey,$this->database_delimiter0)===false? false:true;
+
 				foreach ($array1 as $k => $v) {
-					if ($colT===null) {
-						$col[] = "{$this->database_delimiter0}$k{$this->database_delimiter1}=?";
+
+					if ($hasDelimiter) {
+						if ($colT === null) {
+							$col[] = "$k=?";
+						} else {
+							$col[] = "$k";
+							$colT[] = '?';
+						}
 					} else {
-						$col[] = $k;
-						$colT[] = '?';
+						if ($colT === null) {
+							$col[] = "{$this->database_delimiter0}$k{$this->database_delimiter1}=?";
+						} else {
+							$col[] = "{$this->database_delimiter0}$k{$this->database_delimiter1}";
+							$colT[] = '?';
+						}
 					}
 					$vt=$this->getType($v);
 					$param[] = $vt;
@@ -1796,7 +1847,7 @@ class PdoOne
 					if ($colT===null) {
 						$col[] = "{$this->database_delimiter0}$k{$this->database_delimiter1}=?";
 					} else {
-						$col[] = $k;
+						$col[] = "{$this->database_delimiter0}$k{$this->database_delimiter1}";
 						$colT[] = '?';
 					}
 

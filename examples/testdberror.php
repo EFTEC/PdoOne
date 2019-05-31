@@ -10,7 +10,7 @@ include "../vendor/autoload.php";
 
 
 
-$dao=new PdoOne("127.0.0.1","root","abc.123","sakilaxxxx","logpdoone.txt");
+$dao=new PdoOne('mysql',"127.0.0.1","root","abc.123","sakilaxxxx","logpdoone.txt");
 $dao->logLevel=3;
 $dao->throwOnError=true;
 
