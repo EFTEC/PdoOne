@@ -1,6 +1,6 @@
-# Database Access Object wrapper for PHP and MySqli in a single class
+# Database Access Object wrapper for PHP and PDO in a single class
 
-PdoOne. It's a simple wrapper for Mysqli
+PdoOne. It's a simple wrapper for PHP's PDO library.
 
 This library is as fast as possible. Most of the operations are simple string/array managements.
 
@@ -15,7 +15,7 @@ This library is as fast as possible. Most of the operations are simple string/ar
 
 Turn this 
 
-```$stmt = $mysqli->prepare("SELECT * FROM myTable WHERE name = ?");
+```$stmt = $pdo->prepare("SELECT * FROM myTable WHERE name = ?");
 $stmt->bind_param("s", $_POST['name']);
 $stmt->execute();
 $result = $stmt->get_result();
@@ -85,7 +85,7 @@ Add to composer.json the next requirement, then update composer.
 ```json
   {
       "require": {
-        "eftec/PdoOne": "^3.15"
+        "eftec/PdoOne": "^1.6"
       }
   }
 ```
@@ -107,7 +107,7 @@ $dao->connect();
 ```
 
 where 
-* "mysql" is the mysql database. It also allows sqlsrv
+* "mysql" is the mysql database. It also allows sqlsrv (for sql server)
 * 127.0.0.1 is the server where is the database.
 * root is the user   
 * abc.123 is the password of the user root.
