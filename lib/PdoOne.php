@@ -15,7 +15,7 @@ use PDOStatement;
 /**
  * Class PdoOne
  * This class wrappes PDO but it could be used for another framework/library.
- * @version 1.5 20190531
+ * @version 1.6 20190622
  * @package eftec
  * @author Jorge Castro Castillo
  * @copyright (c) Jorge Castro C. MIT License  https://github.com/EFTEC/PdoOne
@@ -79,8 +79,8 @@ class PdoOne
 	/** @var string last query executed */
 	var $lastQuery;
 	var $lastParam=[];
-
-
+    /** @var int */
+    private $affected_rows=0;
 
 
 	/**
@@ -285,6 +285,7 @@ class PdoOne
 		if (!$this->isOpen) { $this->throwError("RMRQ: It's not connected to the database",""); return false; }
 		$arr = explode(';', $listSql);
 		$ok = true;
+		$counter=0;
 		foreach ($arr as $rawSql) {
 			if(trim($rawSql)!='') {
 				if ($this->readonly) {
@@ -305,9 +306,12 @@ class PdoOne
 					if (!$continueOnError) {
 						$this->throwError("Unable to run raw query",$this->lastQuery);
 					}
-				}
+				} else {
+                    $counter+=$r->rowCount();
+                }
 			}
 		}
+		$this->affected_rows=$counter;
 		return $ok;
 	}
 
@@ -1504,13 +1508,18 @@ class PdoOne
 			if ($rows === false) {
 				$this->throwError("Unable to run raw query",$rawSql,$this->lastParam);
 			}
+            
 			if ($returnArray && $rows instanceof PDOStatement) {
 				if ($rows->columnCount()>0) {
-					return @$rows->fetchAll(PDO::FETCH_ASSOC);
+				    $result=@$rows->fetchAll(PDO::FETCH_ASSOC);
+                    $this->affected_rows= $rows->rowCount();
+					return $result;
 				} else {
+                    $this->affected_rows= $rows->rowCount();
 					return true;
 				}
 			} else {
+                $this->affected_rows= $rows->rowCount();
 				return $rows;
 			}
 		}
@@ -1531,9 +1540,11 @@ class PdoOne
 		}
 		if ($returnArray && $stmt instanceof PDOStatement) {
 			$rows = ($stmt->columnCount()>0) ? $stmt->fetchAll(PDO::FETCH_ASSOC) : array();
+            $this->affected_rows= $stmt->rowCount();
 			$stmt=null;
 			return $rows;
 		} else {
+            $this->affected_rows= $stmt->rowCount();
 			return $stmt;
 		}
 	}
@@ -1567,15 +1578,12 @@ class PdoOne
 	 * @param PDOStatement|null|bool $stmt
 	 * @return mixed
 	 */
-	public function affected_rows($stmt)
+	public function affected_rows($stmt=null)
 	{
 		if ($stmt instanceof PDOStatement) {
 			if (!$this->isOpen) return $stmt->rowCount();
 		}
-		if (is_array($stmt)) {
-			return count($stmt);
-		}
-		return 0;
+		return $this->affected_rows; // returns previous calculated information
 	}
 
 	/**

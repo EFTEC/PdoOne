@@ -639,6 +639,7 @@ $dao->getSequencePHP(true) // string(19) "1739032938181434311"
 
 ## Changelist
 
+* 1.6 2019-jun-22 affected_rows() returns a correct value. 
 * 1.5 2019-may-31 some cleanups.  columnTable() returns if the column is nullable or not. 
 * 1.4 2019-may-30 insertobject()
 * 1.3 2019-may-23 New changes

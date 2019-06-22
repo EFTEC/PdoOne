@@ -5,7 +5,7 @@ include "../vendor/autoload.php";
 include "dBug.php";
 
 // connecting to database sakila at 127.0.0.1 with user root and password abc.123
-$dao=new PdoOne("127.0.0.1","root","abc.123","sakila","logpdoone.txt");
+$dao=new PdoOne("mysql","127.0.0.1","root","abc.123","sakila","logpdoone.txt");
 try {
     echo "<h1>Connection. The instance {$dao->server}, base:{$dao->db}  user:{$dao->user} and password:{$dao->pwd} must exists</h1>";
     $dao->connect();
@@ -36,6 +36,8 @@ try {
     $dao->runRawQuery('insert into `typetable`(`type`,`name`) values(?,?)'
         ,array('i',2,'s','Yummy'));
     echo $dao->lastQuery."<br>";
+    echo $dao->affected_rows()."<br>";
+    die(1);
 
     // $dao->insert("producttype",['idproducttype','i','name','s','type','i'],[1,'Coca-Cola',1]);
     $dao->from("producttype")
