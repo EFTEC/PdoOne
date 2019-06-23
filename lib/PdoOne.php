@@ -1093,7 +1093,9 @@ class PdoOne
 	}
 	private function addQuote($txt) {
 		if (strpos($txt,$this->database_delimiter0)===false) {
-			return $this->database_delimiter0.$txt.$this->database_delimiter1;
+		    $quoted=$this->database_delimiter0.$txt.$this->database_delimiter1;
+		    $quoted=str_replace('.',$this->database_delimiter1.'.'.$this->database_delimiter0,$quoted);
+			return $quoted; 
 		} else {
 			return $txt;
 		}
@@ -1838,9 +1840,9 @@ class PdoOne
 						}
 					} else {
 						if ($colT === null) {
-							$col[] = "{$this->database_delimiter0}$k{$this->database_delimiter1}=?";
+							$col[] = $this->addQuote($k).'=?';
 						} else {
-							$col[] = "{$this->database_delimiter0}$k{$this->database_delimiter1}";
+							$col[] = $this->addQuote($k);
 							$colT[] = '?';
 						}
 					}

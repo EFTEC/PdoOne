@@ -637,6 +637,30 @@ $dao->getSequencePHP() // string(19) "3639032938181434317"
 $dao->getSequencePHP(true) // string(19) "1739032938181434311" 
 ```
 
+### Benchmark (mysql, estimated)
+
+| Library                 | Insert | findPk | hydrate | with | time   |
+|-------------------------|--------|--------|---------|------|--------|
+| PDO                     | 671    | 60     | 278     | 887  | 3,74   |
+| **PdoOne**              | 774    | 63     | 292     | 903  | 4,73   |
+| LessQL                  | 1413   | 133    | 539     | 825  | 5,984  |
+| YiiM                    | 2260   | 127    | 446     | 1516 | 8,415  |
+| YiiMWithCache           | 1925   | 122    | 421     | 1547 | 7,854  |
+| Yii2M                   | 4344   | 208    | 632     | 1165 | 11,968 |
+| Yii2MArrayHydrate       | 4114   | 213    | 531     | 1073 | 11,22  |
+| Yii2MScalarHydrate      | 4150   | 198    | 421     | 516  | 9,537  |
+| Propel20                | 2507   | 123    | 1373    | 1960 | 11,781 |
+| Propel20WithCache       | 1519   | 68     | 1045    | 1454 | 8,228  |
+| Propel20FormatOnDemand  | 1501   | 72     | 994     | 1423 | 8,228  |
+| DoctrineM               | 2119   | 250    | 1592    | 1258 | 18,139 |
+| DoctrineMWithCache      | 2084   | 243    | 1634    | 1155 | 17,952 |
+| DoctrineMArrayHydrate   | 2137   | 240    | 1230    | 877  | 16,83  |
+| DoctrineMScalarHydrate  | 2084   | 392    | 1542    | 939  | 18,887 |
+| DoctrineMWithoutProxies | 2119   | 252    | 1432    | 1960 | 19,822 |
+| Eloquent                | 3691   | 228    | 708     | 1413 | 12,155 |
+
+PdoOne adds a bit of ovehead over PDO, however it is simple a wrapper to pdo.
+
 ## Changelist
 
 * 1.6 2019-jun-22 affected_rows() returns a correct value. 
