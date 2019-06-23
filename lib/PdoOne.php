@@ -15,7 +15,7 @@ use PDOStatement;
 /**
  * Class PdoOne
  * This class wrappes PDO but it could be used for another framework/library.
- * @version 1.6 20190622
+ * @version 1.7 20190623
  * @package eftec
  * @author Jorge Castro Castillo
  * @copyright (c) Jorge Castro C. MIT License  https://github.com/EFTEC/PdoOne
@@ -942,6 +942,7 @@ class PdoOne
 
 
 	/**
+     * Adds a from for a query. It could be used by select,insert,update and delete.
 	 * Example:
 	 *      from('table')
 	 *      from('table alias')
@@ -958,6 +959,10 @@ class PdoOne
 	}
 
 	/**
+     * Adds a left join to the pipeline. It is possible to chain more than one join
+     * Example:
+     *      left('table on t1.c1=t2.c2')
+     *      left('table on table.c1=t2.c2').left('table2 on table1.c1=table2.c2')
 	 * @param $sql
 	 * @return PdoOne
 	 * @test InstanceOf PdoOne::class,this('table2 on table1.t1=table2.t2')
@@ -970,6 +975,10 @@ class PdoOne
 	}
 
 	/**
+     * Adds a right join to the pipeline. It is possible to chain more than one join
+     * Example:
+     *      right('table on t1.c1=t2.c2')
+     *      right('table on table.c1=t2.c2').right('table2 on table1.c1=table2.c2')
 	 * @param $sql
 	 * @return PdoOne
 	 * @test InstanceOf PdoOne::class,this('table2 on table1.t1=table2.t2')

@@ -663,6 +663,7 @@ PdoOne adds a bit of ovehead over PDO, however it is simple a wrapper to pdo.
 
 ## Changelist
 
+* 1.7 2019-jun-23 Added some benchmark. It also solves a problem with the tags.  Now: table.field=? is converted to `table`.`field`=?  
 * 1.6 2019-jun-22 affected_rows() returns a correct value. 
 * 1.5 2019-may-31 some cleanups.  columnTable() returns if the column is nullable or not. 
 * 1.4 2019-may-30 insertobject()
