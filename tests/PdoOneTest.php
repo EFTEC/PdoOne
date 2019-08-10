@@ -1,8 +1,12 @@
-<?php
+<?php 
+/** @noinspection PhpUndefinedClassInspection */
+/** @noinspection PhpUnhandledExceptionInspection */
+/** @noinspection SqlNoDataSourceInspection */
+/** @noinspection SqlDialectInspection */
 
 namespace eftec\tests;
 
-use DateTime;
+
 use eftec\PdoOne;
 use Exception;
 use PHPUnit\Framework\TestCase;
@@ -37,7 +41,7 @@ class PdoOneTest extends TestCase
 
     public function test_connect()
     {
-	    $this->expectException(\Exception::class);
+	    $this->expectException(Exception::class);
         $this->pdoOne->connect();
     }
 
@@ -78,9 +82,14 @@ class PdoOneTest extends TestCase
 		$this->assertEquals('2019-02-06 05:06:07',PdoOne::dateText2Sql('2019-02-06T05:06:07Z',true));
 		$this->assertEquals('2018-02-06 05:06:07.123000',PdoOne::dateText2Sql('2018-02-06T05:06:07.123Z',true));
 
-		$this->assertEquals('2019-02-06',PdoOne::dateSql2Text('2019-02-06'));
-		$this->assertEquals('2019-02-06T05:06:07Z',PdoOne::dateSql2Text('2019-02-06 05:06:07'));
-		$this->assertEquals('2018-02-06T05:06:07.123000Z',PdoOne::dateSql2Text('2018-02-06 05:06:07.123'));
+		// sql format -> human format dd/mm/yyyy
+        $this->assertEquals('06/02/2019',PdoOne::dateSql2Text('2019-02-06'));
+        
+        // 2019-02-06T05:06:07Z -> 2019-02-06 05:06:07 -> 06/02/2019 05:06:07
+		$this->assertEquals('06/02/2019 05:06:07'
+            ,PdoOne::dateSql2Text(PdoOne::dateText2Sql('2019-02-06T05:06:07Z',true)));
+		$this->assertEquals('06/02/2019 05:06:07',PdoOne::dateSql2Text('2019-02-06 05:06:07'));
+		$this->assertEquals('06/02/2018 05:06:07.123000',PdoOne::dateSql2Text('2018-02-06 05:06:07.123'));
 	}
 
 	/**
