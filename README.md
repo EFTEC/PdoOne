@@ -662,6 +662,7 @@ PdoOne adds a bit of ovehead over PDO, however it is simple a wrapper to pdo.
 
 ## Changelist
 
+* 1.9 2019-aug-10 1.8 republished
 * 1.8 2019-aug-10 Added a date format. Methods dateSql2Text() and dateText2Sql()
 * 1.7 2019-jun-23 Added some benchmark. It also solves a problem with the tags.  Now: table.field=? is converted to `table`.`field`=?  
 * 1.6 2019-jun-22 affected_rows() returns a correct value. 
