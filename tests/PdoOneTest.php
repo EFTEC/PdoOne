@@ -78,8 +78,9 @@ class PdoOneTest extends TestCase
     }
 	public function test_time()
 	{
+        $this->assertEquals('2019-02-06 05:06:07',PdoOne::dateText2Sql('2019-02-06T05:06:07Z',true));
 		$this->assertEquals('2019-02-06 00:00:00',PdoOne::dateText2Sql('2019-02-06',false));
-		$this->assertEquals('2019-02-06 05:06:07',PdoOne::dateText2Sql('2019-02-06T05:06:07Z',true));
+		
 		$this->assertEquals('2018-02-06 05:06:07.123000',PdoOne::dateText2Sql('2018-02-06T05:06:07.123Z',true));
 
 		// sql format -> human format dd/mm/yyyy
