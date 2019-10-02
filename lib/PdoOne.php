@@ -1,4 +1,5 @@
-<?php /** @noinspection SqlDialectInspection */
+<?php /** @noinspection PhpUnused */
+/** @noinspection SqlDialectInspection */
 /** @noinspection SqlWithoutWhere */
 /** @noinspection SqlResolve */
 /** @noinspection SqlNoDataSourceInspection */
@@ -15,7 +16,7 @@ use PDOStatement;
  * Class PdoOne
  * This class wrappes PDO but it could be used for another framework/library.
  *
- * @version       1.10 20191001
+ * @version       1.11 20191001
  * @package       eftec
  * @author        Jorge Castro Castillo
  * @copyright (c) Jorge Castro C. MIT License  https://github.com/EFTEC/PdoOne
@@ -61,7 +62,7 @@ class PdoOne
     /** @var bool If true (default), then it throws an error if happens an error. If false, then the execution continues */
     var $throwOnError = true;
 
-    /** @var  \PDO */
+    /** @var  PDO */
     var $conn1;
     //</editor-fold>
     /** @var  bool */
@@ -650,11 +651,12 @@ class PdoOne
      * @param null   $primaryKey
      * @param string $extra
      *
-     * @return array|bool|\PDOStatement
+     * @return array|bool|PDOStatement
      * @throws Exception
      */
     public function createTable($tableName, $definition, $primaryKey = null, $extra = '')
     {
+        $sql=null;
         switch ($this->databaseType) {
             case 'mysql':
                 $sql = "CREATE TABLE `{$tableName}` (";
@@ -700,6 +702,7 @@ class PdoOne
      */
     public function createSequence()
     {
+        $sql='';
         switch ($this->databaseType) {
             case 'mysql':
                 $sql = "CREATE TABLE `{$this->tableSequence}` (
@@ -885,7 +888,7 @@ class PdoOne
             //2018-02-06 05:06:07.123
             // Y-m-d H:i:s.v
             $hasTime = true;
-            $x = DateTime::createFromFormat("Y-m-d H:i:s.u", "2018-02-06 05:06:07.1234");
+            //$x = DateTime::createFromFormat("Y-m-d H:i:s.u", "2018-02-06 05:06:07.1234");
             return DateTime::createFromFormat(self::$isoDateTimeMs, $sqlField);
         } else {
             if (strpos($sqlField, ':')) {
@@ -1026,7 +1029,7 @@ class PdoOne
      *
      * @return string
      */
-    public static function dateText2Sql(string $textDate, $hasTime = true)
+    public static function dateText2Sql($textDate, $hasTime = true)
     {
         $tmpFormat = (($hasTime)
             ? (strpos($textDate, '.') === false
