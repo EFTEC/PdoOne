@@ -393,7 +393,7 @@ Run the query generate.
 > if returnArray is false then it returns a mysqli_result  
 >Note: It resets the current parameters (such as current select, from, where,etc.)
 
-### toList()
+### toList($pdoMode)
 It's a macro of runGen. It returns an associative array or null.
 
 ```php
@@ -401,6 +401,16 @@ $results = $dao->select("*")
 ->from('table')
 ->toList()
 ```
+
+### toListSimple()
+It's a macro of runGen. It returns an indexed array from the first column
+
+```php
+$results = $dao->select("*")
+->from('table')
+->toListSimple()
+```
+
 ### toResult()
 It's a macro of runGen. It returns a mysqli_result or null.
 
