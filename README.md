@@ -662,7 +662,8 @@ PdoOne adds a bit of ovehead over PDO, however it is simple a wrapper to pdo.
 
 ## Changelist
 
-* 1.1 2019-oct-01 1.11 It is still compatible with php 5.6.Added to composer.json
+* 1.12 2019-oct-20 Added argument (optional) ->toList($pdomodel) Added method ->toListSimple()
+* 1.11 2019-oct-01 1.11 It is still compatible with php 5.6.Added to composer.json
 * 1.10 2019-oct-01 1.10 Added method dateConvert(). Added trace to the throw. 
 * 1.9 2019-aug-10 1.8 republished
 * 1.8 2019-aug-10 Added a date format. Methods dateSql2Text() and dateText2Sql()

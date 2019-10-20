@@ -16,7 +16,7 @@ use PDOStatement;
  * Class PdoOne
  * This class wrappes PDO but it could be used for another framework/library.
  *
- * @version       1.11 20191001
+ * @version       1.12 20191020
  * @package       eftec
  * @author        Jorge Castro Castillo
  * @copyright (c) Jorge Castro C. MIT License  https://github.com/EFTEC/PdoOne
@@ -1435,7 +1435,7 @@ class PdoOne
     }
 
     /**
-     * Adds a distinct to the query. The value is ignored if the select() is written complete.
+     * Adds a distinct to the query. The value is ignored if the select() is written complete.<br>
      *      ->select("*")->distinct() // works
      *      ->select("select *")->distinct() // distinct is ignored.
      *
@@ -1451,17 +1451,30 @@ class PdoOne
     }
 
     /**
-     * It returns an array of rows.
+     * It returns an declarative array of rows.<br>
+     * Example: select('select id,name from table')->toList() // [['id'=>'1','name'='john'],['id'=>'2','name'=>'anna']]
+     *
+     * @param int $pdoMode (optional) By default is PDO::FETCH_ASSOC
      *
      * @return array|bool
      * @throws Exception
      */
-    public function toList()
+    public function toList($pdoMode=PDO::FETCH_ASSOC)
     {
 
-        return $this->runGen(true);
+        return $this->runGen(true,$pdoMode);
     }
-
+    /**
+     * It returns an array of simple columns (not declarative). It uses the first column<br>
+     * Example: select('select id from table')->toListSimple() // ['1','2','3','4']
+     *
+     * @return array|bool
+     * @throws Exception
+     */
+    public function toListSimple()
+    {
+        return $this->runGen(true,PDO::FETCH_COLUMN);
+    }
     /**
      * Run builder query and returns a PDOStatement.
      *
@@ -1470,7 +1483,7 @@ class PdoOne
      * @return bool|PDOStatement|array
      * @throws Exception
      */
-    public function runGen($returnArray = true)
+    public function runGen($returnArray = true,$extraMode=PDO::FETCH_ASSOC)
     {
         $sql = $this->sqlGen();
         /** @var PDOStatement $stmt */
@@ -1504,7 +1517,7 @@ class PdoOne
         }
         $this->builderReset();
         if ($returnArray) {
-            $r = ($stmt->columnCount() > 0) ? $stmt->fetchAll(PDO::FETCH_ASSOC) : array();
+            $r = ($stmt->columnCount() > 0) ? $stmt->fetchAll($extraMode) : array();
             $stmt = null; // close
             return $r;
         } else {
