@@ -18,7 +18,7 @@ use stdClass;
  * Class PdoOne
  * This class wrappes PDO but it could be used for another framework/library.
  *
- * @version       1.12 20191020
+ * @version       1.14 20192612
  * @package       eftec
  * @author        Jorge Castro Castillo
  * @copyright (c) Jorge Castro C. MIT License  https://github.com/EFTEC/PdoOne
@@ -121,6 +121,8 @@ class PdoOne {
     private $where = array();
     /** @var int[] PDO::PARAM_STR,PDO::PARAM_INT,PDO::PARAM_BOOL */
     private $whereParamType = array();
+    /** @var null|array */
+    private $whereParamAssoc = null;
     private $whereCounter = 0;
     /** @var array */
     private $whereParamValue = array();
@@ -572,6 +574,7 @@ class PdoOne {
         $this->from = '';
         $this->where = [];
         $this->whereParamType = array();
+        $this->whereParamAssoc = null;
         $this->whereCounter = 0;
         $this->whereParamValue = array();
         $this->set = [];
@@ -842,20 +845,22 @@ class PdoOne {
      * <br><b>Example</b>:<br>
      *      $con->runQuery($con->prepare('select * from table'));
      *
-     * @param $stmt PDOStatement
+     * @param PDOStatement $stmt PDOStatement
+     * @param array|null $namedArgument (optional) 
      *
      * @return bool returns true if the operation is correct, otherwise false
      * @throws Exception
      * @test equals true,$this->pdoOne->runQuery($this->pdoOne->prepare('select 1 from dual'))
      * @test equals [1=>1],$this->pdoOne->select('1')->from('dual')->first(),'it must runs'
      */
-    public function runQuery($stmt) {
+    public function runQuery($stmt,$namedArgument=null) {
         if (!$this->isOpen) {
             $this->throwError("It's not connected to the database", "");
             return null;
         }
         try {
-            $r = $stmt->execute();
+            $namedArgument= ($namedArgument===null) ? $this->whereParamAssoc : $namedArgument;
+            $r = $stmt->execute($namedArgument);
         } catch (Exception $ex) {
             $r = false;
             $this->throwError("Failed to run query ", $this->lastQuery . "\nCAUSE: " . $ex->getMessage(),
@@ -1833,6 +1838,7 @@ class PdoOne {
      *      where('field',[20]) // automatic type (it's the same than where('field=?',[20])
      *      where('field=?', ['i',20] ) // type(i,d,s,b) defined
      *      where('field=?,field2=?', ['i',20,'s','hello'] )
+     *      where('field=:field,field2=:field2', ['field'=>'hello','field2'=>'world'] ) // associative array as value
      *
      * @param string|array $sql
      * @param array|mixed  $param
@@ -1853,6 +1859,12 @@ class PdoOne {
                 return $this;
             }
             switch (true) {
+                case $this->isAssoc($param):
+                    $this->whereParamAssoc=$param;
+                    $this->whereParamType = array();
+                    $this->whereParamValue = array();
+                    $this->whereCounter = 0;
+                    break;
                 case !is_array($param):
                     if (strpos($sql, '?') === false) {
                         $sql .= '=?';
@@ -2020,7 +2032,6 @@ class PdoOne {
 
         }
         $this->runQuery($stmt);
-
         $this->builderReset();
         if ($returnArray) {
             $r = ($stmt->columnCount() > 0) ? $stmt->fetchAll($extraMode) : array();

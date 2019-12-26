@@ -409,6 +409,16 @@ $results = $dao->select("*")->from("table")
 ```
 > Generates the query: select * from table **where p1=?(Coca-Cola) and p2=?(1)**        
 
+You could also use an associative array as argument and named parameters in the query
+```php
+$results = $dao->select("*")->from("table")
+    ->where('condition=:p1 and condition2=:p2',['p1'=>'Coca-Cola','p2'=>1])
+    ->toList();
+```
+> Generates the query: select * from table **where condition=?(Coca-Cola) and condition2=?(1)**        
+
+
+
 ### order($order)
 Generates a order command.
 ```php
@@ -735,6 +745,8 @@ PdoOne adds a bit of ovehead over PDO, however it is simple a wrapper to pdo.
 
 ## Changelist
 
+* 1.14 2019-dec-26
+    * method where() works with associative array
 * 1.13 2019-dec-26 
     * new method count()
     * new method sum()

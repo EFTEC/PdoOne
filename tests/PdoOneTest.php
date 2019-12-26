@@ -83,7 +83,12 @@ class PdoOneTest extends TestCase
         $this->assertEquals(123,$count,'insert must value 123');
         $count=$this->pdoOne->select('select catname from product_category where id_category=4')->firstScalar();
         $this->assertEquals('cheap4',$count,'insert must value cheap4');
-
+        $count=$this->pdoOne->select('select catname from product_category')->where('id_category=?',[4])->firstScalar();
+        $this->assertEquals('cheap4',$count,'insert must value cheap4');
+        $count=$this->pdoOne->select('select catname from product_category')->where('id_category=:idcat',['idcat'=>4])->firstScalar();
+        $this->assertEquals('cheap4',$count,'insert must value cheap4');
+        $count=$this->pdoOne->select('select catname from product_category')->where('id_category=:idcat',['idcat'=>4])->firstScalar();
+        $this->assertEquals('cheap4',$count,'insert must value cheap4');
         $this->assertEquals(137
             ,$this->pdoOne->sum('id_category')->from('product_category')->firstScalar()
             ,'sum must value 137');
@@ -194,6 +199,13 @@ class PdoOneTest extends TestCase
 				->from('DUAL')
 				->where('field=?',[20])
 				->sqlGen(true));
+
+        $this->assertEquals("select 1, 2 from DUAL where field=:field"
+            ,$this->pdoOne
+                ->select(['1','2'])
+                ->from('DUAL')
+                ->where('field=:field',[20])
+                ->sqlGen(true));
 
 		$this->assertEquals("select 1, 2 from DUAL where field=? group by 2 having field2=? order by 1"
 			,$this->pdoOne
