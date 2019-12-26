@@ -71,9 +71,31 @@ class PdoOneTest extends TestCase
 	    }
 	    $this->assertEquals(true,$r,"failed to create table");
 	    // we add some values
-	    $r=$this->pdoOne->set(['id_category' => 1, 'catname' => 'cheap'])
+	    $this->pdoOne->set(['id_category' => 123, 'catname' => 'cheap'])
 		    ->from('product_category')->insert();
-	    $this->assertEquals(0,$r,'insert must value 0');
+        $this->pdoOne->insert('product_category',['id_category'=>'i','catname'=>'s'],['id_category'=>2,'catname'=>'cheap']);
+        $this->pdoOne->insert('product_category',null,['id_category'=>3,'catname'=>'cheap']);
+        $this->pdoOne->insert('product_category',['id_category'=>4,'catname'=>'cheap4']);
+        $this->pdoOne->insert('product_category',['id_category','i','5','catname','s','cheap']);
+        $count=$this->pdoOne->count('from product_category')->firstScalar();
+	    $this->assertEquals(5,$count,'insert must value 5');
+        $count=$this->pdoOne->select('select id_category from product_category where id_category=123')->firstScalar();
+        $this->assertEquals(123,$count,'insert must value 123');
+        $count=$this->pdoOne->select('select catname from product_category where id_category=4')->firstScalar();
+        $this->assertEquals('cheap4',$count,'insert must value cheap4');
+
+        $this->assertEquals(137
+            ,$this->pdoOne->sum('id_category')->from('product_category')->firstScalar()
+            ,'sum must value 137');
+        $this->assertEquals(2
+            ,$this->pdoOne->min('id_category')->from('product_category')->firstScalar()
+            ,'min must value 2');
+        $this->assertEquals(123
+            ,$this->pdoOne->max('id_category')->from('product_category')->firstScalar()
+            ,'max must value 123');
+        $this->assertEquals(27.4
+            ,$this->pdoOne->avg('id_category')->from('product_category')->firstScalar()
+            ,'avg must value 27.4');
 
     }
 	public function test_time()
@@ -243,10 +265,7 @@ class PdoOneTest extends TestCase
 
    
 
-    public function test_generateSqlFields()
-    {
-        $this->assertInstanceOf(PdoOne::class,$this->pdoOne->generateSqlFields(true));
-    }
+
 
    
 

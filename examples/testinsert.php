@@ -33,6 +33,7 @@ try {
     $dao->runRawQuery('insert into `typetable`(`type`,`name`) values(?,?)'
         ,array('i',1,'s','Drink'));
     echo $dao->lastQuery."<br>";
+    
     $dao->runRawQuery('insert into `typetable`(`type`,`name`) values(?,?)'
         ,array('i',2,'s','Yummy'));
     echo $dao->lastQuery."<br>";

@@ -225,7 +225,7 @@ $stats=$dao->statValue('actor','actor_id');
 Returns all columns of a table
 
 ```php
-$result=$dao->columnTable('actor')
+$result=$dao->columnTable('actor');
 ```
 
 | colname     | coltype   | colsize | colpres | colscale | iskey | isidentity |
@@ -246,7 +246,7 @@ Creates a table using a definition and primary key.
 
 
 ```php
-$result=$dao->foreignKeyTable('actor')
+$result=$dao->foreignKeyTable('actor');
 ```
 
 | collocal    | tablerem | colrem      |
@@ -271,22 +271,76 @@ $results = $dao->select("*")->from("producttype")
 ### select($columns)
 Generates a select command.
 ```php
-$results = $dao->select("col1,col2")->...
+$results = $dao->select("col1,col2"); //...
 ```
 > Generates the query: **select col1,col2** ....
 
 ```php
-$results = $dao->select("select * from table")->...
+$results = $dao->select("select * from table"); //->...
 ```
 
 > Generates the query: **select * from table** ....
 
+### count($sql,$arg='*') 
 
+Generates a query that returns a count of values.
+It is a macro of the method select()
+
+```php
+$result = $dao->count('from table where condition=1')->firstScalar(); // select count(*) from table where c..
+$result = $dao->count('from table','col1')->firstScalar(); // select count(col1) from table
+```
+
+### min($sql,$arg='*') 
+
+Generates a query that returns the minimum value of a column.
+If $arg is empty then it uses $sql for the name of the column
+It is a macro of the method select()
+
+```php
+$result = $dao->min('from table where condition=1','col')->firstScalar(); // select min(col) from table where c..
+$result = $dao->min('from table','col1')->firstScalar(); // select min(col1) from table
+$result = $dao->min('','col1')->from('table')->firstScalar(); // select min(col1) from table
+$result = $dao->min('col1')->from('table')->firstScalar(); // select min(col1) from table
+```
+
+### max($sql,$arg='*') 
+
+Generates a query that returns the maximum value of a column.
+If $arg is empty then it uses $sql for the name of the column
+It is a macro of the method select()
+
+```php
+$result = $dao->max('from table where condition=1','col')->firstScalar(); // select max(col) from table where c..
+$result = $dao->max('from table','col1')->firstScalar(); // select max(col1) from table
+```
+
+### sum($sql,$arg='*') 
+
+Generates a query that returns the sum value of a column.
+If $arg is empty then it uses $sql for the name of the column
+It is a macro of the method select()
+
+```php
+$result = $dao->sum('from table where condition=1','col')->firstScalar(); // select sum(col) from table where c..
+$result = $dao->sum('from table','col1')->firstScalar(); // select sum(col1) from table
+```
+
+### avg($sql,$arg='*') 
+
+Generates a query that returns the average value of a column.
+If $arg is empty then it uses $sql for the name of the column
+It is a macro of the method select()
+
+```php
+$result = $dao->avg('from table where condition=1','col')->firstScalar(); // select avg(col) from table where c..
+$result = $dao->avg('from table','col1')->firstScalar(); // select avg(col1) from table
+```
 
 ### distinct($distinct='distinct')
 Generates a select command.
 ```php
-$results = $dao->select("col1,col2")->distinct()...
+$results = $dao->select("col1,col2")->distinct(); //...
 ```
 > Generates the query: select **distinct** col1,col2 ....
 
@@ -295,14 +349,14 @@ $results = $dao->select("col1,col2")->distinct()...
 ### from($tables)
 Generates a from command.
 ```php
-$results = $dao->select("*")->from('table')...
+$results = $dao->select("*")->from('table'); //...
 ```
 > Generates the query: select * **from table**
 
 **$tables** could be a single table or a sql construction. For examp, the next command is valid:
 
 ```php
-$results = $dao->select("*")->from('table t1 inner join t2 on t1.c1=t2.c2')...
+$results = $dao->select("*")->from('table t1 inner join t2 on t1.c1=t2.c2'); //...
 ```
 
 
@@ -314,7 +368,7 @@ Generates a where command.
 ```php
 $results = $dao->select("*")
 ->from('table')
-->where('p1=1')...
+->where('p1=1'); //...
 ```
 > Generates the query: select * **from table** where p1=1
 
@@ -326,14 +380,14 @@ $results = $dao->select("*")
 ```php
 $results = $dao->select("*")
 ->from('table')
-->where('p1=?',['i',1])...
+->where('p1=?',['i',1]); //...
 ```
 > Generates the query: select * from table **where p1=?(1)**
 
 ```php
 $results = $dao->select("*")
 ->from('table')
-->where('p1=? and p2=?',['i',1,'s','hello'])...
+->where('p1=? and p2=?',['i',1,'s','hello']); //...
 ```
 
 > Generates the query: select * from table **where p1=?(1) and p2=?('hello')**
@@ -343,7 +397,7 @@ $results = $dao->select("*")
 $results = $dao->select("*")
 ->from('table')
 ->where('p1=?',['i',1])
-->where('p2=?',['s','hello'])...
+->where('p2=?',['s','hello']); //...
 ```
 > Generates the query: select * from table **where p1=?(1) and p2=?('hello')**
 
@@ -360,7 +414,7 @@ Generates a order command.
 ```php
 $results = $dao->select("*")
 ->from('table')
-->order('p1 desc')...
+->order('p1 desc'); //...
 ```
 > Generates the query: select * from table **order by p1 desc**
 
@@ -369,7 +423,7 @@ Generates a group command.
 ```php
 $results = $dao->select("*")
 ->from('table')
-->group('p1')...
+->group('p1'); //...
 ```
 > Generates the query: select * from table **group by p1**
 
@@ -379,7 +433,7 @@ Generates a group command.
 $results = $dao->select("*")
 ->from('table')
 ->group('p1')
-->having('p1>?',array('i',1))...
+->having('p1>?',array('i',1)); //...
 ```
 > Generates the query: select * from table group by p1 having p1>?(1)
 
@@ -399,7 +453,7 @@ It's a macro of runGen. It returns an associative array or null.
 ```php
 $results = $dao->select("*")
 ->from('table')
-->toList()
+->toList(); 
 ```
 
 ### toListSimple()
@@ -408,7 +462,7 @@ It's a macro of runGen. It returns an indexed array from the first column
 ```php
 $results = $dao->select("*")
 ->from('table')
-->toListSimple()
+->toListSimple(); 
 ```
 
 ### toResult()
@@ -417,16 +471,25 @@ It's a macro of runGen. It returns a mysqli_result or null.
 ```php
 $results = $dao->select("*")
 ->from('table')
-->toResult()
+->toResult(); //
+```
+
+### firstScalar($colName=null)
+
+It returns the first scalar (one value) of a query. 
+If $colName is null then it uses the first column.
+
+```php
+$count=$this->pdoOne->count('from product_category')->firstScalar();
 ```
 
 ### first()
-It's a macro of runGen. It returns the first row (if any, if not, it returns false) as an associative array.
+It's a macro of runGen. It returns the first row if any, if not then it returns false, as an associative array.
 
 ```php
 $results = $dao->select("*")
 ->from('table')
-->first()
+->first(); 
 ```
 
 ### last()
@@ -435,7 +498,7 @@ It's a macro of runGen. It returns the last row (if any, if not, it returns fals
 ```php
 $results = $dao->select("*")
 ->from('table')
-->last()
+->last(); 
 ```
 > Sometimes is more efficient to run order() and first() because last() reads all values.
 
@@ -518,7 +581,7 @@ or (the type is defined, in the possible, automatically by MySql)
 
 ### insertObject($table,[$declarativeArray],$excludeColumn=[])
 ```php
-    $dao->insertObject('table',['Id'=>1,'Name'=>'CocaCola');
+    $dao->insertObject('table',['Id'=>1,'Name'=>'CocaCola']);
 ```
 
     
@@ -672,6 +735,14 @@ PdoOne adds a bit of ovehead over PDO, however it is simple a wrapper to pdo.
 
 ## Changelist
 
+* 1.13 2019-dec-26 
+    * new method count()
+    * new method sum()
+    * new method min()
+    * new method max()
+    * new method avg()
+    * method select now allows null definition.
+    * obtainSqlFields() discontinued
 * 1.12 2019-oct-20 Added argument (optional) ->toList($pdomodel) Added method ->toListSimple()
 * 1.11 2019-oct-01 1.11 It is still compatible with php 5.6.Added to composer.json
 * 1.10 2019-oct-01 1.10 Added method dateConvert(). Added trace to the throw. 
