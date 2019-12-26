@@ -772,6 +772,8 @@ PdoOne adds a bit of ovehead over PDO, however it is simple a wrapper to pdo.
 
 ## Changelist
 
+* 1.15 2019-dec-29
+    * Fix small bug if the argument of isAssoc() is not an array.
 * 1.14 2019-dec-26
     * method where() works with associative array
 * 1.13 2019-dec-26 

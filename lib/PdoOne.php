@@ -18,7 +18,7 @@ use stdClass;
  * Class PdoOne
  * This class wrappes PDO but it could be used for another framework/library.
  *
- * @version       1.14 20192612
+ * @version       1.15 20192612
  * @package       eftec
  * @author        Jorge Castro Castillo
  * @copyright (c) Jorge Castro C. MIT License  https://github.com/EFTEC/PdoOne
@@ -1742,10 +1742,21 @@ class PdoOne {
         }
     }
 
+    /**
+     * It returns true if the array is an associative array.  False otherwise.<br>
+     * Example:<br>
+     * isAssoc(['a1'=>1,'a2'=>2]); // true<br/>
+     * isAssoc(['a1','a2']); // false<br/>
+     * isAssoc('aaa'); isAssoc(null); // false<br/>
+     * 
+     * @param mixed $array
+     *
+     * @return bool
+     */
     private function isAssoc($array) {
-        return $array===null
-            ?false
-            : (array_values($array) !== $array);
+        if($array===null) return false;
+        if(!is_array($array)) return false;
+        return (array_values($array) !== $array);
     }
 
     private function addQuote($txt) {
