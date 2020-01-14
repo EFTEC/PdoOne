@@ -101,7 +101,16 @@ class PdoOneTest extends TestCase
         $this->assertEquals(27.4
             ,$this->pdoOne->avg('id_category')->from('product_category')->firstScalar()
             ,'avg must value 27.4');
-
+        $this->assertEquals([['id_category'=>2],
+                             ['id_category'=>3],
+                             ['id_category'=>4],
+                             ['id_category'=>5],
+                             ['id_category'=>123]]
+            ,$this->pdoOne->select('id_category')->from('product_category')->toList());
+        $this->assertEquals([2,3,4,5,123]
+            ,$this->pdoOne->select('id_category')->from('product_category')->toListSimple());
+        $this->assertEquals([2=>'cheap',3=>'cheap','4'=>'cheap4',5=>'cheap',123=>'cheap']
+            ,$this->pdoOne->select('id_category,catname')->from('product_category')->toListKeyValue());
     }
 	public function test_time()
 	{

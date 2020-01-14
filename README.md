@@ -499,8 +499,18 @@ It's a macro of runGen. It returns an indexed array from the first column
 ```php
 $results = $dao->select("*")
 ->from('table')
-->toListSimple(); 
+->toListSimple(); // ['1','2','3','4']
 ```
+### toListKeyValue()
+It returns an associative array where the first value is the key and the second is the value.  
+If the second value does not exist then it uses the index as value (first value).  
+
+```php
+$results = $dao->select("cod,name")
+->from('table')
+->toListKeyValue(); // ['cod1'=>'name1','cod2'=>'name2']
+```
+
 
 ### toResult()
 It's a macro of runGen. It returns a mysqli_result or null.
@@ -772,6 +782,8 @@ PdoOne adds a bit of ovehead over PDO, however it is simple a wrapper to pdo.
 
 ## Changelist
 
+1.16 2020-jan-14
+    * new method toListKeyValue()
 * 1.15 2019-dec-29
     * Fix small bug if the argument of isAssoc() is not an array.
 * 1.14 2019-dec-26

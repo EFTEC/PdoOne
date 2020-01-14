@@ -18,7 +18,7 @@ use stdClass;
  * Class PdoOne
  * This class wrappes PDO but it could be used for another framework/library.
  *
- * @version       1.15 20192612
+ * @version       1.16 2020-jan.-14. 
  * @package       eftec
  * @author        Jorge Castro Castillo
  * @copyright (c) Jorge Castro C. MIT License  https://github.com/EFTEC/PdoOne
@@ -2048,6 +2048,50 @@ class PdoOne
     }
 
     /**
+     * It returns an array of simple columns (not declarative). It uses the first column<br>
+     * <b>Example:</b><br>
+     * <pre>
+     * select('select id from table')->toListSimple() // ['1','2','3','4']
+     * </pre>
+     *
+     * @return array|bool
+     * @throws Exception
+     */
+    public function toListSimple() {
+        return $this->runGen(true, PDO::FETCH_COLUMN);
+    }
+
+    /**
+     * It returns an associative array where the first value is the key and the second is the value<br>
+     * If the second value does not exist then it uses the index as value (first value)<br>
+     * <b>Example:</b><br>
+     * <pre>
+     * select('select cod,name from table')->toListKeyValue() // ['cod1'=>'name1','cod2'=>'name2']
+     * select('select cod,name,ext from table')->toListKeyValue('|') // ['cod1'=>'name1|ext1','cod2'=>'name2|ext2']
+     * </pre>
+     *
+     * @param string|null $extraValueSeparator (optional) It allows to read a third value and returns
+     *                                         it concatenated with the value.  Example '|'
+     *
+     * @return array|bool|null
+     * @throws Exception
+     */
+    public function toListKeyValue($extraValueSeparator=null) {
+        $list=$this->toList(PDO::FETCH_NUM);
+        if($list===null) return null; 
+        $result=[];
+        foreach($list as $item) {
+            if($extraValueSeparator===null) {
+                $result[$item[0]] = isset($item[1]) ? $item[1] : $item[0];
+            } else {
+                $result[$item[0]] = (isset($item[1]) ? $item[1] : $item[0]) 
+                    .$extraValueSeparator.@$item[2];
+            }
+        }
+        return $result;
+    }
+
+    /**
      * Run builder query and returns a PDOStatement.
      *
      * @param bool $returnArray true=return an array. False return a PDOStatement
@@ -2144,20 +2188,6 @@ class PdoOne
             $this->builderReset();
         }
         return $sql;
-    }
-
-    /**
-     * It returns an array of simple columns (not declarative). It uses the first column<br>
-     * <b>Example:</b><br>
-     * <pre>
-     * select('select id from table')->toListSimple() // ['1','2','3','4']
-     * </pre>
-     *
-     * @return array|bool
-     * @throws Exception
-     */
-    public function toListSimple() {
-        return $this->runGen(true, PDO::FETCH_COLUMN);
     }
 
     /**
