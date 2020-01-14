@@ -7,7 +7,7 @@ This library is as fast as possible. Most of the operations are simple string/ar
 [![Build Status](https://travis-ci.org/EFTEC/PdoOne.svg?branch=master)](https://travis-ci.org/EFTEC/PdoOne)
 [![Packagist](https://img.shields.io/packagist/v/eftec/PdoOne.svg)](https://packagist.org/packages/eftec/PdoOne)
 [![Total Downloads](https://poser.pugx.org/eftec/PdoOne/downloads)](https://packagist.org/packages/eftec/PdoOne)
-[![Maintenance](https://img.shields.io/maintenance/yes/2019.svg)]()
+[![Maintenance](https://img.shields.io/maintenance/yes/2020.svg)]()
 [![composer](https://img.shields.io/badge/composer-%3E1.6-blue.svg)]()
 [![php](https://img.shields.io/badge/php->5.6-green.svg)]()
 [![php](https://img.shields.io/badge/php-7.x-green.svg)]()
