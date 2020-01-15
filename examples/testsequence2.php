@@ -32,7 +32,7 @@ try {
         $dao->drop('next_mysequence2','function');
         echo "<h3>Function dropped</h3>";
     }
-	$dao->createSequence('mysequence2');
+	$dao->createSequence('mysequence2','sequence');
     echo "<h3>Table created</h3>";
 
 } catch (Exception $e) {

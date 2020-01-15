@@ -18,7 +18,7 @@ use stdClass;
  * Class PdoOne
  * This class wrappes PDO but it could be used for another framework/library.
  *
- * @version       1.16 2020-jan.-14. 
+ * @version       1.19 2020-jan.-15. 
  * @package       eftec
  * @author        Jorge Castro Castillo
  * @copyright (c) Jorge Castro C. MIT License  https://github.com/EFTEC/PdoOne
@@ -674,14 +674,16 @@ class PdoOne
      *
      * @see \eftec\PdoOne::getSequencePHP It's the same but it uses less resources but lacks of a sequence.
      *
-     * @param bool $asFloat
-     * @param bool $unpredictable
+     * @param bool   $asFloat
+     * @param bool   $unpredictable
+     * @param string $sequenceName (optional) the name of the sequence. If not then it uses $this->tableSequence
      *
      * @return string . Example string(19) "3639032938181434317"
      * @throws Exception
      */
-    public function getSequence($asFloat = false, $unpredictable = false) {
-        $sql = "select next_{$this->tableSequence}({$this->nodeId}) id";
+    public function getSequence($asFloat = false, $unpredictable = false,$sequenceName='') {
+        $sequenceName=($sequenceName=='')?$this->tableSequence : $sequenceName;
+        $sql = "select next_{$sequenceName}({$this->nodeId}) id";
         $r = $this->runRawQuery($sql, null, true);
         if ($unpredictable) {
             if (PHP_INT_SIZE == 4) {
@@ -735,7 +737,7 @@ class PdoOne
                 $rows = $this->conn1->query($rawSql);
             } catch (Exception $ex) {
                 $rows = false;
-                $this->throwError("Exception raw", $rawSql,
+                $this->throwError("Exception in runRawQuery :", $rawSql,
                     json_encode($this->lastParam) . '\nTRACE:' . $ex->getTraceAsString());
             }
             if ($rows === false) {
@@ -965,12 +967,12 @@ class PdoOne
      * Currently only works with table
      *
      * @param string $objectName
-     * @param string $type (table)
+     * @param string $type=['table','function'][$i] The type of the object
      *
      * @return bool
      * @throws Exception
      */
-    private function objectExist($objectName, $type = 'table') {
+    public function objectExist($objectName, $type = 'table') {
 
         switch ($this->databaseType) {
             case 'mysql':
@@ -978,6 +980,10 @@ class PdoOne
                     case 'table':
                         $query
                             = "SELECT * FROM information_schema.tables where table_schema='{$this->db}' and table_name=?";
+                        break;
+                    case 'function':
+                        $query
+                            = "SELECT * FROM INFORMATION_SCHEMA.ROUTINES where ROUTINE_SCHEMA='{$this->db}' and ROUTINE_NAME=?";
                         break;
                     default:
                         $this->throwError("objectExist: type [$type] not defined for {$this->databaseType}", "");
@@ -989,6 +995,9 @@ class PdoOne
                 switch ($type) {
                     case 'table':
                         $query = "SELECT * FROM sys.objects where name=? and type_desc='USER_TABLE'";
+                        break;
+                    case 'function':
+                        $query = "SELECT * FROM sys.objects where name=? and type_desc='CLR_SCALAR_FUNCTION'";
                         break;
                     default:
                         $this->throwError("objectExist: type [$type] not defined for {$this->databaseType}", "");
@@ -1002,6 +1011,10 @@ class PdoOne
                         $query
                             = "SELECT * FROM tables where table_schema='{$this->db}' and table_name=?";
                         break;
+                    case 'function':
+                        $query
+                            = "SELECT * FROM INFORMATION_SCHEMA.ROUTINES where ROUTINE_SCHEMA='{$this->db}' and ROUTINE_NAME=?";
+                        break;
                     default:
                         $this->throwError("objectExist: type [$type] not defined for {$this->databaseType}", "");
                         die(1);
@@ -1012,8 +1025,12 @@ class PdoOne
                 $this->throwError("database not defined or supported {$this->databaseType}", "");
                 die(1);
         }
+
         $arr = $this->runRawQuery($query, [PDO::PARAM_STR, $objectName], true);
-        return is_array($arr);
+        if(is_array($arr) && count($arr)>0) {
+            return true;
+        }
+        return false;
     }
     //</editor-fold>
 
@@ -1150,6 +1167,47 @@ class PdoOne
     }
 
     /**
+     * It drops a table. It ises the method $this->drop();
+     * 
+     * @param string $tableName the name of the table to drop
+     * @param string $extra (optional) an extra value.
+     *
+     * @return array|bool|PDOStatement
+     * @throws Exception
+     */
+    public function dropTable($tableName,$extra='') {
+        return $this->drop($tableName,'table',$extra);
+    }
+
+    /**
+     * It drops (DDL) an object
+     * 
+     * @param string $objectName The name of the object.
+     * @param string $type=['table','view','columns','function'][$i] The type of object to drop.
+     * @param string $extra (optional) An extra value added at the end of the query
+     *
+     * @return array|bool|PDOStatement
+     * @throws Exception
+     */
+    public function drop($objectName,$type,$extra='') {
+        $sql="drop $type {$this->database_delimiter0}$objectName{$this->database_delimiter1} $extra";
+        return $this->runRawQuery($sql, null, true);
+    }
+    /**
+     * It truncates (DDL)  a table 
+     *
+     * @param string $tableName
+     * @param string $extra (optional) An extra value added at the end of the query
+     *
+     * @return array|bool|PDOStatement
+     * @throws Exception
+     */
+    public function truncate($tableName,$extra='') {
+        $sql="truncate table {$this->database_delimiter0}$tableName{$this->database_delimiter1} $extra";
+        return $this->runRawQuery($sql, null, true);
+    }
+
+    /**
      * Create a table<br>
      * <b>Example:</b><br>
      * <pre>
@@ -1161,14 +1219,17 @@ class PdoOne
      *                                Example ['id'=>'integer not null','name'=>'varchar(50) not null']
      * @param string|null $primaryKey The column's name that is primary key.
      * @param string      $extra      An extra operation inside of the definition of the table.
+     * @param string      $extraOutside An extra operation outside of the definition of the table.<br>
+     *                                  It replaces the default values outside of the table
      *
      * @return array|bool|PDOStatement
      * @throws Exception
      */
-    public function createTable($tableName, $definition, $primaryKey = null, $extra = '') {
+    public function createTable($tableName, $definition, $primaryKey = null, $extra = '',$extraOutside='') {
         $sql = null;
         switch ($this->databaseType) {
             case 'mysql':
+                $extraOutside=($extraOutside==='')? "ENGINE=MyISAM DEFAULT CHARSET={$this->charset};" : $extraOutside;
                 $sql = "CREATE TABLE `{$tableName}` (";
                 foreach ($definition as $key => $type) {
                     $sql .= "`$key` $type,";
@@ -1178,9 +1239,10 @@ class PdoOne
                 } else {
                     $sql = substr($sql, 0, -1);
                 }
-                $sql .= "$extra ) ENGINE=MyISAM DEFAULT CHARSET=" . $this->charset;
+                $sql .= "$extra ) ".$extraOutside;
                 break;
             case 'sqlsrv':
+                $extraOutside=($extraOutside==='')? "ON [PRIMARY]" : $extraOutside;
                 $sql = "set nocount on;
 				CREATE TABLE [{$tableName}] (";
                 foreach ($definition as $key => $type) {
@@ -1195,7 +1257,7 @@ class PdoOne
 							PK_$tableName PRIMARY KEY CLUSTERED 
 							(
 							[$primaryKey]
-							) ON [PRIMARY]
+							) $extraOutside
 						";
                 }
                 break;
@@ -1209,7 +1271,7 @@ class PdoOne
                 } else {
                     $sql = substr($sql, 0, -1);
                 }
-                $sql .= "$extra )";
+                $sql .= "$extra ) $extraOutside";
                 break;
             default:
                 $this->throwError("type not defined for create table", "");
@@ -1219,42 +1281,65 @@ class PdoOne
 
     /**
      * Create a table used for a sequence<br>
-     * The name of the sequence is defined by $pdoOne->tableSequence<br>
+     * The operation will fail if the table, sequence, function or procedure already exists.
+     *
+     * @param string|null $tableSequence The table to use<br>
+     *                                   If null then it uses the table defined in
+     *                                   $pdoOne->tableSequence.
+     * @param string $method=['snowflake','sequence'][$i] snowflake=it generates a value based on snowflake<br>
+     *                      sequence= it generates a regular sequence number (1,2,3...)<br>
      *
      * @throws Exception
      */
-    public function createSequence() {
+    public function createSequence($tableSequence=null,$method='snowflake') {
         $sql = '';
+        $tableSequence=($tableSequence===null)?$this->tableSequence:$tableSequence;
         switch ($this->databaseType) {
             case 'mysql':
-                $sql = "CREATE TABLE `{$this->tableSequence}` (
-				  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
-				  `stub` char(1) NOT NULL DEFAULT '',
-				  PRIMARY KEY (`id`),
-				  UNIQUE KEY `stub` (`stub`)
-				) ENGINE=MyISAM AUTO_INCREMENT=1 DEFAULT CHARSET=utf8;
-				-- insert the firsrt value
-				INSERT INTO `{$this->tableSequence}` (`stub`) VALUES ('a');
-				SET GLOBAL log_bin_trust_function_creators = 1;";
-                $this->runMultipleRawQuery($sql);
-                $sql = "CREATE FUNCTION `next_{$this->tableSequence}`(node integer) RETURNS BIGINT(20)
+                $ok=$this->createTable($tableSequence
+                    ,['id'=>'bigint(20) unsigned NOT NULL AUTO_INCREMENT',
+                        'stub'=>"char(1) NOT NULL DEFAULT ''"],'id'
+                    ,',UNIQUE KEY `stub` (`stub`)','ENGINE=MyISAM AUTO_INCREMENT=1 DEFAULT CHARSET=utf8');
+                if(!$ok) {
+                    $this->throwError("Unable to create table $tableSequence","");
+                    return;
+                }
+                $ok=$this->insert($tableSequence,['stub'=>'a']);
+                if(!$ok) {
+                    $this->throwError("Unable to insert in table $tableSequence","");
+                    return;
+                }
+                $sql = "SET GLOBAL log_bin_trust_function_creators = 1";
+                $this->runRawQuery($sql);
+                if($method=='snowflake') {
+                    $sql = "CREATE FUNCTION `next_{$tableSequence}`(node integer) RETURNS BIGINT(20)
 					BEGIN
 					    DECLARE epoch BIGINT(20);
 					    DECLARE current_ms BIGINT(20);
 					    DECLARE incr BIGINT(20);
 					    SET current_ms = round(UNIX_TIMESTAMP(CURTIME(4)) * 1000);
 					    SET epoch = 1459440000000; 
-					    REPLACE INTO {$this->tableSequence} (stub) VALUES ('a');
+					    REPLACE INTO {$tableSequence} (stub) VALUES ('a');
 					    SELECT LAST_INSERT_ID() INTO incr;    
 					RETURN (current_ms - epoch) << 22 | (node << 12) | (incr % 4096);
 					END;";
+                } else {
+                    
+                    $sql = "CREATE FUNCTION `next_{$tableSequence}`(node integer) RETURNS BIGINT(20)
+					BEGIN
+					    DECLARE incr BIGINT(20);
+					    REPLACE INTO {$tableSequence} (stub) VALUES ('a');
+					    SELECT LAST_INSERT_ID() INTO incr;    
+					RETURN incr;
+					END;";
+                }
                 break;
             case 'sqlsrv':
-                $sql = "CREATE SEQUENCE [{$this->tableSequence}]
+                $sql = "CREATE SEQUENCE [{$tableSequence}]
 				    START WITH 1  
 				    INCREMENT BY 1
 			    ;";
-                $sql .= "create PROCEDURE next_{$this->tableSequence}
+                $sql .= "create PROCEDURE next_{$tableSequence}
 					@node int
 				AS
 					BEGIN
@@ -1265,7 +1350,7 @@ class PdoOne
 						declare @incr bigint;
 						-- 2018-01-01 is an arbitrary epoch
 						set @current_ms=cast(DATEDIFF(s, '2018-01-01 00:00:00', GETDATE()) as bigint) *cast(1000 as bigint)  + DATEPART(MILLISECOND,getutcdate());	
-						SELECT @incr= NEXT VALUE FOR {$this->tableSequence};  
+						SELECT @incr= NEXT VALUE FOR {$tableSequence};  
 						-- current_ms << 22 | (node << 12) | (incr % 4096);
 						set @return=(@current_ms*cast(4194304 as bigint)) + (@node *4096) + (@incr % 4096);
 						select @return

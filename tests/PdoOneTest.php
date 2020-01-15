@@ -112,6 +112,32 @@ class PdoOneTest extends TestCase
         $this->assertEquals([2=>'cheap',3=>'cheap','4'=>'cheap4',5=>'cheap',123=>'cheap']
             ,$this->pdoOne->select('id_category,catname')->from('product_category')->toListKeyValue());
     }
+    public function test_emptyargs()
+    {
+
+        try {
+            $r=$this->pdoOne->runRawQuery('drop table product_category');
+            $this->assertEquals(true,$r,"Drop failed");
+        } catch (Exception $e) {
+            $r=false;
+            // drops silently
+        }
+        $sqlT2="CREATE TABLE `product_category` (`id_category` INT NOT NULL,`catname` 
+                VARCHAR(45) NULL, PRIMARY KEY (`id_category`));";
+        try {
+            $r=$this->pdoOne->runRawQuery($sqlT2);
+        } catch (Exception $e) {
+            echo $e->getMessage()."<br>";
+        }
+        $this->assertEquals(true,$r,"failed to create table");
+        // we add some values
+        $this->pdoOne->set(['id_category' => 1, 'catname' => 'cheap'])
+            ->from('product_category')->insert();
+        $this->pdoOne->set("id_category=2,catname='cheap'")->where("1=1")
+            ->from('product_category')->update();
+      
+    }
+
 	public function test_time()
 	{
         $this->assertEquals('2019-02-06 05:06:07',PdoOne::dateText2Sql('2019-02-06T05:06:07Z',true));
