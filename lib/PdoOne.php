@@ -1,6 +1,6 @@
 <?php /** @noinspection DuplicatedCode */
 /** @noinspection PhpDuplicateSwitchCaseBodyInspection */
-/** @noinspection PhpUnused */
+
 /** @noinspection SqlDialectInspection */
 /** @noinspection SqlWithoutWhere */
 /** @noinspection SqlResolve */
@@ -18,7 +18,7 @@ use stdClass;
  * Class PdoOne
  * This class wrappes PDO but it could be used for another framework/library.
  *
- * @version       1.19 2020-jan.-15. 
+ * @version       1.20 2020-jan.-25. 
  * @package       eftec
  * @author        Jorge Castro Castillo
  * @copyright (c) Jorge Castro C. MIT License  https://github.com/EFTEC/PdoOne
@@ -267,9 +267,25 @@ class PdoOne
     }
 
     /**
-     * @param string $sqlField
-     * @param string $inputFormat  =['iso','human','sql','class'][$i]
-     * @param string $outputFormat =['iso','human','sql','class'][$i]
+     * It converts a date (as string) into another format.<br>
+     * Example:
+     * <pre>
+     * $pdoOne->dateConvert('01/01/2019','human','sql'); // 2019-01-01
+     * </pre>
+     * 
+     * @param string $sqlField The date to convert
+     * @param string $inputFormat  =['iso','human','sql','class'][$i]<br>
+     *                             <b>iso</b> depends on the database. Example: Y-m-d H:i:s<br>
+     *                             <b>human</b> is based in d/m/Y H:i:s but it could
+     *                             be changed (self::dateHumanFormat)<br>
+     *                             <b>sql</b> depends on the database<br>
+     *                             <b>class</b> is a DateTime() object<br>
+     * @param string $outputFormat =['iso','human','sql','class'][$i]<br>
+     *                             <b>iso</b> depends on the database. Example: Y-m-d H:i:s<br>
+     *                             <b>human</b> is based in d/m/Y H:i:s but it could
+     *                             be changed (self::dateHumanFormat)<br>
+     *                             <b>sql</b> depends on the database<br>
+     *                             <b>class</b> is a DateTime() object<br>
      *
      * @return bool|DateTime
      */
@@ -404,7 +420,7 @@ class PdoOne
     }
 
     /**
-     * Returns the current date(and time) in Text format.
+     * Returns the current date(and time) in Text (human) format.
      *
      * @param bool $hasTime
      * @param bool $hasMicroseconds
@@ -422,7 +438,7 @@ class PdoOne
         }
     }
 
-    public static function dateMysqlNow($hasTime = true, $hasMicroseconds = false) {
+    public static function dateSqlNow($hasTime = true, $hasMicroseconds = false) {
         try {
             $tmpDate = new DateTime();
         } catch (Exception $e) {
@@ -1190,7 +1206,7 @@ class PdoOne
      * @throws Exception
      */
     public function drop($objectName,$type,$extra='') {
-        $sql="drop $type {$this->database_delimiter0}$objectName{$this->database_delimiter1} $extra";
+        $sql="drop $type ".$this->addDelimiter($objectName)." $extra";
         return $this->runRawQuery($sql, null, true);
     }
     /**
@@ -1203,7 +1219,7 @@ class PdoOne
      * @throws Exception
      */
     public function truncate($tableName,$extra='') {
-        $sql="truncate table {$this->database_delimiter0}$tableName{$this->database_delimiter1} $extra";
+        $sql="truncate table ".$this->addDelimiter($tableName)." $extra";
         return $this->runRawQuery($sql, null, true);
     }
 
@@ -1372,7 +1388,7 @@ class PdoOne
      * ->runMultipleRawQuery("insert into() values(1); insert into() values(2)");<br>
      * </pre>
      *
-     * @param string $listSql         SQL multiples queries separated by ";"
+     * @param string|array $listSql         SQL multiples queries separated by ";" or an array
      * @param bool   $continueOnError if true then it continues on error.
      *
      * @return bool
@@ -1383,7 +1399,7 @@ class PdoOne
             $this->throwError("RMRQ: It's not connected to the database", "");
             return false;
         }
-        $arr = explode(';', $listSql);
+        $arr =(is_array($listSql))? $listSql : explode(';', $listSql);
         $ok = true;
         $counter = 0;
         foreach ($arr as $rawSql) {
@@ -1541,8 +1557,8 @@ class PdoOne
      * ->sum('col')->from('table')->firstScalar() // select sum(col) from table<br>
      * ->sum('','col')->from('table')->firstScalar() // select sum(col) from table<br>
      *
-     * @param string $sql
-     * @param string $arg
+     * @param string $sql [optional] it could be the name of column or part of the query ("from table..")
+     * @param string $arg [optiona] it could be the name of the column
      *
      * @return PdoOne
      */
@@ -1743,7 +1759,7 @@ class PdoOne
             $p = array();
             $this->constructParam($sqlOrArray, $param, $col, $colT, $p);
             foreach ($col as $k => $c) {
-                $this->set[] = $this->addQuote($c) . "=?";
+                $this->set[] = $this->addDelimiter($c) . "=?";
                 $this->whereParamType[] = $p[$k * 2];
                 $this->whereParamValue['i_' . $this->whereCounter] = $p[$k * 2 + 1];
                 $this->whereCounter++;
@@ -1762,29 +1778,15 @@ class PdoOne
      */
     private function constructParam($tableDefs, $values, &$col, &$colT, &$param) {
         if ($tableDefs === null || $this->isAssoc($tableDefs)) {
-            if ($values === self::NULL) {
-                // the type is calculated automatically. It could fails and it doesn't work with blob^
+            if ($values === self::NULL && $tableDefs !== null) {
+                // the type is calculated automatically. It could fails and it doesn't work with blob
                 reset($tableDefs);
-                $firstKey = key($tableDefs);
-
-                $hasDelimiter = strpos($firstKey, $this->database_delimiter0) === false ? false : true;
-
                 foreach ($tableDefs as $k => $v) {
-
-                    if ($hasDelimiter) {
-                        if ($colT === null) {
-                            $col[] = "$k=?";
-                        } else {
-                            $col[] = "$k";
-                            $colT[] = '?';
-                        }
+                    if ($colT === null) {
+                        $col[] = $this->addDelimiter($k) . '=?';
                     } else {
-                        if ($colT === null) {
-                            $col[] = $this->addQuote($k) . '=?';
-                        } else {
-                            $col[] = $this->addQuote($k);
-                            $colT[] = '?';
-                        }
+                        $col[] = $this->addDelimiter($k);
+                        $colT[] = '?';
                     }
                     $vt = $this->getType($v);
                     $param[] = $vt;
@@ -1794,44 +1796,49 @@ class PdoOne
             } else {
                 if ($tableDefs === null) {
                     $tableDefs = $values;
-                    foreach ($tableDefs as $k => $v) {
-                        $tableDefs[$k] = 's';
+                    if(is_array($tableDefs)) {
+                        foreach ($tableDefs as $k => $v) {
+                            $tableDefs[$k] = 's';
+                        }
                     }
                 }
                 // it uses two associative array, one for the type and another for the value
-                foreach ($tableDefs as $k => $v) {
-                    if ($colT === null) {
-                        $col[] = "{$this->database_delimiter0}$k{$this->database_delimiter1}=?";
-                    } else {
-                        $col[] = "{$this->database_delimiter0}$k{$this->database_delimiter1}";
-                        $colT[] = '?';
-                    }
+                if(is_array($tableDefs)) {
+                    foreach ($tableDefs as $k => $v) {
+                        if ($colT === null) {
+                            $col[] = $this->addDelimiter($k)."=?";
+                        } else {
+                            $col[] = $this->addDelimiter($k); 
+                            $colT[] = '?';
+                        }
 
-                    $param[] = $v;
-                    $param[] = @$values[$k];
+                        $param[] = $v;
+                        $param[] = @$values[$k];
+                    }
                 }
             }
         } else {
             if ($values === self::NULL) {
                 // it uses a single list, the first value is the column, the second value
                 // is the type and the third is the value
-
-                for ($i = 0; $i < count($tableDefs); $i += 3) {
-                    if ($colT === null) {
-                        $col[] = "{$this->database_delimiter0}" . $tableDefs[$i] . "{$this->database_delimiter1}=?";
-                    } else {
-                        $col[] = $tableDefs[$i];
-                        $colT[] = '?';
+                if(is_array($tableDefs)) {
+                    for ($i = 0; $i < count($tableDefs); $i += 3) {
+                        if ($colT === null) {
+                            $col[] =$this->addDelimiter($tableDefs[$i] )."=?";
+                        } else {
+                            $col[] = $tableDefs[$i];
+                            $colT[] = '?';
+                        }
+                        $param[] = $tableDefs[$i + 1];
+                        $param[] = $tableDefs[$i + 2];
                     }
-                    $param[] = $tableDefs[$i + 1];
-                    $param[] = $tableDefs[$i + 2];
                 }
             } else {
                 // it uses two list, the first value of the first list is the column, the second value is the type
                 // , the second list only contains values.
                 for ($i = 0; $i < count($tableDefs); $i += 2) {
                     if ($colT === null) {
-                        $col[] = "{$this->database_delimiter0}" . $tableDefs[$i] . "{$this->database_delimiter1}=?";
+                        $col[] =  $this->addDelimiter($tableDefs[$i] )."=?";
                     } else {
                         $col[] = $tableDefs[$i];
                         $colT[] = '?';
@@ -1863,13 +1870,41 @@ class PdoOne
         }
         return (array_values($array) !== $array);
     }
+    private function strposa($haystack, $needles=array(), $offset=0) {
+        $chr = array();
+        foreach($needles as $needle) {
+            $res = strpos($haystack, $needle, $offset);
+            if ($res !== false) $chr[$needle] = $res;
+        }
+        if(empty($chr)) return false;
+        return min($chr);
+    }
 
-    private function addQuote($txt) {
+    /**
+     * It adds a delimiter to a text based in the type of database (` for mysql and [] for sql server)<br>
+     * Example:<br>
+     * $pdoOne->addDelimiter('hello world'); // `hello` world<br>
+     * $pdoOne->addDelimiter('hello.world'); // `hello`.`world`<br>
+     * $pdoOne->addDelimiter('hello=value); // `hello`=value<br>
+     * 
+     * @param $txt
+     *
+     * @return mixed|string
+     */
+    public function addDelimiter($txt) {
         if (strpos($txt, $this->database_delimiter0) === false) {
-            $quoted = $this->database_delimiter0 . $txt . $this->database_delimiter1;
-            $quoted = str_replace('.', $this->database_delimiter1 . '.' . $this->database_delimiter0, $quoted);
+            $pos=$this->strposa($txt,[' ','=']);
+            if($pos===false) {
+                $quoted = $this->database_delimiter0 . $txt . $this->database_delimiter1;
+                $quoted = str_replace('.', $this->database_delimiter1 . '.' . $this->database_delimiter0, $quoted);
+            } else {
+                $arr=explode(substr($txt,$pos,1),$txt,2);
+                $quoted = $this->database_delimiter0 . $arr[0] . $this->database_delimiter1.substr($txt,$pos,1).$arr[1];
+                $quoted = str_replace('.', $this->database_delimiter1 . '.' . $this->database_delimiter0, $quoted);
+            }
             return $quoted;
         } else {
+            // it has a delimiter, so we returned the same text.
             return $txt;
         }
     }
@@ -2018,7 +2053,6 @@ class PdoOne
             $this->constructParam($sql, $param, $col, $colT, $p);
 
             foreach ($col as $k => $c) {
-                //$c=$this->database_delimiter0.str_replace('.',"{$this->database_delimiter0}.{$this->database_delimiter0}",$c).$this->database_delimiter1;
                 if ($isHaving) {
                     $this->having[] = "$c=?";
                 } else {
@@ -2163,7 +2197,7 @@ class PdoOne
      */
     public function toListKeyValue($extraValueSeparator=null) {
         $list=$this->toList(PDO::FETCH_NUM);
-        if($list===null) return null; 
+        if(!is_array($list)) return null; 
         $result=[];
         foreach($list as $item) {
             if($extraValueSeparator===null) {
@@ -2381,9 +2415,10 @@ class PdoOne
      *          ->set("name=?",['s','Captain-Crunch'])
      *          ->where('idproducttype=?',['i',6])
      *          ->update();
+     *      update('product_category set col1=10 where idproducttype=1')
      * </pre>
      *
-     * @param string       $tableName The name of the table.
+     * @param string       $tableName The name of the table or the whole query.
      * @param string[]     $tableDef
      * @param string[]|int $values
      * @param string[]     $tableDefWhere
@@ -2415,7 +2450,7 @@ class PdoOne
                 $this->throwError($errorCause, "");
                 return false;
             }
-            $sql = "update {$this->database_delimiter0}" . $this->from . "{$this->database_delimiter1} "
+            $sql = "update ".$this->addDelimiter($this->from )." "
                 . $this->constructSet() . ' ' . $this->constructWhere();
             $param = [];
             for ($i = 0; $i < count($this->whereParamType); $i++) {
@@ -2437,8 +2472,9 @@ class PdoOne
                 $this->constructParam($tableDef, $values, $col, $colT, $param);
                 $this->constructParam($tableDefWhere, $valueWhere, $colWhere, $colT, $param);
             }
-            $sql = "update {$this->database_delimiter0}$tableName{$this->database_delimiter1} set " . implode(',', $col)
-                . " where " . implode(' and ', $colWhere);
+            $sql = "update ".$this->addDelimiter($tableName);
+            $sql.=count($col)? " set " . implode(',', $col) : '';
+            $sql.=count($colWhere)? " where " . implode(' and ', $colWhere) : '';
             $this->builderReset();
             $this->runRawQuery($sql, $param);
             return $this->insert_id();
@@ -2559,7 +2595,7 @@ class PdoOne
             }
             $sql
                 = /** @lang text */
-                "insert into {$this->database_delimiter0}" . $this->from . "{$this->database_delimiter1} "
+                "insert into ".$this->addDelimiter($this->from)."  "
                 . $this->constructInsert();
             $param = [];
 
@@ -2575,7 +2611,7 @@ class PdoOne
             $colT = [];
             $param = [];
             $this->constructParam($tableDef, $values, $col, $colT, $param);
-            $sql = "insert into {$this->database_delimiter0}$tableName{$this->database_delimiter1} (" . implode(',',
+            $sql = "insert into ".$this->addDelimiter($tableName)."  (" . implode(',',
                     $col)
                 . ") values(" . implode(',', $colT) . ")";
             $this->builderReset();
@@ -2619,6 +2655,7 @@ class PdoOne
      *      $db->from('table')
      *          ->where('..')
      *          ->delete() // running on a chain
+     *      delete('table where condition=1');
      *
      * @param string       $tableName
      * @param string[]     $tableDefWhere
@@ -2641,8 +2678,8 @@ class PdoOne
                 $this->throwError($errorCause, "");
                 return false;
             }
-            $sql = "delete from {$this->database_delimiter0}" . $this->from . "{$this->database_delimiter1} "
-                . $this->constructWhere();
+            $sql = "delete from ".$this->addDelimiter($this->from)." ";
+            $sql.=$this->constructWhere();
             $param = [];
             for ($i = 0; $i < count($this->whereParamType); $i++) {
                 $param[] = $this->whereParamType[$i];
@@ -2657,8 +2694,8 @@ class PdoOne
             $colT = null;
             $param = [];
             $this->constructParam($tableDefWhere, $valueWhere, $colWhere, $colT, $param);
-            $sql = "delete from {$this->database_delimiter0}$tableName{$this->database_delimiter1} where "
-                . implode(' and ', $colWhere);
+            $sql = "delete from ".$this->addDelimiter($tableName);
+            $sql.=(count($colWhere))? " where ". implode(' and ', $colWhere) : '';
             $this->builderReset();
             $stmt = $this->runRawQuery($sql, $param, true);
             return $this->affected_rows($stmt);

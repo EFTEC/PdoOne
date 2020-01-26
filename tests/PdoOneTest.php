@@ -112,17 +112,39 @@ class PdoOneTest extends TestCase
         $this->assertEquals([2=>'cheap',3=>'cheap','4'=>'cheap4',5=>'cheap',123=>'cheap']
             ,$this->pdoOne->select('id_category,catname')->from('product_category')->toListKeyValue());
     }
+    public function test_quota()
+    {
+        $this->assertEquals('`hello` world',$this->pdoOne->addDelimiter('hello world'));
+        $this->assertEquals('`hello`.`world`',$this->pdoOne->addDelimiter('hello.world'));
+        $this->assertEquals('`hello`=value',$this->pdoOne->addDelimiter('hello=value'));
+        $this->assertEquals('`hello` =value',$this->pdoOne->addDelimiter('hello =value'));
+        $this->assertEquals('2019-01-01',$this->pdoOne->dateConvert('01/01/2019','human','sql'));
+        $this->assertEquals('42143278901651563',$this->pdoOne->getUnpredictable("12345678901234561"));
+        $this->assertEquals('12345678901234561',$this->pdoOne->getUnpredictableInv("42143278901651563"));
+        $this->assertNotEmpty($this->pdoOne->dateTextNow()); // '2020-01-25T22:17:41Z',
+        $this->assertNotEmpty($this->pdoOne->dateSqlNow()); // '2020-01-25 22:18:32',
+    }
     public function test_emptyargs()
     {
+       
+        $r=true;
+        if($this->pdoOne->objectExist('product_category')) {
+            $r = $this->pdoOne->drop('product_category', 'table');
+        } 
+        $this->assertEquals(true,$r,"Drop failed");
 
-        try {
-            $r=$this->pdoOne->runRawQuery('drop table product_category');
-            $this->assertEquals(true,$r,"Drop failed");
-        } catch (Exception $e) {
-            $r=false;
-            // drops silently
+        if($this->pdoOne->objectExist('category')) {
+            $r = $this->pdoOne->drop('category', 'table');
         }
+
         $sqlT2="CREATE TABLE `product_category` (`id_category` INT NOT NULL,`catname` 
+                VARCHAR(45) NULL, PRIMARY KEY (`id_category`));";
+        try {
+            $r=$this->pdoOne->runRawQuery($sqlT2);
+        } catch (Exception $e) {
+            echo $e->getMessage()."<br>";
+        }
+        $sqlT2="CREATE TABLE `category` (`id_category` INT NOT NULL,`catname` 
                 VARCHAR(45) NULL, PRIMARY KEY (`id_category`));";
         try {
             $r=$this->pdoOne->runRawQuery($sqlT2);
@@ -133,9 +155,34 @@ class PdoOneTest extends TestCase
         // we add some values
         $this->pdoOne->set(['id_category' => 1, 'catname' => 'cheap'])
             ->from('product_category')->insert();
-        $this->pdoOne->set("id_category=2,catname='cheap'")->where("1=1")
+        $this->pdoOne->set(['id_category' => 2, 'catname' => 'cheap2'])
+            ->from('product_category')->insert();
+        $this->pdoOne->set("id_category=2,catname='cheap1'")->where("id_category=2")
             ->from('product_category')->update();
+
+        $sr=$this->pdoOne->update("product_category set catname='expensive' where id_category=1");
       
+        $this->assertEquals(['id_category'=>1,'catname'=>'expensive'],$this->pdoOne->select('select * from product_category where id_category=1')->first());
+        $this->assertEquals(['id_category'=>2,'catname'=>'cheap1'],$this->pdoOne->select('select * from product_category where id_category=2')->first());
+    
+        $this->pdoOne->runMultipleRawQuery("insert into product_category(id_category,catname) values (3,'multi');
+                insert into product_category(id_category,catname) values (4,'multi'); ");
+        $this->assertEquals(4,$this->pdoOne->count()->from('product_category')->firstScalar());
+        $r=$this->pdoOne->set(['id_category','i',1,'catname','s','c1'])->from('category')->insert();
+        //$r=$this->pdoOne->set(['id_category','i',2,'catname','s','c2'])->from('category')->insert();
+        $obj=['id_category'=>2,'catname'=>'c2'];
+        $r=$this->pdoOne->insertObject('category',$obj);
+            
+        $query=$this->pdoOne->select('*')->from('product_category')
+            ->innerjoin('category on product_category.id_category=category.id_category')
+            ->toList();
+
+        $this->assertEquals([['id_category'=>1,'catname'=>'c1'],['id_category'=>2,'catname'=>'c2']],$query);
+
+        $this->pdoOne->delete('product_category where id_category>0');
+        
+        $this->assertEquals(0,$this->pdoOne->count()->from('product_category')->firstScalar());
+        
     }
 
 	public function test_time()
@@ -179,6 +226,9 @@ class PdoOneTest extends TestCase
 		$s1=$this->pdoOne->getSequencePHP(true);
 		$s2=$this->pdoOne->getSequencePHP(true);
 		$this->assertTrue($s1!=$s2,"sequence must not be the same");
+		
+
+		
 	}	
 	/**
 	 * @doesNotPerformAssertions
