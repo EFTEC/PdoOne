@@ -764,6 +764,20 @@ $cache=new CacheService();
         ->useCache(1000)->toList(); // cache that lasts 1000ms.
 ```  
 
+### Example using apcu
+
+```php
+class CacheService implements \eftec\IPdoOneCache {
+    public  function getCache($uid) {
+        $value=apcu_fetch($uid);
+        return ($value===false)?null:$value;
+    }
+    public function setCache($uid,$data,$ttl=null) {
+        apcu_store($uid,$data,$ttl);
+    }
+}
+$cache=new CacheService();
+```  
 
 
 ## Sequence
