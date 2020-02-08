@@ -11,6 +11,24 @@ use eftec\PdoOne;
 use Exception;
 use PHPUnit\Framework\TestCase;
 
+// it is an example of a CacheService
+class CacheService implements \eftec\IPdoOneCache {
+    public $cacheData=[];
+    public $cacheCounter=0; // for debug
+    public  function getCache($uid) {
+        if(isset($this->cacheData[$uid])) {
+            $this->cacheCounter++;
+            echo "using cache\n";
+            return $this->cacheData[$uid];
+        }
+        return null;
+    }
+    public function setCache($uid,$data,$ttl=null) {
+        
+        $this->cacheData[$uid]=$data;
+    }
+}
+
 
 class PdoOneTest extends TestCase
 {
@@ -22,6 +40,9 @@ class PdoOneTest extends TestCase
         $this->pdoOne=new PdoOne("mysql","127.0.0.1","travis","","travisdb");
         $this->pdoOne->connect();
         $this->pdoOne->logLevel=3;
+
+        $cache=new CacheService();
+        $this->pdoOne->setCacheService($cache);
     }
 
 
@@ -79,12 +100,39 @@ class PdoOneTest extends TestCase
         $this->pdoOne->insert('product_category',['id_category','i','5','catname','s','cheap']);
         $count=$this->pdoOne->count('from product_category')->firstScalar();
 	    $this->assertEquals(5,$count,'insert must value 5');
-        $count=$this->pdoOne->select('select id_category from product_category where id_category=123')->firstScalar();
+	    
+        $count=$this->pdoOne->select('select id_category from product_category where id_category=123')->useCache()->firstScalar();
         $this->assertEquals(123,$count,'insert must value 123');
-        $count=$this->pdoOne->select('select catname from product_category where id_category=4')->firstScalar();
+        $count=$this->pdoOne->select('select id_category from product_category where id_category=123')->useCache()->firstScalar();
+        $this->assertEquals(123,$count,'insert must value 123');
+
+        $this->assertEquals(1,$this->pdoOne->getCacheService()->cacheCounter); // 1= cache used 1 time
+
+        $count=$this->pdoOne->select('select catname from product_category where id_category>0')->useCache()->firstScalar();
+        $this->assertEquals('cheap',$count);
+        $count=$this->pdoOne->select('select catname from product_category where id_category>0')->useCache()->firstScalar();
+        $this->assertEquals('cheap',$count);
+
+        $count=$this->pdoOne->select('select catname from product_category where id_category=4')->useCache()->first();
+        $this->assertEquals(['catname'=>'cheap4'],$count);
+        $count=$this->pdoOne->select('select catname from product_category where id_category=4')->useCache()->first();
+        $this->assertEquals(['catname'=>'cheap4'],$count);        
+        
+        $count=$this->pdoOne->select('select catname from product_category')->useCache()->last();
+        $this->assertEquals([ 'catname' => 'cheap'],$count);
+        $count=$this->pdoOne->select('select catname from product_category')->useCache()->last();
+        $this->assertEquals([ 'catname' => 'cheap'],$count);
+
+        $count=$this->pdoOne->select('select catname from product_category')->where('id_category=?',[4])->useCache()->firstScalar();
         $this->assertEquals('cheap4',$count,'insert must value cheap4');
-        $count=$this->pdoOne->select('select catname from product_category')->where('id_category=?',[4])->firstScalar();
+        $count=$this->pdoOne->select('select catname from product_category')->where('id_category=?',[4])->useCache()->firstScalar();
         $this->assertEquals('cheap4',$count,'insert must value cheap4');
+        $count=$this->pdoOne->select('select catname from product_category')->where('id_category=?',[4])
+                        ->order('id_category')->useCache()->firstScalar();
+        $this->assertEquals('cheap4',$count,'insert must value cheap4');
+        $count=$this->pdoOne->select('select catname from product_category')->where('id_category=?',[3])->useCache()->firstScalar();
+        $this->assertEquals('cheap',$count,'insert must value cheap');
+
         $count=$this->pdoOne->select('select catname from product_category')->where('id_category=:idcat',['idcat'=>4])->firstScalar();
         $this->assertEquals('cheap4',$count,'insert must value cheap4');
         $count=$this->pdoOne->select('select catname from product_category')->where('id_category=:idcat',['idcat'=>4])->firstScalar();
@@ -106,11 +154,27 @@ class PdoOneTest extends TestCase
                              ['id_category'=>4],
                              ['id_category'=>5],
                              ['id_category'=>123]]
-            ,$this->pdoOne->select('id_category')->from('product_category')->toList());
+            ,$this->pdoOne->select('id_category')->from('product_category')->useCache()->toList());
+
+        $this->assertEquals([['id_category'=>2],
+                             ['id_category'=>3],
+                             ['id_category'=>4],
+                             ['id_category'=>5],
+                             ['id_category'=>123]]
+            ,$this->pdoOne->select('id_category')->from('product_category')->useCache()->toList());
+        $this->assertEquals(6,$this->pdoOne->getCacheService()->cacheCounter); // 1= cache used 1 time
+        
         $this->assertEquals([2,3,4,5,123]
-            ,$this->pdoOne->select('id_category')->from('product_category')->toListSimple());
+            ,$this->pdoOne->select('id_category')->from('product_category')->useCache()->toListSimple());
+        $this->assertEquals([2,3,4,5,123]
+            ,$this->pdoOne->select('id_category')->from('product_category')->useCache()->toListSimple());        
         $this->assertEquals([2=>'cheap',3=>'cheap','4'=>'cheap4',5=>'cheap',123=>'cheap']
-            ,$this->pdoOne->select('id_category,catname')->from('product_category')->toListKeyValue());
+            ,$this->pdoOne->select('id_category,catname')->from('product_category')->useCache()->toListKeyValue());
+        $this->assertEquals([2=>'cheap',3=>'cheap','4'=>'cheap4',5=>'cheap',123=>'cheap']
+            ,$this->pdoOne->select('id_category,catname')->from('product_category')->useCache()->toListKeyValue());
+
+        $this->assertEquals(8,$this->pdoOne->getCacheService()->cacheCounter); // 3= cache used 1 time
+        
     }
     public function test_quota()
     {

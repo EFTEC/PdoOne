@@ -24,6 +24,7 @@ try {
 }
 
 
+
 try {
     $dao->select('1')->from('dual')->toList();
     $dao->runRawQuery("select 1 from dual");
@@ -41,7 +42,7 @@ if (!$dao->isOpen) {
 }
 
 
-$dao=new PdoOne("127.0.0.1","root","abc.123","sakila","logpdoone.txt");
+$dao=new PdoOne("mysql","127.0.0.1","root","abc.123","sakila","logpdoone.txt");
 $dao->logLevel=3;
 try {
     echo "<h1>connection</h1>";
@@ -62,7 +63,7 @@ if (!$dao->isOpen) {
     echo "<img style='width: 14px; height: 14px;'  src='https://assets-cdn.github.com/images/icons/emoji/unicode/2714.png'/><br>";
 }
 
-$sql="CREATE TABLE `product` (
+$table="CREATE TABLE `product` (
   `idproduct` INT NOT NULL AUTO_INCREMENT,
   `name` VARCHAR(45) NULL,
   PRIMARY KEY (`idproduct`));";
@@ -71,7 +72,7 @@ $now=new DateTime();
 // running a raw query (unprepared statement)
 try {
     echo "<h1>Table creation:</h1>";
-    $dao->runRawQuery($sql);
+    $dao->runRawQuery($table);
 } catch (Exception $e) {
     echo "<h2>Table creation error:</h2>";
     echo $dao->lastError()."-".$e->getMessage()."<br>";
@@ -86,6 +87,20 @@ try {
     echo "<h2>Nested Error:</h2>";
     echo $e->getMessage()."<br>";
 }
+try {
+    echo "<h1>PK error: from()->set()->insert()</h1>";
+    $dao->from("product")
+        ->set(['idproduct','i',1])
+        ->insert();
+    $dao->from("product")
+        ->set(['idproduct','i',1])
+        ->insert();
+} catch (Exception $e) {
+    echo "<h2>Nested Error:</h2>";
+    echo $e->getMessage()."<br>";
+}
+
+
 
 try {
     echo "<h1>Nested Error: from()->set()->where()</h1>";

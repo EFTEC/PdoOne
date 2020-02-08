@@ -1,7 +1,7 @@
 {
     "name": "eftec/pdoone",
     "description": "Procedural PDO Data access class in a single Class",
-    "version": "1.20",
+    "version": "1.21",
     "type": "library",
     "keywords": [
         "dao",

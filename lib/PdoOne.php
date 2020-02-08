@@ -18,7 +18,7 @@ use stdClass;
  * Class PdoOne
  * This class wrappes PDO but it could be used for another framework/library.
  *
- * @version       1.20 2020-jan.-25. 
+ * @version       1.21 2020-02-07 
  * @package       eftec
  * @author        Jorge Castro Castillo
  * @copyright (c) Jorge Castro C. MIT License  https://github.com/EFTEC/PdoOne
@@ -111,11 +111,21 @@ class PdoOne
     /** @var string last query executed */
     var $lastQuery;
     var $lastParam = [];
+    private $lastBindParam=[];
     /** @var int */
     private $affected_rows = 0;
 
     //<editor-fold desc="query builder fields">
     private $select = '';
+    /**
+     * @var null|bool|int $ttl If <b>null</b> then the cache never expires.<br>
+     *                         If <b>false</b> then we don't use cache.<br>
+     *                         If <b>int</b> then it is the duration of the cache (in seconds)
+     */
+    private $useCache=false;
+    private $uid=null;
+    /** @var IPdoOneCache The service of cache [optional]  */
+    private $cacheService=null;
     private $from = '';
     /** @var array */
     private $where = array();
@@ -586,6 +596,7 @@ class PdoOne
      */
     private function builderReset() {
         $this->select = '';
+        $this->useCache=false;
         $this->from = '';
         $this->where = [];
         $this->whereParamType = array();
@@ -777,14 +788,30 @@ class PdoOne
         // the "where" has parameters.
         $stmt = $this->prepare($rawSql);
         $counter = 0;
+        $this->lastBindParam=[];
         for ($i = 0; $i < count($param); $i += 2) {
             $counter++;
             $typeP = $this->stringToPdoParam($param[$i]);
+            $this->lastBindParam[$counter]=$param[$i + 1];
             $stmt->bindParam($counter
                 , $param[$i + 1]
                 , $typeP);
         }
-        //$stmt->bindParam($parType, ...$values);
+        if($this->useCache!==false && $returnArray) {
+            $this->uid=hash('sha256',$this->lastQuery.serialize($this->lastBindParam));
+            $result=$this->cacheService->getCache($this->uid);
+            if($result!==null) {
+                // it's found in the cache.
+                if(is_array($result)) {
+                    $this->affected_rows=count($result);    
+                } else {
+                    $this->affected_rows=0;
+                }
+                return $result;
+            }
+        } else {
+            $this->uid=null;
+        }
         $this->runQuery($stmt);
 
         if ($returnArray && $stmt instanceof PDOStatement) {
@@ -793,7 +820,12 @@ class PdoOne
             $stmt = null;
             return $rows;
         } else {
-            $this->affected_rows = $stmt->rowCount();
+            if ($stmt instanceof PDOStatement) {
+                $this->affected_rows = $stmt->rowCount();    
+            } else {
+                $this->affected_rows=0;
+            }
+            
             return $stmt;
         }
     }
@@ -2163,7 +2195,12 @@ class PdoOne
      */
     public function toList($pdoMode = PDO::FETCH_ASSOC) {
 
-        return $this->runGen(true, $pdoMode);
+        $rows=$this->runGen(true, $pdoMode,'tolist');
+        if($this->uid) {
+            // we store the information of the cache.
+            $this->cacheService->setCache($this->uid,$rows,$this->useCache);
+        }
+        return $rows; 
     }
 
     /**
@@ -2177,7 +2214,12 @@ class PdoOne
      * @throws Exception
      */
     public function toListSimple() {
-        return $this->runGen(true, PDO::FETCH_COLUMN);
+        $rows=$this->runGen(true, PDO::FETCH_COLUMN,'tolistsimple');
+        if($this->uid) {
+            // we store the information of the cache.
+            $this->cacheService->setCache($this->uid,$rows,$this->useCache);
+        }
+        return $rows;
     }
 
     /**
@@ -2217,10 +2259,12 @@ class PdoOne
      * @param int  $extraMode   PDO::FETCH_ASSOC,PDO::FETCH_BOTH,PDO::FETCH_NUM,etc.
      *                          By default it returns $extraMode=PDO::FETCH_ASSOC
      *
+     * @param string $extraIdCache [optional] if 'rungen' then cache is stored. If false the cache could be stored
+     *
      * @return bool|PDOStatement|array
      * @throws Exception
      */
-    public function runGen($returnArray = true, $extraMode = PDO::FETCH_ASSOC) {
+    public function runGen($returnArray = true, $extraMode = PDO::FETCH_ASSOC,$extraIdCache='rungen') {
         $sql = $this->sqlGen();
         /** @var PDOStatement $stmt */
         $stmt = $this->prepare($sql);
@@ -2231,15 +2275,16 @@ class PdoOne
         if (count($this->whereParamType)) {
             $counter = 0;
             $reval = true;
+            $this->lastBindParam=[];
             foreach ($this->whereParamType as $k => $v) {
                 $counter++;
                 $typeP = $this->stringToPdoParam($this->whereParamType[$k]);
+                $this->lastBindParam[$counter]=$values[$k];
                 $reval = $reval
                     && $stmt->bindParam($counter
                         , $values[$k]
                         , $typeP);
             }
-
             if (!$reval) {
                 $this->throwError("Error in bind", "",
                     "type: " . json_encode($this->whereParamType) . " values:" . json_encode($values));
@@ -2247,12 +2292,33 @@ class PdoOne
             }
 
         }
+        if($this->useCache!==false && $returnArray) {
+            $this->uid=hash('sha256',$this->lastQuery.$extraMode.serialize($this->lastBindParam).$extraIdCache);
+            $result=$this->cacheService->getCache($this->uid);
+            if($result!==null) {
+                // it's found in the cache.
+                $this->builderReset();
+                return $result;
+            }
+        } else {
+            if ($extraIdCache=='rungen') {
+                $this->uid=null;    
+            }
+            
+        }
         $this->runQuery($stmt);
+
+        
         $this->builderReset();
-        if ($returnArray) {
-            $r = ($stmt->columnCount() > 0) ? $stmt->fetchAll($extraMode) : array();
+        if ($returnArray && $stmt instanceof PDOStatement) {
+            $result = ($stmt->columnCount() > 0) ? $stmt->fetchAll($extraMode) : array();
+            $this->affected_rows = $stmt->rowCount();
             $stmt = null; // close
-            return $r;
+            if($extraIdCache=='rungen' && $this->uid) {
+                // we store the information of the cache.
+                $this->cacheService->setCache($this->uid,$result,$this->useCache);
+            }
+            return $result;
         } else {
             return $stmt;
         }
@@ -2310,7 +2376,8 @@ class PdoOne
     }
 
     /**
-     * It returns a PDOStatement.
+     * It returns a PDOStatement.<br>
+     * <b>Note:</b> The result is not cached.
      *
      * @return PDOStatement
      * @throws Exception
@@ -2330,19 +2397,35 @@ class PdoOne
      * @throws Exception
      */
     public function first() {
-        /** @var PDOStatement $rows */
-        $rows = $this->runGen(false);
-        if ($rows === false) {
-            return null;
+        if($this->useCache!==false) {
+            $sql = $this->sqlGen();
+            $this->uid=hash('sha256',$sql.PDO::FETCH_ASSOC.serialize($this->whereParamType)
+                .serialize($this->whereParamValue).'first');
+            $rows=$this->cacheService->getCache($this->uid);
+            if($rows!==null) {
+                $this->builderReset();
+                return $rows;
+            }
         }
-        if (!$rows->columnCount()) {
-            return null;
+        $statement = $this->runGen(false,PDO::FETCH_ASSOC,'first');
+        $row=null;
+        if ($statement === false) {
+            $row= null;
+        } else {
+            if (!$statement->columnCount()) {
+                $row= null;
+            } else {
+                while ($row = $statement->fetch(PDO::FETCH_ASSOC)) {
+                    $statement = null;
+                    break;
+                }
+            }
         }
-        while ($row = $rows->fetch(PDO::FETCH_ASSOC)) {
-            $rows = null;
-            return $row;
+        if($this->uid) {
+            // we store the information of the cache.
+            $this->cacheService->setCache($this->uid,$row,$this->useCache);
         }
-        return null;
+        return $row;
     }
 
     /**
@@ -2360,23 +2443,42 @@ class PdoOne
      * @throws Exception
      */
     public function firstScalar($colName = null) {
-        /** @var PDOStatement $rows */
-        $rows = $this->runGen(false);
-        if ($rows === false) {
-            return null;
-        }
-        if (!$rows->columnCount()) {
-            return null;
-        }
-        while ($row = $rows->fetch(PDO::FETCH_ASSOC)) {
-            $rows = null;
-            if ($colName === null) {
-                return reset($row); // first column of the first row
-            } else {
-                return $row[$colName];
+        $rows=null;
+        if($this->useCache!==false) {
+            $sql = $this->sqlGen();
+            $this->uid=hash('sha256',$sql.PDO::FETCH_ASSOC.serialize($this->whereParamType)
+                .serialize($this->whereParamValue).'firstscalar');
+            $rows=$this->cacheService->getCache($this->uid);
+            if($rows!==null) {
+                $this->builderReset();
+                return $rows;
             }
         }
-        return null;
+        $rows = $this->runGen(false,PDO::FETCH_ASSOC,'firstscalar');
+        
+        $row=null;
+        if ($rows === false) {
+            $row= null;
+        } else {
+            if (!$rows->columnCount()) {
+                $row= null;
+            } else {
+                while ($row = $rows->fetch(PDO::FETCH_ASSOC)) {
+                    $rows = null;
+                    if ($colName === null) {
+                        $row= reset($row); // first column of the first row
+                    } else {
+                        $row= $row[$colName];
+                    }
+                    break;
+                }
+            }
+        }
+        if($this->uid) {
+            // we store the information of the cache.
+            $this->cacheService->setCache($this->uid,$row,$this->useCache);
+        }
+        return $row;
     }
 
     /**
@@ -2391,16 +2493,33 @@ class PdoOne
      * @see \eftec\PdoOne::first
      */
     public function last() {
-        /** @var PDOStatement $rows */
-        $rows = $this->runGen(false);
-        if ($rows === false) {
-            return null;
+        if($this->useCache!==false) {
+            $sql = $this->sqlGen();
+            $this->uid=hash('sha256',$sql.PDO::FETCH_ASSOC.serialize($this->whereParamType)
+                .serialize($this->whereParamValue).'last');
+            $rows=$this->cacheService->getCache($this->uid);
+            if($rows!==null) {
+                $this->builderReset();
+                return $rows;
+            }
         }
-        if (!$rows->columnCount()) {
-            return null;
+        $statement = $this->runGen(false,PDO::FETCH_ASSOC,'last');
+        $row=null;
+        if ($statement === false) {
+            $row= null;
+        } else {
+            if (!$statement->columnCount()) {
+                $row= null;
+            } else {
+                while ($dummy = $statement->fetch(PDO::FETCH_ASSOC)) {
+                    $row=$dummy;
+                }
+                $statement = null;
+            }
         }
-        /** @noinspection PhpStatementHasEmptyBodyInspection */
-        while ($row = $rows->fetch(PDO::FETCH_ASSOC)) {
+        if($this->uid) {
+            // we store the information of the cache.
+            $this->cacheService->setCache($this->uid,$row,$this->useCache);
         }
         return $row;
     }
@@ -2702,7 +2821,46 @@ class PdoOne
         }
     }
     //</editor-fold>
+    //<editor-fold desc="Cache" defaultstate="collapsed" >
 
+
+    /**
+     * It sets the cache service (optional).
+     * 
+     * @param IPdoOneCache $cacheService
+     *
+     * @return $this
+     */
+    public function setCacheService($cacheService) {
+        $this->cacheService=$cacheService;
+        return $this;
+    }
+
+    /**
+     * @return IPdoOneCache
+     */
+    public function getCacheService() {
+        return $this->cacheService;
+    }
+
+    /**
+     * It sets to use cache (if the cacheservice is set)
+     *
+     * @param null|bool|int $ttl If null then the cache never expires.<br>
+     *                           If false then we don't use cache.<br>
+     *                           If int then it is the duration of the cache (in seconds)
+     *
+     * @return $this
+     */
+    public function useCache($ttl=null) {
+        if($this->cacheService===null) {
+            $ttl=false;
+        }
+        $this->useCache=$ttl;
+        return $this;
+    }
+    
+    //</editor-fold>
     //<editor-fold desc="Log functions" defaultstate="collapsed" >
 
     /**

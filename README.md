@@ -708,6 +708,63 @@ $dao->from("producttype")
 ```
 > Generates the query: **delete from producttype where `idproducttype`=?** ....
 
+
+## Cache
+
+It is possible to optionally cache the result of the queries. The duration of the query is also defined in the query.
+If the value is not cached, then it is calculated.   For identify a query, the system generates an unique id (uid) based
+in sha256 and uses the query, parameters, methods and the type of operation.
+
+
+* Cache works with the next methods.
+    * toList()
+    * toListSimple()
+    * first()
+    * firstScalar()
+    * last()
+    
+### How it works
+
+(1) We need to define a class that implements \eftec\IPdoOneCache
+
+```php
+class CacheService implements \eftec\IPdoOneCache {
+    public $cacheData=[];
+    public $cacheCounter=0; // for debug
+    public  function getCache($uid) {
+        if(isset($this->cacheData[$uid])) {
+            $this->cacheCounter++;
+            echo "using cache\n";
+            return $this->cacheData[$uid];
+        }
+        return null;
+    }
+    public function setCache($uid,$data,$ttl=null) {
+        
+        $this->cacheData[$uid]=$data;
+    }
+}
+$cache=new CacheService();
+```  
+
+(2) Sets the cache service
+
+```php
+    $pdoOne=new PdoOne("mysql","127.0.0.1","travis","","travisdb");
+    $cache=new CacheService();
+    $$pdoOne->setCacheService($cache);
+```  
+(3) Use the cache as as follow, we must add the method useCache() in any part of the query.
+
+```php
+    $pdoOne->select('select * from table')
+        ->useCache()->toList(); // cache that never expires
+    $pdoOne->select('select * from table')
+        ->useCache(1000)->toList(); // cache that lasts 1000ms.
+```  
+
+
+
 ## Sequence
 
 Sequence is an alternative to AUTO_NUMERIC field.  It uses a table to generate an unique ID.  
@@ -781,6 +838,9 @@ $dao->getSequencePHP(true) // string(19) "1739032938181434311"
 PdoOne adds a bit of ovehead over PDO, however it is simple a wrapper to pdo.
 
 ## Changelist
+1.21 2020-02-07
+    * method setCacheService() and getCacheService()
+    * method useCache()
 
 1.20 2020-jan-25
     * Many cleanups.
