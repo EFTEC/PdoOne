@@ -715,6 +715,7 @@ It is possible to optionally cache the result of the queries. The duration of th
 If the value is not cached, then it is calculated.   For identify a query, the system generates an unique id (uid) based
 in sha256 and uses the query, parameters, methods and the type of operation.
 
+The library does not cache the result, instead it allows to cache the results using any library.
 
 * Cache works with the next methods.
     * toList()
