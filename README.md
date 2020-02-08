@@ -712,10 +712,11 @@ $dao->from("producttype")
 ## Cache
 
 It is possible to optionally cache the result of the queries. The duration of the query is also defined in the query.
-If the value is not cached, then it is calculated.   For identify a query, the system generates an unique id (uid) based
-in sha256 and uses the query, parameters, methods and the type of operation.
+If the result of the query is not cached, then it is calculated normally (executing the query in the database.   For 
+identify a query as unique, the system generates an unique id (uid) based in sha256 created with the query, 
+parameters, methods and the type of operation.
 
-The library does not cache the result, instead it allows to cache the results using any library.
+The library does not do any cache operation directly, instead it allows to cache the results using an external library.
 
 * Cache works with the next methods.
     * toList()
