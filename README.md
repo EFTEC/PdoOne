@@ -853,14 +853,13 @@ $dao->getSequencePHP(true) // string(19) "1739032938181434311"
 PdoOne adds a bit of ovehead over PDO, however it is simple a wrapper to pdo.
 
 ## Changelist
-1.21 2020-02-07
-    * method setCacheService() and getCacheService()
-    * method useCache()
-
-1.20 2020-jan-25
-    * Many cleanups.
-    * update() and delete() now allows to set the query.
-    * new method addDelimiter() to add delimiters to the query (i.e. 'table' for mysql and [table] for sql server)
+1.21 2020-02-07    
+    * method setCacheService() and getCacheService()  
+    * method useCache()  
+1.20 2020-jan-25  
+    * Many cleanups.  
+    * update() and delete() now allows to set the query.   
+    * new method addDelimiter() to add delimiters to the query (i.e. 'table' for mysql and [table] for sql server)   
 1.19 2020-jan-15
     * getSequence() now has a new argument (name of the sequence, optional)
     * createSequence() has a new argument (type of sequence) and it allows to create a sequential sequence.
