@@ -18,7 +18,7 @@ use stdClass;
  * Class PdoOne
  * This class wrappes PDO but it could be used for another framework/library.
  *
- * @version       1.21 2020-02-07 
+ * @version       1.22 2020-02-08
  * @package       eftec
  * @author        Jorge Castro Castillo
  * @copyright (c) Jorge Castro C. MIT License  https://github.com/EFTEC/PdoOne
@@ -123,7 +123,10 @@ class PdoOne
      *                         If <b>int</b> then it is the duration of the cache (in seconds)
      */
     private $useCache=false;
+    /** @var null|string the unique id generate by sha256 and based in the query, arguments, type and methods */
     private $uid=null;
+    /** @var string [optional] It is the family or group of the cache */
+    private $cacheFamily='';    
     /** @var IPdoOneCache The service of cache [optional]  */
     private $cacheService=null;
     private $from = '';
@@ -799,8 +802,8 @@ class PdoOne
         }
         if($this->useCache!==false && $returnArray) {
             $this->uid=hash('sha256',$this->lastQuery.serialize($this->lastBindParam));
-            $result=$this->cacheService->getCache($this->uid);
-            if($result!==null) {
+            $result=$this->cacheService->getCache($this->uid,$this->cacheFamily);
+            if($result!==false) {
                 // it's found in the cache.
                 if(is_array($result)) {
                     $this->affected_rows=count($result);    
@@ -2198,7 +2201,7 @@ class PdoOne
         $rows=$this->runGen(true, $pdoMode,'tolist');
         if($this->uid) {
             // we store the information of the cache.
-            $this->cacheService->setCache($this->uid,$rows,$this->useCache);
+            $this->cacheService->setCache($this->uid,$this->cacheFamily,$rows,$this->useCache);
         }
         return $rows; 
     }
@@ -2217,7 +2220,7 @@ class PdoOne
         $rows=$this->runGen(true, PDO::FETCH_COLUMN,'tolistsimple');
         if($this->uid) {
             // we store the information of the cache.
-            $this->cacheService->setCache($this->uid,$rows,$this->useCache);
+            $this->cacheService->setCache($this->uid,$this->cacheFamily,$rows,$this->useCache);
         }
         return $rows;
     }
@@ -2294,8 +2297,8 @@ class PdoOne
         }
         if($this->useCache!==false && $returnArray) {
             $this->uid=hash('sha256',$this->lastQuery.$extraMode.serialize($this->lastBindParam).$extraIdCache);
-            $result=$this->cacheService->getCache($this->uid);
-            if($result!==null) {
+            $result=$this->cacheService->getCache($this->uid,$this->cacheFamily);
+            if($result!==false) {
                 // it's found in the cache.
                 $this->builderReset();
                 return $result;
@@ -2316,7 +2319,7 @@ class PdoOne
             $stmt = null; // close
             if($extraIdCache=='rungen' && $this->uid) {
                 // we store the information of the cache.
-                $this->cacheService->setCache($this->uid,$result,$this->useCache);
+                $this->cacheService->setCache($this->uid,$this->cacheFamily,$result,$this->useCache);
             }
             return $result;
         } else {
@@ -2401,8 +2404,8 @@ class PdoOne
             $sql = $this->sqlGen();
             $this->uid=hash('sha256',$sql.PDO::FETCH_ASSOC.serialize($this->whereParamType)
                 .serialize($this->whereParamValue).'first');
-            $rows=$this->cacheService->getCache($this->uid);
-            if($rows!==null) {
+            $rows=$this->cacheService->getCache($this->uid,$this->cacheFamily);
+            if($rows!==false) {
                 $this->builderReset();
                 return $rows;
             }
@@ -2423,7 +2426,7 @@ class PdoOne
         }
         if($this->uid) {
             // we store the information of the cache.
-            $this->cacheService->setCache($this->uid,$row,$this->useCache);
+            $this->cacheService->setCache($this->uid,$this->cacheFamily,$row,$this->useCache);
         }
         return $row;
     }
@@ -2448,8 +2451,8 @@ class PdoOne
             $sql = $this->sqlGen();
             $this->uid=hash('sha256',$sql.PDO::FETCH_ASSOC.serialize($this->whereParamType)
                 .serialize($this->whereParamValue).'firstscalar');
-            $rows=$this->cacheService->getCache($this->uid);
-            if($rows!==null) {
+            $rows=$this->cacheService->getCache($this->uid,$this->cacheFamily);
+            if($rows!==false) {
                 $this->builderReset();
                 return $rows;
             }
@@ -2476,7 +2479,7 @@ class PdoOne
         }
         if($this->uid) {
             // we store the information of the cache.
-            $this->cacheService->setCache($this->uid,$row,$this->useCache);
+            $this->cacheService->setCache($this->uid,$this->cacheFamily,$row,$this->useCache);
         }
         return $row;
     }
@@ -2497,8 +2500,8 @@ class PdoOne
             $sql = $this->sqlGen();
             $this->uid=hash('sha256',$sql.PDO::FETCH_ASSOC.serialize($this->whereParamType)
                 .serialize($this->whereParamValue).'last');
-            $rows=$this->cacheService->getCache($this->uid);
-            if($rows!==null) {
+            $rows=$this->cacheService->getCache($this->uid,$this->cacheFamily);
+            if($rows!==false) {
                 $this->builderReset();
                 return $rows;
             }
@@ -2519,7 +2522,7 @@ class PdoOne
         }
         if($this->uid) {
             // we store the information of the cache.
-            $this->cacheService->setCache($this->uid,$row,$this->useCache);
+            $this->cacheService->setCache($this->uid,$this->cacheFamily,$row,$this->useCache);
         }
         return $row;
     }
@@ -2849,14 +2852,36 @@ class PdoOne
      * @param null|bool|int $ttl If null then the cache never expires.<br>
      *                           If false then we don't use cache.<br>
      *                           If int then it is the duration of the cache (in seconds)
+     * @param string        $family [optional] It is the family or group of the cache. It could be used to identify 
+     *                              a group of cache to invalidate the whole group (for example, invalidate all cache
+     *                              from a specific table).
      *
      * @return $this
      */
-    public function useCache($ttl=null) {
+    public function useCache($ttl=null,$family='') {
         if($this->cacheService===null) {
             $ttl=false;
         }
+        $this->cacheFamily=$family;
         $this->useCache=$ttl;
+        return $this;
+    }
+
+    /**
+     * Invalidate a single cache or a list of cache based in a single uid or in a family/group of cache.
+     *
+     * @param string|string[] $uid The unique id. It is generate by sha256 based in the query, parameters, type of
+     *                             query and method.
+     * @param string|string[] $family [optional] It is the family or group of the cache. It could be used to invalidate
+     *                       the whole group. For example, to invalidate all the cache related with a table.
+     *
+     * @return $this
+     */
+    public function invalidateCache($uid='',$family='') {
+        
+        if($this->cacheService!==null) {
+            $this->cacheService->invalidateCache($uid,$family);
+        }
         return $this;
     }
     

@@ -733,17 +733,20 @@ The library does not do any cache operation directly, instead it allows to cache
 class CacheService implements \eftec\IPdoOneCache {
     public $cacheData=[];
     public $cacheCounter=0; // for debug
-    public  function getCache($uid) {
+    public  function getCache($uid,$family='') {
         if(isset($this->cacheData[$uid])) {
             $this->cacheCounter++;
             echo "using cache\n";
             return $this->cacheData[$uid];
         }
-        return null;
+        return false;
     }
-    public function setCache($uid,$data,$ttl=null) {
+    public function setCache($uid,$family='',$data=null,$ttl=null) {
         
         $this->cacheData[$uid]=$data;
+    }
+    public function invalidateCache($uid = '', $family = '') {
+        unset($this->cacheData[$uid]);
     }
 }
 $cache=new CacheService();
@@ -769,12 +772,15 @@ $cache=new CacheService();
 
 ```php
 class CacheService implements \eftec\IPdoOneCache {
-    public  function getCache($uid) {
-        $value=apcu_fetch($uid);
-        return ($value===false)?null:$value;
+    public  function getCache($uid,$family='') {
+        return apcu_fetch($uid);
     }
-    public function setCache($uid,$data,$ttl=null) {
+    public function setCache($uid,$family='',$data=null,$ttl=null) {
         apcu_store($uid,$data,$ttl);
+    }
+    public function invalidateCache($uid = '', $family = '') {
+        // invalidate cache
+        apcu_delete($uid);
     }
 }
 $cache=new CacheService();
@@ -854,6 +860,9 @@ $dao->getSequencePHP(true) // string(19) "1739032938181434311"
 PdoOne adds a bit of ovehead over PDO, however it is simple a wrapper to pdo.
 
 ## Changelist
+* 1.22 2020-02-08
+    * method invalidateCache()
+    * changed the interface IPdoOneCache
 * 1.21 2020-02-07    
     * method setCacheService() and getCacheService()  
     * method useCache()  

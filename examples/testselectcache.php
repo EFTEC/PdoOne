@@ -13,14 +13,14 @@ $dao=new PdoOne("mysql","127.0.0.1","root","abc.123","sakila","logpdoone.txt");
 
 class CacheService implements \eftec\IPdoOneCache {
     public  $cacheData=[];
-    public  function getCache($uid) {
+    public  function getCache($uid,$family='') {
         if(isset($this->cacheData[$uid])) {
             echo "using cache!";
             return $this->cacheData[$uid];
         }            
-        return null;
+        return false;
     }
-    public function setCache($uid,$data,$ttl=null) {
+    public function setCache($uid,$family='',$data=null,$ttl=null) {
         $this->cacheData[$uid]=$data;
     }
 }

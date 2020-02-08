@@ -15,17 +15,20 @@ use PHPUnit\Framework\TestCase;
 class CacheService implements \eftec\IPdoOneCache {
     public $cacheData=[];
     public $cacheCounter=0; // for debug
-    public  function getCache($uid) {
+    public  function getCache($uid,$family='') {
         if(isset($this->cacheData[$uid])) {
             $this->cacheCounter++;
             echo "using cache\n";
             return $this->cacheData[$uid];
         }
-        return null;
+        return false;
     }
-    public function setCache($uid,$data,$ttl=null) {
-        
+    public function setCache($uid,$family='',$data=null,$ttl=null) {
         $this->cacheData[$uid]=$data;
+    }
+    public function invalidateCache($uid = '', $family = '') {
+        $this->cacheData=[]; // we delete all the cache
+        //unset($this->cacheData[$uid]);
     }
 }
 
@@ -65,7 +68,43 @@ class PdoOneTest extends TestCase
 	    $this->expectException(Exception::class);
         $this->pdoOne->connect();
     }
+    function test_cache() {
+        $this->pdoOne->getCacheService()->cacheCounter=0;
+        
+        $rows=$this->pdoOne->select('select 123 field1 from dual')->useCache()->toList();
+        $this->assertEquals([['field1'=>123]],$rows);
+        $rows=$this->pdoOne->select('select 123 field1 from dual')->where('1=1')->order('1')->useCache()->toList();
+        $rows=$this->pdoOne->select('select 123 field1 from dual')->useCache()->toList();
+        $this->assertEquals([['field1'=>123]],$rows);
+        $this->assertEquals(1,$this->pdoOne->getCacheService()->cacheCounter); // 1= cache used 1 time
+        $rows=$this->pdoOne->invalidateCache();
+        
+        $rows=$this->pdoOne->select('select 123 field1 from dual')->useCache()->toList();
+        $this->assertEquals([['field1'=>123]],$rows);
+        $this->assertEquals(1,$this->pdoOne->getCacheService()->cacheCounter); // 1= cache used 1 time
+        $this->pdoOne->getCacheService()->cacheCounter=0;
+    }
+    function test_cache_noCache() {
+        $this->pdoOne->setCacheService(null);
+        
+        
 
+        $rows=$this->pdoOne->select('select 123 field1 from dual')->useCache()->toList();
+        $this->assertEquals([['field1'=>123]],$rows);
+        $rows=$this->pdoOne->select('select 123 field1 from dual')->where('1=1')->order('1')->useCache()->toList();
+        $rows=$this->pdoOne->select('select 123 field1 from dual')->useCache()->toList();
+        $this->assertEquals([['field1'=>123]],$rows);
+        //$this->assertEquals(1,$this->pdoOne->getCacheService()->cacheCounter); // 1= cache used 1 time
+        $rows=$this->pdoOne->invalidateCache();
+
+        $rows=$this->pdoOne->select('select 123 field1 from dual')->useCache()->toList();
+        $this->assertEquals([['field1'=>123]],$rows);
+        //$this->assertEquals(1,$this->pdoOne->getCacheService()->cacheCounter); // 1= cache used 1 time
+        //$this->pdoOne->getCacheService()->cacheCounter=0;
+
+        $cache=new CacheService();
+        $this->pdoOne->setCacheService($cache);
+    }
     public function test_open()
     {
         //$this->expectException(\Exception::class);
