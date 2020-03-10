@@ -4,7 +4,7 @@ use eftec\PdoOne;
 
 include "../vendor/autoload.php";
 
-$dao=new PdoOne("127.0.0.1","root","abc.123","sakila");
+$dao=new PdoOne("mysql","127.0.0.1","root","abc.123","sakila");
 
 $t1=microtime(true);
 for($i=0;$i<1000000;$i++) {

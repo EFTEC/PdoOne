@@ -129,7 +129,12 @@ class Collection
             $html .= '<tr >';
             if (is_array($value)) {
                 foreach ($value as $key2 => $value2) {
-                    $html .= '<td >' . htmlspecialchars($value2) . '</td>';
+                    if(is_array($value2)) {
+                        $html .= '<td >' . htmlspecialchars(json_encode($value2)) . '</td>';    
+                    } else {
+                        $html .= '<td >' . htmlspecialchars($value2) . '</td>';
+                    }
+                    
                 }
             } else {
                 $html .= '<td >' . $value . '</td>';

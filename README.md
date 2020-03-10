@@ -81,6 +81,7 @@ $products=$dao
     + [having($having,[$arrayParameters])](#having--having---arrayparameters--)
     + [runGen($returnArray=true)](#rungen--returnarray-true-)
     + [toList($pdoMode)](#tolist--pdomode-)
+    + [toMeta()](#tometa--)
     + [toListSimple()](#tolistsimple--)
     + [toResult()](#toresult--)
     + [firstScalar($colName=null)](#firstscalar--colname-null-)
@@ -493,6 +494,61 @@ $results = $dao->select("*")
 ->toList(); 
 ```
 
+### toMeta()
+It returns a metacode of each columns of the query.
+
+```php
+$results = $dao->select("*")
+->from('table')
+->toMeta(); 
+```
+result:
+
+```
+array(3) {
+  [0]=>
+  array(7) {
+    ["native_type"]=>
+    string(4) "LONG"
+    ["pdo_type"]=>
+    int(2)
+    ["flags"]=>
+    array(2) {
+      [0]=>
+      string(8) "not_null"
+      [1]=>
+      string(11) "primary_key"
+    }
+    ["table"]=>
+    string(11) "producttype"
+    ["name"]=>
+    string(13) "idproducttype"
+    ["len"]=>
+    int(11)
+    ["precision"]=>
+    int(0)
+  }
+  [1]=>
+  array(7) {
+    ["native_type"]=>
+    string(10) "VAR_STRING"
+    ["pdo_type"]=>
+    int(2)
+    ["flags"]=>
+    array(0) {
+    }
+    ["table"]=>
+    string(11) "producttype"
+    ["name"]=>
+    string(4) "name"
+    ["len"]=>
+    int(135)
+    ["precision"]=>
+    int(0)
+  }
+}
+```
+
 ### toListSimple()
 It's a macro of runGen. It returns an indexed array from the first column
 
@@ -860,6 +916,8 @@ $dao->getSequencePHP(true) // string(19) "1739032938181434311"
 PdoOne adds a bit of ovehead over PDO, however it is simple a wrapper to pdo.
 
 ## Changelist
+* 1.23 2020-03-10
+    * method toMeta()
 * 1.22 2020-02-08
     * method invalidateCache()
     * changed the interface IPdoOneCache

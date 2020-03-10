@@ -6,9 +6,9 @@ use mapache_commons\Collection;
 include "../vendor/autoload.php";
 include "Collection.php";
 include "dBug.php";
-echo "<body><div style='width:600px'>";
+echo "<body><div>";
 // connecting to database sakila at 127.0.0.1 with user root and password abc.123
-$dao=new PdoOne("127.0.0.1","root","abc.123","sakila","logpdoone.txt");
+$dao=new PdoOne("mysql","127.0.0.1","root","abc.123","sakila","logpdoone.txt");
 try {
     echo "<h1>Connection. The instance {$dao->server}, base:{$dao->db}  user:{$dao->user} and password:{$dao->pwd} must exists</h1>";
     $dao->connect();
@@ -45,12 +45,26 @@ try {
     echo $dao->lastError()."-".$e->getMessage()."<br>";
 }
 
+echo "<hr>toMeta:";
+$results = $dao->select("*")->from("producttype")
+    ->where('name=?', [PDO::PARAM_STR, 'Coca-Cola'])
+    ->where('idproducttype=?', [PDO::PARAM_INT, 1])
+    ->toMeta();
+echo "<pre>";
+var_dump($results);
+echo "</pre>";
+echo $dao->lastQuery;
+
+echo Collection::generateTable($results);
+
 
 try {
 	echo "<hr>toList (raw query):";
 	$results = $dao->runRawQuery("select * from producttype where name=?",[PDO::PARAM_STR, 'Coca-Cola'],true);
 	echo $dao->lastQuery;
 	echo Collection::generateTable($results);
+	
+	
 	
     echo "<hr>toList:";
     $results = $dao->select("*")->from("producttype")
@@ -59,6 +73,9 @@ try {
         ->toList();
     echo $dao->lastQuery;
     echo Collection::generateTable($results);
+
+
+    
 
     echo "<hr>toList without where:";
     $results = $dao->select("*")->from("producttype")

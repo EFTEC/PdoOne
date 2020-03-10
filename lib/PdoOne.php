@@ -18,7 +18,7 @@ use stdClass;
  * Class PdoOne
  * This class wrappes PDO but it could be used for another framework/library.
  *
- * @version       1.22 2020-02-08
+ * @version       1.23 2020-03-10
  * @package       eftec
  * @author        Jorge Castro Castillo
  * @copyright (c) Jorge Castro C. MIT License  https://github.com/EFTEC/PdoOne
@@ -1555,6 +1555,7 @@ class PdoOne
         return $this->select("select $method($arg) $sql");
     }
 
+
     /**
      * It adds a select to the query builder.
      * <br><b>Example</b>:<br>
@@ -2207,6 +2208,28 @@ class PdoOne
     }
 
     /**
+     * It returns an array with the metadata of each columns (i.e. name, type, size, etc.) or false if error.
+     * 
+     * @return array|bool
+     * @throws Exception
+     */
+    public function toMeta() {
+        /** @var PDOStatement $stmt */
+        $stmt = $this->runGen(false, PDO::FETCH_ASSOC,'tometa');
+        if ($stmt === null || $stmt instanceof PDOStatement === false) {
+            $stmt=null;
+            return false;
+        }
+        $numCol=$stmt->columnCount();
+        $rows=[];
+        for($i=0;$i<$numCol;$i++) {
+            $rows[]=$stmt->getColumnMeta($i);
+        }
+        $stmt=null;
+        return $rows;
+    }
+
+    /**
      * It returns an array of simple columns (not declarative). It uses the first column<br>
      * <b>Example:</b><br>
      * <pre>
@@ -2258,7 +2281,7 @@ class PdoOne
     /**
      * Run builder query and returns a PDOStatement.
      *
-     * @param bool $returnArray true=return an array. False return a PDOStatement
+     * @param bool $returnArray true=return an array. False returns a PDOStatement
      * @param int  $extraMode   PDO::FETCH_ASSOC,PDO::FETCH_BOTH,PDO::FETCH_NUM,etc.
      *                          By default it returns $extraMode=PDO::FETCH_ASSOC
      *
@@ -2310,9 +2333,8 @@ class PdoOne
             
         }
         $this->runQuery($stmt);
-
-        
         $this->builderReset();
+ 
         if ($returnArray && $stmt instanceof PDOStatement) {
             $result = ($stmt->columnCount() > 0) ? $stmt->fetchAll($extraMode) : array();
             $this->affected_rows = $stmt->rowCount();
