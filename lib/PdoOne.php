@@ -18,7 +18,7 @@ use stdClass;
  * Class PdoOne
  * This class wrappes PDO but it could be used for another framework/library.
  *
- * @version       1.23 2020-03-10
+ * @version       1.23.1 2020-03-10
  * @package       eftec
  * @author        Jorge Castro Castillo
  * @copyright (c) Jorge Castro C. MIT License  https://github.com/EFTEC/PdoOne
@@ -2198,11 +2198,11 @@ class PdoOne
      * @throws Exception
      */
     public function toList($pdoMode = PDO::FETCH_ASSOC) {
-
+        $useCache=$this->useCache; // because builderReset cleans this value
         $rows=$this->runGen(true, $pdoMode,'tolist');
         if($this->uid) {
             // we store the information of the cache.
-            $this->cacheService->setCache($this->uid,$this->cacheFamily,$rows,$this->useCache);
+            $this->cacheService->setCache($this->uid,$this->cacheFamily,$rows,$useCache);
         }
         return $rows; 
     }
@@ -2240,10 +2240,11 @@ class PdoOne
      * @throws Exception
      */
     public function toListSimple() {
+        $useCache=$this->useCache; // because builderReset cleans this value
         $rows=$this->runGen(true, PDO::FETCH_COLUMN,'tolistsimple');
         if($this->uid) {
             // we store the information of the cache.
-            $this->cacheService->setCache($this->uid,$this->cacheFamily,$rows,$this->useCache);
+            $this->cacheService->setCache($this->uid,$this->cacheFamily,$rows,$useCache);
         }
         return $rows;
     }
@@ -2318,7 +2319,8 @@ class PdoOne
             }
 
         }
-        if($this->useCache!==false && $returnArray) {
+        $useCache=$this->useCache; // because builderReset cleans this value
+        if($useCache!==false && $returnArray) {
             $this->uid=hash('sha256',$this->lastQuery.$extraMode.serialize($this->lastBindParam).$extraIdCache);
             $result=$this->cacheService->getCache($this->uid,$this->cacheFamily);
             if($result!==false) {
@@ -2332,6 +2334,7 @@ class PdoOne
             }
             
         }
+        
         $this->runQuery($stmt);
         $this->builderReset();
  
@@ -2341,7 +2344,7 @@ class PdoOne
             $stmt = null; // close
             if($extraIdCache=='rungen' && $this->uid) {
                 // we store the information of the cache.
-                $this->cacheService->setCache($this->uid,$this->cacheFamily,$result,$this->useCache);
+                $this->cacheService->setCache($this->uid,$this->cacheFamily,$result,$useCache);
             }
             return $result;
         } else {
@@ -2422,7 +2425,8 @@ class PdoOne
      * @throws Exception
      */
     public function first() {
-        if($this->useCache!==false) {
+        $useCache=$this->useCache; // because builderReset cleans this value
+        if($useCache!==false) {
             $sql = $this->sqlGen();
             $this->uid=hash('sha256',$sql.PDO::FETCH_ASSOC.serialize($this->whereParamType)
                 .serialize($this->whereParamValue).'first');
@@ -2448,7 +2452,7 @@ class PdoOne
         }
         if($this->uid) {
             // we store the information of the cache.
-            $this->cacheService->setCache($this->uid,$this->cacheFamily,$row,$this->useCache);
+            $this->cacheService->setCache($this->uid,$this->cacheFamily,$row,$useCache);
         }
         return $row;
     }
@@ -2469,7 +2473,8 @@ class PdoOne
      */
     public function firstScalar($colName = null) {
         $rows=null;
-        if($this->useCache!==false) {
+        $useCache=$this->useCache; // because builderReset cleans this value
+        if($useCache!==false) {
             $sql = $this->sqlGen();
             $this->uid=hash('sha256',$sql.PDO::FETCH_ASSOC.serialize($this->whereParamType)
                 .serialize($this->whereParamValue).'firstscalar');
@@ -2501,7 +2506,7 @@ class PdoOne
         }
         if($this->uid) {
             // we store the information of the cache.
-            $this->cacheService->setCache($this->uid,$this->cacheFamily,$row,$this->useCache);
+            $this->cacheService->setCache($this->uid,$this->cacheFamily,$row,$useCache);
         }
         return $row;
     }
@@ -2518,7 +2523,8 @@ class PdoOne
      * @see \eftec\PdoOne::first
      */
     public function last() {
-        if($this->useCache!==false) {
+        $useCache=$this->useCache; // because builderReset cleans this value
+        if($useCache!==false) {
             $sql = $this->sqlGen();
             $this->uid=hash('sha256',$sql.PDO::FETCH_ASSOC.serialize($this->whereParamType)
                 .serialize($this->whereParamValue).'last');
@@ -2544,7 +2550,7 @@ class PdoOne
         }
         if($this->uid) {
             // we store the information of the cache.
-            $this->cacheService->setCache($this->uid,$this->cacheFamily,$row,$this->useCache);
+            $this->cacheService->setCache($this->uid,$this->cacheFamily,$row,$useCache);
         }
         return $row;
     }
@@ -2869,7 +2875,7 @@ class PdoOne
     }
 
     /**
-     * It sets to use cache (if the cacheservice is set)
+     * It sets to use cache (if the cacheservice is set) for the current pipelines.
      *
      * @param null|bool|int $ttl If null then the cache never expires.<br>
      *                           If false then we don't use cache.<br>
