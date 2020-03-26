@@ -68,6 +68,13 @@ class PdoOneTest extends TestCase
 	    $this->expectException(Exception::class);
         $this->pdoOne->connect();
     }
+    function test_chainreset() {
+        $this->pdoOne->logLevel=3;
+        $rows=$this->pdoOne->select('select 123 field1 from dual');
+        $this->pdoOne->builderReset();
+        $rows=$this->pdoOne->select('select 123 field1 from dual')->toList();
+        $this->assertEquals([['field1'=>123]],$rows);
+    }
     function test_cache() {
         $this->pdoOne->getCacheService()->cacheCounter=0;
         
