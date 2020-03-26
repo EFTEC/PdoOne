@@ -916,6 +916,8 @@ $dao->getSequencePHP(true) // string(19) "1739032938181434311"
 PdoOne adds a bit of ovehead over PDO, however it is simple a wrapper to pdo.
 
 ## Changelist
+* 1.24 2020-03-26
+    * builderReset() is now public
 * 1.23.1 2020-03-10
     * Fixed a problem with the cache
 * 1.23 2020-03-10

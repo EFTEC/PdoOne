@@ -18,7 +18,7 @@ use stdClass;
  * Class PdoOne
  * This class wrappes PDO but it could be used for another framework/library.
  *
- * @version       1.23.1 2020-03-10
+ * @version       1.24 2020-03-26
  * @package       eftec
  * @author        Jorge Castro Castillo
  * @copyright (c) Jorge Castro C. MIT License  https://github.com/EFTEC/PdoOne
@@ -597,7 +597,7 @@ class PdoOne
     /**
      * It reset the parameters used to Build Query.
      */
-    private function builderReset() {
+    public function builderReset() {
         $this->select = '';
         $this->useCache=false;
         $this->from = '';
