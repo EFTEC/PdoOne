@@ -900,11 +900,10 @@ $dao->getSequencePHP(true) // string(19) "1739032938181434311"
 
 ## CLI 
 
-From 1.28, PdoOne has a CLI interface.
+PdoOne has some features available only in CLI.  Right now, it only supports MYSQL.
 
 ![](examples/cli.jpg)
 
-Right now, it only supports MYSQL.
 
 ```
  _____    _       _____
@@ -930,7 +929,6 @@ Syntax:php PdoOne.php
     json = it returns the value of the queries as json
 ```
 
-The library now could be ejecuted as CLI
 
 ### Run as cli
 
