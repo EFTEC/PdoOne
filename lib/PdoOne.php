@@ -900,15 +900,8 @@ eot;
                 break;
             default:
                 echo "Output $output not defined";
-                
+                break;
         }
-
-        /** @var array $result=array(["actor_id"=>0,"first_name"=>'',"last_name"=>'',"last_update"=>'']) */
-        $result=$pdo
-            ->select("*")
-            ->from("actor")
-            ->toList();
-        
     }
 
     /**
