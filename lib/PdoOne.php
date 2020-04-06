@@ -18,7 +18,7 @@ use stdClass;
  * Class PdoOne
  * This class wrappes PDO but it could be used for another framework/library.
  *
- * @version       1.24.1 2020-03-26
+ * @version       1.28 2020-04-06
  * @package       eftec
  * @author        Jorge Castro Castillo
  * @copyright (c) Jorge Castro C. MIT License  https://github.com/EFTEC/PdoOne
@@ -26,6 +26,7 @@ use stdClass;
  */
 class PdoOne
 {
+    const VERSION = '1.28';
 
     const NULL = PHP_INT_MAX;
     /** @var string|null Static date (when the date is empty) */
@@ -83,7 +84,7 @@ class PdoOne
     var $database_delimiter0 = '`';
     //</editor-fold>
     var $database_delimiter1 = '`';
-    /** @var string server ip. Ex. 127.0.0.1 */
+    /** @var string server ip. Ex. 127.0.0.1 127.0.0.1:3306 */
     var $server;
     var $user;
     var $pwd;
@@ -121,13 +122,13 @@ class PdoOne
      *                         If <b>false</b> then we don't use cache.<br>
      *                         If <b>int</b> then it is the duration of the cache (in seconds)
      */
-    private $useCache=false;
+    private $useCache = false;
     /** @var null|string the unique id generate by sha256 and based in the query, arguments, type and methods */
-    private $uid=null;
+    private $uid = null;
     /** @var string [optional] It is the family or group of the cache */
-    private $cacheFamily='';    
-    /** @var IPdoOneCache The service of cache [optional]  */
-    private $cacheService=null;
+    private $cacheFamily = '';
+    /** @var IPdoOneCache The service of cache [optional] */
+    private $cacheService = null;
     private $from = '';
     /** @var array */
     private $where = array();
@@ -152,14 +153,14 @@ class PdoOne
     /**
      * PdoOne constructor.  It doesn't open the connection to the database.
      *
-     * @param string database ['mysql','sqlsrv','oracle','test'][$i]
-     * @param string $server  server ip. Ex. 127.0.0.1
-     * @param string $user    Ex. root
-     * @param string $pwd     Ex. 12345
-     * @param string $db      Ex. mybase
-     * @param string $logFile Optional  log file. Example c:\\temp\log.log
-     * @param string $charset Example utf8mb4
-     * @param int    $nodeId  It is the id of the node (server). It is used for sequence. Form 0 to 1023
+     * @param string $database =['mysql','sqlsrv','oracle','test'][$i]
+     * @param string $server   server ip. Ex. 127.0.0.1 127.0.0.1:3306
+     * @param string $user     Ex. root
+     * @param string $pwd      Ex. 12345
+     * @param string $db       Ex. mybase
+     * @param string $logFile  Optional  log file. Example c:\\temp\log.log
+     * @param string $charset  Example utf8mb4
+     * @param int    $nodeId   It is the id of the node (server). It is used for sequence. Form 0 to 1023
      *
      * @see PdoOne::connect()
      */
@@ -222,7 +223,7 @@ class PdoOne
      * Convert date, from mysql date -> text (using a format pre-established)
      *
      * @param string $sqlField
-     * @param bool $hasTime if true then the date contains time.
+     * @param bool   $hasTime if true then the date contains time.
      *
      * @return string Returns a text with the date formatted (human readable)
      */
@@ -244,7 +245,7 @@ class PdoOne
      * Convert date, from mysql -> php
      *
      * @param string $sqlField
-     * @param bool $hasTime
+     * @param bool   $hasTime
      *
      * @return bool|DateTime|null
      */
@@ -284,8 +285,8 @@ class PdoOne
      * <pre>
      * $pdoOne->dateConvert('01/01/2019','human','sql'); // 2019-01-01
      * </pre>
-     * 
-     * @param string $sqlField The date to convert
+     *
+     * @param string $sqlField     The date to convert
      * @param string $inputFormat  =['iso','human','sql','class'][$i]<br>
      *                             <b>iso</b> depends on the database. Example: Y-m-d H:i:s<br>
      *                             <b>human</b> is based in d/m/Y H:i:s but it could
@@ -463,6 +464,499 @@ class PdoOne
         }
     }
 
+    public static function isCli() {
+        return !http_response_code();
+    }
+    private function typeDict($type,$default=true) {
+        switch($this->databaseType) {
+            case 'mysql':
+                switch ($type) {
+                    case 'VAR_STRING':
+                    case 'BLOB':
+                    case 'STRING':
+                    case 'GEOMETRY':
+                        return ($default)?"''":'string';
+                    case 'LONG':
+                    case 'SHORT':
+                    case 'TINY':
+                    case 'YEAR':
+                        return ($default)?"0":'int';
+                    case 'DATETIME':
+                    case 'DATE':
+                    case 'TIME':
+                    case 'TIMESTAMP':
+                        return ($default)?"''":'string';
+                    case 'DECIMAL':
+                    case 'DOUBLE':
+                    case 'FLOAT':
+                    case 'NEWDECIMAL':
+                        return ($default)?"0.0":'float';
+                    default:
+                        return "???".$type;
+                }
+                break;
+            default:
+                trigger_error('typedic not defined for '.$this->databaseType);
+                return '???';
+        }
+    }
+    /**
+     * @param PdoOne $dao
+     * @param string $query
+     *
+     * @return string
+     * @throws Exception
+     */
+    protected static function generateCodeArray($dao,$query) {
+        $r=($dao->toMeta($query));
+
+        $defaultNull=false;
+        $inline=true;
+
+        $ln=($inline)?'':"\n";
+
+        $result= "[".$ln;
+        $used=[];
+        foreach($r as $row) {
+            $name=$row['name'];
+            if(!in_array($name,$used)) {
+                if($defaultNull) {
+                    $default='null';
+                } else {
+                    $default=$dao->typeDict([@$row['native_type']][0],true);
+                }
+                $result.= '"' . $name . "\"=>" . $default . ",".$ln;
+            }
+            $used[]=$name;
+        }
+        $result.= "]".$ln;
+        $result=str_replace(",$ln]","$ln]", $result);
+        return $result;
+    }
+
+    /**
+     * @param PdoOne $pdo
+     * @param string $query
+     *
+     * @return string
+     * @throws Exception
+     */
+    protected static function generateCodeSelect($pdo,$query) {
+        $q=self::splitQuery($query);
+        $code='/** @var array $result=array('.self::generateCodeArray($pdo,$query).') */'."\n";
+
+
+        $code.='$result=$pdo'."\n";
+        foreach($q as $k=>$v) {
+            if($v!==null) {
+                $k2=str_replace(' by','',$k); // order by -> order
+                foreach($v as $vitem) {
+                    $code .= "\t->{$k2}(\"{$vitem}\")\n";
+                }
+            }
+        }
+        $code.="\t->toList();\n";
+        return $code;
+    }
+    protected static function splitQuery($query) {
+        $parts=['select','from'
+                ,'inner join','inner join','inner join','inner join','inner join','inner join'
+                ,'left join','left join','left join','left join','left join','left join'
+                ,'right join','right join','right join','right join','right join','right join'
+                ,'where','group by','having','order by','limit','*END*'];
+        $partsRealIndex=['select','from'
+                         ,'innerjoin','innerjoin','innerjoin','innerjoin','innerjoin','innerjoin'
+                         ,'left','left','left','left','left','left'
+                         ,'right','right','right','right','right','right'
+                         ,'where','group','having','order','limit','*END*'];
+        $query=str_replace(["\r\n","\n","\t"]," ",$query);
+        $query=str_replace(["   ","  "]," ",$query); // remove 3 or 2 space and put instead 1 space
+        $query=' '.trim($query," \t\n\r\0\x0B;").'*END*'; // we also trim the last ; (if any)
+        $pfin=0;
+        foreach($parts as $kp=>$part) {
+            $ri=$partsRealIndex[$kp];
+            if($part!='*END*') {
+                //$result[$ri] = null;
+                $pini = stripos($query, $part, $pfin);
+                if ($pini !== false) {
+                    $pini+=strlen($part);
+                    $found = false;
+                    for ($i = $kp + 1; $i < count($parts); $i++) {
+                        $pfin = stripos($query, $parts[$i], $pini);
+                        if ($pfin !== false) {
+                            $found = $pfin;
+                            break;
+                        }
+                    }
+                    if ($found !== false) {
+                        $pfin = $found;
+                        if (!isset($result[$ri])) {
+                            $result[$ri]=array();
+                        }
+                        $result[$ri][] =trim( substr($query, $pini, $pfin - $pini));
+                    }
+                }
+            }
+        }
+        return $result;
+    }
+    protected static function generateCodeClass($pdo,$input,$query,$pk) {
+        $r=<<<'eot'
+/**
+ * Generated by PdoOne Version {version}
+ * Class {table}Repo
+ */
+class {table}Repo
+{
+    const TABLE = '{table}';
+    const PK = '{pk}';
+    /** @var PdoOne */
+    public static $pdoOne = null;
+
+    /**
+     * It creates a new table<br>
+     * If the table exists then the operation is ignored (and it returns false)
+     * 
+     * @param array $definition
+     * @param null  $extra
+     *
+     * @return array|bool|PDOStatement
+     * @throws Exception
+     */
+    public static function createTable($definition, $extra = null) {
+        if (!self::getPdoOne()->tableExist(self::TABLE)) {
+            return self::getPdoOne()->createTable(self::TABLE, $definition, self::PK, $extra);
+        }
+        return false; // table already exist
+    }
+
+    /**
+     * It is used for DI.<br>
+     * If the field is not null, it returns the field self::$pdoOne<br>
+     * If the global function pdoOne exists, then it is used<br>
+     * if the globla variable $pdoOne exists, then it is used<br>
+     * Otherwise, it returns null
+     *
+     * @return PdoOne
+     */
+    protected static function getPdoOne() {
+        if (self::$pdoOne !== null) {
+            return self::$pdoOne;
+        }
+        if (function_exists('pdoOne')) {
+            return pdoOne();
+        }
+        if (isset($GLOBALS['pdoOne'])) {
+            return $GLOBALS['pdoOne'];
+        }
+        return null;
+    }
+
+    /**
+     * It sets the field self::$pdoOne
+     * 
+     * @param $pdoOne
+     */
+    public static function setPdoOne($pdoOne) {
+        self::$pdoOne = $pdoOne;
+    }
+
+    /**
+     * It cleans the whole table (delete all rows)
+     * 
+     * @return array|bool|PDOStatement
+     * @throws Exception
+     */
+    public static function truncate() {
+        return self::getPdoOne()->truncate(self::TABLE);
+    }
+
+    /**
+     * It drops the table (structure and values)
+     * 
+     * @return array|bool|PDOStatement
+     * @throws Exception
+     */
+    public static function dropTable() {
+        if (!self::getPdoOne()->tableExist(self::TABLE)) {
+            return self::getPdoOne()->dropTable(self::TABLE);
+        }
+        return false; // table does not exist
+    }
+
+    /**
+     * Insert an new row
+     * 
+     * @param array $obj ={array}
+     *
+     * @return mixed
+     * @throws Exception
+     */
+    public static function insert($obj) {
+        return self::getPdoOne()->insertObject(self::TABLE, $obj);
+    }
+
+    /**
+     * Update an registry
+     * 
+     * @param array $obj ={array}
+     *
+     * @return mixed
+     * @throws Exception
+     */
+    public static function update($obj) {
+        return self::getPdoOne()->from(self::TABLE)
+            ->set($obj)
+            ->where(self::PK, $obj[self::PK])
+            ->update();
+    }
+
+    /**
+     * It deletes a registry
+     * 
+     * @param mixed $pk
+     *
+     * @return mixed
+     * @throws Exception
+     */
+    public static function delete($pk) {
+        return self::getPdoOne()->from(self::TABLE)
+            ->where(self::PK, $pk)
+            ->delete();
+    }
+
+    /**
+     * It gets a registry using the primary key.
+     * 
+     * @param mixed $pk
+     *
+     * @return {array}
+     * @throws Exception
+     */
+    public static function get($pk) {
+        return self::getPdoOne()->select('*')
+            ->from(self::TABLE)
+            ->where(self::PK, $pk)
+            ->first();
+    }
+
+    /**
+     * It returns a list of rows
+     * 
+     * @param null|array $where ={array}
+     * @param null|string $order
+     * @param null|string $limit
+     *
+     * @return [{array}]
+     * @throws Exception
+     */
+    public static function select($where = null, $order = null, $limit = null) {
+        return self::getPdoOne()->select('*')
+            ->from(self::TABLE)
+            ->where($where)
+            ->order($order)
+            ->limit($limit)
+            ->toList();
+    }
+
+    /**
+     * It returns the number of rows
+     * 
+     * @param null|array $where ={array}
+     *
+     * @return int
+     * @throws Exception
+     */
+    public static function count($where = null) {
+        return (int)self::getPdoOne()->count()
+            ->from(self::TABLE)
+            ->where($where)
+            ->firstScalar();
+    }
+}
+eot;
+        $r=str_replace('{version}',self::VERSION,$r);
+        $r=str_replace('{table}',$input,$r);
+        $r=str_replace('{pk}',$pk,$r);
+        $r=str_replace('{array}',self::generateCodeArray($pdo,$query),$r);
+        return $r;
+
+    }
+
+    /**
+     * @param $argv
+     *
+     * @throws Exception
+     */
+    public static function cliEngine() {
+        $database = self::getParameterCli('database');
+        $server = self::getParameterCli('server');
+        $user = self::getParameterCli('user');
+        $pwd = self::getParameterCli('pwd');
+        $db = self::getParameterCli('db');
+        $input = self::getParameterCli('input');
+        $output = self::getParameterCli('output');
+        // var_dump(getopt('database:'));
+        
+        
+        $v = self::VERSION;
+        
+        if($database==='' || $server==='' || $user==='' || $pwd==='' || $input === '' || $output === '' ) {
+
+            echo <<<eot
+ _____    _       _____           
+|  _  | _| | ___ |     | ___  ___ 
+|   __|| . || . ||  |  ||   || -_|
+|__|   |___||___||_____||_|_||___|  $v
+
+Syntax:php PdoOne.php 
+-database (mysql/sqlsrv/oracle/test) [$database]
+-server [$server]
+    Example mysql: 127.0.0.1 , 127.0.0.1:3306
+-user root The username to access to the database [$user]
+-pwd 12345 The password to access to the database [***]
+-db sakila  The database/schema [$db]
+-input ("select * from table"/"table") The input value.[$input]
+    "select * from table" = it runs a query
+    "table" = it runs a table (it could generates a query automatically)
+-output (classcode/selectcode/arraycode/csv/json) The result. [$output]
+    classcode =it returns php code with a CRUDL class
+    selectcode =it shows a php code with a select
+    arraycode = it shows a php code with the definition of an array Ex: ['idfield'=0,'name'=>'']
+    csv = it returns a csv result
+    json = it returns the value of the queries as json
+
+eot;
+            return;
+        }
+
+        $pdo = new PdoOne($database, $server, $user, $pwd, $db);
+        $pdo->logLevel = 3;
+        $pdo->connect(false);
+        if (!$pdo->isOpen) {
+            echo "Unable to open database $database $server $user **** $db\n";
+            echo $pdo->lastError();
+            die(1);
+        }
+        if (stripos($input, 'select ') !== false) {
+            $query=$input;
+        } else {
+            $query='select * from '.$pdo->addDelimiter($input);
+        }
+        switch ($output) {
+            case 'csv':
+                $result = $pdo->runRawQuery($query, [], true);
+                if (!is_array($result)) {
+                    echo "No result or result error\n";
+                    die(1);
+                }
+                $head = '';
+                foreach ($result[0] as $k => $row) {
+                    $head .= $k . ',';
+                }
+                $head = rtrim($head, ',') . "\n";
+                echo $head;
+                foreach ($result as $k => $row) {
+                    $line = '';
+                    foreach ($row as $cell) {
+
+                        $line .= self::fixCsv($cell) . ',';
+                    }
+                    $line = rtrim($line, ',') . "\n";
+                    echo $line;
+                }
+                break;
+            case 'json':
+                $result = $pdo->runRawQuery($query, [], true);
+                if (!is_array($result)) {
+                    echo "No result or result error\n";
+                    die(1);
+                }
+                echo json_encode($result);
+                break;
+            case 'selectcode':
+                echo self::generateCodeSelect($pdo,$query);
+                break;
+            case 'arraycode':
+                echo self::generateCodeArray($pdo,$query);
+                break;
+            case 'classcode':
+                $q=$pdo->toMeta($query);
+                $pk='';
+                switch ($pdo->databaseType) {
+                    case 'mysql':
+                        foreach($q as $item) {
+                            if (in_array('primary_key', $item['flags'])) {
+                                $pk = $item['name'];
+                            }
+                        }
+                        break;
+                }
+                if(!$pk) {
+                    echo "Unable to find primary key on query $query";
+                    die(1);
+                }
+                echo self::generateCodeClass($pdo,$input,$query,$pk);
+                break;
+            default:
+                echo "Output $output not defined";
+                
+        }
+
+        /** @var array $result=array(["actor_id"=>0,"first_name"=>'',"last_name"=>'',"last_update"=>'']) */
+        $result=$pdo
+            ->select("*")
+            ->from("actor")
+            ->toList();
+        
+    }
+
+    /**
+     * @param        $key
+     * @param string $default is the defalut value is the parameter is set without value.
+     *
+     * @return string
+     */
+    protected static function getParameterCli($key, $default = '') {
+        global $argv;
+        $p = array_search('-' . $key, $argv);
+        if ($p === false) {
+            return '';
+        }
+        if ($default !== '') {
+            return $default;
+        }
+        if (count($argv) >= $p + 1) {
+            return self::removeTrailSlash($argv[$p + 1]);
+        }
+
+        return '';
+    }
+
+    protected static function removeTrailSlash($txt) {
+        return rtrim($txt, '/\\');
+    }
+
+    /**
+     * Returns the last error.
+     *
+     * @return string
+     */
+    public function lastError() {
+        if (!$this->isOpen) {
+            return "It's not connected to the database";
+        }
+        return $this->conn1->errorInfo()[2];
+    }
+
+    protected static function fixCsv($value) {
+        if (is_numeric($value)) {
+            return $value;
+        }
+        $value = str_replace('"', '""', $value);
+        return '"' . $value . '"';
+    }
+
     /**
      * It changes default database, schema or user.
      *
@@ -548,6 +1042,11 @@ class PdoOne
         }
 
     }
+
+
+
+
+    //<editor-fold desc="transaction functions">
 
     /**
      * Write a log line for debug, clean the command chain then throw an error (if throwOnError==true)
@@ -658,6 +1157,9 @@ class PdoOne
 
         @fclose($fp);
     }
+    //</editor-fold>
+
+    //<editor-fold desc="Date functions" defaultstate="collapsed" >
 
     /**
      * Write a log line for debug, clean the command chain then throw an error (if throwOnError==true)
@@ -689,11 +1191,6 @@ class PdoOne
         @$this->conn1 = null;
     }
 
-
-
-
-    //<editor-fold desc="transaction functions">
-
     /**
      * It returns the next sequence.
      * It gets a collision free number if we don't do more than one operation
@@ -711,8 +1208,8 @@ class PdoOne
      * @return string . Example string(19) "3639032938181434317"
      * @throws Exception
      */
-    public function getSequence($asFloat = false, $unpredictable = false,$sequenceName='') {
-        $sequenceName=($sequenceName=='')?$this->tableSequence : $sequenceName;
+    public function getSequence($asFloat = false, $unpredictable = false, $sequenceName = '') {
+        $sequenceName = ($sequenceName == '') ? $this->tableSequence : $sequenceName;
         $sql = "select next_{$sequenceName}({$this->nodeId}) id";
         $r = $this->runRawQuery($sql, null, true);
         if ($unpredictable) {
@@ -756,64 +1253,46 @@ class PdoOne
                 $this->throwError("Database is in READ ONLY MODE", '');
             }
         }
+        if (!is_array($param) && $param !== null) {
+            $this->throwError("runRawQuery, param must be null or an array", '');
+            return false;
+        }
+
         $this->lastParam = $param;
         $this->lastQuery = $rawSql;
         if ($this->logLevel >= 2) {
             $this->storeInfo($rawSql);
         }
         if ($param === null) {
-            // the "where" chain doesn't have parameters.
-            try {
-                $rows = $this->conn1->query($rawSql);
-            } catch (Exception $ex) {
-                $rows = false;
-                $this->throwError("Exception in runRawQuery :", $rawSql,
-                    json_encode($this->lastParam) . '\nTRACE:' . $ex->getTraceAsString());
-            }
-            if ($rows === false) {
-                $this->throwError("Unable to run raw query", $rawSql, $this->lastParam);
-            }
-
-            if ($returnArray && $rows instanceof PDOStatement) {
-                if ($rows->columnCount() > 0) {
-                    $result = @$rows->fetchAll(PDO::FETCH_ASSOC);
-                    $this->affected_rows = $rows->rowCount();
-                    return $result;
-                } else {
-                    $this->affected_rows = $rows->rowCount();
-                    return true;
-                }
-            } else {
-                $this->affected_rows = $rows->rowCount();
-                return $rows;
-            }
+            return $this->runRawQueryParamLess($rawSql, $returnArray);
         }
+
         // the "where" has parameters.
         $stmt = $this->prepare($rawSql);
         $counter = 0;
-        $this->lastBindParam=[];
+        $this->lastBindParam = [];
         for ($i = 0; $i < count($param); $i += 2) {
             $counter++;
             $typeP = $this->stringToPdoParam($param[$i]);
-            $this->lastBindParam[$counter]=$param[$i + 1];
+            $this->lastBindParam[$counter] = $param[$i + 1];
             $stmt->bindParam($counter
                 , $param[$i + 1]
                 , $typeP);
         }
-        if($this->useCache!==false && $returnArray) {
-            $this->uid=hash('sha256',$this->lastQuery.serialize($this->lastBindParam));
-            $result=$this->cacheService->getCache($this->uid,$this->cacheFamily);
-            if($result!==false) {
+        if ($this->useCache !== false && $returnArray) {
+            $this->uid = hash('sha256', $this->lastQuery . serialize($this->lastBindParam));
+            $result = $this->cacheService->getCache($this->uid, $this->cacheFamily);
+            if ($result !== false) {
                 // it's found in the cache.
-                if(is_array($result)) {
-                    $this->affected_rows=count($result);    
+                if (is_array($result)) {
+                    $this->affected_rows = count($result);
                 } else {
-                    $this->affected_rows=0;
+                    $this->affected_rows = 0;
                 }
                 return $result;
             }
         } else {
-            $this->uid=null;
+            $this->uid = null;
         }
         $this->runQuery($stmt);
 
@@ -824,12 +1303,50 @@ class PdoOne
             return $rows;
         } else {
             if ($stmt instanceof PDOStatement) {
-                $this->affected_rows = $stmt->rowCount();    
+                $this->affected_rows = $stmt->rowCount();
             } else {
-                $this->affected_rows=0;
+                $this->affected_rows = 0;
             }
-            
+
             return $stmt;
+        }
+    }
+
+    /**
+     * Internal Use: It runs a raw query
+     *
+     * @param string $rawSql
+     * @param bool   $returnArray
+     *
+     * @return array|bool|false|PDOStatement
+     * @throws Exception
+     * @see \eftec\PdoOne::runRawQuery
+     */
+    private function runRawQueryParamLess($rawSql, $returnArray) {
+        // the "where" chain doesn't have parameters.
+        try {
+            $rows = $this->conn1->query($rawSql);
+        } catch (Exception $ex) {
+            $rows = false;
+            $this->throwError("Exception in runRawQueryParamLess :", $rawSql,
+                json_encode($this->lastParam) . '\nTRACE:' . $ex->getTraceAsString());
+        }
+        if ($rows === false) {
+            $this->throwError("Unable to run raw runRawQueryParamLess", $rawSql, $this->lastParam);
+        }
+
+        if ($returnArray && $rows instanceof PDOStatement) {
+            if ($rows->columnCount() > 0) {
+                $result = @$rows->fetchAll(PDO::FETCH_ASSOC);
+                $this->affected_rows = $rows->rowCount();
+                return $result;
+            } else {
+                $this->affected_rows = $rows->rowCount();
+                return true;
+            }
+        } else {
+            $this->affected_rows = $rows->rowCount();
+            return $rows;
         }
     }
 
@@ -871,9 +1388,6 @@ class PdoOne
         }
         return $stmt;
     }
-    //</editor-fold>
-
-    //<editor-fold desc="Date functions" defaultstate="collapsed" >
 
     private function stringToPdoParam($string) {
         if (is_int($string)) {
@@ -891,6 +1405,9 @@ class PdoOne
                 return null;
         }
     }
+    //</editor-fold>
+
+    //<editor-fold desc="Query Builder functions" defaultstate="collapsed" >
 
     /**
      * Run a prepared statement.
@@ -1018,7 +1535,7 @@ class PdoOne
      * Currently only works with table
      *
      * @param string $objectName
-     * @param string $type=['table','function'][$i] The type of the object
+     * @param string $type =['table','function'][$i] The type of the object
      *
      * @return bool
      * @throws Exception
@@ -1078,14 +1595,11 @@ class PdoOne
         }
 
         $arr = $this->runRawQuery($query, [PDO::PARAM_STR, $objectName], true);
-        if(is_array($arr) && count($arr)>0) {
+        if (is_array($arr) && count($arr) > 0) {
             return true;
         }
         return false;
     }
-    //</editor-fold>
-
-    //<editor-fold desc="Query Builder functions" defaultstate="collapsed" >
 
     /**
      * It returns the statistics (minimum,maximum,average,sum and count) of a column of a table
@@ -1219,33 +1733,78 @@ class PdoOne
 
     /**
      * It drops a table. It ises the method $this->drop();
-     * 
+     *
      * @param string $tableName the name of the table to drop
-     * @param string $extra (optional) an extra value.
+     * @param string $extra     (optional) an extra value.
      *
      * @return array|bool|PDOStatement
      * @throws Exception
      */
-    public function dropTable($tableName,$extra='') {
-        return $this->drop($tableName,'table',$extra);
+    public function dropTable($tableName, $extra = '') {
+        return $this->drop($tableName, 'table', $extra);
     }
 
     /**
      * It drops (DDL) an object
-     * 
+     *
      * @param string $objectName The name of the object.
-     * @param string $type=['table','view','columns','function'][$i] The type of object to drop.
-     * @param string $extra (optional) An extra value added at the end of the query
+     * @param string $type       =['table','view','columns','function'][$i] The type of object to drop.
+     * @param string $extra      (optional) An extra value added at the end of the query
      *
      * @return array|bool|PDOStatement
      * @throws Exception
      */
-    public function drop($objectName,$type,$extra='') {
-        $sql="drop $type ".$this->addDelimiter($objectName)." $extra";
+    public function drop($objectName, $type, $extra = '') {
+        $sql = "drop $type " . $this->addDelimiter($objectName) . " $extra";
         return $this->runRawQuery($sql, null, true);
     }
+
     /**
-     * It truncates (DDL)  a table 
+     * It adds a delimiter to a text based in the type of database (` for mysql and [] for sql server)<br>
+     * Example:<br>
+     * $pdoOne->addDelimiter('hello world'); // `hello` world<br>
+     * $pdoOne->addDelimiter('hello.world'); // `hello`.`world`<br>
+     * $pdoOne->addDelimiter('hello=value); // `hello`=value<br>
+     *
+     * @param $txt
+     *
+     * @return mixed|string
+     */
+    public function addDelimiter($txt) {
+        if (strpos($txt, $this->database_delimiter0) === false) {
+            $pos = $this->strposa($txt, [' ', '=']);
+            if ($pos === false) {
+                $quoted = $this->database_delimiter0 . $txt . $this->database_delimiter1;
+                $quoted = str_replace('.', $this->database_delimiter1 . '.' . $this->database_delimiter0, $quoted);
+            } else {
+                $arr = explode(substr($txt, $pos, 1), $txt, 2);
+                $quoted = $this->database_delimiter0 . $arr[0] . $this->database_delimiter1 . substr($txt, $pos, 1)
+                    . $arr[1];
+                $quoted = str_replace('.', $this->database_delimiter1 . '.' . $this->database_delimiter0, $quoted);
+            }
+            return $quoted;
+        } else {
+            // it has a delimiter, so we returned the same text.
+            return $txt;
+        }
+    }
+
+    private function strposa($haystack, $needles = array(), $offset = 0) {
+        $chr = array();
+        foreach ($needles as $needle) {
+            $res = strpos($haystack, $needle, $offset);
+            if ($res !== false) {
+                $chr[$needle] = $res;
+            }
+        }
+        if (empty($chr)) {
+            return false;
+        }
+        return min($chr);
+    }
+
+    /**
+     * It truncates (DDL)  a table
      *
      * @param string $tableName
      * @param string $extra (optional) An extra value added at the end of the query
@@ -1253,80 +1812,8 @@ class PdoOne
      * @return array|bool|PDOStatement
      * @throws Exception
      */
-    public function truncate($tableName,$extra='') {
-        $sql="truncate table ".$this->addDelimiter($tableName)." $extra";
-        return $this->runRawQuery($sql, null, true);
-    }
-
-    /**
-     * Create a table<br>
-     * <b>Example:</b><br>
-     * <pre>
-     * createTable('products',['id'=>'int not null','name'=>'varchar(50) not null'],'id');
-     * </pre>
-     *
-     * @param string      $tableName  The name of the new table. This method will fail if the table exists.
-     * @param array       $definition An associative array with the definition of the columns.<br>
-     *                                Example ['id'=>'integer not null','name'=>'varchar(50) not null']
-     * @param string|null $primaryKey The column's name that is primary key.
-     * @param string      $extra      An extra operation inside of the definition of the table.
-     * @param string      $extraOutside An extra operation outside of the definition of the table.<br>
-     *                                  It replaces the default values outside of the table
-     *
-     * @return array|bool|PDOStatement
-     * @throws Exception
-     */
-    public function createTable($tableName, $definition, $primaryKey = null, $extra = '',$extraOutside='') {
-        $sql = null;
-        switch ($this->databaseType) {
-            case 'mysql':
-                $extraOutside=($extraOutside==='')? "ENGINE=MyISAM DEFAULT CHARSET={$this->charset};" : $extraOutside;
-                $sql = "CREATE TABLE `{$tableName}` (";
-                foreach ($definition as $key => $type) {
-                    $sql .= "`$key` $type,";
-                }
-                if ($primaryKey) {
-                    $sql .= " PRIMARY KEY(`$primaryKey`) ";
-                } else {
-                    $sql = substr($sql, 0, -1);
-                }
-                $sql .= "$extra ) ".$extraOutside;
-                break;
-            case 'sqlsrv':
-                $extraOutside=($extraOutside==='')? "ON [PRIMARY]" : $extraOutside;
-                $sql = "set nocount on;
-				CREATE TABLE [{$tableName}] (";
-                foreach ($definition as $key => $type) {
-                    $sql .= "[$key] $type,";
-                }
-
-                $sql .= "$extra ) ON [PRIMARY]; ";
-
-                if ($primaryKey) {
-                    $sql .= "
-						ALTER TABLE [$tableName] ADD CONSTRAINT
-							PK_$tableName PRIMARY KEY CLUSTERED 
-							(
-							[$primaryKey]
-							) $extraOutside
-						";
-                }
-                break;
-            case 'test':
-                $sql = "CREATE TABLE {$tableName} (";
-                foreach ($definition as $key => $type) {
-                    $sql .= "$key $type,";
-                }
-                if ($primaryKey) {
-                    $sql .= " PRIMARY KEY(`$primaryKey`) ";
-                } else {
-                    $sql = substr($sql, 0, -1);
-                }
-                $sql .= "$extra ) $extraOutside";
-                break;
-            default:
-                $this->throwError("type not defined for create table", "");
-        }
+    public function truncate($tableName, $extra = '') {
+        $sql = "truncate table " . $this->addDelimiter($tableName) . " $extra";
         return $this->runRawQuery($sql, null, true);
     }
 
@@ -1337,32 +1824,34 @@ class PdoOne
      * @param string|null $tableSequence The table to use<br>
      *                                   If null then it uses the table defined in
      *                                   $pdoOne->tableSequence.
-     * @param string $method=['snowflake','sequence'][$i] snowflake=it generates a value based on snowflake<br>
-     *                      sequence= it generates a regular sequence number (1,2,3...)<br>
+     * @param string      $method        =['snowflake','sequence'][$i] snowflake=it generates a value based on snowflake<br>
+     *                                   sequence= it generates a regular sequence number (1,2,3...)<br>
      *
      * @throws Exception
      */
-    public function createSequence($tableSequence=null,$method='snowflake') {
+    public function createSequence($tableSequence = null, $method = 'snowflake') {
         $sql = '';
-        $tableSequence=($tableSequence===null)?$this->tableSequence:$tableSequence;
+        $tableSequence = ($tableSequence === null) ? $this->tableSequence : $tableSequence;
         switch ($this->databaseType) {
             case 'mysql':
-                $ok=$this->createTable($tableSequence
-                    ,['id'=>'bigint(20) unsigned NOT NULL AUTO_INCREMENT',
-                        'stub'=>"char(1) NOT NULL DEFAULT ''"],'id'
-                    ,',UNIQUE KEY `stub` (`stub`)','ENGINE=MyISAM AUTO_INCREMENT=1 DEFAULT CHARSET=utf8');
-                if(!$ok) {
-                    $this->throwError("Unable to create table $tableSequence","");
+                $ok = $this->createTable($tableSequence
+                    , [
+                        'id' => 'bigint(20) unsigned NOT NULL AUTO_INCREMENT',
+                        'stub' => "char(1) NOT NULL DEFAULT ''"
+                    ], 'id'
+                    , ',UNIQUE KEY `stub` (`stub`)', 'ENGINE=MyISAM AUTO_INCREMENT=1 DEFAULT CHARSET=utf8');
+                if (!$ok) {
+                    $this->throwError("Unable to create table $tableSequence", "");
                     return;
                 }
-                $ok=$this->insert($tableSequence,['stub'=>'a']);
-                if(!$ok) {
-                    $this->throwError("Unable to insert in table $tableSequence","");
+                $ok = $this->insert($tableSequence, ['stub' => 'a']);
+                if (!$ok) {
+                    $this->throwError("Unable to insert in table $tableSequence", "");
                     return;
                 }
                 $sql = "SET GLOBAL log_bin_trust_function_creators = 1";
                 $this->runRawQuery($sql);
-                if($method=='snowflake') {
+                if ($method == 'snowflake') {
                     $sql = "CREATE FUNCTION `next_{$tableSequence}`(node integer) RETURNS BIGINT(20)
 					BEGIN
 					    DECLARE epoch BIGINT(20);
@@ -1375,7 +1864,7 @@ class PdoOne
 					RETURN (current_ms - epoch) << 22 | (node << 12) | (incr % 4096);
 					END;";
                 } else {
-                    
+
                     $sql = "CREATE FUNCTION `next_{$tableSequence}`(node integer) RETURNS BIGINT(20)
 					BEGIN
 					    DECLARE incr BIGINT(20);
@@ -1417,6 +1906,314 @@ class PdoOne
     }
 
     /**
+     * Create a table<br>
+     * <b>Example:</b><br>
+     * <pre>
+     * createTable('products',['id'=>'int not null','name'=>'varchar(50) not null'],'id');
+     * </pre>
+     *
+     * @param string      $tableName    The name of the new table. This method will fail if the table exists.
+     * @param array       $definition   An associative array with the definition of the columns.<br>
+     *                                  Example ['id'=>'integer not null','name'=>'varchar(50) not null']
+     * @param string|null $primaryKey   The column's name that is primary key.
+     * @param string      $extra        An extra operation inside of the definition of the table.
+     * @param string      $extraOutside An extra operation outside of the definition of the table.<br>
+     *                                  It replaces the default values outside of the table
+     *
+     * @return array|bool|PDOStatement
+     * @throws Exception
+     */
+    public function createTable($tableName, $definition, $primaryKey = null, $extra = '', $extraOutside = '') {
+        $sql = null;
+        switch ($this->databaseType) {
+            case 'mysql':
+                $extraOutside = ($extraOutside === '') ? "ENGINE=InnoDB DEFAULT CHARSET={$this->charset};"
+                    : $extraOutside;
+                $sql = "CREATE TABLE `{$tableName}` (";
+                foreach ($definition as $key => $type) {
+                    $sql .= "`$key` $type,";
+                }
+                if ($primaryKey) {
+                    $sql .= " PRIMARY KEY(`$primaryKey`) ";
+                } else {
+                    $sql = substr($sql, 0, -1);
+                }
+                $sql .= "$extra ) " . $extraOutside;
+                break;
+            case 'sqlsrv':
+                $extraOutside = ($extraOutside === '') ? "ON [PRIMARY]" : $extraOutside;
+                $sql = "set nocount on;
+				CREATE TABLE [{$tableName}] (";
+                foreach ($definition as $key => $type) {
+                    $sql .= "[$key] $type,";
+                }
+
+                $sql .= "$extra ) ON [PRIMARY]; ";
+
+                if ($primaryKey) {
+                    $sql .= "
+						ALTER TABLE [$tableName] ADD CONSTRAINT
+							PK_$tableName PRIMARY KEY CLUSTERED 
+							(
+							[$primaryKey]
+							) $extraOutside
+						";
+                }
+                break;
+            case 'test':
+                $sql = "CREATE TABLE {$tableName} (";
+                foreach ($definition as $key => $type) {
+                    $sql .= "$key $type,";
+                }
+                if ($primaryKey) {
+                    $sql .= " PRIMARY KEY(`$primaryKey`) ";
+                } else {
+                    $sql = substr($sql, 0, -1);
+                }
+                $sql .= "$extra ) $extraOutside";
+                break;
+            default:
+                $this->throwError("type not defined for create table", "");
+        }
+        return $this->runRawQuery($sql, null, true);
+    }
+
+    /**
+     * Generates and execute an insert command. Example:
+     * Example:
+     *      insert('table',['col1','i',10,'col2','s','hello world']); // ternary colname,type,value,...
+     *      insert('table',null,['col1'=>10,'col2'=>'hello world']); // definition is obtained from the values
+     *      insert('table',['col1'=>10,'col2'=>'hello world']); // definition is obtained from the values
+     *      insert('table',['col1','i','col2','s'],[10,'hello world']); // definition (binary) and value
+     *      insert('table',['col1'=>'i','col2'=>'s'],['col1'=>10,'col2'=>'hello world']); // definition declarative array)
+     *      ->set(['col1','i',10,'col2','s','hello world'])
+     *          ->from('table')
+     *          ->insert();
+     *
+     * @param string        $tableName
+     * @param string[]|null $tableDef
+     * @param string[]|int  $values
+     *
+     * @return mixed
+     * @throws Exception
+     */
+    public function insert($tableName = null, $tableDef = null, $values = self::NULL) {
+        if ($tableName === null) {
+            // using builder. from()->set()->insert()
+            $errorCause = '';
+            if ($this->from == "") {
+                $errorCause = "you can't execute an empty insert() without a from()";
+            }
+            if (count($this->set) === 0) {
+                $errorCause = "you can't execute an empty insert() without a set()";
+            }
+            if ($errorCause) {
+                $this->throwError($errorCause, "");
+                return false;
+            }
+            $sql
+                = /** @lang text */
+                "insert into " . $this->addDelimiter($this->from) . "  "
+                . $this->constructInsert();
+            $param = [];
+
+            for ($i = 0; $i < count($this->whereParamType); $i++) {
+                $param[] = $this->whereParamType[$i];
+                $param[] = $this->whereParamValue['i_' . $i];
+            }
+            $this->builderReset();
+            $this->runRawQuery($sql, $param, true);
+            return $this->insert_id();
+        } else {
+            $col = [];
+            $colT = [];
+            $param = [];
+            $this->constructParam($tableDef, $values, $col, $colT, $param);
+            $sql = "insert into " . $this->addDelimiter($tableName) . "  (" . implode(',',
+                    $col)
+                . ") values(" . implode(',', $colT) . ")";
+            $this->builderReset();
+
+            $this->runRawQuery($sql, $param);
+            return $this->insert_id();
+        }
+    }
+
+    /**
+     * @return string
+     */
+    private function constructInsert() {
+        if (count($this->set)) {
+            $arr = [];
+            $val = [];
+            $first = $this->set[0];
+            if (strpos($first, '=') !== false) {
+                // set([])
+                foreach ($this->set as $v) {
+                    $tmp = explode('=', $v);
+                    $arr[] = $tmp[0];
+                    $val[] = $tmp[1];
+                }
+                $where = "(" . implode(',', $arr) . ') values (' . implode(',', $val) . ')';
+            } else {
+                // set('(a,b,c) values(?,?,?)',[])
+                $where = $first;
+            }
+        } else {
+            $where = '';
+        }
+        return $where;
+    }
+
+    /**
+     * Returns the last inserted identity.
+     *
+     * @return mixed
+     */
+    public function insert_id() {
+        if (!$this->isOpen) {
+            return -1;
+        }
+        return $this->conn1->lastInsertId();
+    }
+
+    /**
+     * @param array|null $tableDefs       It could be a definition with or without values.
+     *                                    If null then it is defined automatically by $arrayValue.
+     * @param array|int  $values          if value is self::NULL then it's calculated without this value
+     * @param array      $col
+     * @param array      $colT
+     * @param array      $param
+     */
+    private function constructParam($tableDefs, $values, &$col, &$colT, &$param) {
+        if ($tableDefs === null || $this->isAssoc($tableDefs)) {
+            if ($values === self::NULL && $tableDefs !== null) {
+                // the type is calculated automatically. It could fails and it doesn't work with blob
+                reset($tableDefs);
+                foreach ($tableDefs as $k => $v) {
+                    if ($colT === null) {
+                        $col[] = $this->addDelimiter($k) . '=?';
+                    } else {
+                        $col[] = $this->addDelimiter($k);
+                        $colT[] = '?';
+                    }
+                    $vt = $this->getType($v);
+                    $param[] = $vt;
+                    $param[] = $v;
+                }
+
+            } else {
+                if ($tableDefs === null) {
+                    $tableDefs = $values;
+                    if (is_array($tableDefs)) {
+                        foreach ($tableDefs as $k => $v) {
+                            $tableDefs[$k] = 's';
+                        }
+                    }
+                }
+                // it uses two associative array, one for the type and another for the value
+                if (is_array($tableDefs)) {
+                    foreach ($tableDefs as $k => $v) {
+                        if ($colT === null) {
+                            $col[] = $this->addDelimiter($k) . "=?";
+                        } else {
+                            $col[] = $this->addDelimiter($k);
+                            $colT[] = '?';
+                        }
+
+                        $param[] = $v;
+                        $param[] = @$values[$k];
+                    }
+                }
+            }
+        } else {
+            if ($values === self::NULL) {
+                // it uses a single list, the first value is the column, the second value
+                // is the type and the third is the value
+                if (is_array($tableDefs)) {
+                    for ($i = 0; $i < count($tableDefs); $i += 3) {
+                        if ($colT === null) {
+                            $col[] = $this->addDelimiter($tableDefs[$i]) . "=?";
+                        } else {
+                            $col[] = $tableDefs[$i];
+                            $colT[] = '?';
+                        }
+                        $param[] = $tableDefs[$i + 1];
+                        $param[] = $tableDefs[$i + 2];
+                    }
+                }
+            } else {
+                // it uses two list, the first value of the first list is the column, the second value is the type
+                // , the second list only contains values.
+                for ($i = 0; $i < count($tableDefs); $i += 2) {
+                    if ($colT === null) {
+                        $col[] = $this->addDelimiter($tableDefs[$i]) . "=?";
+                    } else {
+                        $col[] = $tableDefs[$i];
+                        $colT[] = '?';
+                    }
+                    $param[] = $tableDefs[$i + 1];
+                    $param[] = $values[$i / 2];
+                }
+            }
+        }
+    }
+
+    /**
+     * It returns true if the array is an associative array.  False otherwise.<br>
+     * <b>Example:</b><br>
+     * isAssoc(['a1'=>1,'a2'=>2]); // true<br/>
+     * isAssoc(['a1','a2']); // false<br/>
+     * isAssoc('aaa'); isAssoc(null); // false<br/>
+     *
+     * @param mixed $array
+     *
+     * @return bool
+     */
+    private function isAssoc($array) {
+        if ($array === null) {
+            return false;
+        }
+        if (!is_array($array)) {
+            return false;
+        }
+        return (array_values($array) !== $array);
+    }
+
+    /**
+     * @param mixed $v Variable
+     *
+     * @return int=[PDO::PARAM_STR,PDO::PARAM_INT,PDO::PARAM_BOOL][$i]
+     * @test equals PDO::PARAM_STR,(20.3)
+     * @test equals PDO::PARAM_STR,('hello')
+     */
+    private function getType(&$v) {
+        switch (1) {
+            case ($v === null):
+                $vt = PDO::PARAM_STR;
+                break;
+            case (is_double($v)):
+                $vt = PDO::PARAM_STR;
+                break;
+            case (is_numeric($v)):
+                $vt = PDO::PARAM_INT;
+                break;
+            case (is_bool($v)):
+
+                $vt = PDO::PARAM_INT;
+                $v = ($v) ? 1 : 0;
+                break;
+            case (is_object($v) && get_class($v) == 'DateTime'):
+                $vt = PDO::PARAM_STR;
+                $v = PdoOne::dateTimePHP2Sql($v);
+                break;
+            default:
+                $vt = PDO::PARAM_STR;
+        }
+        return $vt;
+    }
+
+    /**
      * Run many  unprepared query separated by ;<br>
      * <b>Example:</b><br>
      * <pre>
@@ -1424,7 +2221,7 @@ class PdoOne
      * </pre>
      *
      * @param string|array $listSql         SQL multiples queries separated by ";" or an array
-     * @param bool   $continueOnError if true then it continues on error.
+     * @param bool         $continueOnError if true then it continues on error.
      *
      * @return bool
      * @throws Exception
@@ -1434,7 +2231,7 @@ class PdoOne
             $this->throwError("RMRQ: It's not connected to the database", "");
             return false;
         }
-        $arr =(is_array($listSql))? $listSql : explode(';', $listSql);
+        $arr = (is_array($listSql)) ? $listSql : explode(';', $listSql);
         $ok = true;
         $counter = 0;
         foreach ($arr as $rawSql) {
@@ -1554,7 +2351,6 @@ class PdoOne
         }
         return $this->select("select $method($arg) $sql");
     }
-
 
     /**
      * It adds a select to the query builder.
@@ -1805,180 +2601,6 @@ class PdoOne
     }
 
     /**
-     * @param array|null $tableDefs       It could be a definition with or without values.
-     *                                    If null then it is defined automatically by $arrayValue.
-     * @param array|int  $values          if value is self::NULL then it's calculated without this value
-     * @param array      $col
-     * @param array      $colT
-     * @param array      $param
-     */
-    private function constructParam($tableDefs, $values, &$col, &$colT, &$param) {
-        if ($tableDefs === null || $this->isAssoc($tableDefs)) {
-            if ($values === self::NULL && $tableDefs !== null) {
-                // the type is calculated automatically. It could fails and it doesn't work with blob
-                reset($tableDefs);
-                foreach ($tableDefs as $k => $v) {
-                    if ($colT === null) {
-                        $col[] = $this->addDelimiter($k) . '=?';
-                    } else {
-                        $col[] = $this->addDelimiter($k);
-                        $colT[] = '?';
-                    }
-                    $vt = $this->getType($v);
-                    $param[] = $vt;
-                    $param[] = $v;
-                }
-
-            } else {
-                if ($tableDefs === null) {
-                    $tableDefs = $values;
-                    if(is_array($tableDefs)) {
-                        foreach ($tableDefs as $k => $v) {
-                            $tableDefs[$k] = 's';
-                        }
-                    }
-                }
-                // it uses two associative array, one for the type and another for the value
-                if(is_array($tableDefs)) {
-                    foreach ($tableDefs as $k => $v) {
-                        if ($colT === null) {
-                            $col[] = $this->addDelimiter($k)."=?";
-                        } else {
-                            $col[] = $this->addDelimiter($k); 
-                            $colT[] = '?';
-                        }
-
-                        $param[] = $v;
-                        $param[] = @$values[$k];
-                    }
-                }
-            }
-        } else {
-            if ($values === self::NULL) {
-                // it uses a single list, the first value is the column, the second value
-                // is the type and the third is the value
-                if(is_array($tableDefs)) {
-                    for ($i = 0; $i < count($tableDefs); $i += 3) {
-                        if ($colT === null) {
-                            $col[] =$this->addDelimiter($tableDefs[$i] )."=?";
-                        } else {
-                            $col[] = $tableDefs[$i];
-                            $colT[] = '?';
-                        }
-                        $param[] = $tableDefs[$i + 1];
-                        $param[] = $tableDefs[$i + 2];
-                    }
-                }
-            } else {
-                // it uses two list, the first value of the first list is the column, the second value is the type
-                // , the second list only contains values.
-                for ($i = 0; $i < count($tableDefs); $i += 2) {
-                    if ($colT === null) {
-                        $col[] =  $this->addDelimiter($tableDefs[$i] )."=?";
-                    } else {
-                        $col[] = $tableDefs[$i];
-                        $colT[] = '?';
-                    }
-                    $param[] = $tableDefs[$i + 1];
-                    $param[] = $values[$i / 2];
-                }
-            }
-        }
-    }
-
-    /**
-     * It returns true if the array is an associative array.  False otherwise.<br>
-     * <b>Example:</b><br>
-     * isAssoc(['a1'=>1,'a2'=>2]); // true<br/>
-     * isAssoc(['a1','a2']); // false<br/>
-     * isAssoc('aaa'); isAssoc(null); // false<br/>
-     *
-     * @param mixed $array
-     *
-     * @return bool
-     */
-    private function isAssoc($array) {
-        if ($array === null) {
-            return false;
-        }
-        if (!is_array($array)) {
-            return false;
-        }
-        return (array_values($array) !== $array);
-    }
-    private function strposa($haystack, $needles=array(), $offset=0) {
-        $chr = array();
-        foreach($needles as $needle) {
-            $res = strpos($haystack, $needle, $offset);
-            if ($res !== false) $chr[$needle] = $res;
-        }
-        if(empty($chr)) return false;
-        return min($chr);
-    }
-
-    /**
-     * It adds a delimiter to a text based in the type of database (` for mysql and [] for sql server)<br>
-     * Example:<br>
-     * $pdoOne->addDelimiter('hello world'); // `hello` world<br>
-     * $pdoOne->addDelimiter('hello.world'); // `hello`.`world`<br>
-     * $pdoOne->addDelimiter('hello=value); // `hello`=value<br>
-     * 
-     * @param $txt
-     *
-     * @return mixed|string
-     */
-    public function addDelimiter($txt) {
-        if (strpos($txt, $this->database_delimiter0) === false) {
-            $pos=$this->strposa($txt,[' ','=']);
-            if($pos===false) {
-                $quoted = $this->database_delimiter0 . $txt . $this->database_delimiter1;
-                $quoted = str_replace('.', $this->database_delimiter1 . '.' . $this->database_delimiter0, $quoted);
-            } else {
-                $arr=explode(substr($txt,$pos,1),$txt,2);
-                $quoted = $this->database_delimiter0 . $arr[0] . $this->database_delimiter1.substr($txt,$pos,1).$arr[1];
-                $quoted = str_replace('.', $this->database_delimiter1 . '.' . $this->database_delimiter0, $quoted);
-            }
-            return $quoted;
-        } else {
-            // it has a delimiter, so we returned the same text.
-            return $txt;
-        }
-    }
-
-    /**
-     * @param mixed $v Variable
-     *
-     * @return int=[PDO::PARAM_STR,PDO::PARAM_INT,PDO::PARAM_BOOL][$i]
-     * @test equals PDO::PARAM_STR,(20.3)
-     * @test equals PDO::PARAM_STR,('hello')
-     */
-    private function getType(&$v) {
-        switch (1) {
-            case ($v === null):
-                $vt = PDO::PARAM_STR;
-                break;
-            case (is_double($v)):
-                $vt = PDO::PARAM_STR;
-                break;
-            case (is_numeric($v)):
-                $vt = PDO::PARAM_INT;
-                break;
-            case (is_bool($v)):
-
-                $vt = PDO::PARAM_INT;
-                $v = ($v) ? 1 : 0;
-                break;
-            case (is_object($v) && get_class($v) == 'DateTime'):
-                $vt = PDO::PARAM_STR;
-                $v = PdoOne::dateTimePHP2Sql($v);
-                break;
-            default:
-                $vt = PDO::PARAM_STR;
-        }
-        return $vt;
-    }
-
-    /**
      * It groups by a condition.<br>
      * <b>Example:</b><br>
      * ->select('col1,count(*)')->from('table')->group('col1')->toList();
@@ -2186,112 +2808,51 @@ class PdoOne
     }
 
     /**
-     * It returns an declarative array of rows.<br>
-     * Example:
-     * <pre>
-     * select('select id,name from table')->toList() // [['id'=>'1','name'='john'],['id'=>'2','name'=>'anna']]
-     * </pre>
-     *
-     * @param int $pdoMode (optional) By default is PDO::FETCH_ASSOC
-     *
-     * @return array|bool
-     * @throws Exception
-     */
-    public function toList($pdoMode = PDO::FETCH_ASSOC) {
-        $useCache=$this->useCache; // because builderReset cleans this value
-        $rows=$this->runGen(true, $pdoMode,'tolist');
-        if($this->uid) {
-            // we store the information of the cache.
-            $this->cacheService->setCache($this->uid,$this->cacheFamily,$rows,$useCache);
-        }
-        return $rows; 
-    }
-
-    /**
      * It returns an array with the metadata of each columns (i.e. name, type, size, etc.) or false if error.
-     * 
+     *
+     * @param null|string $sql If null then it uses the generation of query (if any).<br>
+     *                         if string then get the statement of the query
+     *
+     * @param array       $args
+     *
      * @return array|bool
      * @throws Exception
      */
-    public function toMeta() {
-        /** @var PDOStatement $stmt */
-        $stmt = $this->runGen(false, PDO::FETCH_ASSOC,'tometa');
+    public function toMeta($sql = null, $args = []) {
+
+        if ($sql === null) {
+            /** @var PDOStatement $stmt */
+            $stmt = $this->runGen(false, PDO::FETCH_ASSOC, 'tometa');
+        } else {
+            /** @var PDOStatement $stmt */
+            $stmt = $this->runRawQuery($sql, $args, false);
+        }
         if ($stmt === null || $stmt instanceof PDOStatement === false) {
-            $stmt=null;
+            $stmt = null;
             return false;
         }
-        $numCol=$stmt->columnCount();
-        $rows=[];
-        for($i=0;$i<$numCol;$i++) {
-            $rows[]=$stmt->getColumnMeta($i);
+        $numCol = $stmt->columnCount();
+        $rows = [];
+        for ($i = 0; $i < $numCol; $i++) {
+            $rows[] = $stmt->getColumnMeta($i);
         }
-        $stmt=null;
+        $stmt = null;
         return $rows;
-    }
-
-    /**
-     * It returns an array of simple columns (not declarative). It uses the first column<br>
-     * <b>Example:</b><br>
-     * <pre>
-     * select('select id from table')->toListSimple() // ['1','2','3','4']
-     * </pre>
-     *
-     * @return array|bool
-     * @throws Exception
-     */
-    public function toListSimple() {
-        $useCache=$this->useCache; // because builderReset cleans this value
-        $rows=$this->runGen(true, PDO::FETCH_COLUMN,'tolistsimple');
-        if($this->uid) {
-            // we store the information of the cache.
-            $this->cacheService->setCache($this->uid,$this->cacheFamily,$rows,$useCache);
-        }
-        return $rows;
-    }
-
-    /**
-     * It returns an associative array where the first value is the key and the second is the value<br>
-     * If the second value does not exist then it uses the index as value (first value)<br>
-     * <b>Example:</b><br>
-     * <pre>
-     * select('select cod,name from table')->toListKeyValue() // ['cod1'=>'name1','cod2'=>'name2']
-     * select('select cod,name,ext from table')->toListKeyValue('|') // ['cod1'=>'name1|ext1','cod2'=>'name2|ext2']
-     * </pre>
-     *
-     * @param string|null $extraValueSeparator (optional) It allows to read a third value and returns
-     *                                         it concatenated with the value.  Example '|'
-     *
-     * @return array|bool|null
-     * @throws Exception
-     */
-    public function toListKeyValue($extraValueSeparator=null) {
-        $list=$this->toList(PDO::FETCH_NUM);
-        if(!is_array($list)) return null; 
-        $result=[];
-        foreach($list as $item) {
-            if($extraValueSeparator===null) {
-                $result[$item[0]] = isset($item[1]) ? $item[1] : $item[0];
-            } else {
-                $result[$item[0]] = (isset($item[1]) ? $item[1] : $item[0]) 
-                    .$extraValueSeparator.@$item[2];
-            }
-        }
-        return $result;
     }
 
     /**
      * Run builder query and returns a PDOStatement.
      *
-     * @param bool $returnArray true=return an array. False returns a PDOStatement
-     * @param int  $extraMode   PDO::FETCH_ASSOC,PDO::FETCH_BOTH,PDO::FETCH_NUM,etc.
-     *                          By default it returns $extraMode=PDO::FETCH_ASSOC
+     * @param bool   $returnArray  true=return an array. False returns a PDOStatement
+     * @param int    $extraMode    PDO::FETCH_ASSOC,PDO::FETCH_BOTH,PDO::FETCH_NUM,etc.
+     *                             By default it returns $extraMode=PDO::FETCH_ASSOC
      *
      * @param string $extraIdCache [optional] if 'rungen' then cache is stored. If false the cache could be stored
      *
      * @return bool|PDOStatement|array
      * @throws Exception
      */
-    public function runGen($returnArray = true, $extraMode = PDO::FETCH_ASSOC,$extraIdCache='rungen') {
+    public function runGen($returnArray = true, $extraMode = PDO::FETCH_ASSOC, $extraIdCache = 'rungen') {
         $sql = $this->sqlGen();
         /** @var PDOStatement $stmt */
         $stmt = $this->prepare($sql);
@@ -2302,11 +2863,11 @@ class PdoOne
         if (count($this->whereParamType)) {
             $counter = 0;
             $reval = true;
-            $this->lastBindParam=[];
+            $this->lastBindParam = [];
             foreach ($this->whereParamType as $k => $v) {
                 $counter++;
                 $typeP = $this->stringToPdoParam($this->whereParamType[$k]);
-                $this->lastBindParam[$counter]=$values[$k];
+                $this->lastBindParam[$counter] = $values[$k];
                 $reval = $reval
                     && $stmt->bindParam($counter
                         , $values[$k]
@@ -2319,32 +2880,33 @@ class PdoOne
             }
 
         }
-        $useCache=$this->useCache; // because builderReset cleans this value
-        if($useCache!==false && $returnArray) {
-            $this->uid=hash('sha256',$this->lastQuery.$extraMode.serialize($this->lastBindParam).$extraIdCache);
-            $result=$this->cacheService->getCache($this->uid,$this->cacheFamily);
-            if($result!==false) {
+        $useCache = $this->useCache; // because builderReset cleans this value
+        if ($useCache !== false && $returnArray) {
+            $this->uid = hash('sha256',
+                $this->lastQuery . $extraMode . serialize($this->lastBindParam) . $extraIdCache);
+            $result = $this->cacheService->getCache($this->uid, $this->cacheFamily);
+            if ($result !== false) {
                 // it's found in the cache.
                 $this->builderReset();
                 return $result;
             }
         } else {
-            if ($extraIdCache=='rungen') {
-                $this->uid=null;    
+            if ($extraIdCache == 'rungen') {
+                $this->uid = null;
             }
-            
+
         }
-        
+
         $this->runQuery($stmt);
         $this->builderReset();
- 
+
         if ($returnArray && $stmt instanceof PDOStatement) {
             $result = ($stmt->columnCount() > 0) ? $stmt->fetchAll($extraMode) : array();
             $this->affected_rows = $stmt->rowCount();
             $stmt = null; // close
-            if($extraIdCache=='rungen' && $this->uid) {
+            if ($extraIdCache == 'rungen' && $this->uid) {
                 // we store the information of the cache.
-                $this->cacheService->setCache($this->uid,$this->cacheFamily,$result,$useCache);
+                $this->cacheService->setCache($this->uid, $this->cacheFamily, $result, $useCache);
             }
             return $result;
         } else {
@@ -2404,6 +2966,80 @@ class PdoOne
     }
 
     /**
+     * It returns an array of simple columns (not declarative). It uses the first column<br>
+     * <b>Example:</b><br>
+     * <pre>
+     * select('select id from table')->toListSimple() // ['1','2','3','4']
+     * </pre>
+     *
+     * @return array|bool
+     * @throws Exception
+     */
+    public function toListSimple() {
+        $useCache = $this->useCache; // because builderReset cleans this value
+        $rows = $this->runGen(true, PDO::FETCH_COLUMN, 'tolistsimple');
+        if ($this->uid) {
+            // we store the information of the cache.
+            $this->cacheService->setCache($this->uid, $this->cacheFamily, $rows, $useCache);
+        }
+        return $rows;
+    }
+
+    /**
+     * It returns an associative array where the first value is the key and the second is the value<br>
+     * If the second value does not exist then it uses the index as value (first value)<br>
+     * <b>Example:</b><br>
+     * <pre>
+     * select('select cod,name from table')->toListKeyValue() // ['cod1'=>'name1','cod2'=>'name2']
+     * select('select cod,name,ext from table')->toListKeyValue('|') // ['cod1'=>'name1|ext1','cod2'=>'name2|ext2']
+     * </pre>
+     *
+     * @param string|null $extraValueSeparator (optional) It allows to read a third value and returns
+     *                                         it concatenated with the value.  Example '|'
+     *
+     * @return array|bool|null
+     * @throws Exception
+     */
+    public function toListKeyValue($extraValueSeparator = null) {
+        $list = $this->toList(PDO::FETCH_NUM);
+        if (!is_array($list)) {
+            return null;
+        }
+        $result = [];
+        foreach ($list as $item) {
+            if ($extraValueSeparator === null) {
+                $result[$item[0]] = isset($item[1]) ? $item[1] : $item[0];
+            } else {
+                $result[$item[0]] = (isset($item[1]) ? $item[1] : $item[0])
+                    . $extraValueSeparator . @$item[2];
+            }
+        }
+        return $result;
+    }
+
+    /**
+     * It returns an declarative array of rows.<br>
+     * Example:
+     * <pre>
+     * select('select id,name from table')->toList() // [['id'=>'1','name'='john'],['id'=>'2','name'=>'anna']]
+     * </pre>
+     *
+     * @param int $pdoMode (optional) By default is PDO::FETCH_ASSOC
+     *
+     * @return array|bool
+     * @throws Exception
+     */
+    public function toList($pdoMode = PDO::FETCH_ASSOC) {
+        $useCache = $this->useCache; // because builderReset cleans this value
+        $rows = $this->runGen(true, $pdoMode, 'tolist');
+        if ($this->uid) {
+            // we store the information of the cache.
+            $this->cacheService->setCache($this->uid, $this->cacheFamily, $rows, $useCache);
+        }
+        return $rows;
+    }
+
+    /**
      * It returns a PDOStatement.<br>
      * <b>Note:</b> The result is not cached.
      *
@@ -2413,6 +3049,9 @@ class PdoOne
     public function toResult() {
         return $this->runGen(false);
     }
+    //</editor-fold>
+
+    //<editor-fold desc="Encryption functions" defaultstate="collapsed" >
 
     /**
      * It returns the first row.  If there is not row then it returns empty.
@@ -2425,24 +3064,24 @@ class PdoOne
      * @throws Exception
      */
     public function first() {
-        $useCache=$this->useCache; // because builderReset cleans this value
-        if($useCache!==false) {
+        $useCache = $this->useCache; // because builderReset cleans this value
+        if ($useCache !== false) {
             $sql = $this->sqlGen();
-            $this->uid=hash('sha256',$sql.PDO::FETCH_ASSOC.serialize($this->whereParamType)
-                .serialize($this->whereParamValue).'first');
-            $rows=$this->cacheService->getCache($this->uid,$this->cacheFamily);
-            if($rows!==false) {
+            $this->uid = hash('sha256', $sql . PDO::FETCH_ASSOC . serialize($this->whereParamType)
+                . serialize($this->whereParamValue) . 'first');
+            $rows = $this->cacheService->getCache($this->uid, $this->cacheFamily);
+            if ($rows !== false) {
                 $this->builderReset();
                 return $rows;
             }
         }
-        $statement = $this->runGen(false,PDO::FETCH_ASSOC,'first');
-        $row=null;
+        $statement = $this->runGen(false, PDO::FETCH_ASSOC, 'first');
+        $row = null;
         if ($statement === false) {
-            $row= null;
+            $row = null;
         } else {
             if (!$statement->columnCount()) {
-                $row= null;
+                $row = null;
             } else {
                 while ($row = $statement->fetch(PDO::FETCH_ASSOC)) {
                     $statement = null;
@@ -2450,9 +3089,9 @@ class PdoOne
                 }
             }
         }
-        if($this->uid) {
+        if ($this->uid) {
             // we store the information of the cache.
-            $this->cacheService->setCache($this->uid,$this->cacheFamily,$row,$useCache);
+            $this->cacheService->setCache($this->uid, $this->cacheFamily, $row, $useCache);
         }
         return $row;
     }
@@ -2472,41 +3111,41 @@ class PdoOne
      * @throws Exception
      */
     public function firstScalar($colName = null) {
-        $rows=null;
-        $useCache=$this->useCache; // because builderReset cleans this value
-        if($useCache!==false) {
+        $rows = null;
+        $useCache = $this->useCache; // because builderReset cleans this value
+        if ($useCache !== false) {
             $sql = $this->sqlGen();
-            $this->uid=hash('sha256',$sql.PDO::FETCH_ASSOC.serialize($this->whereParamType)
-                .serialize($this->whereParamValue).'firstscalar');
-            $rows=$this->cacheService->getCache($this->uid,$this->cacheFamily);
-            if($rows!==false) {
+            $this->uid = hash('sha256', $sql . PDO::FETCH_ASSOC . serialize($this->whereParamType)
+                . serialize($this->whereParamValue) . 'firstscalar');
+            $rows = $this->cacheService->getCache($this->uid, $this->cacheFamily);
+            if ($rows !== false) {
                 $this->builderReset();
                 return $rows;
             }
         }
-        $rows = $this->runGen(false,PDO::FETCH_ASSOC,'firstscalar');
-        
-        $row=null;
+        $rows = $this->runGen(false, PDO::FETCH_ASSOC, 'firstscalar');
+
+        $row = null;
         if ($rows === false) {
-            $row= null;
+            $row = null;
         } else {
             if (!$rows->columnCount()) {
-                $row= null;
+                $row = null;
             } else {
                 while ($row = $rows->fetch(PDO::FETCH_ASSOC)) {
                     $rows = null;
                     if ($colName === null) {
-                        $row= reset($row); // first column of the first row
+                        $row = reset($row); // first column of the first row
                     } else {
-                        $row= $row[$colName];
+                        $row = $row[$colName];
                     }
                     break;
                 }
             }
         }
-        if($this->uid) {
+        if ($this->uid) {
             // we store the information of the cache.
-            $this->cacheService->setCache($this->uid,$this->cacheFamily,$row,$useCache);
+            $this->cacheService->setCache($this->uid, $this->cacheFamily, $row, $useCache);
         }
         return $row;
     }
@@ -2523,36 +3162,59 @@ class PdoOne
      * @see \eftec\PdoOne::first
      */
     public function last() {
-        $useCache=$this->useCache; // because builderReset cleans this value
-        if($useCache!==false) {
+        $useCache = $this->useCache; // because builderReset cleans this value
+        if ($useCache !== false) {
             $sql = $this->sqlGen();
-            $this->uid=hash('sha256',$sql.PDO::FETCH_ASSOC.serialize($this->whereParamType)
-                .serialize($this->whereParamValue).'last');
-            $rows=$this->cacheService->getCache($this->uid,$this->cacheFamily);
-            if($rows!==false) {
+            $this->uid = hash('sha256', $sql . PDO::FETCH_ASSOC . serialize($this->whereParamType)
+                . serialize($this->whereParamValue) . 'last');
+            $rows = $this->cacheService->getCache($this->uid, $this->cacheFamily);
+            if ($rows !== false) {
                 $this->builderReset();
                 return $rows;
             }
         }
-        $statement = $this->runGen(false,PDO::FETCH_ASSOC,'last');
-        $row=null;
+        $statement = $this->runGen(false, PDO::FETCH_ASSOC, 'last');
+        $row = null;
         if ($statement === false) {
-            $row= null;
+            $row = null;
         } else {
             if (!$statement->columnCount()) {
-                $row= null;
+                $row = null;
             } else {
                 while ($dummy = $statement->fetch(PDO::FETCH_ASSOC)) {
-                    $row=$dummy;
+                    $row = $dummy;
                 }
                 $statement = null;
             }
         }
-        if($this->uid) {
+        if ($this->uid) {
             // we store the information of the cache.
-            $this->cacheService->setCache($this->uid,$this->cacheFamily,$row,$useCache);
+            $this->cacheService->setCache($this->uid, $this->cacheFamily, $row, $useCache);
         }
         return $row;
+    }
+    //</editor-fold>
+    //<editor-fold desc="Cache" defaultstate="collapsed" >
+
+    /**
+     * It sets to use cache (if the cacheservice is set) for the current pipelines.
+     *
+     * @param null|bool|int $ttl    If null then the cache never expires.<br>
+     *                              If false then we don't use cache.<br>
+     *                              If int then it is the duration of the cache (in seconds)
+     * @param string        $family [optional] It is the family or group of the cache. It could be used to identify
+     *                              a group of cache to invalidate the whole group (for example, invalidate all cache
+     *                              from a specific table).
+     *
+     * @return $this
+     */
+    public function useCache($ttl = null, $family = '') {
+        if ($this->cacheService === null) {
+            $ttl = false;
+        }
+        $this->cacheFamily = $family;
+        $this->useCache = $ttl;
+        return $this;
     }
 
     /**
@@ -2600,7 +3262,7 @@ class PdoOne
                 $this->throwError($errorCause, "");
                 return false;
             }
-            $sql = "update ".$this->addDelimiter($this->from )." "
+            $sql = "update " . $this->addDelimiter($this->from) . " "
                 . $this->constructSet() . ' ' . $this->constructWhere();
             $param = [];
             for ($i = 0; $i < count($this->whereParamType); $i++) {
@@ -2622,9 +3284,9 @@ class PdoOne
                 $this->constructParam($tableDef, $values, $col, $colT, $param);
                 $this->constructParam($tableDefWhere, $valueWhere, $colWhere, $colT, $param);
             }
-            $sql = "update ".$this->addDelimiter($tableName);
-            $sql.=count($col)? " set " . implode(',', $col) : '';
-            $sql.=count($colWhere)? " where " . implode(' and ', $colWhere) : '';
+            $sql = "update " . $this->addDelimiter($tableName);
+            $sql .= count($col) ? " set " . implode(',', $col) : '';
+            $sql .= count($colWhere) ? " where " . implode(' and ', $colWhere) : '';
             $this->builderReset();
             $this->runRawQuery($sql, $param);
             return $this->insert_id();
@@ -2671,17 +3333,8 @@ class PdoOne
         return $this->affected_rows; // returns previous calculated information
     }
 
-    /**
-     * Returns the last inserted identity.
-     *
-     * @return mixed
-     */
-    public function insert_id() {
-        if (!$this->isOpen) {
-            return -1;
-        }
-        return $this->conn1->lastInsertId();
-    }
+    //</editor-fold>
+    //<editor-fold desc="Log functions" defaultstate="collapsed" >
 
     /**
      * It allows to insert a declarative array. It uses "s" (string) as filetype.
@@ -2705,96 +3358,6 @@ class PdoOne
             unset($object[$ex]);
         }
         return $this->insert($tableName, $tabledef, $object);
-    }
-    //</editor-fold>
-
-    //<editor-fold desc="Encryption functions" defaultstate="collapsed" >
-
-    /**
-     * Generates and execute an insert command. Example:
-     * Example:
-     *      insert('table',['col1','i',10,'col2','s','hello world']); // ternary colname,type,value,...
-     *      insert('table',null,['col1'=>10,'col2'=>'hello world']); // definition is obtained from the values
-     *      insert('table',['col1'=>10,'col2'=>'hello world']); // definition is obtained from the values
-     *      insert('table',['col1','i','col2','s'],[10,'hello world']); // definition (binary) and value
-     *      insert('table',['col1'=>'i','col2'=>'s'],['col1'=>10,'col2'=>'hello world']); // definition declarative array)
-     *      ->set(['col1','i',10,'col2','s','hello world'])
-     *          ->from('table')
-     *          ->insert();
-     *
-     * @param string        $tableName
-     * @param string[]|null $tableDef
-     * @param string[]|int  $values
-     *
-     * @return mixed
-     * @throws Exception
-     */
-    public function insert($tableName = null, $tableDef = null, $values = self::NULL) {
-        if ($tableName === null) {
-            // using builder. from()->set()->insert()
-            $errorCause = '';
-            if ($this->from == "") {
-                $errorCause = "you can't execute an empty insert() without a from()";
-            }
-            if (count($this->set) === 0) {
-                $errorCause = "you can't execute an empty insert() without a set()";
-            }
-            if ($errorCause) {
-                $this->throwError($errorCause, "");
-                return false;
-            }
-            $sql
-                = /** @lang text */
-                "insert into ".$this->addDelimiter($this->from)."  "
-                . $this->constructInsert();
-            $param = [];
-
-            for ($i = 0; $i < count($this->whereParamType); $i++) {
-                $param[] = $this->whereParamType[$i];
-                $param[] = $this->whereParamValue['i_' . $i];
-            }
-            $this->builderReset();
-            $this->runRawQuery($sql, $param, true);
-            return $this->insert_id();
-        } else {
-            $col = [];
-            $colT = [];
-            $param = [];
-            $this->constructParam($tableDef, $values, $col, $colT, $param);
-            $sql = "insert into ".$this->addDelimiter($tableName)."  (" . implode(',',
-                    $col)
-                . ") values(" . implode(',', $colT) . ")";
-            $this->builderReset();
-
-            $this->runRawQuery($sql, $param);
-            return $this->insert_id();
-        }
-    }
-
-    /**
-     * @return string
-     */
-    private function constructInsert() {
-        if (count($this->set)) {
-            $arr = [];
-            $val = [];
-            $first = $this->set[0];
-            if (strpos($first, '=') !== false) {
-                // set([])
-                foreach ($this->set as $v) {
-                    $tmp = explode('=', $v);
-                    $arr[] = $tmp[0];
-                    $val[] = $tmp[1];
-                }
-                $where = "(" . implode(',', $arr) . ') values (' . implode(',', $val) . ')';
-            } else {
-                // set('(a,b,c) values(?,?,?)',[])
-                $where = $first;
-            }
-        } else {
-            $where = '';
-        }
-        return $where;
     }
 
     /**
@@ -2828,8 +3391,8 @@ class PdoOne
                 $this->throwError($errorCause, "");
                 return false;
             }
-            $sql = "delete from ".$this->addDelimiter($this->from)." ";
-            $sql.=$this->constructWhere();
+            $sql = "delete from " . $this->addDelimiter($this->from) . " ";
+            $sql .= $this->constructWhere();
             $param = [];
             for ($i = 0; $i < count($this->whereParamType); $i++) {
                 $param[] = $this->whereParamType[$i];
@@ -2844,27 +3407,12 @@ class PdoOne
             $colT = null;
             $param = [];
             $this->constructParam($tableDefWhere, $valueWhere, $colWhere, $colT, $param);
-            $sql = "delete from ".$this->addDelimiter($tableName);
-            $sql.=(count($colWhere))? " where ". implode(' and ', $colWhere) : '';
+            $sql = "delete from " . $this->addDelimiter($tableName);
+            $sql .= (count($colWhere)) ? " where " . implode(' and ', $colWhere) : '';
             $this->builderReset();
             $stmt = $this->runRawQuery($sql, $param, true);
             return $this->affected_rows($stmt);
         }
-    }
-    //</editor-fold>
-    //<editor-fold desc="Cache" defaultstate="collapsed" >
-
-
-    /**
-     * It sets the cache service (optional).
-     * 
-     * @param IPdoOneCache $cacheService
-     *
-     * @return $this
-     */
-    public function setCacheService($cacheService) {
-        $this->cacheService=$cacheService;
-        return $this;
     }
 
     /**
@@ -2875,46 +3423,37 @@ class PdoOne
     }
 
     /**
-     * It sets to use cache (if the cacheservice is set) for the current pipelines.
+     * It sets the cache service (optional).
      *
-     * @param null|bool|int $ttl If null then the cache never expires.<br>
-     *                           If false then we don't use cache.<br>
-     *                           If int then it is the duration of the cache (in seconds)
-     * @param string        $family [optional] It is the family or group of the cache. It could be used to identify 
-     *                              a group of cache to invalidate the whole group (for example, invalidate all cache
-     *                              from a specific table).
+     * @param IPdoOneCache $cacheService
      *
      * @return $this
      */
-    public function useCache($ttl=null,$family='') {
-        if($this->cacheService===null) {
-            $ttl=false;
-        }
-        $this->cacheFamily=$family;
-        $this->useCache=$ttl;
+    public function setCacheService($cacheService) {
+        $this->cacheService = $cacheService;
         return $this;
     }
+
+    //</editor-fold>
+    //<editor-fold desc="cli functions" defaultstate="collapsed" >
 
     /**
      * Invalidate a single cache or a list of cache based in a single uid or in a family/group of cache.
      *
-     * @param string|string[] $uid The unique id. It is generate by sha256 based in the query, parameters, type of
-     *                             query and method.
+     * @param string|string[] $uid    The unique id. It is generate by sha256 based in the query, parameters, type of
+     *                                query and method.
      * @param string|string[] $family [optional] It is the family or group of the cache. It could be used to invalidate
-     *                       the whole group. For example, to invalidate all the cache related with a table.
+     *                                the whole group. For example, to invalidate all the cache related with a table.
      *
      * @return $this
      */
-    public function invalidateCache($uid='',$family='') {
-        
-        if($this->cacheService!==null) {
-            $this->cacheService->invalidateCache($uid,$family);
+    public function invalidateCache($uid = '', $family = '') {
+
+        if ($this->cacheService !== null) {
+            $this->cacheService->invalidateCache($uid, $family);
         }
         return $this;
     }
-    
-    //</editor-fold>
-    //<editor-fold desc="Log functions" defaultstate="collapsed" >
 
     /**
      * @param string|int $password  <p>Use a integer if the method is INTEGER</p>
@@ -2961,19 +3500,12 @@ class PdoOne
     public function decrypt($data) {
         return $this->encryption->decrypt($data);
     }
-
-    /**
-     * Returns the last error.
-     *
-     * @return string
-     */
-    public function lastError() {
-        if (!$this->isOpen) {
-            return "It's not connected to the database";
-        }
-        return $this->conn1->errorInfo()[2];
-    }
-
     //</editor-fold>
+}
 
+
+if (PdoOne::isCli() && basename(strtolower(@$_SERVER['SCRIPT_NAME']))!=='pdoone') {
+    // if SCRIPT_NAME<>pdoone then it is included
+    include "PdoOneEncryption.php";
+    PdoOne::cliEngine();
 }
