@@ -18,7 +18,7 @@ use stdClass;
  * Class PdoOne
  * This class wrappes PDO but it could be used for another framework/library.
  *
- * @version       1.28 2020-04-06
+ * @version       1.28.1 2020-04-06
  * @package       eftec
  * @author        Jorge Castro Castillo
  * @copyright (c) Jorge Castro C. MIT License  https://github.com/EFTEC/PdoOne
@@ -26,7 +26,7 @@ use stdClass;
  */
 class PdoOne
 {
-    const VERSION = '1.28';
+    const VERSION = '1.28.1';
 
     const NULL = PHP_INT_MAX;
     /** @var string|null Static date (when the date is empty) */
@@ -467,9 +467,11 @@ class PdoOne
     public static function isCli() {
         return !http_response_code();
     }
-    private function typeDict($type,$default=true) {
+    private function typeDict($row,$default=true) {
+        
         switch($this->databaseType) {
             case 'mysql':
+                $type=@$row['native_type'][0];
                 switch ($type) {
                     case 'VAR_STRING':
                     case 'BLOB':
@@ -490,6 +492,47 @@ class PdoOne
                     case 'DOUBLE':
                     case 'FLOAT':
                     case 'NEWDECIMAL':
+                        return ($default)?"0.0":'float';
+                    default:
+                        return "???".$type;
+                }
+                break;
+            case 'sqlsrv':
+                $type=@$row['sqlsrv:decl_type'];
+                switch ($type) {
+                    case 'varchar':
+                    case 'nvarchar':
+                    case 'text':
+                    case 'ntext':
+                    case 'char':
+                    case 'nchar':
+                    case 'binary':
+                    case 'varbinary':
+                    case 'image':
+                        return ($default)?"''":'string';
+                    case 'long':
+                    case 'tinyint':
+                    case 'int':
+                    case 'year':
+                    case 'bigint':
+                    case 'numeric':
+                    case 'bit':
+                    case 'smallint':
+                        return ($default)?"0":'int';
+                    case 'datetime':
+                    case 'datetimeoffset':
+                    case 'datetime2':
+                    case 'smalldatetime':
+                    case 'date':
+                    case 'time':
+                    case 'timestamp':
+                        return ($default)?"''":'string';
+                    case 'decimal':
+                    case 'smallmoney':
+                    case 'money':
+                    case 'double':
+                    case 'real':
+                    case 'float':
                         return ($default)?"0.0":'float';
                     default:
                         return "???".$type;
@@ -523,7 +566,7 @@ class PdoOne
                 if($defaultNull) {
                     $default='null';
                 } else {
-                    $default=$dao->typeDict([@$row['native_type']][0],true);
+                    $default=$dao->typeDict($row,true);
                 }
                 $result.= '"' . $name . "\"=>" . $default . ",".$ln;
             }
@@ -784,8 +827,8 @@ eot;
     }
 
     /**
-     * @param $argv
-     *
+     * It executes the cli Engine.
+     * 
      * @throws Exception
      */
     public static function cliEngine() {
@@ -796,6 +839,7 @@ eot;
         $db = self::getParameterCli('db');
         $input = self::getParameterCli('input');
         $output = self::getParameterCli('output');
+        $pk = self::getParameterCli('pk');
         // var_dump(getopt('database:'));
         
         
@@ -809,22 +853,29 @@ eot;
 |   __|| . || . ||  |  ||   || -_|
 |__|   |___||___||_____||_|_||___|  $v
 
-Syntax:php PdoOne.php 
--database (mysql/sqlsrv/oracle/test) [$database]
+Syntax:php PdoOne.php <args>
+-database [$database]
+    Example: (mysql/sqlsrv/oracle/test)
 -server [$server]
     Example mysql: 127.0.0.1 , 127.0.0.1:3306
--user root The username to access to the database [$user]
--pwd 12345 The password to access to the database [***]
--db sakila  The database/schema [$db]
--input ("select * from table"/"table") The input value.[$input]
-    "select * from table" = it runs a query
-    "table" = it runs a table (it could generates a query automatically)
--output (classcode/selectcode/arraycode/csv/json) The result. [$output]
-    classcode =it returns php code with a CRUDL class
-    selectcode =it shows a php code with a select
-    arraycode = it shows a php code with the definition of an array Ex: ['idfield'=0,'name'=>'']
-    csv = it returns a csv result
-    json = it returns the value of the queries as json
+    Example sqlsrv: (local)\sqlexpress 127.0.0.1\sqlexpress
+-user The username to access to the database [$user]
+    Example: root, su
+-pwd The password to access to the database [***]
+    Example: abc.123
+-db The database/schema [$db]
+    Example: sakila
+-input The input value.[$input]
+    Example: "select * from table" = it runs a query
+    Example: "table" = it runs a table (it could generates a query automatically)
+-output The result value. [$output]
+    classcode: it returns php code with a CRUDL class
+    selectcode: it shows a php code with a select
+    arraycode: it shows a php code with the definition of an array Ex: ['idfield'=0,'name'=>'']
+    csv: it returns a csv result
+    json: it returns the value of the queries as json
+-pk [optional] the primary key. It is requerido for SQLSERVER and output classcode [$pk]
+    Example: "customerid"    
 
 eot;
             return;
@@ -882,18 +933,26 @@ eot;
                 break;
             case 'classcode':
                 $q=$pdo->toMeta($query);
-                $pk='';
                 switch ($pdo->databaseType) {
                     case 'mysql':
-                        foreach($q as $item) {
-                            if (in_array('primary_key', $item['flags'])) {
-                                $pk = $item['name'];
+                        if(!$pk) {
+                            foreach ($q as $item) {
+                                if (in_array('primary_key', $item['flags'])) {
+                                    $pk = $item['name'];
+                                    break;
+                                }
                             }
+                        }
+                        break;
+                    case 'sqlsrv':
+                        if(!$pk) {
+                            echo "SQLSRV: requires to specify the primary key using the argument -pk <name of the pk>";
+                            die(1);
                         }
                         break;
                 }
                 if(!$pk) {
-                    echo "Unable to find primary key on query $query";
+                    echo "Unable to find primary key on query $query or primary key not specified with -pk";
                     die(1);
                 }
                 echo self::generateCodeClass($pdo,$input,$query,$pk);
@@ -2499,6 +2558,7 @@ eot;
      * @test InstanceOf PdoOne::class,this('table t1')
      */
     public function from($sql) {
+        if($sql===null) return $this;
         $this->from = ($sql) ? $sql : '';
         return $this;
     }
@@ -2517,6 +2577,7 @@ eot;
      * @test InstanceOf PdoOne::class,this('table2 on table1.t1=table2.t2')
      */
     public function left($sql) {
+        if($sql===null) return $this;
         if ($this->from == '') {
             return $this->from($sql);
         }
@@ -2536,6 +2597,7 @@ eot;
      * @test InstanceOf PdoOne::class,this('table2 on table1.t1=table2.t2')
      */
     public function right($sql) {
+        if($sql===null) return $this;
         if ($this->from == '') {
             return $this->from($sql);
         }
@@ -2557,6 +2619,7 @@ eot;
      * @test InstanceOf PdoOne::class,this('field1=?,field2=?',['i',20,'s','hello'])
      */
     public function set($sqlOrArray, $param = self::NULL) {
+        if($sqlOrArray===null) return $this;
         if (count($this->where)) {
             trigger_error("you can't execute set() after a where()");
             //$this->throwError("you can't execute set() after a where()","");
@@ -2604,6 +2667,7 @@ eot;
      * @test InstanceOf PdoOne::class,this('fieldgroup')
      */
     public function group($sql) {
+        if($sql===null) return $this;
         $this->group = ($sql) ? ' group by ' . $sql : '';
         return $this;
     }
@@ -2630,6 +2694,7 @@ eot;
      * @test InstanceOf PdoOne::class,this('field1=?,field2=?',['i',20,'s','hello'])
      */
     public function having($sql, $param = self::NULL) {
+        if($sql===null) return $this;
         return $this->where($sql, $param, true);
     }
 
@@ -2655,6 +2720,7 @@ eot;
      * @test InstanceOf PdoOne::class,this('field1=?,field2=?',['i',20,'s','hello'])
      */
     public function where($sql, $param = self::NULL, $isHaving = false) {
+        if($sql===null) return $this;
         if (is_string($sql)) {
             if ($param === self::NULL) {
                 if ($isHaving) {
@@ -2731,7 +2797,7 @@ eot;
      * @test InstanceOf PdoOne::class,this('name desc')
      */
     public function order($sql) {
-
+        if($sql===null) return $this;
         $this->order = ($sql) ? ' order by ' . $sql : '';
         return $this;
     }
@@ -2750,6 +2816,7 @@ eot;
      * @test InstanceOf PdoOne::class,this('1,10')
      */
     public function limit($sql) {
+        if($sql===null) return $this;
         switch ($this->databaseType) {
             case 'mysql':
                 $this->limit = ($sql) ? ' limit ' . $sql : '';
@@ -2796,6 +2863,7 @@ eot;
      * @test InstanceOf PdoOne::class,this()
      */
     public function distinct($sql = 'distinct') {
+        if($sql===null) return $this;
         $this->distinct = ($sql) ? $sql . ' ' : '';
         return $this;
     }

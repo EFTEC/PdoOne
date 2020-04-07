@@ -148,23 +148,23 @@ $sql="CREATE TABLE `product` (
     `idproduct` INT NOT NULL AUTO_INCREMENT,
     `name` VARCHAR(45) NULL,
     PRIMARY KEY (`idproduct`));";
-$dao->runRawQuery($sql);  
+$pdoOne->runRawQuery($sql);  
 ```
 
 ### Run a prepared query
 ```php
 $sql="insert into `product`(name) values(?)";
-$stmt=$dao->prepare($sql);
+$stmt=$pdoOne->prepare($sql);
 $productName="Cocacola";
 $stmt->bind_param("s",$productName); // s stand for string. Also i =integer, d = double and b=blob
-$dao->runQuery($stmt);
+$pdoOne->runQuery($stmt);
 ```
 
 > note: you could also insert using a procedural chain [insert($table,$schema,[$values])](#insert--table--schema---values--)
 
 ### Run a prepared query with parameters.
 ```php
-$dao->runRawQuery('insert into `product` (name) values(?)'
+$pdoOne->runRawQuery('insert into `product` (name) values(?)'
     ,array('s','cocacola'));
 ```
 
@@ -175,8 +175,8 @@ It returns a mysqli_statement.
 
 ```php
     $sql="select * from `product` order by name";
-    $stmt=$dao->prepare($sql);
-    $dao->runQuery($stmt);
+    $stmt=$pdoOne->prepare($sql);
+    $pdoOne->runQuery($stmt);
     $rows = $stmt->get_result();
     while ($row = $rows->fetch_assoc()) {
         var_dump($row);
@@ -190,8 +190,8 @@ It returns an associative array.
 
 ```php
     $sql="select * from `product` order by name";
-    $stmt=$dao->prepare($sql);
-    $dao->runQuery($stmt);
+    $stmt=$pdoOne->prepare($sql);
+    $pdoOne->runQuery($stmt);
     $rows = $stmt->get_result();
     $allRows=$rows->fetch_all(PDO::FETCH_ASSOC);
     var_dump($allRows);
@@ -201,14 +201,14 @@ It returns an associative array.
 ```php
 try {
     $sql="insert into `product`(name) values(?)";
-    $dao->startTransaction();
-    $stmt=$dao->prepare($sql);
+    $pdoOne->startTransaction();
+    $stmt=$pdoOne->prepare($sql);
     $productName="Fanta";
     $stmt->bind_param("s",$productName); 
-    $dao->runQuery($stmt);
-    $dao->commit(); // transaction ok
+    $pdoOne->runQuery($stmt);
+    $pdoOne->commit(); // transaction ok
 } catch (Exception $e) {
-    $dao->rollback(false); // error, transaction cancelled.
+    $pdoOne->rollback(false); // error, transaction cancelled.
 }
 ```   
 #### startTransaction()
@@ -241,7 +241,7 @@ Returns true if the table exists (current database/schema)
 Returns the stastictic (as an array) of a column of a table. 
 
 ```php
-$stats=$dao->statValue('actor','actor_id');
+$stats=$pdoOne->statValue('actor','actor_id');
 ```
 
 | min | max | avg      | sum   | count |
@@ -253,7 +253,7 @@ $stats=$dao->statValue('actor','actor_id');
 Returns all columns of a table
 
 ```php
-$result=$dao->columnTable('actor');
+$result=$pdoOne->columnTable('actor');
 ```
 
 | colname     | coltype   | colsize | colpres | colscale | iskey | isidentity |
@@ -274,7 +274,7 @@ Creates a table using a definition and primary key.
 
 
 ```php
-$result=$dao->foreignKeyTable('actor');
+$result=$pdoOne->foreignKeyTable('actor');
 ```
 
 | collocal    | tablerem | colrem      |
@@ -290,7 +290,7 @@ You could also build a procedural query.
 
 Example:
 ```php
-$results = $dao->select("*")->from("producttype")
+$results = $pdoOne->select("*")->from("producttype")
     ->where('name=?', ['s', 'Cocacola'])
     ->where('idproducttype=?', ['i', 1])
     ->toList();   
@@ -299,12 +299,12 @@ $results = $dao->select("*")->from("producttype")
 ### select($columns)
 Generates a select command.
 ```php
-$results = $dao->select("col1,col2"); //...
+$results = $pdoOne->select("col1,col2"); //...
 ```
 > Generates the query: **select col1,col2** ....
 
 ```php
-$results = $dao->select("select * from table"); //->...
+$results = $pdoOne->select("select * from table"); //->...
 ```
 
 > Generates the query: **select * from table** ....
@@ -315,8 +315,8 @@ Generates a query that returns a count of values.
 It is a macro of the method select()
 
 ```php
-$result = $dao->count('from table where condition=1')->firstScalar(); // select count(*) from table where c..
-$result = $dao->count('from table','col1')->firstScalar(); // select count(col1) from table
+$result = $pdoOne->count('from table where condition=1')->firstScalar(); // select count(*) from table where c..
+$result = $pdoOne->count('from table','col1')->firstScalar(); // select count(col1) from table
 ```
 
 ### min($sql,$arg='*') 
@@ -326,10 +326,10 @@ If $arg is empty then it uses $sql for the name of the column
 It is a macro of the method select()
 
 ```php
-$result = $dao->min('from table where condition=1','col')->firstScalar(); // select min(col) from table where c..
-$result = $dao->min('from table','col1')->firstScalar(); // select min(col1) from table
-$result = $dao->min('','col1')->from('table')->firstScalar(); // select min(col1) from table
-$result = $dao->min('col1')->from('table')->firstScalar(); // select min(col1) from table
+$result = $pdoOne->min('from table where condition=1','col')->firstScalar(); // select min(col) from table where c..
+$result = $pdoOne->min('from table','col1')->firstScalar(); // select min(col1) from table
+$result = $pdoOne->min('','col1')->from('table')->firstScalar(); // select min(col1) from table
+$result = $pdoOne->min('col1')->from('table')->firstScalar(); // select min(col1) from table
 ```
 
 ### max($sql,$arg='*') 
@@ -339,8 +339,8 @@ If $arg is empty then it uses $sql for the name of the column
 It is a macro of the method select()
 
 ```php
-$result = $dao->max('from table where condition=1','col')->firstScalar(); // select max(col) from table where c..
-$result = $dao->max('from table','col1')->firstScalar(); // select max(col1) from table
+$result = $pdoOne->max('from table where condition=1','col')->firstScalar(); // select max(col) from table where c..
+$result = $pdoOne->max('from table','col1')->firstScalar(); // select max(col1) from table
 ```
 
 ### sum($sql,$arg='*') 
@@ -350,8 +350,8 @@ If $arg is empty then it uses $sql for the name of the column
 It is a macro of the method select()
 
 ```php
-$result = $dao->sum('from table where condition=1','col')->firstScalar(); // select sum(col) from table where c..
-$result = $dao->sum('from table','col1')->firstScalar(); // select sum(col1) from table
+$result = $pdoOne->sum('from table where condition=1','col')->firstScalar(); // select sum(col) from table where c..
+$result = $pdoOne->sum('from table','col1')->firstScalar(); // select sum(col1) from table
 ```
 
 ### avg($sql,$arg='*') 
@@ -361,14 +361,14 @@ If $arg is empty then it uses $sql for the name of the column
 It is a macro of the method select()
 
 ```php
-$result = $dao->avg('from table where condition=1','col')->firstScalar(); // select avg(col) from table where c..
-$result = $dao->avg('from table','col1')->firstScalar(); // select avg(col1) from table
+$result = $pdoOne->avg('from table where condition=1','col')->firstScalar(); // select avg(col) from table where c..
+$result = $pdoOne->avg('from table','col1')->firstScalar(); // select avg(col1) from table
 ```
 
 ### distinct($distinct='distinct')
 Generates a select command.
 ```php
-$results = $dao->select("col1,col2")->distinct(); //...
+$results = $pdoOne->select("col1,col2")->distinct(); //...
 ```
 > Generates the query: select **distinct** col1,col2 ....
 
@@ -377,14 +377,14 @@ $results = $dao->select("col1,col2")->distinct(); //...
 ### from($tables)
 Generates a from command.
 ```php
-$results = $dao->select("*")->from('table'); //...
+$results = $pdoOne->select("*")->from('table'); //...
 ```
 > Generates the query: select * **from table**
 
 **$tables** could be a single table or a sql construction. For examp, the next command is valid:
 
 ```php
-$results = $dao->select("*")->from('table t1 inner join t2 on t1.c1=t2.c2'); //...
+$results = $pdoOne->select("*")->from('table t1 inner join t2 on t1.c1=t2.c2'); //...
 ```
 
 
@@ -394,7 +394,7 @@ Generates a where command.
 * $where is an array or a string. If it's a string, then it's evaluated by using the parameters. if any
 
 ```php
-$results = $dao->select("*")
+$results = $pdoOne->select("*")
 ->from('table')
 ->where('p1=1'); //...
 ```
@@ -406,14 +406,14 @@ $results = $dao->select("*")
 > ['i',1 ,'s','hello' ,'d',20.3 ,'s','world']
 
 ```php
-$results = $dao->select("*")
+$results = $pdoOne->select("*")
 ->from('table')
 ->where('p1=?',['i',1]); //...
 ```
 > Generates the query: select * from table **where p1=?(1)**
 
 ```php
-$results = $dao->select("*")
+$results = $pdoOne->select("*")
 ->from('table')
 ->where('p1=? and p2=?',['i',1,'s','hello']); //...
 ```
@@ -422,7 +422,7 @@ $results = $dao->select("*")
 
 > Note. where could be nested.
 ```php
-$results = $dao->select("*")
+$results = $pdoOne->select("*")
 ->from('table')
 ->where('p1=?',['i',1])
 ->where('p2=?',['s','hello']); //...
@@ -431,7 +431,7 @@ $results = $dao->select("*")
 
 You could also use:
 ```php
-$results = $dao->select("*")->from("table")
+$results = $pdoOne->select("*")->from("table")
     ->where(['p1'=>'Coca-Cola','p2'=>1])
     ->toList();
 ```
@@ -439,7 +439,7 @@ $results = $dao->select("*")->from("table")
 
 You could also use an associative array as argument and named parameters in the query
 ```php
-$results = $dao->select("*")->from("table")
+$results = $pdoOne->select("*")->from("table")
     ->where('condition=:p1 and condition2=:p2',['p1'=>'Coca-Cola','p2'=>1])
     ->toList();
 ```
@@ -450,7 +450,7 @@ $results = $dao->select("*")->from("table")
 ### order($order)
 Generates a order command.
 ```php
-$results = $dao->select("*")
+$results = $pdoOne->select("*")
 ->from('table')
 ->order('p1 desc'); //...
 ```
@@ -459,7 +459,7 @@ $results = $dao->select("*")
 ### group($group)
 Generates a group command.
 ```php
-$results = $dao->select("*")
+$results = $pdoOne->select("*")
 ->from('table')
 ->group('p1'); //...
 ```
@@ -468,7 +468,7 @@ $results = $dao->select("*")
 ### having($having,[$arrayParameters])
 Generates a group command.
 ```php
-$results = $dao->select("*")
+$results = $pdoOne->select("*")
 ->from('table')
 ->group('p1')
 ->having('p1>?',array('i',1)); //...
@@ -489,7 +489,7 @@ Run the query generate.
 It's a macro of runGen. It returns an associative array or null.
 
 ```php
-$results = $dao->select("*")
+$results = $pdoOne->select("*")
 ->from('table')
 ->toList(); 
 ```
@@ -498,7 +498,7 @@ $results = $dao->select("*")
 It returns a metacode of each columns of the query.
 
 ```php
-$results = $dao->select("*")
+$results = $pdoOne->select("*")
 ->from('table')
 ->toMeta(); 
 ```
@@ -506,7 +506,7 @@ $results = $dao->select("*")
 or
 
 ```php
-$results = $dao->toMeta('select * from table'); 
+$results = $pdoOne->toMeta('select * from table'); 
 ```
 
 result:
@@ -560,7 +560,7 @@ array(3) {
 It's a macro of runGen. It returns an indexed array from the first column
 
 ```php
-$results = $dao->select("*")
+$results = $pdoOne->select("*")
 ->from('table')
 ->toListSimple(); // ['1','2','3','4']
 ```
@@ -569,7 +569,7 @@ It returns an associative array where the first value is the key and the second 
 If the second value does not exist then it uses the index as value (first value).  
 
 ```php
-$results = $dao->select("cod,name")
+$results = $pdoOne->select("cod,name")
 ->from('table')
 ->toListKeyValue(); // ['cod1'=>'name1','cod2'=>'name2']
 ```
@@ -579,7 +579,7 @@ $results = $dao->select("cod,name")
 It's a macro of runGen. It returns a mysqli_result or null.
 
 ```php
-$results = $dao->select("*")
+$results = $pdoOne->select("*")
 ->from('table')
 ->toResult(); //
 ```
@@ -597,7 +597,7 @@ $count=$this->pdoOne->count('from product_category')->firstScalar();
 It's a macro of runGen. It returns the first row if any, if not then it returns false, as an associative array.
 
 ```php
-$results = $dao->select("*")
+$results = $pdoOne->select("*")
 ->from('table')
 ->first(); 
 ```
@@ -606,7 +606,7 @@ $results = $dao->select("*")
 It's a macro of runGen. It returns the last row (if any, if not, it returns false) as an associative array.
 
 ```php
-$results = $dao->select("*")
+$results = $pdoOne->select("*")
 ->from('table')
 ->last(); 
 ```
@@ -616,11 +616,11 @@ $results = $dao->select("*")
 
 It returns the sql command.
 ```php
-$sql = $dao->select("*")
+$sql = $pdoOne->select("*")
 ->from('table')
 ->sqlGen();
 echo $sql; // returns select * from table
-$results=$dao->toList(); // executes the query
+$results=$pdoOne->toList(); // executes the query
 ```
 > Note: it doesn't reset the query.
 
@@ -632,27 +632,27 @@ Let's say that we want to add an **integer** in the column **col1** with the val
 
 __Schema and values using a list of values__: Where the first value is the column, the second is the type of value (i=integer,d=double,s=string,b=blob) and second array contains the values.
 ```php
-$dao->insert("table"
+$pdoOne->insert("table"
     ,['col1','i']
     ,[20]);
 ```
 __Schema and values in the same list__: Where the first value is the column, the second is the type of value (i=integer,d=double,s=string,b=blob) and the third is the value.
 ```php
-$dao->insert("table"
+$pdoOne->insert("table"
     ,['col1','i',20]);
 ```
 
 __Schema and values using two associative arrays__:
 
 ```php
-$dao->insert("table"
+$pdoOne->insert("table"
     ,['col1'=>'i']
     ,['col1'=>20]);
 ```
 __Schema and values using a single associative array__: The type is calculated automatically.
 
 ```php
-$dao->insert("table"
+$pdoOne->insert("table"
     ,['col1'=>20]);
 ```
 
@@ -660,21 +660,21 @@ $dao->insert("table"
 Generates a insert command.
 
 ```php
-$dao->insert("producttype"
+$pdoOne->insert("producttype"
     ,['idproducttype','i','name','s','type','i']
     ,[1,'cocacola',1]);
 ```
 
 Using nested chain (single array)
 ```php
-    $dao->from("producttype")
+    $pdoOne->from("producttype")
         ->set(['idproducttype','i',0 ,'name','s','Pepsi' ,'type','i',1])
         ->insert();
 ```
 
 Using nested chain multiple set
 ```php
-    $dao->from("producttype")
+    $pdoOne->from("producttype")
         ->set("idproducttype=?",['i',101])
         ->set('name=?',['s','Pepsi'])
         ->set('type=?',['i',1])
@@ -682,7 +682,7 @@ Using nested chain multiple set
 ```
 or (the type is defined, in the possible, automatically by MySql)     
 ```php
-    $dao->from("producttype")
+    $pdoOne->from("producttype")
         ->set("idproducttype=?",['i',101])
         ->set('name=?','Pepsi')
         ->set('type=?',1)
@@ -691,13 +691,13 @@ or (the type is defined, in the possible, automatically by MySql)
 
 ### insertObject($table,[$declarativeArray],$excludeColumn=[])
 ```php
-    $dao->insertObject('table',['Id'=>1,'Name'=>'CocaCola']);
+    $pdoOne->insertObject('table',['Id'=>1,'Name'=>'CocaCola']);
 ```
 
     
 Using nested chain declarative set
 ```php
-    $dao->from("producttype")
+    $pdoOne->from("producttype")
         ->set('(idproducttype,name,type) values (?,?,?)',['i',100,'s','Pepsi','i',1])
         ->insert();
 ```
@@ -710,7 +710,7 @@ Using nested chain declarative set
 Generates a insert command.
 
 ```php
-$dao->update("producttype"
+$pdoOne->update("producttype"
     ,['name','s','type','i'] //set
     ,[6,'Captain-Crunch',2] //set
     ,['idproducttype','i'] // where
@@ -718,13 +718,13 @@ $dao->update("producttype"
 ```
 
 ```php
-$dao->update("producttype"
+$pdoOne->update("producttype"
     ,['name'=>'Captain-Crunch','type'=>2] // set
     ,['idproducttype'=>6]); // where
 ```
 
 ```php
-$dao->from("producttype")
+$pdoOne->from("producttype")
     ->set("name=?",['s','Captain-Crunch']) //set
     ->set("type=?",['i',6]) //set
     ->where('idproducttype=?',['i',6]) // where
@@ -734,7 +734,7 @@ $dao->from("producttype")
 or
 
 ```php
-$dao->from("producttype")
+$pdoOne->from("producttype")
     ->set("name=?",'Captain-Crunch') //set
     ->set("type=?",6) //set
     ->where('idproducttype=?',['i',6]) // where
@@ -748,24 +748,24 @@ $dao->from("producttype")
 Generates a delete command.
 
 ```php
-$dao->delete("producttype"
+$pdoOne->delete("producttype"
     ,['idproducttype','i'] // where
     ,[7]); // where
 ```
 ```php
-$dao->delete("producttype"
+$pdoOne->delete("producttype"
     ,['idproducttype'=>7]); // where
 ```
 > Generates the query: **delete from producttype where `idproducttype`=?** ....
 
 You could also delete via a DQL builder chain.
 ```php
-$dao->from("producttype")
+$pdoOne->from("producttype")
     ->where('idproducttype=?',['i',7]) // where
     ->delete(); 
 ```
 ```php
-$dao->from("producttype")
+$pdoOne->from("producttype")
     ->where(['idproducttype'=>7]) // where
     ->delete(); 
 ```
@@ -900,7 +900,7 @@ $dao->getSequencePHP(true) // string(19) "1739032938181434311"
 
 ## CLI 
 
-PdoOne has some features available only in CLI.  Right now, it only supports MYSQL.
+PdoOne has some features available only in CLI.  
 
 ![](examples/cli.jpg)
 
@@ -909,24 +909,32 @@ PdoOne has some features available only in CLI.  Right now, it only supports MYS
  _____    _       _____
 |  _  | _| | ___ |     | ___  ___
 |   __|| . || . ||  |  ||   || -_|
-|__|   |___||___||_____||_|_||___|  1.28
+|__|   |___||___||_____||_|_||___|  1.28.1
 
-Syntax:php PdoOne.php
--database (mysql/sqlsrv/oracle/test) [mysql]
--server [127.0.0.1:3306]
+Syntax:php PdoOne.php <args>
+-database [$database]
+    Example: (mysql/sqlsrv/oracle/test)
+-server [$server]
     Example mysql: 127.0.0.1 , 127.0.0.1:3306
--user root The username to access to the database [root]
--pwd 12345 The password to access to the database [***]
--db sakila  The database/schema [sakila]
--input ("select * from table"/"table") The input value.[Actor]
-    "select * from table" = it runs a query
-    "table" = it runs a table (it could generates a query automatically)
--output (classcode/selectcode/arraycode/csv/json) The result. []
-    classcode =it returns php code with a CRUDL class
-    selectcode =it shows a php code with a select
-    arraycode = it shows a php code with the definition of an array Ex: ['idfield'=0,'name'=>'']
-    csv = it returns a csv result
-    json = it returns the value of the queries as json
+    Example sqlsrv: (local)\sqlexpress 127.0.0.1\sqlexpress
+-user The username to access to the database [$user]
+    Example: root, su
+-pwd The password to access to the database [***]
+    Example: abc.123
+-db The database/schema [$db]
+    Example: sakila
+-input The input value.[$input]
+    Example: "select * from table" = it runs a query
+    Example: "table" = it runs a table (it could generates a query automatically)
+-output The result value. [$output]
+    classcode: it returns php code with a CRUDL class
+    selectcode: it shows a php code with a select
+    arraycode: it shows a php code with the definition of an array Ex: ['idfield'=0,'name'=>'']
+    csv: it returns a csv result
+    json: it returns the value of the queries as json
+-pk [optional] the primary key. It is requerido for SQLSERVER and output classcode [$pk]
+    Example: "customerid"    
+
 ```
 
 
@@ -934,7 +942,11 @@ Syntax:php PdoOne.php
 
 Execute the next line (in the lib folder)
 
-> php pdoone.php
+> php PdoOne.php <arg>
+
+(or pointing to the right folder)
+
+> php /var/web/vendor/eftec/lib/PdoOne.php <arg>
 
 Note: It requires to enter all arguments (-database, -server, etc.)
 
@@ -944,9 +956,14 @@ The functionality will generate a ready-to-use repository class.
 
 Let's say the next example
 
-> php pdoone.php -database mysql -server 127.0.0.1:3306 -user root -pwd abc.123 -db sakila -input "Actor" -output classcode
+> mysql:  
+> php pdoone.php -database mysql -server 127.0.0.1:3306 -user root -pwd abc.123 -db sakila -input "Actor" -output classcode  
+> sqlsrv:
+> php pdoone.php -database sqlsrv -server PCJC\SQLEXPRESS -user sa -pwd abc.123 -db sakila -input "Actor" -output classcode  
 
-It will connect to the database mysql, ip: 127.0.0.1 and database sakila, and it will read the "actor" table.  
+It will connect to the database mysql, ip: 127.0.0.1 and database sakila, and it will read the "actor" table.
+
+  
 It will return the next result
 
 ```php
@@ -991,8 +1008,25 @@ could modify the code, add new methods, modify previous method and so one.
 For to use the class, we could write the next code:
 
 ```php
+// 1) option 1, inject an instance of $pdo
+ActorRepo::setPdoOne($pdoOne); // it inject the current connect to the database
 
-ActorRepo::setPdoOne($pdo); // it inject the current connect to the database
+// 2) option 2.
+// If the global variable $pdoOne exists, then it is injected. (unless it is defined by using setPdoOne()
+$pdoOne=new PdoOne("mysql","127.0.0.1","root","abc.123","sakila","");
+$pdoOne->connect();
+
+// 3) option 3
+// If the global function pdoOne() exists, then it is used for obtain the instance.
+function pdoOne() {
+    global $pdo;
+    if ($pdo===null) {
+        $pdo=new PdoOne('mysql','127.0.0.1','root','abc.123','sakila');
+    }
+    return $pdo;
+}
+
+
 $actorActorRepo::get(2); // it will read the actor with the pk=2 and it will return as an array.
 $actors=$actorArray=ActorRepo::select(); // it returns all the rows.
 
@@ -1002,6 +1036,9 @@ Alternatively, you could generate the php file automatically as follow:
 
 > php pdoone.php -database mysql -server 127.0.0.1:3306 -user root -pwd abc.123 -db sakila
 > -input "Actor" -output classcode >ActorRepo.php
+
+Note: the code lacks of php-tags, namespace and use but everything else is here.
+
 
 ### cli-selectcode
 
@@ -1095,6 +1132,8 @@ actor_id,first_name,last_name,last_update
 PdoOne adds a bit of ovehead over PDO, however it is simple a wrapper to pdo.
 
 ## Changelist
+* 1.28.1 2020-04-06
+    * cli now supports sqlsrv
 * 1.28 2020-04-06
     * method toMeta() now allows arguments.
     * **The library now has a cli interface and a generation of code**
