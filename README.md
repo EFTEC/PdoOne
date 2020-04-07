@@ -958,7 +958,7 @@ Let's say the next example
 
 > mysql:  
 > php pdoone.php -database mysql -server 127.0.0.1:3306 -user root -pwd abc.123 -db sakila -input "Actor" -output classcode  
-> sqlsrv:
+> sqlsrv:  
 > php pdoone.php -database sqlsrv -server PCJC\SQLEXPRESS -user sa -pwd abc.123 -db sakila -input "Actor" -output classcode  
 
 It will connect to the database mysql, ip: 127.0.0.1 and database sakila, and it will read the "actor" table.
