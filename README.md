@@ -2,7 +2,9 @@
 
 PdoOne. It's a simple wrapper for PHP's PDO library.
 
-This library is as fast as possible. Most of the operations are simple string/array managements.
+This library tries to work as fast as possible. Most of the operations are simple string/array managements and work in the bare metal of the PDO library.
+
+
 
 [![Build Status](https://travis-ci.org/EFTEC/PdoOne.svg?branch=master)](https://travis-ci.org/EFTEC/PdoOne)
 [![Packagist](https://img.shields.io/packagist/v/eftec/PdoOne.svg)](https://packagist.org/packages/eftec/PdoOne)
@@ -129,7 +131,11 @@ Just download the file lib/PdoOne.php and save it in a folder.
 ### Start a connection
 
 ```php
+// mysql
 $dao=new PdoOne("mysql","127.0.0.1","root","abc.123","sakila","");
+$dao->connect();
+// sql server
+$dao=new PdoOne("sqlsrv","(local)\sqlexpress","sa","abc.123","sakila","");
 $dao->connect();
 ```
 
@@ -151,7 +157,7 @@ $sql="CREATE TABLE `product` (
 $pdoOne->runRawQuery($sql);  
 ```
 
-### Run a prepared query
+### Run a query using a Prepared Statement of PDO
 ```php
 $sql="insert into `product`(name) values(?)";
 $stmt=$pdoOne->prepare($sql);
@@ -164,14 +170,20 @@ $pdoOne->runQuery($stmt);
 
 ### Run a prepared query with parameters.
 ```php
+// native query
 $pdoOne->runRawQuery('insert into `product` (name) values(?)'
     ,array('s','cocacola'));
+// query builder
+$pdoOne->set(['name'=>'cocacola'])
+    ->from('product')
+    ->insert();
+
 ```
 
 
 
 ### Return data (first method)
-It returns a mysqli_statement.
+It returns a PDOStatement.
 
 ```php
     $sql="select * from `product` order by name";
@@ -182,7 +194,7 @@ It returns a mysqli_statement.
         var_dump($row);
     }
     
-```    
+```
 > This statement must be processed manually.
 
 ### Return data (second method)
@@ -195,7 +207,7 @@ It returns an associative array.
     $rows = $stmt->get_result();
     $allRows=$rows->fetch_all(PDO::FETCH_ASSOC);
     var_dump($allRows);
-```    
+```
 
 ### Running a transaction
 ```php
@@ -210,7 +222,7 @@ try {
 } catch (Exception $e) {
     $pdoOne->rollback(false); // error, transaction cancelled.
 }
-```   
+```
 #### startTransaction()
 It starts a transaction
 
@@ -267,13 +279,136 @@ $result=$pdoOne->columnTable('actor');
 
 Returns all foreign keys of a table (source table)
 
-### createTable($tableName,$definition,$primaryKey=null,$extra='')
+### createTable($tableName,$definition,$primaryKey=null,$extra='',$extraOutside='')
 
 Creates a table using a definition and primary key.
+
+* **$definition** The definition is an associative array with the name of the column as key and the definition as value.
+* **primaryKey** It could be an string or associative array.   
+   * if it is an string then it is the name of the primary key, example "user_id";
+   * it it is an associative array, then it could be used to define primary key, unique, key and foreign keys:
+        * 'key_name'=>'PRIMARY KEY'
+        * 'key_name'=>'KEY'
+        * 'key_name'=>'UNIQUE KEY'
+        * 'key_name'=>'FOREIGN KEY REFERENCES TABLEREF(COLREF) ...'
+* **$extra** It defines a extra definition inside the definition of the table.
+* **extraOutside** It defines a extra definition after the definition of the table.
+
+>Note: You could generate a code to create a table using an existing table by executing cli (output classcode)   
+> php pdoone.php -database mysql -server 127.0.0.1 -user root -pwd abc.123 -db sakila -input film -output classcode   
+
+Example: (mysql)
+
+```php
+$pdo->createTable('film',                                                                                                
+    [                                                                                                                    
+        "film_id" => "smallint unsigned not null auto_increment",                                                        
+        "title" => "varchar(255) not null",                                                                              
+        "description" => "text",                                                                                         
+        "release_year" => "year",                                                                                        
+        "language_id" => "tinyint unsigned not null",                                                                    
+        "original_language_id" => "tinyint unsigned",                                                                    
+        "rental_duration" => "tinyint unsigned not null default '3'",                                                    
+        "rental_rate" => "decimal(4,2) not null default '4.99'",                                                         
+        "length" => "smallint unsigned",                                                                                 
+        "replacement_cost" => "decimal(5,2) not null default '19.99'",                                                   
+        "rating" => "enum('G','PG','PG-13','R','NC-17') default 'G'",                                                    
+        "special_features" => "set('Trailers','Commentaries','Deleted Scenes','Behind the Scenes')",                     
+        "last_update" => "timestamp not null default CURRENT_TIMESTAMP on update CURRENT_TIMESTAMP"                      
+    ],[                                                                                                                  
+        "film_id" => "PRIMARY KEY",                                                                                      
+        "title" => "KEY",                                                                                                
+        "language_id" => "FOREIGN KEY REFERENCES`language`(`language_id`) ON UPDATE CASCADE",                            
+        "original_language_id" => "FOREIGN KEY REFERENCES`language`(`language_id`) ON UPDATE CASCADE"                    
+    ]);                                                                                                                  
+```
+
+```php
+$pdo->createTable('film',                                                                                                
+    [                                                                                                                    
+        "film_id" => "smallint unsigned not null auto_increment",                                                        
+        "title" => "varchar(255) not null",                                                                              
+        "description" => "text",                                                                                         
+        "release_year" => "year",                                                                                        
+        "language_id" => "tinyint unsigned not null",                                                                    
+        "original_language_id" => "tinyint unsigned",                                                                    
+        "rental_duration" => "tinyint unsigned not null default '3'",                                                    
+        "rental_rate" => "decimal(4,2) not null default '4.99'",                                                         
+        "length" => "smallint unsigned",                                                                                 
+        "replacement_cost" => "decimal(5,2) not null default '19.99'",                                                   
+        "rating" => "enum('G','PG','PG-13','R','NC-17') default 'G'",                                                    
+        "special_features" => "set('Trailers','Commentaries','Deleted Scenes','Behind the Scenes')",                     
+        "last_update" => "timestamp not null default CURRENT_TIMESTAMP on update CURRENT_TIMESTAMP"                      
+    ],'film_id');                                                                                                                  
+```
+
+Example (sqlsrv)
 
 
 
 ```php
+$pdo->createTable('film',
+	[
+	    "film_id" => "int NOT NULL IDENTITY(1,1)",
+	    "title" => "varchar(255) NOT NULL",
+	    "description" => "text(2147483647) DEFAULT (NULL)",
+	    "release_year" => "varchar(4)",
+	    "language_id" => "tinyint NOT NULL",
+	    "original_language_id" => "tinyint DEFAULT (NULL)",
+	    "rental_duration" => "tinyint NOT NULL DEFAULT ((3))",
+	    "rental_rate" => "decimal(4,2) NOT NULL DEFAULT ((4.99))",
+	    "length" => "smallint DEFAULT (NULL)",
+	    "replacement_cost" => "decimal(5,2) NOT NULL DEFAULT ((19.99))",
+	    "rating" => "varchar(10) DEFAULT ('G')",
+	    "special_features" => "varchar(255) DEFAULT (NULL)",
+	    "last_update" => "datetime NOT NULL DEFAULT (getdate())"
+	],[
+	    "language_id" => "FOREIGN KEY REFERENCES language(language_id)",
+	    "original_language_id" => "FOREIGN KEY REFERENCES language(language_id)",
+	    "film_id" => "PRIMARY KEY"
+	]);
+```
+
+### validateDefTable($pdoInstance,$tablename,$defTable,$defTableKey)
+
+It validates a table if the table matches the definition asigned by values.
+
+```
+$def=[
+	    "film_id" => "int NOT NULL IDENTITY(1,1)",
+	    "title" => "varchar(255) NOT NULL",
+	    "description" => "text(2147483647) DEFAULT (NULL)",
+	    "release_year" => "varchar(4)",
+	    "language_id" => "tinyint NOT NULL",
+	    "original_language_id" => "tinyint DEFAULT (NULL)",
+	    "rental_duration" => "tinyint NOT NULL DEFAULT ((3))",
+	    "rental_rate" => "decimal(4,2) NOT NULL DEFAULT ((4.99))",
+	    "length" => "smallint DEFAULT (NULL)",
+	    "replacement_cost" => "decimal(5,2) NOT NULL DEFAULT ((19.99))",
+	    "rating" => "varchar(10) DEFAULT ('G')",
+	    "special_features" => "varchar(255) DEFAULT (NULL)",
+	    "last_update" => "datetime NOT NULL DEFAULT (getdate())"
+	];
+$keys=[
+	    "language_id" => "FOREIGN KEY REFERENCES language(language_id)",
+	    "original_language_id" => "FOREIGN KEY REFERENCES language(language_id)",
+	    "film_id" => "PRIMARY KEY"
+	];	
+	
+var_dump(PdoOne::validateDefTable(self::getPdoOne(),self::TABLE,$def,$keys));
+```
+
+
+
+
+
+### foreignKeyTable
+
+
+
+
+```php
+
 $result=$pdoOne->foreignKeyTable('actor');
 ```
 
@@ -694,7 +829,7 @@ or (the type is defined, in the possible, automatically by MySql)
     $pdoOne->insertObject('table',['Id'=>1,'Name'=>'CocaCola']);
 ```
 
-    
+
 Using nested chain declarative set
 ```php
     $pdoOne->from("producttype")
@@ -813,7 +948,7 @@ class CacheService implements \eftec\IPdoOneCache {
     }
 }
 $cache=new CacheService();
-```  
+```
 
 (2) Sets the cache service
 
@@ -821,7 +956,7 @@ $cache=new CacheService();
     $pdoOne=new PdoOne("mysql","127.0.0.1","travis","","travisdb");
     $cache=new CacheService();
     $$pdoOne->setCacheService($cache);
-```  
+```
 (3) Use the cache as as follow, we must add the method useCache() in any part of the query.
 
 ```php
@@ -829,7 +964,7 @@ $cache=new CacheService();
         ->useCache()->toList(); // cache that never expires
     $pdoOne->select('select * from table')
         ->useCache(1000)->toList(); // cache that lasts 1000ms.
-```  
+```
 
 ### Example using apcu
 
@@ -847,7 +982,7 @@ class CacheService implements \eftec\IPdoOneCache {
     }
 }
 $cache=new CacheService();
-```  
+```
 
 
 ## Sequence
@@ -963,7 +1098,7 @@ Let's say the next example
 
 It will connect to the database mysql, ip: 127.0.0.1 and database sakila, and it will read the "actor" table.
 
-  
+
 It will return the next result
 
 ```php
@@ -1002,7 +1137,7 @@ class ActorRepo
 This functionality will generate a new Repository class with the most common operations: insert, 
 list, update, delete, get, count, create table, drop table and truncate table
 
-Why we need to generate a class (instead of inherit one)?  This Crud class is only a starting point. The developer 
+Why we need to generate a class? (instead of inherit one)  This Crud class is only a starting point. The developer 
 could modify the code, add new methods, modify previous method and so one.
 
 For to use the class, we could write the next code:
@@ -1132,6 +1267,11 @@ actor_id,first_name,last_name,last_update
 PdoOne adds a bit of ovehead over PDO, however it is simple a wrapper to pdo.
 
 ## Changelist
+
+* 1.29 2020-04-10
+    * createTable() now allows more features
+    * new method validateDefTable()
+    * a new UI render() 
 * 1.28.1 2020-04-06
     * cli now supports sqlsrv
 * 1.28 2020-04-06
