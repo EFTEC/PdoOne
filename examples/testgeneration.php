@@ -254,8 +254,8 @@ class actorRepo
      * @return array If valid then it returns an empty array
      * @throws Exception
      */
-    public static function validTable() {
-        return PdoOne::validateDefTable(self::$pdoOne,self::TABLE,self::DEF);
+    public function validTable() {
+        return $this->validateDefTable(self::TABLE,self::DEF);
     }
     
     /**

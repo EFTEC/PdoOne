@@ -75,7 +75,7 @@ class filmRepo
      * @throws Exception
      */
     public static function validTable() {
-        return PdoOne::validateDefTable(self::getPdoOne(),self::TABLE,self::DEF,self::DEFKEY);
+        return PdoOne::validateDefTable(self::TABLE,self::DEF,self::DEFKEY);
     }
 
     /**

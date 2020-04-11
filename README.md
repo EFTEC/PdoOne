@@ -1268,6 +1268,12 @@ PdoOne adds a bit of ovehead over PDO, however it is simple a wrapper to pdo.
 
 ## Changelist
 
+* 1.30 2020-04-10
+    * Class separated in 3 new service class
+    * lib/ext/PdoOne_Mysql.php = Service class for Mysql (mysql)
+    * lib/ext/PdoOne_Sqlsrv.php = Service class for Sql Server (sqlsrv)
+    * lib/ext/PdoOne_TestMockup.php = Service class for mockup test (test)
+    * lib/ext/PdoOne_IExt.php = Interface for all services.
 * 1.29 2020-04-10
     * createTable() now allows more features
     * new method validateDefTable()

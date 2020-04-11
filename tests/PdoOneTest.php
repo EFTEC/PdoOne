@@ -7,18 +7,19 @@
 namespace eftec\tests;
 
 
+use eftec\IPdoOneCache;
 use eftec\PdoOne;
 use Exception;
 use PHPUnit\Framework\TestCase;
 
 // it is an example of a CacheService
-class CacheService implements \eftec\IPdoOneCache {
+class CacheService implements IPdoOneCache {
     public $cacheData=[];
     public $cacheCounter=0; // for debug
     public  function getCache($uid,$family='') {
         if(isset($this->cacheData[$uid])) {
             $this->cacheCounter++;
-            echo "using cache\n";
+            echo "test:using cache\n";
             return $this->cacheData[$uid];
         }
         return false;
@@ -115,7 +116,6 @@ class PdoOneTest extends TestCase
     public function test_open()
     {
         //$this->expectException(\Exception::class);
-
         //$this->pdoOne->open(true);
 	    try {
 		    $r=$this->pdoOne->runRawQuery('drop table product_category');
@@ -137,6 +137,8 @@ class PdoOneTest extends TestCase
 		    echo $e->getMessage()."<br>";
 	    }
 	    $this->assertEquals(true,$r,"failed to create table");
+
+        $this->assertGreaterThan(1,count($this->pdoOne->objectList('table')));
 	    // we add some values
 	    $this->pdoOne->set(['id_category' => 123, 'catname' => 'cheap'])
 		    ->from('product_category')->insert();
