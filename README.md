@@ -1240,6 +1240,36 @@ actor_id,first_name,last_name,last_update
 4,"JENNIFER","DAVIS","2006-02-15 01:34:33"
 ```
 
+### UI
+
+Alternatively to the CLI, the library has an interface visual. It does all the operation of the CLI.
+
+![](examples/ui.jpg)
+
+### How to run the UI?
+
+Simply call the method render()
+
+```php
+<?php
+
+use eftec\PdoOne;
+use mapache_commons\Collection;
+
+include "../vendor/autoload.php";
+
+$dao=new PdoOne("test","127.0.0.1","dummy","dummy","dummy"); // we need any connection.
+$dao->logLevel=3;
+
+$dao->render();
+```
+
+
+
+> There is an example in the folder examples/testui.php
+
+
+
 
 
 ## Benchmark (mysql, estimated)
@@ -1274,6 +1304,7 @@ PdoOne adds a bit of ovehead over PDO, however it is simple a wrapper to pdo.
     * lib/ext/PdoOne_Sqlsrv.php = Service class for Sql Server (sqlsrv)
     * lib/ext/PdoOne_TestMockup.php = Service class for mockup test (test)
     * lib/ext/PdoOne_IExt.php = Interface for all services.
+    * the /examples folder is not delivered by default. It allows to reduce the number of size.  Use composer --prefer-source to get the examples
 * 1.29 2020-04-10
     * createTable() now allows more features
     * new method validateDefTable()
