@@ -369,6 +369,23 @@ $pdo->createTable('film',
 	]);
 ```
 
+### tableSorted($maxLoop = 5, $returnProblems = false, $debugTrace = false)
+
+It returns a list of tables ordered by dependency (from no dependent to more dependent)
+
+**Note**: This operation is not foolproof because the tables could have circular references.
+
+```php
+$dao = new PdoOne('sqlsrv', "(local)\sqlexpress", "sa", "abc.123", "sakila");
+$dao->open();
+echo "<pre>";
+var_dump($dao->tableSorted(3, false, true)); // it returns the tables sortered
+var_dump($dao->tableSorted(3, true, true)); // it returns all the tables that can't be sortered
+echo "</pre>";
+```
+
+
+
 ### validateDefTable($pdoInstance,$tablename,$defTable,$defTableKey)
 
 It validates a table if the table matches the definition asigned by values.
@@ -400,11 +417,9 @@ var_dump(PdoOne::validateDefTable(self::getPdoOne(),self::TABLE,$def,$keys));
 
 
 
-
-
 ### foreignKeyTable
 
-
+It returns all the foreign keys of a table.
 
 
 ```php
@@ -1298,6 +1313,8 @@ PdoOne adds a bit of ovehead over PDO, however it is simple a wrapper to pdo.
 
 ## Changelist
 
+* 1.31 2020-04-11
+    * new method tableSorted()
 * 1.30 2020-04-10
     * Class separated in 3 new service class
     * lib/ext/PdoOne_Mysql.php = Service class for Mysql (mysql)

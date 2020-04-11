@@ -1,4 +1,5 @@
 <?php /** @noinspection DuplicatedCode */
+
 /** @noinspection SqlDialectInspection */
 /** @noinspection SqlWithoutWhere */
 /** @noinspection SqlResolve */
@@ -19,20 +20,24 @@ use PDOStatement;
  * Class PdoOne
  * This class wrappes PDO but it could be used for another framework/library.
  *
- * @version       1.30 2020-04-10
+ * @see           https://github.com/EFTEC/PdoOne
  * @package       eftec
  * @author        Jorge Castro Castillo
  * @copyright (c) Jorge Castro C. MIT License  https://github.com/EFTEC/PdoOne
- * @see           https://github.com/EFTEC/PdoOne
+ * @version       1.31 2020-04-10
  */
 class PdoOne
 {
-    const VERSION = '1.30';
+
+    const VERSION = '1.31';
 
     const NULL = PHP_INT_MAX;
+
     /** @var string|null Static date (when the date is empty) */
     static $dateEpoch = "2000-01-01 00:00:00.00000";
+
     //<editor-fold desc="server fields">
+
     /**
      * Text date format
      *
@@ -40,7 +45,9 @@ class PdoOne
      * @see https://secure.php.net/manual/en/function.date.php
      */
     public static $dateFormat = 'Y-m-d';
+
     public static $dateHumanFormat = 'd/m/Y';
+
     /**
      * Text datetime format
      *
@@ -48,7 +55,9 @@ class PdoOne
      * @see https://secure.php.net/manual/en/function.date.php
      */
     public static $dateTimeFormat = 'Y-m-d\TH:i:s\Z';
+
     public static $dateTimeHumanFormat = 'd/m/Y H:i:s';
+
     /**
      * Text datetime format with microseconds
      *
@@ -56,20 +65,29 @@ class PdoOne
      * @see https://secure.php.net/manual/en/function.date.php
      */
     public static $dateTimeMicroFormat = 'Y-m-d\TH:i:s.u\Z';
+
     public static $dateTimeMicroHumanFormat = 'd/m/Y H:i:s.u';
+
     /**
      * @var string ISO format for date
      */
     public static $isoDate = '';
+
     public static $isoDateTimeMs = '';
+
     public static $isoDateTime = '';
+
     /** @var int nodeId It is the identifier of the node. It must be between 0..1023 */
     var $nodeId = 1;
+
     var $tableSequence = 'snowflake';
+
     /**
-     * it is used to generate an unpredictable number by flipping positions. It must be changed.
+     * it is used to generate an unpredictable number by flipping positions. It
+     * must be changed.
      * $mask0 and $mask1 must have the same number of elements.
-     * Each value must be from 0..17 (the size of snowflake, if it is used with snowflake)
+     * Each value must be from 0..17 (the size of snowflake, if it is used with
+     * snowflake)
      * $masks0=[0] and masks1[3] means that 01234->31204
      * number 14,15,16,17 ($masks1) has the highest entrophy
      *
@@ -77,78 +95,120 @@ class PdoOne
      * @see \eftec\PdoOne::getUnpredictable
      */
     var $masks0 = [2, 0, 4, 5];
+
     var $masks1 = [16, 13, 12, 11];
+
     /** @var PdoOneEncryption */
     var $encryption = null;
+
     /** @var string=['mysql','sqlsrv','oracle'][$i] */
     var $databaseType;
+
     var $database_delimiter0 = '`';
+
     //</editor-fold>
     var $database_delimiter1 = '`';
+
     /** @var string server ip. Ex. 127.0.0.1 127.0.0.1:3306 */
     var $server;
+
     var $user;
+
     var $pwd;
+
     /** @var string The name of the database/schema */
     var $db;
+
     var $charset = 'utf8';
+
     /** @var bool It is true if the database is connected otherwise,it's false */
     var $isOpen = false;
+
     /** @var bool If true (default), then it throws an error if happens an error. If false, then the execution continues */
     var $throwOnError = true;
+
     /** @var  PDO */
     var $conn1;
+
     /** @var  bool */
     var $transactionOpen;
+
     /** @var bool if the database is in READ ONLY mode or not. If true then we must avoid to write in the database. */
     var $readonly = false;
+
     /** @var string full filename of the log file. If it's empty then it doesn't store a log file. The log file is limited to 1mb */
     var $logFile = "";
+
     /** @var int
      * 0=no debug for production (all message of error are generic)<br>
      * 1=it shows an error message<br>
      * 2=it shows the error messages and the last query
-     * 3=it shows the error messagr, the last query and the last parameters (if any). It could be unsafe (it could show password)
+     * 3=it shows the error messagr, the last query and the last parameters (if
+     * any). It could be unsafe (it could show password)
      */
     public $logLevel = 0;
+
     /** @var string last query executed */
     var $lastQuery;
+
     var $lastParam = [];
+
     public $limit = '';
-    private $lastBindParam = [];
+
+    public $order = '';
+
     //<editor-fold desc="query builder fields">
+    private $lastBindParam = [];
+
     /** @var int */
     private $affected_rows = 0;
+
     private $select = '';
+
     /**
      * @var null|bool|int $ttl If <b>null</b> then the cache never expires.<br>
      *                         If <b>false</b> then we don't use cache.<br>
-     *                         If <b>int</b> then it is the duration of the cache (in seconds)
+     *                         If <b>int</b> then it is the duration of the
+     *     cache
+     *                         (in seconds)
      */
     private $useCache = false;
+
     /** @var null|string the unique id generate by sha256 and based in the query, arguments, type and methods */
     private $uid = null;
+
     /** @var string [optional] It is the family or group of the cache */
     private $cacheFamily = '';
+
     /** @var IPdoOneCache The service of cache [optional] */
     private $cacheService = null;
+
     private $from = '';
+
     /** @var array */
-    private $where = array();
+    private $where = [];
+
     /** @var int[] PDO::PARAM_STR,PDO::PARAM_INT,PDO::PARAM_BOOL */
-    private $whereParamType = array();
+    private $whereParamType = [];
+
     /** @var null|array */
     private $whereParamAssoc = null;
+
     private $whereCounter = 0;
+
     /** @var array */
-    private $whereParamValue = array();
+    private $whereParamValue = [];
+
     /** @var array */
-    private $set = array();
+    private $set = [];
+
     private $group = '';
+
     /** @var array */
-    private $having = array();
+    private $having = [];
+
     private $distinct = '';
-    public $order = '';
+
     /** @var PdoOne_IExt */
     private $service;
 
@@ -157,22 +217,43 @@ class PdoOne
     /**
      * PdoOne constructor.  It doesn't open the connection to the database.
      *
-     * @param string $database =['mysql','sqlsrv','oracle','test'][$i]
-     * @param string $server   server ip. Ex. 127.0.0.1 127.0.0.1:3306
-     * @param string $user     Ex. root
-     * @param string $pwd      Ex. 12345
-     * @param string $db       Ex. mybase
-     * @param string $logFile  Optional  log file. Example c:\\temp\log.log
-     * @param string $charset  Example utf8mb4
-     * @param int    $nodeId   It is the id of the node (server). It is used for sequence. Form 0 to 1023
+     * @param string $database     =['mysql','sqlsrv','oracle','test'][$i]
+     * @param string $server       server ip. Ex. 127.0.0.1 127.0.0.1:3306
+     * @param string $user         Ex. root
+     * @param string $pwd          Ex. 12345
+     * @param string $db           Ex. mybase
+     * @param string $logFile      Optional  log file. Example c:\\temp\log.log
+     * @param string $charset      Example utf8mb4
+     * @param int    $nodeId       It is the id of the node (server). It is used
+     *                             for sequence. Form 0 to 1023
      *
      * @see PdoOne::connect()
      */
-    public function __construct($database, $server, $user, $pwd, $db, $logFile = "", $charset = null, $nodeId = 1) {
-        $this->construct($database, $server, $user, $pwd, $db, $logFile, $charset, $nodeId);
+    public function __construct(
+        $database,
+        $server,
+        $user,
+        $pwd,
+        $db,
+        $logFile = "",
+        $charset = null,
+        $nodeId = 1
+    ) {
+        $this->construct(
+            $database, $server, $user, $pwd, $db, $logFile, $charset, $nodeId
+        );
     }
 
-    protected function construct($database, $server, $user, $pwd, $db, $logFile = "", $charset = null, $nodeId = 1) {
+    protected function construct(
+        $database,
+        $server,
+        $user,
+        $pwd,
+        $db,
+        $logFile = "",
+        $charset = null,
+        $nodeId = 1
+    ) {
         $this->databaseType = $database;
         switch ($this->databaseType) {
             case 'mysql':
@@ -205,11 +286,13 @@ class PdoOne
      *
      * @return string
      */
-    public static function unixtime2Sql($dateNum) {
+    public static function unixtime2Sql($dateNum)
+    {
         // 31/01/2016 20:20:00 --> 2016-01-31 00:00
         if ($dateNum == null) {
             return PdoOne::$dateEpoch;
         }
+
         return date(self::$isoDateTimeMs, $dateNum);
     }
 
@@ -221,15 +304,18 @@ class PdoOne
      *
      * @return string Returns a text with the date formatted (human readable)
      */
-    public static function dateSql2Text($sqlField, $hasTime = false) {
+    public static function dateSql2Text($sqlField, $hasTime = false)
+    {
         $tmpDate = self::dateTimeSql2PHP($sqlField, $hasTime);
         if ($tmpDate === null) {
             return null;
         }
         if ($hasTime) {
-            return $tmpDate->format((strpos($sqlField, '.') !== false)
-                ? self::$dateTimeMicroHumanFormat
-                : self::$dateTimeHumanFormat);
+            return $tmpDate->format(
+                (strpos($sqlField, '.') !== false)
+                    ? self::$dateTimeMicroHumanFormat
+                    : self::$dateTimeHumanFormat
+            );
         } else {
             return $tmpDate->format(self::$dateHumanFormat);
         }
@@ -243,14 +329,18 @@ class PdoOne
      *
      * @return bool|DateTime|null
      */
-    public static function dateTimeSql2PHP($sqlField, &$hasTime = false) {
+    public static function dateTimeSql2PHP($sqlField, &$hasTime = false)
+    {
         // 3  2016-01-31 00:00:00 -> 01/01/2016 00:00:00
         // mysql always returns the date/datetime/timestmamp in ansi format.
         if ($sqlField === "" || $sqlField === null) {
             if (PdoOne::$dateEpoch === null) {
                 return null;
             }
-            return DateTime::createFromFormat(self::$isoDateTimeMs, PdoOne::$dateEpoch);
+
+            return DateTime::createFromFormat(
+                self::$isoDateTimeMs, PdoOne::$dateEpoch
+            );
         }
 
         if (strpos($sqlField, '.')) {
@@ -258,16 +348,20 @@ class PdoOne
             //2018-02-06 05:06:07.123
             // Y-m-d H:i:s.v
             $hasTime = true;
+
             //$x = DateTime::createFromFormat("Y-m-d H:i:s.u", "2018-02-06 05:06:07.1234");
             return DateTime::createFromFormat(self::$isoDateTimeMs, $sqlField);
         } else {
             if (strpos($sqlField, ':')) {
                 // date with time
                 $hasTime = true;
-                return DateTime::createFromFormat(self::$isoDateTime, $sqlField);
+
+                return DateTime::createFromFormat(self::$isoDateTime,
+                    $sqlField);
             } else {
                 // only date
                 $hasTime = false;
+
                 return DateTime::createFromFormat(self::$isoDate, $sqlField);
             }
         }
@@ -280,23 +374,28 @@ class PdoOne
      * $pdoOne->dateConvert('01/01/2019','human','sql'); // 2019-01-01
      * </pre>
      *
-     * @param string $sqlField     The date to convert
-     * @param string $inputFormat  =['iso','human','sql','class'][$i]<br>
-     *                             <b>iso</b> depends on the database. Example: Y-m-d H:i:s<br>
-     *                             <b>human</b> is based in d/m/Y H:i:s but it could
-     *                             be changed (self::dateHumanFormat)<br>
-     *                             <b>sql</b> depends on the database<br>
-     *                             <b>class</b> is a DateTime() object<br>
-     * @param string $outputFormat =['iso','human','sql','class'][$i]<br>
-     *                             <b>iso</b> depends on the database. Example: Y-m-d H:i:s<br>
-     *                             <b>human</b> is based in d/m/Y H:i:s but it could
-     *                             be changed (self::dateHumanFormat)<br>
-     *                             <b>sql</b> depends on the database<br>
-     *                             <b>class</b> is a DateTime() object<br>
+     * @param string $sqlField         The date to convert
+     * @param string $inputFormat      =['iso','human','sql','class'][$i]<br>
+     *                                 <b>iso</b> depends on the database.
+     *                                 Example: Y-m-d H:i:s<br>
+     *                                 <b>human</b> is based in d/m/Y H:i:s but
+     *                                 it could be changed
+     *                                 (self::dateHumanFormat)<br>
+     *                                 <b>sql</b> depends on the database<br>
+     *                                 <b>class</b> is a DateTime() object<br>
+     * @param string $outputFormat     =['iso','human','sql','class'][$i]<br>
+     *                                 <b>iso</b> depends on the database.
+     *                                 Example: Y-m-d H:i:s<br>
+     *                                 <b>human</b> is based in d/m/Y H:i:s but
+     *                                 it could be changed
+     *                                 (self::dateHumanFormat)<br>
+     *                                 <b>sql</b> depends on the database<br>
+     *                                 <b>class</b> is a DateTime() object<br>
      *
      * @return bool|DateTime
      */
-    public static function dateConvert($sqlField, $inputFormat, $outputFormat) {
+    public static function dateConvert($sqlField, $inputFormat, $outputFormat)
+    {
         $ms = false;
         $time = false;
         $tmpDate = '';
@@ -304,39 +403,55 @@ class PdoOne
             case 'iso':
                 if (strpos($sqlField, '.') !== false) {
                     $ms = true;
-                    $tmpDate = DateTime::createFromFormat(self::$dateTimeMicroFormat, $sqlField);
+                    $tmpDate = DateTime::createFromFormat(
+                        self::$dateTimeMicroFormat, $sqlField
+                    );
                 } else {
                     if (strpos($sqlField, ':') !== false) {
                         $time = true;
-                        $tmpDate = DateTime::createFromFormat(self::$dateTimeFormat, $sqlField);
+                        $tmpDate = DateTime::createFromFormat(
+                            self::$dateTimeFormat, $sqlField
+                        );
                     } else {
-                        $tmpDate = DateTime::createFromFormat(self::$dateFormat, $sqlField);
+                        $tmpDate = DateTime::createFromFormat(self::$dateFormat,
+                            $sqlField);
                     }
                 }
                 break;
             case 'human':
                 if (strpos($sqlField, '.') !== false) {
                     $ms = true;
-                    $tmpDate = DateTime::createFromFormat(self::$dateTimeMicroHumanFormat, $sqlField);
+                    $tmpDate = DateTime::createFromFormat(
+                        self::$dateTimeMicroHumanFormat, $sqlField
+                    );
                 } else {
                     if (strpos($sqlField, ':') !== false) {
                         $time = true;
-                        $tmpDate = DateTime::createFromFormat(self::$dateTimeHumanFormat, $sqlField);
+                        $tmpDate = DateTime::createFromFormat(
+                            self::$dateTimeHumanFormat, $sqlField
+                        );
                     } else {
-                        $tmpDate = DateTime::createFromFormat(self::$dateHumanFormat, $sqlField);
+                        $tmpDate = DateTime::createFromFormat(
+                            self::$dateHumanFormat, $sqlField
+                        );
                     }
                 }
                 break;
             case 'sql':
                 if (strpos($sqlField, '.') !== false) {
                     $ms = true;
-                    $tmpDate = DateTime::createFromFormat(self::$isoDateTimeMs, $sqlField);
+                    $tmpDate = DateTime::createFromFormat(
+                        self::$isoDateTimeMs, $sqlField
+                    );
                 } else {
                     if (strpos($sqlField, ':') !== false) {
                         $time = true;
-                        $tmpDate = DateTime::createFromFormat(self::$isoDateTime, $sqlField);
+                        $tmpDate = DateTime::createFromFormat(
+                            self::$isoDateTime, $sqlField
+                        );
                     } else {
-                        $tmpDate = DateTime::createFromFormat(self::$isoDate, $sqlField);
+                        $tmpDate = DateTime::createFromFormat(self::$isoDate,
+                            $sqlField);
                     }
                 }
                 break;
@@ -357,6 +472,7 @@ class PdoOne
                 if ($time) {
                     return $tmpDate->format(self::$dateTimeFormat);
                 }
+
                 return $tmpDate->format(self::$dateFormat);
                 break;
             case 'human':
@@ -366,6 +482,7 @@ class PdoOne
                 if ($time) {
                     return $tmpDate->format(self::$dateTimeHumanFormat);
                 }
+
                 return $tmpDate->format(self::$dateHumanFormat);
                 break;
             case 'sql':
@@ -375,24 +492,28 @@ class PdoOne
                 if ($time) {
                     return $tmpDate->format(self::$isoDateTime);
                 }
+
                 return $tmpDate->format(self::$isoDate);
                 break;
             case 'class':
                 return $tmpDate;
                 break;
         }
+
         return false;
     }
 
     /**
      * Convert date, from text -> mysql (using a format pre-established)
      *
-     * @param string $textDate Input date
-     * @param bool   $hasTime  If true then it works with date and time (instead of date)
+     * @param string $textDate     Input date
+     * @param bool   $hasTime      If true then it works with date and time
+     *                             (instead of date)
      *
      * @return string
      */
-    public static function dateText2Sql($textDate, $hasTime = true) {
+    public static function dateText2Sql($textDate, $hasTime = true)
+    {
         $tmpFormat = (($hasTime)
             ? (strpos($textDate, '.') === false
                 ? self::$dateTimeFormat
@@ -402,18 +523,23 @@ class PdoOne
         if (!$hasTime && $tmpDate) {
             $tmpDate->setTime(0, 0, 0);
         }
-        return self::dateTimePHP2Sql($tmpDate); // it always returns a date with time. Mysql Ignores it.
+
+        return self::dateTimePHP2Sql(
+            $tmpDate
+        ); // it always returns a date with time. Mysql Ignores it.
     }
 
     /**
      * Conver date from php -> mysql
-     * It always returns a time (00:00:00 if time is empty). it could returns microseconds 2010-01-01 00:00:00.00000
+     * It always returns a time (00:00:00 if time is empty). it could returns
+     * microseconds 2010-01-01 00:00:00.00000
      *
      * @param DateTime $date
      *
      * @return string
      */
-    public static function dateTimePHP2Sql($date) {
+    public static function dateTimePHP2Sql($date)
+    {
         // 31/01/2016 20:20:00 --> 2016-01-31 00:00
         if ($date == null) {
             return PdoOne::$dateEpoch;
@@ -423,7 +549,6 @@ class PdoOne
         } else {
             return $date->format(self::$isoDateTime);
         }
-
     }
 
     /**
@@ -436,29 +561,40 @@ class PdoOne
      * @throws Exception
      * @see PdoOne::$dateTimeFormat
      */
-    public static function dateTextNow($hasTime = true, $hasMicroseconds = false) {
+    public static function dateTextNow(
+        $hasTime = true,
+        $hasMicroseconds = false
+    ) {
         $tmpDate = new DateTime();
         if ($hasTime) {
-            return $tmpDate->format(($hasMicroseconds !== false) ? self::$dateTimeMicroFormat : self::$dateTimeFormat);
+            return $tmpDate->format(
+                ($hasMicroseconds !== false) ? self::$dateTimeMicroFormat
+                    : self::$dateTimeFormat
+            );
         } else {
             return $tmpDate->format(self::$dateFormat);
         }
     }
 
-    public static function dateSqlNow($hasTime = true, $hasMicroseconds = false) {
+    public static function dateSqlNow($hasTime = true, $hasMicroseconds = false)
+    {
         try {
             $tmpDate = new DateTime();
         } catch (Exception $e) {
             $tmpDate = null;
         }
         if ($hasTime) {
-            return $tmpDate->format(($hasMicroseconds !== false) ? self::$isoDateTimeMs : self::$isoDateTime);
+            return $tmpDate->format(
+                ($hasMicroseconds !== false) ? self::$isoDateTimeMs
+                    : self::$isoDateTime
+            );
         } else {
             return $tmpDate->format(self::$isoDate);
         }
     }
 
-    public static function isCli() {
+    public static function isCli()
+    {
         return !http_response_code();
     }
 
@@ -470,11 +606,12 @@ class PdoOne
      *
      * @param string|array $defKeys
      *
-     * @return array An array with all the errors or an empty array (if both matches)
+     * @return array An array with all the errors or an empty array (if both
+     *               matches)
      * @throws Exception
      */
-    public function validateDefTable($table, $defArray, $defKeys) {
-
+    public function validateDefTable($table, $defArray, $defKeys)
+    {
         $defCurrent = $this->getDefTable($table);
         // if keys exists
         $error = [];
@@ -489,7 +626,11 @@ class PdoOne
             }
         }
         foreach ($defCurrent as $k => $dc) {
-            if (isset($defArray[$k]) && strtolower($defArray[$k]) != strtolower($dc)) {
+            if (isset($defArray[$k])
+                && strtolower($defArray[$k]) != strtolower(
+                    $dc
+                )
+            ) {
                 $error[$k] = "$k $dc , $k {$defArray[$k]} are different";
             }
         }
@@ -526,229 +667,361 @@ class PdoOne
      * @return array
      * @throws Exception
      */
-    protected function getDefTable($table) {
-        return $this->service->getDefTable($table);         
+    protected function getDefTable($table)
+    {
+        return $this->service->getDefTable($table);
     }
 
+    /**
+     * @param string $table            The name of the table to analize.
+     * @param bool   $returnSimple     true= returns as a simple associative
+     *                                 array<br> example:['id'=>'PRIMARY
+     *                                 KEY','name'=>'FOREIGN KEY...']<br> false=
+     *                                 returns as an associative array separated
+     *                                 by parts<br>
+     *                                 ['key','refcol','reftable','extra']
+     *
+     * @return array
+     * @throws Exception
+     */
+    public function getDefTableKeys($table, $returnSimple = true)
+    {
+        return $this->service->getDefTableKeys($table, $returnSimple);
+    }
 
     /**
-     * It returns an declarative array of rows.<br>
-     * Example:
+     * It adds an "order by" in a query.<br>
+     * <b>Example:</b><br>
      * <pre>
-     * select('select id,name from table')->toList() // [['id'=>'1','name'='john'],['id'=>'2','name'=>'anna']]
+     *      ->select("")->order("column")->toList();
+     *      ->select("")->order("col1,col2")->toList();
      * </pre>
      *
-     * @param int $pdoMode (optional) By default is PDO::FETCH_ASSOC
+     * @param string $sql Input SQL query
      *
-     * @return array|bool
-     * @throws Exception
+     * @return PdoOne
+     * @test InstanceOf PdoOne::class,this('name desc')
      */
-    public function toList($pdoMode = PDO::FETCH_ASSOC) {
-        $useCache = $this->useCache; // because builderReset cleans this value
-        $rows = $this->runGen(true, $pdoMode, 'tolist');
-        if ($this->uid) {
-            // we store the information of the cache.
-            $this->cacheService->setCache($this->uid, $this->cacheFamily, $rows, $useCache);
+    public function order($sql)
+    {
+        if ($sql === null) {
+            return $this;
         }
-        return $rows;
+        $this->order = ($sql) ? ' order by ' . $sql : '';
+
+        return $this;
     }
 
     /**
-     * Run builder query and returns a PDOStatement.
+     * Macro of join.<br>
+     * <b>Example</b>:<br>
+     * <pre>
+     *          innerjoin('tablejoin on t1.field=t2.field')
+     *          innerjoin('tablejoin tj on t1.field=t2.field')
+     *          innerjoin('tablejoin','t1.field=t2.field')
+     * </pre>
      *
-     * @param bool   $returnArray  true=return an array. False returns a PDOStatement
-     * @param int    $extraMode    PDO::FETCH_ASSOC,PDO::FETCH_BOTH,PDO::FETCH_NUM,etc.
-     *                             By default it returns $extraMode=PDO::FETCH_ASSOC
+     * @param string $sql
+     * @param string $condition
      *
-     * @param string $extraIdCache [optional] if 'rungen' then cache is stored. If false the cache could be stored
+     * @return PdoOne
+     * @see \eftec\PdoOne::join
+     */
+    public function innerjoin($sql, $condition = '')
+    {
+        return $this->join($sql, $condition);
+    }
+
+    /**
+     * It generates an inner join<br>
+     * <b>Example:</b><br>
+     * <pre>
+     *          join('tablejoin on t1.field=t2.field')<br>
+     *          join('tablejoin','t1.field=t2.field')<br>
+     * </pre>
      *
-     * @return bool|PDOStatement|array
+     * @param string $sql Example "tablejoin on table1.field=tablejoin.field"
+     * @param string $condition
+     *
+     * @return PdoOne
+     * @test InstanceOf PdoOne::class,this('tablejoin on t1.field=t2.field')
+     */
+    public function join($sql, $condition = '')
+    {
+        if ($this->from == '') {
+            return $this->from($sql);
+        }
+        if ($condition != '') {
+            $sql = "$sql on $condition";
+        }
+        $this->from .= ($sql) ? " inner join $sql " : '';
+
+        return $this;
+    }
+
+    /**
+     * Adds a from for a query. It could be used by select,insert,update and
+     * delete.<br>
+     * <b>Example:</b><br>
+     * <pre>
+     *      from('table')
+     *      from('table alias')
+     *      from('table1,table2')
+     *      from('table1 inner join table2 on table1.c=table2.c')
+     * </pre>
+     *
+     * @param string $sql Input SQL query
+     *
+     * @return PdoOne
+     * @test InstanceOf PdoOne::class,this('table t1')
+     */
+    public function from($sql)
+    {
+        if ($sql === null) {
+            return $this;
+        }
+        $this->from = ($sql) ? $sql : '';
+
+        return $this;
+    }
+
+    /**
+     * It executes the cli Engine.
+     *
      * @throws Exception
      */
-    public function runGen($returnArray = true, $extraMode = PDO::FETCH_ASSOC, $extraIdCache = 'rungen') {
-        $sql = $this->sqlGen();
-        /** @var PDOStatement $stmt */
-        $stmt = $this->prepare($sql);
-        if ($stmt === null) {
-            return false;
-        }
-        $values = array_values($this->whereParamValue);
-        if (count($this->whereParamType)) {
-            $counter = 0;
-            $reval = true;
-            $this->lastBindParam = [];
-            foreach ($this->whereParamType as $k => $v) {
-                $counter++;
-                $typeP = $this->stringToPdoParam($this->whereParamType[$k]);
-                $this->lastBindParam[$counter] = $values[$k];
-                $reval = $reval
-                    && $stmt->bindParam($counter
-                        , $values[$k]
-                        , $typeP);
-            }
-            if (!$reval) {
-                $this->throwError("Error in bind", "",
-                    "type: " . json_encode($this->whereParamType) . " values:" . json_encode($values));
-                return false;
-            }
+    public function cliEngine()
+    {
+        $database = self::getParameterCli('database');
+        $server = self::getParameterCli('server');
+        $user = self::getParameterCli('user');
+        $pwd = self::getParameterCli('pwd');
+        $db = self::getParameterCli('db');
+        $input = self::getParameterCli('input');
+        $output = self::getParameterCli('output');
+        $pk = self::getParameterCli('pk');
+        $v = self::VERSION;
 
-        }
-        $useCache = $this->useCache; // because builderReset cleans this value
-        if ($useCache !== false && $returnArray) {
-            $this->uid = hash('sha256',
-                $this->lastQuery . $extraMode . serialize($this->lastBindParam) . $extraIdCache);
-            $result = $this->cacheService->getCache($this->uid, $this->cacheFamily);
-            if ($result !== false) {
-                // it's found in the cache.
-                $this->builderReset();
-                return $result;
-            }
+        if ($database === '' || $server === '' || $user === '' || $pwd === ''
+            || $input === ''
+            || $output === ''
+        ) {
+            echo <<<eot
+ _____    _       _____           
+|  _  | _| | ___ |     | ___  ___ 
+|   __|| . || . ||  |  ||   || -_|
+|__|   |___||___||_____||_|_||___|  $v
+
+Syntax:php PdoOne.php <args>
+-database [$database]
+    Example: (mysql/sqlsrv/oracle/test)
+-server [$server]
+    Example mysql: 127.0.0.1 , 127.0.0.1:3306
+    Example sqlsrv: (local)\sqlexpress 127.0.0.1\sqlexpress
+-user The username to access to the database [$user]
+    Example: root, su
+-pwd The password to access to the database [***]
+    Example: abc.123
+-db The database/schema [$db]
+    Example: sakila
+-input The input value.[$input]
+    Example: "select * from table" = it runs a query
+    Example: "table" = it runs a table (it could generates a query automatically)
+-output The result value. [$output]
+    classcode: it returns php code with a CRUDL class
+    selectcode: it shows a php code with a select
+    arraycode: it shows a php code with the definition of an array Ex: ['idfield'=0,'name'=>'']
+    csv: it returns a csv result
+    json: it returns the value of the queries as json
+-pk [optional] the primary key. It is requerido for SQLSERVER and output classcode [$pk]
+    Example: "customerid"    
+
+eot;
+
+            return;
         } else {
-            if ($extraIdCache == 'rungen') {
-                $this->uid = null;
-            }
-
-        }
-
-        $this->runQuery($stmt);
-        $this->builderReset();
-
-        if ($returnArray && $stmt instanceof PDOStatement) {
-            $result = ($stmt->columnCount() > 0) ? $stmt->fetchAll($extraMode) : array();
-            $this->affected_rows = $stmt->rowCount();
-            $stmt = null; // close
-            if ($extraIdCache == 'rungen' && $this->uid) {
-                // we store the information of the cache.
-                $this->cacheService->setCache($this->uid, $this->cacheFamily, $result, $useCache);
-            }
-            return $result;
-        } else {
-            return $stmt;
+            echo $this->run(
+                $database, $server, $user, $pwd, $db, $input, $output, $pk
+            );
         }
     }
 
     /**
-     * Generates the sql (script). It doesn't run or execute the query.
-     *
-     * @param bool $resetStack if true then it reset all the values of the stack, including parameters.
+     * @param           $key
+     * @param string    $default  is the defalut value is the parameter is set
+     *                            without value.
      *
      * @return string
      */
-    public function sqlGen($resetStack = false) {
-        if (stripos($this->select, 'select') !== false) {
-            // is it a full query? ->select=select * ..." instead of ->select=*
-            $words = preg_split('#\s+#', strtolower($this->select));
-        } else {
-            $words = [];
+    protected static function getParameterCli($key, $default = '')
+    {
+        global $argv;
+        $p = array_search('-' . $key, $argv);
+        if ($p === false) {
+            return '';
         }
-        if (!in_array('select', $words)) {
-            $sql = 'select ' . $this->distinct . $this->select;
-        } else {
-            $sql = $this->select; // the query already constains "select", so we don't want "select select * from".
+        if ($default !== '') {
+            return $default;
         }
-        if (!in_array('from', $words)) {
-            $sql .= ' from ' . $this->from;
-        } else {
-            $sql .= $this->from;
-        }
-        if (!in_array('where', $words)) {
-            if (count($this->where)) {
-                if (!in_array('where', $words)) {
-                    $where = ' where ' . implode(' and ', $this->where);
-                } else {
-                    $where = implode(' and ', $this->where);
-                }
-            } else {
-                $where = '';
-            }
-        } else {
-            $where = '';
-        }
-        if (count($this->having)) {
-            $having = ' having ' . implode(' and ', $this->having);
-        } else {
-            $having = '';
+        if (count($argv) >= $p + 1) {
+            return self::removeTrailSlash($argv[$p + 1]);
         }
 
-        $sql = $sql . $where . $this->group . $having . $this->order . $this->limit;
+        return '';
+    }
 
-        if ($resetStack) {
-            $this->builderReset();
-        }
-        return $sql;
+    protected static function removeTrailSlash($txt)
+    {
+        return rtrim($txt, '/\\');
     }
 
     /**
-     * It reset the parameters used to Build Query.
+     * @param string $database
+     * @param string $server
+     * @param string $user
+     * @param string $pwd
+     * @param string $db
+     * @param string $input
+     * @param string $output
+     * @param string $pk
      *
-     */
-    public function builderReset() {
-        $this->select = '';
-        $this->useCache = false;
-        $this->from = '';
-        $this->where = [];
-        $this->whereParamType = array();
-        $this->whereParamAssoc = null;
-        $this->whereCounter = 0;
-        $this->whereParamValue = array();
-        $this->set = [];
-        $this->group = '';
-        $this->having = [];
-        $this->limit = '';
-        $this->distinct = '';
-        $this->order = '';
-    }
-
-    /**
-     * Prepare a query. It returns a mysqli statement.
-     *
-     * @param string $statement A SQL statement.
-     *
-     * @return PDOStatement returns the statement if correct otherwise null
+     * @return false|string
      * @throws Exception
      */
-    public function prepare($statement) {
+    protected function run(
+        $database,
+        $server,
+        $user,
+        $pwd,
+        $db,
+        $input,
+        $output,
+        $pk
+    ) {
+        $this->construct($database, $server, $user, $pwd, $db);
+        //$this->logLevel = 3;
+        $this->connect(false);
         if (!$this->isOpen) {
-            $this->throwError("It's not connected to the database", "");
-            return null;
-        }
-        $this->lastQuery = $statement;
-        if ($this->readonly) {
-            if (stripos($statement, 'insert ') === 0 || stripos($statement, 'update ') === 0
-                || stripos($statement, 'delete ') === 0
-            ) {
-                // we aren't checking SQL-DCL queries.
-                $this->throwError("Database is in READ ONLY MODE", "");
-            }
-        }
-        if ($this->logLevel >= 2) {
-            $this->storeInfo($statement);
-        }
+            $r = "Unable to open database $database $server $user **** $db\n";
+            $r .= $this->lastError();
 
-        try {
-            $stmt = $this->conn1->prepare($statement);
-        } catch (Exception $ex) {
-            $stmt = false;
-            $this->throwError("Failed to prepare", $ex->getMessage(),
-                json_encode($this->lastParam) . '\nTRACE:' . $ex->getTraceAsString());
+            return $r;
         }
-        if ($stmt === false) {
-            $this->throwError("Unable to prepare query", $this->lastQuery, json_encode($this->lastParam));
+        if (stripos($input, 'select ') !== false
+            || stripos($input, 'show ') !== false
+        ) {
+            $query = $input;
+        } else {
+            $query = 'select * from ' . $this->addDelimiter($input);
         }
-        return $stmt;
+        switch ($output) {
+            case 'csv':
+                $result = $this->runRawQuery($query, [], true);
+                if (!is_array($result)) {
+                    return "No result or result error\n";
+                }
+                $head = '';
+                foreach ($result[0] as $k => $row) {
+                    $head .= $k . ',';
+                }
+                $head = rtrim($head, ',') . "\n";
+                $r = $head;
+                foreach ($result as $k => $row) {
+                    $line = '';
+                    foreach ($row as $cell) {
+                        $line .= self::fixCsv($cell) . ',';
+                    }
+                    $line = rtrim($line, ',') . "\n";
+                    $r .= $line;
+                }
+
+                return $r;
+                break;
+            case 'json':
+                $result = $this->runRawQuery($query, [], true);
+                if (!is_array($result)) {
+                    return "No result or result error\n";
+                }
+
+                return json_encode($result);
+                break;
+            case 'selectcode':
+                return $this->generateCodeSelect($query);
+                break;
+            case 'arraycode':
+                return $this->generateCodeArray($query);
+                break;
+            case 'createcode':
+                return $this->generateCodeCreate($input);
+                break;
+            case 'classcode':
+                $pk = $this->service->getPK($query, $pk);
+                if (!$pk) {
+                    return "Unable to find primary key on query $query or primary key not specified with -pk";
+                }
+
+                return $this->generateCodeClass($input, $query, $pk);
+                break;
+            default:
+                return "Output $output not defined. Use csv/json/selectcode/arraycode/createcode/classcode";
+                break;
+        }
     }
 
     /**
-     * Write a log line for debug, clean the command chain then throw an error (if throwOnError==true)
+     * Connects to the database.
      *
-     * @param string       $txt        The message to show.
-     * @param string       $txtExtra   It's only used if $logLevel>=2. It shows an extra message
-     * @param string|array $extraParam It's only used if $logLevel>=3  It shows parameters (if any)
+     * @param bool $failIfConnected     true=it throw an error if it's connected,
+     *                                  otherwise it does nothing
+     *
+     * @throws Exception
+     * @test exception this(false)
+     */
+    public function connect($failIfConnected = true)
+    {
+        //mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
+        if ($this->isOpen) {
+            if (!$failIfConnected) {
+                return;
+            } // it's already connected.
+            $this->throwError("Already connected", "");
+        }
+        try {
+            if ($this->logLevel >= 2) {
+                $this->storeInfo(
+                    "connecting to {$this->server} {$this->user}/*** {$this->db}"
+                );
+            }
+            $cs = ($this->charset != '') ? ';charset=' . $this->charset : '';
+            $this->service->connect($cs);
+            $this->conn1->setAttribute(PDO::ATTR_ERRMODE,
+                PDO::ERRMODE_EXCEPTION);
+
+            $this->isOpen = true;
+        } catch (Exception $ex) {
+            $this->isOpen = false;
+            $this->throwError(
+                "Failed to connect to {$this->databaseType}", $ex->getMessage(),
+                '\nTRACE:' . $ex->getTraceAsString()
+            );
+        }
+    }
+
+    /**
+     * Write a log line for debug, clean the command chain then throw an error
+     * (if throwOnError==true)
+     *
+     * @param string       $txt            The message to show.
+     * @param string       $txtExtra       It's only used if $logLevel>=2. It
+     *                                     shows an extra message
+     * @param string|array $extraParam     It's only used if $logLevel>=3  It
+     *                                     shows parameters (if any)
      *
      * @throws Exception
      * @see \eftec\PdoOne::$logLevel
      */
-    function throwError($txt, $txtExtra, $extraParam = '') {
+    function throwError($txt, $txtExtra, $extraParam = '')
+    {
         if ($this->logLevel === 0) {
             $txt = 'Error on database';
         }
@@ -783,19 +1056,44 @@ class PdoOne
     }
 
     /**
+     * It reset the parameters used to Build Query.
+     *
+     */
+    public function builderReset()
+    {
+        $this->select = '';
+        $this->useCache = false;
+        $this->from = '';
+        $this->where = [];
+        $this->whereParamType = [];
+        $this->whereParamAssoc = null;
+        $this->whereCounter = 0;
+        $this->whereParamValue = [];
+        $this->set = [];
+        $this->group = '';
+        $this->having = [];
+        $this->limit = '';
+        $this->distinct = '';
+        $this->order = '';
+    }
+
+    /**
      * Injects a Message Container.
      *
      * @return MessageList|null
      * @test equals null,this(),'this is not a message container'
      */
-    public function getMessages() {
+    public function getMessages()
+    {
         if (function_exists('messages')) {
             return messages();
         }
+
         return null;
     }
 
-    function debugFile($txt, $level = 'INFO') {
+    function debugFile($txt, $level = 'INFO')
+    {
         if ($this->logFile == '') {
             return; // debug file is disabled.
         }
@@ -828,13 +1126,15 @@ class PdoOne
     }
 
     /**
-     * Write a log line for debug, clean the command chain then throw an error (if throwOnError==true)
+     * Write a log line for debug, clean the command chain then throw an error
+     * (if throwOnError==true)
      *
      * @param $txt
      *
      * @throws Exception
      */
-    function storeInfo($txt) {
+    function storeInfo($txt)
+    {
         if ($this->getMessages() === null) {
             $this->debugFile($txt, 'INFO');
         } else {
@@ -843,279 +1143,23 @@ class PdoOne
         }
     }
 
-    private function stringToPdoParam($string) {
-        if (is_int($string)) {
-            return $string;
-        }
-        switch ($string) {
-            case 'i':
-                return PDO::PARAM_INT;
-            case 'd':
-            case 's':
-                return PDO::PARAM_STR;
-            default:
-                trigger_error("param type not defined [$string]");
-                return null;
-        }
-    }
-
     /**
-     * Run a prepared statement.
-     * <br><b>Example</b>:<br>
-     *      $con->runQuery($con->prepare('select * from table'));
+     * Returns the last error.
      *
-     * @param PDOStatement $stmt          PDOStatement
-     * @param array|null   $namedArgument (optional)
-     *
-     * @return bool returns true if the operation is correct, otherwise false
-     * @throws Exception
-     * @test equals true,$this->pdoOne->runQuery($this->pdoOne->prepare('select 1 from dual'))
-     * @test equals [1=>1],$this->pdoOne->select('1')->from('dual')->first(),'it must runs'
+     * @return string
      */
-    public function runQuery($stmt, $namedArgument = null) {
+    public function lastError()
+    {
         if (!$this->isOpen) {
-            $this->throwError("It's not connected to the database", "");
-            return null;
+            return "It's not connected to the database";
         }
-        try {
-            $namedArgument = ($namedArgument === null) ? $this->whereParamAssoc : $namedArgument;
-            $r = $stmt->execute($namedArgument);
-        } catch (Exception $ex) {
-            $r = false;
-            $this->throwError($this->databaseType . ":Failed to run query ",
-                $this->lastQuery . "\nCAUSE: " . $ex->getMessage(),
-                json_encode($this->lastParam) . '\nTRACE:' . $ex->getTraceAsString());
-        }
-        if ($r === false) {
-            $this->throwError("Exception query ", $this->lastQuery, $this->lastParam);
-        }
-        return true;
+
+        return $this->conn1->errorInfo()[2];
     }
 
     /**
-     * <b>Example:</b><br>
-     *      where( ['field'=>20] ) // associative array with automatic type
-     *      where( ['field'=>['i',20]] ) // associative array with type defined
-     *      where( ['field',20] ) // array automatic type
-     *      where (['field',['i',20]] ) // array type defined
-     *      where('field=20') // literal value
-     *      where('field=?',[20]) // automatic type
-     *      where('field',[20]) // automatic type (it's the same than where('field=?',[20])
-     *      where('field=?', ['i',20] ) // type(i,d,s,b) defined
-     *      where('field=?,field2=?', ['i',20,'s','hello'] )
-     *      where('field=:field,field2=:field2', ['field'=>'hello','field2'=>'world'] ) // associative array as value
-     *
-     * @param string|array $sql      Input SQL query or associative/indexed array
-     * @param array|mixed  $param    Associative or indexed array with the conditions.
-     * @param bool         $isHaving if true then it is a HAVING sql commando instead of a WHERE.
-     *
-     * @return PdoOne
-     * @see  http://php.net/manual/en/mysqli-stmt.bind-param.php for types
-     * @test InstanceOf PdoOne::class,this('field1=?,field2=?',['i',20,'s','hello'])
-     */
-    public function where($sql, $param = self::NULL, $isHaving = false) {
-        if ($sql === null) {
-            return $this;
-        }
-        if (is_string($sql)) {
-            if ($param === self::NULL) {
-                if ($isHaving) {
-                    $this->having[] = $sql;
-                } else {
-                    $this->where[] = $sql;
-                }
-                return $this;
-            }
-            switch (true) {
-                case $this->isAssoc($param):
-                    $this->whereParamAssoc = $param;
-                    $this->whereParamType = array();
-                    $this->whereParamValue = array();
-                    $this->whereCounter = 0;
-                    break;
-                case !is_array($param):
-                    if (strpos($sql, '?') === false) {
-                        $sql .= '=?';
-                    } // transform 'condition' to 'condition=?'
-                    $this->whereParamType[] = $this->getType($param);
-                    $this->whereParamValue['i_' . $this->whereCounter] = $param;
-                    $this->whereCounter++;
-                    break;
-                case count($param) == 1:
-                    $this->whereParamType[] = $this->getType($param[0]);
-                    $this->whereParamValue['i_' . $this->whereCounter] = $param[0];
-                    $this->whereCounter++;
-                    break;
-                default:
-                    for ($i = 0; $i < count($param); $i += 2) {
-                        $this->whereParamType[] = $param[$i];
-                        $this->whereParamValue['i_' . $this->whereCounter] = $param[$i + 1];
-                        $this->whereCounter++;
-                    }
-            }
-            if ($isHaving) {
-                $this->having[] = $sql;
-            } else {
-                $this->where[] = $sql;
-            }
-
-        } else {
-            $col = array();
-            $colT = array();
-            $p = array();
-            $this->constructParam($sql, $param, $col, $colT, $p);
-
-            foreach ($col as $k => $c) {
-                if ($isHaving) {
-                    $this->having[] = "$c=?";
-                } else {
-                    $this->where[] = "$c=?";
-                }
-                $this->whereParamType[] = $p[$k * 2];
-                $this->whereParamValue['i_' . $this->whereCounter] = $p[$k * 2 + 1];
-                $this->whereCounter++;
-            }
-        }
-        return $this;
-    }
-
-    /**
-     * It returns true if the array is an associative array.  False otherwise.<br>
-     * <b>Example:</b><br>
-     * isAssoc(['a1'=>1,'a2'=>2]); // true<br/>
-     * isAssoc(['a1','a2']); // false<br/>
-     * isAssoc('aaa'); isAssoc(null); // false<br/>
-     *
-     * @param mixed $array
-     *
-     * @return bool
-     */
-    private function isAssoc($array) {
-        if ($array === null) {
-            return false;
-        }
-        if (!is_array($array)) {
-            return false;
-        }
-        return (array_values($array) !== $array);
-    }
-
-    /**
-     * @param mixed $v Variable
-     *
-     * @return int=[PDO::PARAM_STR,PDO::PARAM_INT,PDO::PARAM_BOOL][$i]
-     * @test equals PDO::PARAM_STR,(20.3)
-     * @test equals PDO::PARAM_STR,('hello')
-     */
-    private function getType(&$v) {
-        switch (1) {
-            case (is_double($v)):
-            case ($v === null):
-                $vt = PDO::PARAM_STR;
-                break;
-            case (is_numeric($v)):
-                $vt = PDO::PARAM_INT;
-                break;
-            case (is_bool($v)):
-
-                $vt = PDO::PARAM_INT;
-                $v = ($v) ? 1 : 0;
-                break;
-            case (is_object($v) && get_class($v) == 'DateTime'):
-                $vt = PDO::PARAM_STR;
-                $v = PdoOne::dateTimePHP2Sql($v);
-                break;
-            default:
-                $vt = PDO::PARAM_STR;
-        }
-        return $vt;
-    }
-
-    /**
-     * @param array|null $tableDefs       It could be a definition with or without values.
-     *                                    If null then it is defined automatically by $arrayValue.
-     * @param array|int  $values          if value is self::NULL then it's calculated without this value
-     * @param array      $col
-     * @param array      $colT
-     * @param array      $param
-     */
-    private function constructParam($tableDefs, $values, &$col, &$colT, &$param) {
-        if ($tableDefs === null || $this->isAssoc($tableDefs)) {
-            if ($values === self::NULL && $tableDefs !== null) {
-                // the type is calculated automatically. It could fails and it doesn't work with blob
-                reset($tableDefs);
-                foreach ($tableDefs as $k => $v) {
-                    if ($colT === null) {
-                        $col[] = $this->addDelimiter($k) . '=?';
-                    } else {
-                        $col[] = $this->addDelimiter($k);
-                        $colT[] = '?';
-                    }
-                    $vt = $this->getType($v);
-                    $param[] = $vt;
-                    $param[] = $v;
-                }
-
-            } else {
-                if ($tableDefs === null) {
-                    $tableDefs = $values;
-                    if (is_array($tableDefs)) {
-                        foreach ($tableDefs as $k => $v) {
-                            $tableDefs[$k] = 's';
-                        }
-                    }
-                }
-                // it uses two associative array, one for the type and another for the value
-                if (is_array($tableDefs)) {
-                    foreach ($tableDefs as $k => $v) {
-                        if ($colT === null) {
-                            $col[] = $this->addDelimiter($k) . "=?";
-                        } else {
-                            $col[] = $this->addDelimiter($k);
-                            $colT[] = '?';
-                        }
-
-                        $param[] = $v;
-                        $param[] = @$values[$k];
-                    }
-                }
-            }
-        } else {
-            if ($values === self::NULL) {
-                // it uses a single list, the first value is the column, the second value
-                // is the type and the third is the value
-                if (is_array($tableDefs)) {
-                    for ($i = 0; $i < count($tableDefs); $i += 3) {
-                        if ($colT === null) {
-                            $col[] = $this->addDelimiter($tableDefs[$i]) . "=?";
-                        } else {
-                            $col[] = $tableDefs[$i];
-                            $colT[] = '?';
-                        }
-                        $param[] = $tableDefs[$i + 1];
-                        $param[] = $tableDefs[$i + 2];
-                    }
-                }
-            } else {
-                // it uses two list, the first value of the first list is the column, the second value is the type
-                // , the second list only contains values.
-                for ($i = 0; $i < count($tableDefs); $i += 2) {
-                    if ($colT === null) {
-                        $col[] = $this->addDelimiter($tableDefs[$i]) . "=?";
-                    } else {
-                        $col[] = $tableDefs[$i];
-                        $colT[] = '?';
-                    }
-                    $param[] = $tableDefs[$i + 1];
-                    $param[] = $values[$i / 2];
-                }
-            }
-        }
-    }
-
-    /**
-     * It adds a delimiter to a text based in the type of database (` for mysql and [] for sql server)<br>
-     * Example:<br>
+     * It adds a delimiter to a text based in the type of database (` for mysql
+     * and [] for sql server)<br> Example:<br>
      * $pdoOne->addDelimiter('hello world'); // `hello` world<br>
      * $pdoOne->addDelimiter('hello.world'); // `hello`.`world`<br>
      * $pdoOne->addDelimiter('hello=value); // `hello`=value<br>
@@ -1124,18 +1168,30 @@ class PdoOne
      *
      * @return mixed|string
      */
-    public function addDelimiter($txt) {
+    public function addDelimiter($txt)
+    {
         if (strpos($txt, $this->database_delimiter0) === false) {
             $pos = $this->strposa($txt, [' ', '=']);
             if ($pos === false) {
-                $quoted = $this->database_delimiter0 . $txt . $this->database_delimiter1;
-                $quoted = str_replace('.', $this->database_delimiter1 . '.' . $this->database_delimiter0, $quoted);
+                $quoted = $this->database_delimiter0 . $txt
+                    . $this->database_delimiter1;
+                $quoted = str_replace(
+                    '.',
+                    $this->database_delimiter1 . '.' . $this->database_delimiter0,
+                    $quoted
+                );
             } else {
                 $arr = explode(substr($txt, $pos, 1), $txt, 2);
-                $quoted = $this->database_delimiter0 . $arr[0] . $this->database_delimiter1 . substr($txt, $pos, 1)
+                $quoted = $this->database_delimiter0 . $arr[0]
+                    . $this->database_delimiter1 . substr($txt, $pos, 1)
                     . $arr[1];
-                $quoted = str_replace('.', $this->database_delimiter1 . '.' . $this->database_delimiter0, $quoted);
+                $quoted = str_replace(
+                    '.',
+                    $this->database_delimiter1 . '.' . $this->database_delimiter0,
+                    $quoted
+                );
             }
+
             return $quoted;
         } else {
             // it has a delimiter, so we returned the same text.
@@ -1143,8 +1199,11 @@ class PdoOne
         }
     }
 
-    private function strposa($haystack, $needles = array(), $offset = 0) {
-        $chr = array();
+    //<editor-fold desc="transaction functions">
+
+    private function strposa($haystack, $needles = [], $offset = 0)
+    {
+        $chr = [];
         foreach ($needles as $needle) {
             $res = strpos($haystack, $needle, $offset);
             if ($res !== false) {
@@ -1154,373 +1213,35 @@ class PdoOne
         if (empty($chr)) {
             return false;
         }
+
         return min($chr);
-    }
-
-
-
-
-    //<editor-fold desc="transaction functions">
-
-    /**
-     * Adds a from for a query. It could be used by select,insert,update and delete.<br>
-     * <b>Example:</b><br>
-     * <pre>
-     *      from('table')
-     *      from('table alias')
-     *      from('table1,table2')
-     *      from('table1 inner join table2 on table1.c=table2.c')
-     * </pre>
-     *
-     * @param string $sql Input SQL query
-     *
-     * @return PdoOne
-     * @test InstanceOf PdoOne::class,this('table t1')
-     */
-    public function from($sql) {
-        if ($sql === null) {
-            return $this;
-        }
-        $this->from = ($sql) ? $sql : '';
-        return $this;
-    }
-
-    /**
-     * It adds a select to the query builder.
-     * <br><b>Example</b>:<br>
-     * <pre>
-     * ->select("\*")->from('table') = <i>"select * from table"</i><br>
-     * ->select(['col1','col2'])->from('table') = <i>"select col1,col2 from table"</i><br>
-     * ->select('col1,col2')->from('table') = <i>"select col1,col2 from table"</i><br>
-     * ->select('select *')->from('table') = <i>"select * from table"</i><br>
-     * ->select('select * from table') = <i>"select * from table"</i><br>
-     * ->select('select * from table where id=1') = <i>"select * from table where id=1"</i><br>
-     * </pre>
-     *
-     * @param string|array $sql
-     *
-     * @return PdoOne
-     * @test InstanceOf PdoOne::class,this('select 1 from DUAL')
-     */
-    public function select($sql) {
-        if (is_array($sql)) {
-            $this->select .= implode(', ', $sql);
-        } else {
-            if ($this->select === '') {
-                $this->select = $sql;
-            } else {
-                $this->select .= ', ' . $sql;
-            }
-        }
-        return $this;
-    }
-
-    /**
-     * It adds an "order by" in a query.<br>
-     * <b>Example:</b><br>
-     * <pre>
-     *      ->select("")->order("column")->toList();
-     *      ->select("")->order("col1,col2")->toList();
-     * </pre>
-     *
-     * @param string $sql Input SQL query
-     *
-     * @return PdoOne
-     * @test InstanceOf PdoOne::class,this('name desc')
-     */
-    public function order($sql) {
-        if ($sql === null) {
-            return $this;
-        }
-        $this->order = ($sql) ? ' order by ' . $sql : '';
-        return $this;
-    }
-
-
-    //</editor-fold>
-
-    //<editor-fold desc="Date functions" defaultstate="collapsed" >
-
-    /**
-     * @param string $table
-     *
-     * @return array
-     * @throws Exception
-     */
-    public function getDefTableKeys($table) {
-        return $this->service->getDefTableKeys($table);
-    }
-
-    /**
-     * Macro of join.<br>
-     * <b>Example</b>:<br>
-     * <pre>
-     *          innerjoin('tablejoin on t1.field=t2.field')
-     *          innerjoin('tablejoin tj on t1.field=t2.field')
-     *          innerjoin('tablejoin','t1.field=t2.field')
-     * </pre>
-     *
-     * @param string $sql
-     * @param string $condition
-     *
-     * @return PdoOne
-     * @see \eftec\PdoOne::join
-     */
-    public function innerjoin($sql, $condition = '') {
-        return $this->join($sql, $condition);
-    }
-
-    /**
-     * It generates an inner join<br>
-     * <b>Example:</b><br>
-     * <pre>
-     *          join('tablejoin on t1.field=t2.field')<br>
-     *          join('tablejoin','t1.field=t2.field')<br>
-     * </pre>
-     *
-     * @param string $sql Example "tablejoin on table1.field=tablejoin.field"
-     * @param string $condition
-     *
-     * @return PdoOne
-     * @test InstanceOf PdoOne::class,this('tablejoin on t1.field=t2.field')
-     */
-    public function join($sql, $condition = '') {
-        if ($this->from == '') {
-            return $this->from($sql);
-        }
-        if ($condition != '') {
-            $sql = "$sql on $condition";
-        }
-        $this->from .= ($sql) ? " inner join $sql " : '';
-        return $this;
-    }
-
-    /**
-     * It executes the cli Engine.
-     *
-     * @throws Exception
-     */
-    public function cliEngine() {
-        $database = self::getParameterCli('database');
-        $server = self::getParameterCli('server');
-        $user = self::getParameterCli('user');
-        $pwd = self::getParameterCli('pwd');
-        $db = self::getParameterCli('db');
-        $input = self::getParameterCli('input');
-        $output = self::getParameterCli('output');
-        $pk = self::getParameterCli('pk');
-        $v = self::VERSION;
-
-        if ($database === '' || $server === '' || $user === '' || $pwd === '' || $input === '' || $output === '') {
-
-            echo <<<eot
- _____    _       _____           
-|  _  | _| | ___ |     | ___  ___ 
-|   __|| . || . ||  |  ||   || -_|
-|__|   |___||___||_____||_|_||___|  $v
-
-Syntax:php PdoOne.php <args>
--database [$database]
-    Example: (mysql/sqlsrv/oracle/test)
--server [$server]
-    Example mysql: 127.0.0.1 , 127.0.0.1:3306
-    Example sqlsrv: (local)\sqlexpress 127.0.0.1\sqlexpress
--user The username to access to the database [$user]
-    Example: root, su
--pwd The password to access to the database [***]
-    Example: abc.123
--db The database/schema [$db]
-    Example: sakila
--input The input value.[$input]
-    Example: "select * from table" = it runs a query
-    Example: "table" = it runs a table (it could generates a query automatically)
--output The result value. [$output]
-    classcode: it returns php code with a CRUDL class
-    selectcode: it shows a php code with a select
-    arraycode: it shows a php code with the definition of an array Ex: ['idfield'=0,'name'=>'']
-    csv: it returns a csv result
-    json: it returns the value of the queries as json
--pk [optional] the primary key. It is requerido for SQLSERVER and output classcode [$pk]
-    Example: "customerid"    
-
-eot;
-            return;
-        } else {
-            echo $this->run($database, $server, $user, $pwd, $db, $input, $output, $pk);
-        }
-
-    }
-
-    /**
-     * @param        $key
-     * @param string $default is the defalut value is the parameter is set without value.
-     *
-     * @return string
-     */
-    protected static function getParameterCli($key, $default = '') {
-        global $argv;
-        $p = array_search('-' . $key, $argv);
-        if ($p === false) {
-            return '';
-        }
-        if ($default !== '') {
-            return $default;
-        }
-        if (count($argv) >= $p + 1) {
-            return self::removeTrailSlash($argv[$p + 1]);
-        }
-
-        return '';
-    }
-
-    protected static function removeTrailSlash($txt) {
-        return rtrim($txt, '/\\');
-    }
-
-    /**
-     * @param string $database
-     * @param string $server
-     * @param string $user
-     * @param string $pwd
-     * @param string $db
-     * @param string $input
-     * @param string $output
-     * @param string $pk
-     *
-     * @return false|string
-     * @throws Exception
-     */
-    protected function run($database, $server, $user, $pwd, $db, $input, $output, $pk) {
-        $this->construct($database, $server, $user, $pwd, $db);
-        //$this->logLevel = 3;
-        $this->connect(false);
-        if (!$this->isOpen) {
-            $r = "Unable to open database $database $server $user **** $db\n";
-            $r .= $this->lastError();
-            return $r;
-        }
-        if (stripos($input, 'select ') !== false || stripos($input, 'show ') !== false) {
-            $query = $input;
-        } else {
-            $query = 'select * from ' . $this->addDelimiter($input);
-        }
-        switch ($output) {
-            case 'csv':
-                $result = $this->runRawQuery($query, [], true);
-                if (!is_array($result)) {
-                    return "No result or result error\n";
-                }
-                $head = '';
-                foreach ($result[0] as $k => $row) {
-                    $head .= $k . ',';
-                }
-                $head = rtrim($head, ',') . "\n";
-                $r = $head;
-                foreach ($result as $k => $row) {
-                    $line = '';
-                    foreach ($row as $cell) {
-
-                        $line .= self::fixCsv($cell) . ',';
-                    }
-                    $line = rtrim($line, ',') . "\n";
-                    $r .= $line;
-                }
-                return $r;
-                break;
-            case 'json':
-                $result = $this->runRawQuery($query, [], true);
-                if (!is_array($result)) {
-                    return "No result or result error\n";
-                }
-                return json_encode($result);
-                break;
-            case 'selectcode':
-                return $this->generateCodeSelect($query);
-                break;
-            case 'arraycode':
-                return $this->generateCodeArray($query);
-                break;
-            case 'createcode':
-                return $this->generateCodeCreate($input);
-                break;
-            case 'classcode':
-                $pk = $this->service->getPK($query, $pk);
-                if (!$pk) {
-                    return "Unable to find primary key on query $query or primary key not specified with -pk";
-                }
-                return $this->generateCodeClass($input, $query, $pk);
-                break;
-            default:
-                return "Output $output not defined. Use csv/json/selectcode/arraycode/createcode/classcode";
-                break;
-        }
-    }
-
-    /**
-     * Connects to the database.
-     *
-     * @param bool $failIfConnected true=it throw an error if it's connected, otherwise it does nothing
-     *
-     * @throws Exception
-     * @test exception this(false)
-     */
-    public function connect($failIfConnected = true) {
-        //mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
-        if ($this->isOpen) {
-            if (!$failIfConnected) {
-                return;
-            } // it's already connected.
-            $this->throwError("Already connected", "");
-        }
-        try {
-            if ($this->logLevel >= 2) {
-                $this->storeInfo("connecting to {$this->server} {$this->user}/*** {$this->db}");
-            }
-            $cs = ($this->charset != '') ? ';charset=' . $this->charset : '';
-            $this->service->connect($cs);
-            $this->conn1->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-
-            $this->isOpen = true;
-        } catch (Exception $ex) {
-            $this->isOpen = false;
-            $this->throwError("Failed to connect to {$this->databaseType}", $ex->getMessage(),
-                '\nTRACE:' . $ex->getTraceAsString());
-        }
-
-    }
-
-    /**
-     * Returns the last error.
-     *
-     * @return string
-     */
-    public function lastError() {
-        if (!$this->isOpen) {
-            return "It's not connected to the database";
-        }
-        return $this->conn1->errorInfo()[2];
     }
 
     /**
      * It runs an unprepared query.
      * <br><b>Example</b>:<br>
-     *      $values=$con->runRawQuery('select * from table where id=?',["i",20]',true)
+     *      $values=$con->runRawQuery('select * from table where
+     *      id=?',["i",20]',true)
      *
      * @param string     $rawSql
      * @param array|null $param
      * @param bool       $returnArray
      *
-     * @return bool|PDOStatement|array an array of associative or a pdo statement
+     * @return bool|PDOStatement|array an array of associative or a pdo
+     *     statement
      * @throws Exception
      * @test equals [0=>[1=>1]],this('select 1',null,true)
      */
-    public function runRawQuery($rawSql, $param = null, $returnArray = true) {
+    public function runRawQuery($rawSql, $param = null, $returnArray = true)
+    {
         if (!$this->isOpen) {
             $this->throwError("It's not connected to the database", '');
+
             return false;
         }
         if ($this->readonly) {
-            if (stripos($rawSql, 'insert ') === 0 || stripos($rawSql, 'update ') === 0
+            if (stripos($rawSql, 'insert ') === 0
+                || stripos($rawSql, 'update ') === 0
                 || stripos($rawSql, 'delete ') === 0
             ) {
                 // we aren't checking SQL-DLC queries. Also, "insert into" is stopped but "  insert into" not.
@@ -1528,7 +1249,9 @@ eot;
             }
         }
         if (!is_array($param) && $param !== null) {
-            $this->throwError("runRawQuery, param must be null or an array", '');
+            $this->throwError("runRawQuery, param must be null or an array",
+                '');
+
             return false;
         }
 
@@ -1549,13 +1272,19 @@ eot;
             $counter++;
             $typeP = $this->stringToPdoParam($param[$i]);
             $this->lastBindParam[$counter] = $param[$i + 1];
-            $stmt->bindParam($counter
+            $stmt->bindParam(
+                $counter
                 , $param[$i + 1]
-                , $typeP);
+                , $typeP
+            );
         }
         if ($this->useCache !== false && $returnArray) {
-            $this->uid = hash('sha256', $this->lastQuery . serialize($this->lastBindParam));
-            $result = $this->cacheService->getCache($this->uid, $this->cacheFamily);
+            $this->uid = hash(
+                'sha256', $this->lastQuery . serialize($this->lastBindParam)
+            );
+            $result = $this->cacheService->getCache(
+                $this->uid, $this->cacheFamily
+            );
             if ($result !== false) {
                 // it's found in the cache.
                 if (is_array($result)) {
@@ -1563,6 +1292,7 @@ eot;
                 } else {
                     $this->affected_rows = 0;
                 }
+
                 return $result;
             }
         } else {
@@ -1571,9 +1301,12 @@ eot;
         $this->runQuery($stmt);
 
         if ($returnArray && $stmt instanceof PDOStatement) {
-            $rows = ($stmt->columnCount() > 0) ? $stmt->fetchAll(PDO::FETCH_ASSOC) : array();
+            $rows = ($stmt->columnCount() > 0) ? $stmt->fetchAll(
+                PDO::FETCH_ASSOC
+            ) : [];
             $this->affected_rows = $stmt->rowCount();
             $stmt = null;
+
             return $rows;
         } else {
             if ($stmt instanceof PDOStatement) {
@@ -1596,42 +1329,164 @@ eot;
      * @throws Exception
      * @see \eftec\PdoOne::runRawQuery
      */
-    private function runRawQueryParamLess($rawSql, $returnArray) {
+    private function runRawQueryParamLess($rawSql, $returnArray)
+    {
         // the "where" chain doesn't have parameters.
         try {
             $rows = $this->conn1->query($rawSql);
         } catch (Exception $ex) {
             $rows = false;
-            $this->throwError("Exception in runRawQueryParamLess :", $rawSql,
-                json_encode($this->lastParam) . '\nTRACE:' . $ex->getTraceAsString());
+            $this->throwError(
+                "Exception in runRawQueryParamLess :", $rawSql,
+                json_encode($this->lastParam) . '\nTRACE:' . $ex->getTraceAsString()
+            );
         }
         if ($rows === false) {
-            $this->throwError("Unable to run raw runRawQueryParamLess", $rawSql, $this->lastParam);
+            $this->throwError(
+                "Unable to run raw runRawQueryParamLess", $rawSql,
+                $this->lastParam
+            );
         }
 
         if ($returnArray && $rows instanceof PDOStatement) {
             if ($rows->columnCount() > 0) {
                 $result = @$rows->fetchAll(PDO::FETCH_ASSOC);
                 $this->affected_rows = $rows->rowCount();
+
                 return $result;
             } else {
                 $this->affected_rows = $rows->rowCount();
+
                 return true;
             }
         } else {
             $this->affected_rows = $rows->rowCount();
+
             return $rows;
         }
     }
+
+
     //</editor-fold>
 
-    //<editor-fold desc="Query Builder functions" defaultstate="collapsed" >
+    //<editor-fold desc="Date functions" defaultstate="collapsed" >
 
-    protected static function fixCsv($value) {
+    /**
+     * Prepare a query. It returns a mysqli statement.
+     *
+     * @param string $statement A SQL statement.
+     *
+     * @return PDOStatement returns the statement if correct otherwise null
+     * @throws Exception
+     */
+    public function prepare($statement)
+    {
+        if (!$this->isOpen) {
+            $this->throwError("It's not connected to the database", "");
+
+            return null;
+        }
+        $this->lastQuery = $statement;
+        if ($this->readonly) {
+            if (stripos($statement, 'insert ') === 0
+                || stripos($statement, 'update ') === 0
+                || stripos($statement, 'delete ') === 0
+            ) {
+                // we aren't checking SQL-DCL queries.
+                $this->throwError("Database is in READ ONLY MODE", "");
+            }
+        }
+        if ($this->logLevel >= 2) {
+            $this->storeInfo($statement);
+        }
+
+        try {
+            $stmt = $this->conn1->prepare($statement);
+        } catch (Exception $ex) {
+            $stmt = false;
+            $this->throwError(
+                "Failed to prepare", $ex->getMessage(),
+                json_encode($this->lastParam) . '\nTRACE:' . $ex->getTraceAsString()
+            );
+        }
+        if ($stmt === false) {
+            $this->throwError(
+                "Unable to prepare query", $this->lastQuery,
+                json_encode($this->lastParam)
+            );
+        }
+
+        return $stmt;
+    }
+
+    private function stringToPdoParam($string)
+    {
+        if (is_int($string)) {
+            return $string;
+        }
+        switch ($string) {
+            case 'i':
+                return PDO::PARAM_INT;
+            case 'd':
+            case 's':
+                return PDO::PARAM_STR;
+            default:
+                trigger_error("param type not defined [$string]");
+
+                return null;
+        }
+    }
+
+    /**
+     * Run a prepared statement.
+     * <br><b>Example</b>:<br>
+     *      $con->runQuery($con->prepare('select * from table'));
+     *
+     * @param PDOStatement $stmt          PDOStatement
+     * @param array|null   $namedArgument (optional)
+     *
+     * @return bool returns true if the operation is correct, otherwise false
+     * @throws Exception
+     * @test equals true,$this->pdoOne->runQuery($this->pdoOne->prepare('select
+     *     1 from dual'))
+     * @test equals
+     *     [1=>1],$this->pdoOne->select('1')->from('dual')->first(),'it
+     *       must runs'
+     */
+    public function runQuery($stmt, $namedArgument = null)
+    {
+        if (!$this->isOpen) {
+            $this->throwError("It's not connected to the database", "");
+
+            return null;
+        }
+        try {
+            $namedArgument = ($namedArgument === null) ? $this->whereParamAssoc
+                : $namedArgument;
+            $r = $stmt->execute($namedArgument);
+        } catch (Exception $ex) {
+            $r = false;
+            $this->throwError(
+                $this->databaseType . ":Failed to run query ",
+                $this->lastQuery . "\nCAUSE: " . $ex->getMessage(),
+                json_encode($this->lastParam) . '\nTRACE:' . $ex->getTraceAsString()
+            );
+        }
+        if ($r === false) {
+            $this->throwError("Exception query ", $this->lastQuery,
+                $this->lastParam);
+        }
+
+        return true;
+    }
+
+    protected static function fixCsv($value)
+    {
         if (is_numeric($value)) {
             return $value;
         }
         $value = str_replace('"', '""', $value);
+
         return '"' . $value . '"';
     }
 
@@ -1641,9 +1496,11 @@ eot;
      * @return string
      * @throws Exception
      */
-    protected function generateCodeSelect($query) {
+    protected function generateCodeSelect($query)
+    {
         $q = self::splitQuery($query);
-        $code = '/** @var array $result=array(' . $this->generateCodeArray($query) . ') */' . "\n";
+        $code = '/** @var array $result=array(' . $this->generateCodeArray($query)
+            . ') */' . "\n";
 
         $code .= '$result=$pdo' . "\n";
         foreach ($q as $k => $v) {
@@ -1655,10 +1512,12 @@ eot;
             }
         }
         $code .= "\t->toList();\n";
+
         return $code;
     }
 
-    protected static function splitQuery($query) {
+    protected static function splitQuery($query)
+    {
         $result = [];
         $parts = [
             'select',
@@ -1690,7 +1549,7 @@ eot;
             'having',
             'order by',
             'limit',
-            '*END*'
+            '*END*',
         ];
         $partsRealIndex = [
             'select',
@@ -1722,11 +1581,14 @@ eot;
             'having',
             'order',
             'limit',
-            '*END*'
+            '*END*',
         ];
         $query = str_replace(["\r\n", "\n", "\t"], " ", $query);
-        $query = str_replace(["   ", "  "], " ", $query); // remove 3 or 2 space and put instead 1 space
-        $query = ' ' . trim($query, " \t\n\r\0\x0B;") . '*END*'; // we also trim the last ; (if any)
+        $query = str_replace(
+            ["   ", "  "], " ", $query
+        ); // remove 3 or 2 space and put instead 1 space
+        $query = ' ' . trim($query, " \t\n\r\0\x0B;")
+            . '*END*'; // we also trim the last ; (if any)
         $pfin = 0;
         foreach ($parts as $kp => $part) {
             $ri = $partsRealIndex[$kp];
@@ -1746,13 +1608,15 @@ eot;
                     if ($found !== false) {
                         $pfin = $found;
                         if (!isset($result[$ri])) {
-                            $result[$ri] = array();
+                            $result[$ri] = [];
                         }
-                        $result[$ri][] = trim(substr($query, $pini, $pfin - $pini));
+                        $result[$ri][] = trim(substr($query, $pini,
+                            $pfin - $pini));
                     }
                 }
             }
         }
+
         return $result;
     }
 
@@ -1762,7 +1626,8 @@ eot;
      * @return string
      * @throws Exception
      */
-    protected function generateCodeArray($query) {
+    protected function generateCodeArray($query)
+    {
         $r = ($this->toMeta($query));
 
         $defaultNull = false;
@@ -1786,22 +1651,25 @@ eot;
         }
         $result .= "]" . $ln;
         $result = str_replace(",$ln]", "$ln]", $result);
+
         return $result;
     }
 
     /**
-     * It returns an array with the metadata of each columns (i.e. name, type, size, etc.) or false if error.
+     * It returns an array with the metadata of each columns (i.e. name, type,
+     * size, etc.) or false if error.
      *
-     * @param null|string $sql If null then it uses the generation of query (if any).<br>
-     *                         if string then get the statement of the query
+     * @param null|string $sql     If null then it uses the generation of query
+     *                             (if any).<br> if string then get the
+     *                             statement of the query
      *
      * @param array       $args
      *
      * @return array|bool
      * @throws Exception
      */
-    public function toMeta($sql = null, $args = []) {
-
+    public function toMeta($sql = null, $args = [])
+    {
         if ($sql === null) {
             /** @var PDOStatement $stmt */
             $stmt = $this->runGen(false, PDO::FETCH_ASSOC, 'tometa');
@@ -1811,6 +1679,7 @@ eot;
         }
         if ($stmt === null || $stmt instanceof PDOStatement === false) {
             $stmt = null;
+
             return false;
         }
         $numCol = $stmt->columnCount();
@@ -1819,12 +1688,171 @@ eot;
             $rows[] = $stmt->getColumnMeta($i);
         }
         $stmt = null;
+
         return $rows;
     }
 
-    private function typeDict($row, $default = true) {
+    /**
+     * Run builder query and returns a PDOStatement.
+     *
+     * @param bool   $returnArray      true=return an array. False returns a
+     *                                 PDOStatement
+     * @param int    $extraMode        PDO::FETCH_ASSOC,PDO::FETCH_BOTH,PDO::FETCH_NUM,etc.
+     *                                 By default it returns
+     *                                 $extraMode=PDO::FETCH_ASSOC
+     *
+     * @param string $extraIdCache     [optional] if 'rungen' then cache is
+     *                                 stored. If false the cache could be
+     *                                 stored
+     *
+     * @return bool|PDOStatement|array
+     * @throws Exception
+     */
+    public function runGen(
+        $returnArray = true,
+        $extraMode = PDO::FETCH_ASSOC,
+        $extraIdCache = 'rungen'
+    ) {
+        $sql = $this->sqlGen();
+        /** @var PDOStatement $stmt */
+        $stmt = $this->prepare($sql);
+        if ($stmt === null) {
+            return false;
+        }
+        $values = array_values($this->whereParamValue);
+        if (count($this->whereParamType)) {
+            $counter = 0;
+            $reval = true;
+            $this->lastBindParam = [];
+            foreach ($this->whereParamType as $k => $v) {
+                $counter++;
+                $typeP = $this->stringToPdoParam(
+                    $this->whereParamType[$k]
+                );
+                $this->lastBindParam[$counter] = $values[$k];
+                $reval = $reval
+                    && $stmt->bindParam(
+                        $counter
+                        , $values[$k]
+                        , $typeP
+                    );
+            }
+            if (!$reval) {
+                $this->throwError(
+                    "Error in bind", "",
+                    "type: " . json_encode($this->whereParamType) . " values:"
+                    . json_encode($values)
+                );
+
+                return false;
+            }
+        }
+        $useCache = $this->useCache; // because builderReset cleans this value
+        if ($useCache !== false && $returnArray) {
+            $this->uid = hash(
+                'sha256',
+                $this->lastQuery . $extraMode . serialize($this->lastBindParam)
+                . $extraIdCache
+            );
+            $result = $this->cacheService->getCache(
+                $this->uid, $this->cacheFamily
+            );
+            if ($result !== false) {
+                // it's found in the cache.
+                $this->builderReset();
+
+                return $result;
+            }
+        } else {
+            if ($extraIdCache == 'rungen') {
+                $this->uid = null;
+            }
+        }
+
+        $this->runQuery($stmt);
+        $this->builderReset();
+
+        if ($returnArray && $stmt instanceof PDOStatement) {
+            $result = ($stmt->columnCount() > 0) ? $stmt->fetchAll(
+                $extraMode
+            ) : [];
+            $this->affected_rows = $stmt->rowCount();
+            $stmt = null; // close
+            if ($extraIdCache == 'rungen' && $this->uid) {
+                // we store the information of the cache.
+                $this->cacheService->setCache(
+                    $this->uid, $this->cacheFamily, $result, $useCache
+                );
+            }
+
+            return $result;
+        } else {
+            return $stmt;
+        }
+    }
+
+    /**
+     * Generates the sql (script). It doesn't run or execute the query.
+     *
+     * @param bool $resetStack     if true then it reset all the values of the
+     *                             stack, including parameters.
+     *
+     * @return string
+     */
+    public function sqlGen($resetStack = false)
+    {
+        if (stripos($this->select, 'select') !== false) {
+            // is it a full query? ->select=select * ..." instead of ->select=*
+            $words = preg_split('#\s+#', strtolower($this->select));
+        } else {
+            $words = [];
+        }
+        if (!in_array('select', $words)) {
+            $sql = 'select ' . $this->distinct . $this->select;
+        } else {
+            $sql
+                = $this->select; // the query already constains "select", so we don't want "select select * from".
+        }
+        if (!in_array('from', $words)) {
+            $sql .= ' from ' . $this->from;
+        } else {
+            $sql .= $this->from;
+        }
+        if (!in_array('where', $words)) {
+            if (count($this->where)) {
+                if (!in_array('where', $words)) {
+                    $where = ' where ' . implode(' and ', $this->where);
+                } else {
+                    $where = implode(' and ', $this->where);
+                }
+            } else {
+                $where = '';
+            }
+        } else {
+            $where = '';
+        }
+        if (count($this->having)) {
+            $having = ' having ' . implode(' and ', $this->having);
+        } else {
+            $having = '';
+        }
+
+        $sql = $sql . $where . $this->group . $having . $this->order . $this->limit;
+
+        if ($resetStack) {
+            $this->builderReset();
+        }
+
+        return $sql;
+    }
+
+    private function typeDict($row, $default = true)
+    {
         return $this->service->typeDict($row, $default);
     }
+    //</editor-fold>
+
+    //<editor-fold desc="Query Builder functions" defaultstate="collapsed" >
 
     /**
      * @param string $tableName
@@ -1832,7 +1860,8 @@ eot;
      * @return string
      * @throws Exception
      */
-    protected function generateCodeCreate($tableName) {
+    protected function generateCodeCreate($tableName)
+    {
         $code = "\$pdo->createTable('" . $tableName . "',\n";
         $arr = $this->getDefTable($tableName);
         $arrKey = $this->getDefTableKeys($tableName);
@@ -1843,8 +1872,8 @@ eot;
         return $code;
     }
 
-    protected static function varExport($input, $indent = "\t") {
-
+    protected static function varExport($input, $indent = "\t")
+    {
         switch (gettype($input)) {
             case "string":
                 return '"' . addcslashes($input, "\\\$\"\r\n\t\v\f") . '"';
@@ -1856,13 +1885,13 @@ eot;
                         . ($indexed ? "" : self::varExport($key) . " => ")
                         . self::varExport($value, "$indent    ");
                 }
+
                 return "[\n" . implode(",\n", $r) . "\n" . $indent . "]";
             case "boolean":
                 return $input ? "TRUE" : "FALSE";
             default:
                 return var_export($input, true);
         }
-
     }
 
     /**
@@ -1875,7 +1904,8 @@ eot;
      * @return string|string[]
      * @throws Exception
      */
-    protected function generateCodeClass($input, $query, $pk) {
+    protected function generateCodeClass($input, $query, $pk)
+    {
         $r = <<<'eot'
 <?php
 /** @noinspection PhpUnused */
@@ -2072,14 +2102,18 @@ eot;
         $r = str_replace('{version}', self::VERSION, $r);
         $r = str_replace('{table}', $input, $r);
         $r = str_replace('{pk}', $pk, $r);
-        $r = str_replace('{def}', self::varExport($this->getDefTable($input)), $r);
-        $r = str_replace('{defkey}', self::varExport($this->getDefTableKeys($input)), $r);
+        $r = str_replace('{def}', self::varExport($this->getDefTable($input)),
+            $r);
+        $r = str_replace(
+            '{defkey}', self::varExport($this->getDefTableKeys($input)), $r
+        );
         $r = str_replace('{array}', $this->generateCodeArray($query), $r);
-        return $r;
 
+        return $r;
     }
 
-    public function render() {
+    public function render()
+    {
         if ($this->logLevel) {
             ob_clean();
         }
@@ -2328,7 +2362,10 @@ TEM1;
             $log = '';
             if ($button) {
                 try {
-                    $log = $this->run($database, $server, $user, $pwd, $db, $input, $output, $pk);
+                    $log = $this->run(
+                        $database, $server, $user, $pwd, $db, $input, $output,
+                        $pk
+                    );
                 } catch (Exception $e) {
                     $log = $e->getMessage();
                 }
@@ -2337,14 +2374,25 @@ TEM1;
             $web = str_replace('{{version}}', $this::VERSION, $web);
             $valid = ['mysql', 'sqlsrv'];
 
-            $web = str_replace("{{database}}", $this->runUtilCombo($valid, $database), $web);
+            $web = str_replace(
+                "{{database}}", $this->runUtilCombo($valid, $database), $web
+            );
             $web = str_replace('{{server}}', $server, $web);
             $web = str_replace('{{user}}', $user, $web);
             $web = str_replace('{{pwd}}', $pwd, $web);
             $web = str_replace('{{db}}', $db, $web);
             $web = str_replace('{{input}}', $input, $web);
-            $valid = ['classcode', 'selectcode', 'createcode', 'arraycode', 'csv', 'json'];
-            $web = str_replace('{{output}}', $this->runUtilCombo($valid, $output), $web);
+            $valid = [
+                'classcode',
+                'selectcode',
+                'createcode',
+                'arraycode',
+                'csv',
+                'json',
+            ];
+            $web = str_replace(
+                '{{output}}', $this->runUtilCombo($valid, $output), $web
+            );
             $web = str_replace('{{pk}}', $pk, $web);
             $web = str_replace('{{log}}', $log, $web);
 
@@ -2353,23 +2401,26 @@ TEM1;
             $web = str_replace('{{ms}}', $ms, $web);
             echo $web;
         }
-
     }
 
-    public function bootstrapcss() {
+    public function bootstrapcss()
+    {
         return <<<BOOTS
     	<style>
 html{font-family:sans-serif;-webkit-text-size-adjust:100%;-ms-text-size-adjust:100%}body{margin:0}article,aside,details,figcaption,figure,footer,header,hgroup,main,menu,nav,section,summary{display:block}audio,canvas,progress,video{display:inline-block;vertical-align:baseline}audio:not([controls]){display:none;height:0}[hidden],template{display:none}a{background-color:transparent}a:active,a:hover{outline:0}abbr[title]{border-bottom:1px dotted}b,strong{font-weight:700}dfn{font-style:italic}h1{margin:.67em 0;font-size:2em}mark{color:#000;background:#ff0}small{font-size:80%}sub,sup{position:relative;font-size:75%;line-height:0;vertical-align:baseline}sup{top:-.5em}sub{bottom:-.25em}img{border:0}svg:not(:root){overflow:hidden}figure{margin:1em 40px}hr{height:0;-webkit-box-sizing:content-box;-moz-box-sizing:content-box;box-sizing:content-box}pre{overflow:auto}code,kbd,pre,samp{font-family:monospace,monospace;font-size:1em}button,input,optgroup,select,textarea{margin:0;font:inherit;color:inherit}button{overflow:visible}button,select{text-transform:none}button,html input[type=button],input[type=reset],input[type=submit]{-webkit-appearance:button;cursor:pointer}button[disabled],html input[disabled]{cursor:default}button::-moz-focus-inner,input::-moz-focus-inner{padding:0;border:0}input{line-height:normal}input[type=checkbox],input[type=radio]{-webkit-box-sizing:border-box;-moz-box-sizing:border-box;box-sizing:border-box;padding:0}input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-spin-button{height:auto}input[type=search]{-webkit-box-sizing:content-box;-moz-box-sizing:content-box;box-sizing:content-box;-webkit-appearance:textfield}input[type=search]::-webkit-search-cancel-button,input[type=search]::-webkit-search-decoration{-webkit-appearance:none}fieldset{padding:.35em .625em .75em;margin:0 2px;border:1px solid silver}legend{padding:0;border:0}textarea{overflow:auto}optgroup{font-weight:700}table{border-spacing:0;border-collapse:collapse}td,th{padding:0}/*! Source: https://github.com/h5bp/html5-boilerplate/blob/master/src/css/main.css */@media print{*,:after,:before{color:#000!important;text-shadow:none!important;background:0 0!important;-webkit-box-shadow:none!important;box-shadow:none!important}a,a:visited{text-decoration:underline}a[href]:after{content:" (" attr(href) ")"}abbr[title]:after{content:" (" attr(title) ")"}a[href^="#"]:after,a[href^="javascript:"]:after{content:""}blockquote,pre{border:1px solid #999;page-break-inside:avoid}thead{display:table-header-group}img,tr{page-break-inside:avoid}img{max-width:100%!important}h2,h3,p{orphans:3;widows:3}h2,h3{page-break-after:avoid}.navbar{display:none}.btn>.caret,.dropup>.btn>.caret{border-top-color:#000!important}.label{border:1px solid #000}.table{border-collapse:collapse!important}.table td,.table th{background-color:#fff!important}.table-bordered td,.table-bordered th{border:1px solid #ddd!important}}*{-webkit-box-sizing:border-box;-moz-box-sizing:border-box;box-sizing:border-box}:after,:before{-webkit-box-sizing:border-box;-moz-box-sizing:border-box;box-sizing:border-box}html{font-size:10px;-webkit-tap-highlight-color:transparent}body{font-family:"Helvetica Neue",Helvetica,Arial,sans-serif;font-size:14px;line-height:1.42857143;color:#333;background-color:#fff}button,input,select,textarea{font-family:inherit;font-size:inherit;line-height:inherit}a{color:#337ab7;text-decoration:none}a:focus,a:hover{color:#23527c;text-decoration:underline}a:focus{outline:5px auto -webkit-focus-ring-color;outline-offset:-2px}figure{margin:0}img{vertical-align:middle}.carousel-inner>.item>a>img,.carousel-inner>.item>img,.img-responsive,.thumbnail a>img,.thumbnail>img{display:block;max-width:100%;height:auto}.img-rounded{border-radius:6px}.img-thumbnail{display:inline-block;max-width:100%;height:auto;padding:4px;line-height:1.42857143;background-color:#fff;border:1px solid #ddd;border-radius:4px;-webkit-transition:all .2s ease-in-out;-o-transition:all .2s ease-in-out;transition:all .2s ease-in-out}.img-circle{border-radius:50%}hr{margin-top:20px;margin-bottom:20px;border:0;border-top:1px solid #eee}.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);border:0}.sr-only-focusable:active,.sr-only-focusable:focus{position:static;width:auto;height:auto;margin:0;overflow:visible;clip:auto}[role=button]{cursor:pointer}.h1,.h2,.h3,.h4,.h5,.h6,h1,h2,h3,h4,h5,h6{font-family:inherit;font-weight:500;line-height:1.1;color:inherit}.h1 .small,.h1 small,.h2 .small,.h2 small,.h3 .small,.h3 small,.h4 .small,.h4 small,.h5 .small,.h5 small,.h6 .small,.h6 small,h1 .small,h1 small,h2 .small,h2 small,h3 .small,h3 small,h4 .small,h4 small,h5 .small,h5 small,h6 .small,h6 small{font-weight:400;line-height:1;color:#777}.h1,.h2,.h3,h1,h2,h3{margin-top:20px;margin-bottom:10px}.h1 .small,.h1 small,.h2 .small,.h2 small,.h3 .small,.h3 small,h1 .small,h1 small,h2 .small,h2 small,h3 .small,h3 small{font-size:65%}.h4,.h5,.h6,h4,h5,h6{margin-top:10px;margin-bottom:10px}.h4 .small,.h4 small,.h5 .small,.h5 small,.h6 .small,.h6 small,h4 .small,h4 small,h5 .small,h5 small,h6 .small,h6 small{font-size:75%}.h1,h1{font-size:36px}.h2,h2{font-size:30px}.h3,h3{font-size:24px}.h4,h4{font-size:18px}.h5,h5{font-size:14px}.h6,h6{font-size:12px}p{margin:0 0 10px}.lead{margin-bottom:20px;font-size:16px;font-weight:300;line-height:1.4}@media (min-width:768px){.lead{font-size:21px}}.small,small{font-size:85%}.mark,mark{padding:.2em;background-color:#fcf8e3}.text-left{text-align:left}.text-right{text-align:right}.text-center{text-align:center}.text-justify{text-align:justify}.text-nowrap{white-space:nowrap}.text-lowercase{text-transform:lowercase}.text-uppercase{text-transform:uppercase}.text-capitalize{text-transform:capitalize}.text-muted{color:#777}.text-primary{color:#337ab7}a.text-primary:focus,a.text-primary:hover{color:#286090}.text-success{color:#3c763d}a.text-success:focus,a.text-success:hover{color:#2b542c}.text-info{color:#31708f}a.text-info:focus,a.text-info:hover{color:#245269}.text-warning{color:#8a6d3b}a.text-warning:focus,a.text-warning:hover{color:#66512c}.text-danger{color:#a94442}a.text-danger:focus,a.text-danger:hover{color:#843534}.bg-primary{color:#fff;background-color:#337ab7}a.bg-primary:focus,a.bg-primary:hover{background-color:#286090}.bg-success{background-color:#dff0d8}a.bg-success:focus,a.bg-success:hover{background-color:#c1e2b3}.bg-info{background-color:#d9edf7}a.bg-info:focus,a.bg-info:hover{background-color:#afd9ee}.bg-warning{background-color:#fcf8e3}a.bg-warning:focus,a.bg-warning:hover{background-color:#f7ecb5}.bg-danger{background-color:#f2dede}a.bg-danger:focus,a.bg-danger:hover{background-color:#e4b9b9}.page-header{padding-bottom:9px;margin:40px 0 20px;border-bottom:1px solid #eee}ol,ul{margin-top:0;margin-bottom:10px}ol ol,ol ul,ul ol,ul ul{margin-bottom:0}.list-unstyled{padding-left:0;list-style:none}.list-inline{padding-left:0;margin-left:-5px;list-style:none}.list-inline>li{display:inline-block;padding-right:5px;padding-left:5px}dl{margin-top:0;margin-bottom:20px}dd,dt{line-height:1.42857143}dt{font-weight:700}dd{margin-left:0}@media (min-width:768px){.dl-horizontal dt{float:left;width:160px;overflow:hidden;clear:left;text-align:right;text-overflow:ellipsis;white-space:nowrap}.dl-horizontal dd{margin-left:180px}}abbr[data-original-title],abbr[title]{cursor:help;border-bottom:1px dotted #777}.initialism{font-size:90%;text-transform:uppercase}blockquote{padding:10px 20px;margin:0 0 20px;font-size:17.5px;border-left:5px solid #eee}blockquote ol:last-child,blockquote p:last-child,blockquote ul:last-child{margin-bottom:0}blockquote .small,blockquote footer,blockquote small{display:block;font-size:80%;line-height:1.42857143;color:#777}blockquote .small:before,blockquote footer:before,blockquote small:before{content:'\2014 \00A0'}.blockquote-reverse,blockquote.pull-right{padding-right:15px;padding-left:0;text-align:right;border-right:5px solid #eee;border-left:0}.blockquote-reverse .small:before,.blockquote-reverse footer:before,.blockquote-reverse small:before,blockquote.pull-right .small:before,blockquote.pull-right footer:before,blockquote.pull-right small:before{content:''}.blockquote-reverse .small:after,.blockquote-reverse footer:after,.blockquote-reverse small:after,blockquote.pull-right .small:after,blockquote.pull-right footer:after,blockquote.pull-right small:after{content:'\00A0 \2014'}address{margin-bottom:20px;font-style:normal;line-height:1.42857143}code,kbd,pre,samp{font-family:Menlo,Monaco,Consolas,"Courier New",monospace}code{padding:2px 4px;font-size:90%;color:#c7254e;background-color:#f9f2f4;border-radius:4px}kbd{padding:2px 4px;font-size:90%;color:#fff;background-color:#333;border-radius:3px;-webkit-box-shadow:inset 0 -1px 0 rgba(0,0,0,.25);box-shadow:inset 0 -1px 0 rgba(0,0,0,.25)}kbd kbd{padding:0;font-size:100%;font-weight:700;-webkit-box-shadow:none;box-shadow:none}pre{display:block;padding:9.5px;margin:0 0 10px;font-size:13px;line-height:1.42857143;color:#333;word-break:break-all;word-wrap:break-word;background-color:#f5f5f5;border:1px solid #ccc;border-radius:4px}pre code{padding:0;font-size:inherit;color:inherit;white-space:pre-wrap;background-color:transparent;border-radius:0}.pre-scrollable{max-height:340px;overflow-y:scroll}.container{padding-right:15px;padding-left:15px;margin-right:auto;margin-left:auto}@media (min-width:768px){.container{width:750px}}@media (min-width:992px){.container{width:970px}}@media (min-width:1200px){.container{width:1170px}}.container-fluid{padding-right:15px;padding-left:15px;margin-right:auto;margin-left:auto}.row{margin-right:-15px;margin-left:-15px}.col-lg-1,.col-lg-10,.col-lg-11,.col-lg-12,.col-lg-2,.col-lg-3,.col-lg-4,.col-lg-5,.col-lg-6,.col-lg-7,.col-lg-8,.col-lg-9,.col-md-1,.col-md-10,.col-md-11,.col-md-12,.col-md-2,.col-md-3,.col-md-4,.col-md-5,.col-md-6,.col-md-7,.col-md-8,.col-md-9,.col-sm-1,.col-sm-10,.col-sm-11,.col-sm-12,.col-sm-2,.col-sm-3,.col-sm-4,.col-sm-5,.col-sm-6,.col-sm-7,.col-sm-8,.col-sm-9,.col-xs-1,.col-xs-10,.col-xs-11,.col-xs-12,.col-xs-2,.col-xs-3,.col-xs-4,.col-xs-5,.col-xs-6,.col-xs-7,.col-xs-8,.col-xs-9{position:relative;min-height:1px;padding-right:15px;padding-left:15px}.col-xs-1,.col-xs-10,.col-xs-11,.col-xs-12,.col-xs-2,.col-xs-3,.col-xs-4,.col-xs-5,.col-xs-6,.col-xs-7,.col-xs-8,.col-xs-9{float:left}.col-xs-12{width:100%}.col-xs-11{width:91.66666667%}.col-xs-10{width:83.33333333%}.col-xs-9{width:75%}.col-xs-8{width:66.66666667%}.col-xs-7{width:58.33333333%}.col-xs-6{width:50%}.col-xs-5{width:41.66666667%}.col-xs-4{width:33.33333333%}.col-xs-3{width:25%}.col-xs-2{width:16.66666667%}.col-xs-1{width:8.33333333%}.col-xs-pull-12{right:100%}.col-xs-pull-11{right:91.66666667%}.col-xs-pull-10{right:83.33333333%}.col-xs-pull-9{right:75%}.col-xs-pull-8{right:66.66666667%}.col-xs-pull-7{right:58.33333333%}.col-xs-pull-6{right:50%}.col-xs-pull-5{right:41.66666667%}.col-xs-pull-4{right:33.33333333%}.col-xs-pull-3{right:25%}.col-xs-pull-2{right:16.66666667%}.col-xs-pull-1{right:8.33333333%}.col-xs-pull-0{right:auto}.col-xs-push-12{left:100%}.col-xs-push-11{left:91.66666667%}.col-xs-push-10{left:83.33333333%}.col-xs-push-9{left:75%}.col-xs-push-8{left:66.66666667%}.col-xs-push-7{left:58.33333333%}.col-xs-push-6{left:50%}.col-xs-push-5{left:41.66666667%}.col-xs-push-4{left:33.33333333%}.col-xs-push-3{left:25%}.col-xs-push-2{left:16.66666667%}.col-xs-push-1{left:8.33333333%}.col-xs-push-0{left:auto}.col-xs-offset-12{margin-left:100%}.col-xs-offset-11{margin-left:91.66666667%}.col-xs-offset-10{margin-left:83.33333333%}.col-xs-offset-9{margin-left:75%}.col-xs-offset-8{margin-left:66.66666667%}.col-xs-offset-7{margin-left:58.33333333%}.col-xs-offset-6{margin-left:50%}.col-xs-offset-5{margin-left:41.66666667%}.col-xs-offset-4{margin-left:33.33333333%}.col-xs-offset-3{margin-left:25%}.col-xs-offset-2{margin-left:16.66666667%}.col-xs-offset-1{margin-left:8.33333333%}.col-xs-offset-0{margin-left:0}@media (min-width:768px){.col-sm-1,.col-sm-10,.col-sm-11,.col-sm-12,.col-sm-2,.col-sm-3,.col-sm-4,.col-sm-5,.col-sm-6,.col-sm-7,.col-sm-8,.col-sm-9{float:left}.col-sm-12{width:100%}.col-sm-11{width:91.66666667%}.col-sm-10{width:83.33333333%}.col-sm-9{width:75%}.col-sm-8{width:66.66666667%}.col-sm-7{width:58.33333333%}.col-sm-6{width:50%}.col-sm-5{width:41.66666667%}.col-sm-4{width:33.33333333%}.col-sm-3{width:25%}.col-sm-2{width:16.66666667%}.col-sm-1{width:8.33333333%}.col-sm-pull-12{right:100%}.col-sm-pull-11{right:91.66666667%}.col-sm-pull-10{right:83.33333333%}.col-sm-pull-9{right:75%}.col-sm-pull-8{right:66.66666667%}.col-sm-pull-7{right:58.33333333%}.col-sm-pull-6{right:50%}.col-sm-pull-5{right:41.66666667%}.col-sm-pull-4{right:33.33333333%}.col-sm-pull-3{right:25%}.col-sm-pull-2{right:16.66666667%}.col-sm-pull-1{right:8.33333333%}.col-sm-pull-0{right:auto}.col-sm-push-12{left:100%}.col-sm-push-11{left:91.66666667%}.col-sm-push-10{left:83.33333333%}.col-sm-push-9{left:75%}.col-sm-push-8{left:66.66666667%}.col-sm-push-7{left:58.33333333%}.col-sm-push-6{left:50%}.col-sm-push-5{left:41.66666667%}.col-sm-push-4{left:33.33333333%}.col-sm-push-3{left:25%}.col-sm-push-2{left:16.66666667%}.col-sm-push-1{left:8.33333333%}.col-sm-push-0{left:auto}.col-sm-offset-12{margin-left:100%}.col-sm-offset-11{margin-left:91.66666667%}.col-sm-offset-10{margin-left:83.33333333%}.col-sm-offset-9{margin-left:75%}.col-sm-offset-8{margin-left:66.66666667%}.col-sm-offset-7{margin-left:58.33333333%}.col-sm-offset-6{margin-left:50%}.col-sm-offset-5{margin-left:41.66666667%}.col-sm-offset-4{margin-left:33.33333333%}.col-sm-offset-3{margin-left:25%}.col-sm-offset-2{margin-left:16.66666667%}.col-sm-offset-1{margin-left:8.33333333%}.col-sm-offset-0{margin-left:0}}@media (min-width:992px){.col-md-1,.col-md-10,.col-md-11,.col-md-12,.col-md-2,.col-md-3,.col-md-4,.col-md-5,.col-md-6,.col-md-7,.col-md-8,.col-md-9{float:left}.col-md-12{width:100%}.col-md-11{width:91.66666667%}.col-md-10{width:83.33333333%}.col-md-9{width:75%}.col-md-8{width:66.66666667%}.col-md-7{width:58.33333333%}.col-md-6{width:50%}.col-md-5{width:41.66666667%}.col-md-4{width:33.33333333%}.col-md-3{width:25%}.col-md-2{width:16.66666667%}.col-md-1{width:8.33333333%}.col-md-pull-12{right:100%}.col-md-pull-11{right:91.66666667%}.col-md-pull-10{right:83.33333333%}.col-md-pull-9{right:75%}.col-md-pull-8{right:66.66666667%}.col-md-pull-7{right:58.33333333%}.col-md-pull-6{right:50%}.col-md-pull-5{right:41.66666667%}.col-md-pull-4{right:33.33333333%}.col-md-pull-3{right:25%}.col-md-pull-2{right:16.66666667%}.col-md-pull-1{right:8.33333333%}.col-md-pull-0{right:auto}.col-md-push-12{left:100%}.col-md-push-11{left:91.66666667%}.col-md-push-10{left:83.33333333%}.col-md-push-9{left:75%}.col-md-push-8{left:66.66666667%}.col-md-push-7{left:58.33333333%}.col-md-push-6{left:50%}.col-md-push-5{left:41.66666667%}.col-md-push-4{left:33.33333333%}.col-md-push-3{left:25%}.col-md-push-2{left:16.66666667%}.col-md-push-1{left:8.33333333%}.col-md-push-0{left:auto}.col-md-offset-12{margin-left:100%}.col-md-offset-11{margin-left:91.66666667%}.col-md-offset-10{margin-left:83.33333333%}.col-md-offset-9{margin-left:75%}.col-md-offset-8{margin-left:66.66666667%}.col-md-offset-7{margin-left:58.33333333%}.col-md-offset-6{margin-left:50%}.col-md-offset-5{margin-left:41.66666667%}.col-md-offset-4{margin-left:33.33333333%}.col-md-offset-3{margin-left:25%}.col-md-offset-2{margin-left:16.66666667%}.col-md-offset-1{margin-left:8.33333333%}.col-md-offset-0{margin-left:0}}@media (min-width:1200px){.col-lg-1,.col-lg-10,.col-lg-11,.col-lg-12,.col-lg-2,.col-lg-3,.col-lg-4,.col-lg-5,.col-lg-6,.col-lg-7,.col-lg-8,.col-lg-9{float:left}.col-lg-12{width:100%}.col-lg-11{width:91.66666667%}.col-lg-10{width:83.33333333%}.col-lg-9{width:75%}.col-lg-8{width:66.66666667%}.col-lg-7{width:58.33333333%}.col-lg-6{width:50%}.col-lg-5{width:41.66666667%}.col-lg-4{width:33.33333333%}.col-lg-3{width:25%}.col-lg-2{width:16.66666667%}.col-lg-1{width:8.33333333%}.col-lg-pull-12{right:100%}.col-lg-pull-11{right:91.66666667%}.col-lg-pull-10{right:83.33333333%}.col-lg-pull-9{right:75%}.col-lg-pull-8{right:66.66666667%}.col-lg-pull-7{right:58.33333333%}.col-lg-pull-6{right:50%}.col-lg-pull-5{right:41.66666667%}.col-lg-pull-4{right:33.33333333%}.col-lg-pull-3{right:25%}.col-lg-pull-2{right:16.66666667%}.col-lg-pull-1{right:8.33333333%}.col-lg-pull-0{right:auto}.col-lg-push-12{left:100%}.col-lg-push-11{left:91.66666667%}.col-lg-push-10{left:83.33333333%}.col-lg-push-9{left:75%}.col-lg-push-8{left:66.66666667%}.col-lg-push-7{left:58.33333333%}.col-lg-push-6{left:50%}.col-lg-push-5{left:41.66666667%}.col-lg-push-4{left:33.33333333%}.col-lg-push-3{left:25%}.col-lg-push-2{left:16.66666667%}.col-lg-push-1{left:8.33333333%}.col-lg-push-0{left:auto}.col-lg-offset-12{margin-left:100%}.col-lg-offset-11{margin-left:91.66666667%}.col-lg-offset-10{margin-left:83.33333333%}.col-lg-offset-9{margin-left:75%}.col-lg-offset-8{margin-left:66.66666667%}.col-lg-offset-7{margin-left:58.33333333%}.col-lg-offset-6{margin-left:50%}.col-lg-offset-5{margin-left:41.66666667%}.col-lg-offset-4{margin-left:33.33333333%}.col-lg-offset-3{margin-left:25%}.col-lg-offset-2{margin-left:16.66666667%}.col-lg-offset-1{margin-left:8.33333333%}.col-lg-offset-0{margin-left:0}}table{background-color:transparent}caption{padding-top:8px;padding-bottom:8px;color:#777;text-align:left}th{text-align:left}.table{width:100%;max-width:100%;margin-bottom:20px}.table>tbody>tr>td,.table>tbody>tr>th,.table>tfoot>tr>td,.table>tfoot>tr>th,.table>thead>tr>td,.table>thead>tr>th{padding:8px;line-height:1.42857143;vertical-align:top;border-top:1px solid #ddd}.table>thead>tr>th{vertical-align:bottom;border-bottom:2px solid #ddd}.table>caption+thead>tr:first-child>td,.table>caption+thead>tr:first-child>th,.table>colgroup+thead>tr:first-child>td,.table>colgroup+thead>tr:first-child>th,.table>thead:first-child>tr:first-child>td,.table>thead:first-child>tr:first-child>th{border-top:0}.table>tbody+tbody{border-top:2px solid #ddd}.table .table{background-color:#fff}.table-condensed>tbody>tr>td,.table-condensed>tbody>tr>th,.table-condensed>tfoot>tr>td,.table-condensed>tfoot>tr>th,.table-condensed>thead>tr>td,.table-condensed>thead>tr>th{padding:5px}.table-bordered{border:1px solid #ddd}.table-bordered>tbody>tr>td,.table-bordered>tbody>tr>th,.table-bordered>tfoot>tr>td,.table-bordered>tfoot>tr>th,.table-bordered>thead>tr>td,.table-bordered>thead>tr>th{border:1px solid #ddd}.table-bordered>thead>tr>td,.table-bordered>thead>tr>th{border-bottom-width:2px}.table-striped>tbody>tr:nth-of-type(odd){background-color:#f9f9f9}.table-hover>tbody>tr:hover{background-color:#f5f5f5}table col[class*=col-]{position:static;display:table-column;float:none}table td[class*=col-],table th[class*=col-]{position:static;display:table-cell;float:none}.table>tbody>tr.active>td,.table>tbody>tr.active>th,.table>tbody>tr>td.active,.table>tbody>tr>th.active,.table>tfoot>tr.active>td,.table>tfoot>tr.active>th,.table>tfoot>tr>td.active,.table>tfoot>tr>th.active,.table>thead>tr.active>td,.table>thead>tr.active>th,.table>thead>tr>td.active,.table>thead>tr>th.active{background-color:#f5f5f5}.table-hover>tbody>tr.active:hover>td,.table-hover>tbody>tr.active:hover>th,.table-hover>tbody>tr:hover>.active,.table-hover>tbody>tr>td.active:hover,.table-hover>tbody>tr>th.active:hover{background-color:#e8e8e8}.table>tbody>tr.success>td,.table>tbody>tr.success>th,.table>tbody>tr>td.success,.table>tbody>tr>th.success,.table>tfoot>tr.success>td,.table>tfoot>tr.success>th,.table>tfoot>tr>td.success,.table>tfoot>tr>th.success,.table>thead>tr.success>td,.table>thead>tr.success>th,.table>thead>tr>td.success,.table>thead>tr>th.success{background-color:#dff0d8}.table-hover>tbody>tr.success:hover>td,.table-hover>tbody>tr.success:hover>th,.table-hover>tbody>tr:hover>.success,.table-hover>tbody>tr>td.success:hover,.table-hover>tbody>tr>th.success:hover{background-color:#d0e9c6}.table>tbody>tr.info>td,.table>tbody>tr.info>th,.table>tbody>tr>td.info,.table>tbody>tr>th.info,.table>tfoot>tr.info>td,.table>tfoot>tr.info>th,.table>tfoot>tr>td.info,.table>tfoot>tr>th.info,.table>thead>tr.info>td,.table>thead>tr.info>th,.table>thead>tr>td.info,.table>thead>tr>th.info{background-color:#d9edf7}.table-hover>tbody>tr.info:hover>td,.table-hover>tbody>tr.info:hover>th,.table-hover>tbody>tr:hover>.info,.table-hover>tbody>tr>td.info:hover,.table-hover>tbody>tr>th.info:hover{background-color:#c4e3f3}.table>tbody>tr.warning>td,.table>tbody>tr.warning>th,.table>tbody>tr>td.warning,.table>tbody>tr>th.warning,.table>tfoot>tr.warning>td,.table>tfoot>tr.warning>th,.table>tfoot>tr>td.warning,.table>tfoot>tr>th.warning,.table>thead>tr.warning>td,.table>thead>tr.warning>th,.table>thead>tr>td.warning,.table>thead>tr>th.warning{background-color:#fcf8e3}.table-hover>tbody>tr.warning:hover>td,.table-hover>tbody>tr.warning:hover>th,.table-hover>tbody>tr:hover>.warning,.table-hover>tbody>tr>td.warning:hover,.table-hover>tbody>tr>th.warning:hover{background-color:#faf2cc}.table>tbody>tr.danger>td,.table>tbody>tr.danger>th,.table>tbody>tr>td.danger,.table>tbody>tr>th.danger,.table>tfoot>tr.danger>td,.table>tfoot>tr.danger>th,.table>tfoot>tr>td.danger,.table>tfoot>tr>th.danger,.table>thead>tr.danger>td,.table>thead>tr.danger>th,.table>thead>tr>td.danger,.table>thead>tr>th.danger{background-color:#f2dede}.table-hover>tbody>tr.danger:hover>td,.table-hover>tbody>tr.danger:hover>th,.table-hover>tbody>tr:hover>.danger,.table-hover>tbody>tr>td.danger:hover,.table-hover>tbody>tr>th.danger:hover{background-color:#ebcccc}.table-responsive{min-height:.01%;overflow-x:auto}@media screen and (max-width:767px){.table-responsive{width:100%;margin-bottom:15px;overflow-y:hidden;-ms-overflow-style:-ms-autohiding-scrollbar;border:1px solid #ddd}.table-responsive>.table{margin-bottom:0}.table-responsive>.table>tbody>tr>td,.table-responsive>.table>tbody>tr>th,.table-responsive>.table>tfoot>tr>td,.table-responsive>.table>tfoot>tr>th,.table-responsive>.table>thead>tr>td,.table-responsive>.table>thead>tr>th{white-space:nowrap}.table-responsive>.table-bordered{border:0}.table-responsive>.table-bordered>tbody>tr>td:first-child,.table-responsive>.table-bordered>tbody>tr>th:first-child,.table-responsive>.table-bordered>tfoot>tr>td:first-child,.table-responsive>.table-bordered>tfoot>tr>th:first-child,.table-responsive>.table-bordered>thead>tr>td:first-child,.table-responsive>.table-bordered>thead>tr>th:first-child{border-left:0}.table-responsive>.table-bordered>tbody>tr>td:last-child,.table-responsive>.table-bordered>tbody>tr>th:last-child,.table-responsive>.table-bordered>tfoot>tr>td:last-child,.table-responsive>.table-bordered>tfoot>tr>th:last-child,.table-responsive>.table-bordered>thead>tr>td:last-child,.table-responsive>.table-bordered>thead>tr>th:last-child{border-right:0}.table-responsive>.table-bordered>tbody>tr:last-child>td,.table-responsive>.table-bordered>tbody>tr:last-child>th,.table-responsive>.table-bordered>tfoot>tr:last-child>td,.table-responsive>.table-bordered>tfoot>tr:last-child>th{border-bottom:0}}fieldset{min-width:0;padding:0;margin:0;border:0}legend{display:block;width:100%;padding:0;margin-bottom:20px;font-size:21px;line-height:inherit;color:#333;border:0;border-bottom:1px solid #e5e5e5}label{display:inline-block;max-width:100%;margin-bottom:5px;font-weight:700}input[type=search]{-webkit-box-sizing:border-box;-moz-box-sizing:border-box;box-sizing:border-box}input[type=checkbox],input[type=radio]{margin:4px 0 0;line-height:normal}input[type=file]{display:block}input[type=range]{display:block;width:100%}select[multiple],select[size]{height:auto}input[type=checkbox]:focus,input[type=file]:focus,input[type=radio]:focus{outline:5px auto -webkit-focus-ring-color;outline-offset:-2px}output{display:block;padding-top:7px;font-size:14px;line-height:1.42857143;color:#555}.form-control{display:block;width:100%;height:34px;padding:6px 12px;font-size:14px;line-height:1.42857143;color:#555;background-color:#fff;background-image:none;border:1px solid #ccc;border-radius:4px;-webkit-box-shadow:inset 0 1px 1px rgba(0,0,0,.075);box-shadow:inset 0 1px 1px rgba(0,0,0,.075);-webkit-transition:border-color ease-in-out .15s,-webkit-box-shadow ease-in-out .15s;-o-transition:border-color ease-in-out .15s,box-shadow ease-in-out .15s;transition:border-color ease-in-out .15s,box-shadow ease-in-out .15s}.form-control:focus{border-color:#66afe9;outline:0;-webkit-box-shadow:inset 0 1px 1px rgba(0,0,0,.075),0 0 8px rgba(102,175,233,.6);box-shadow:inset 0 1px 1px rgba(0,0,0,.075),0 0 8px rgba(102,175,233,.6)}.form-control::-moz-placeholder{color:#999;opacity:1}.form-control:-ms-input-placeholder{color:#999}.form-control::-webkit-input-placeholder{color:#999}.form-control::-ms-expand{background-color:transparent;border:0}.form-control[disabled],.form-control[readonly],fieldset[disabled] .form-control{background-color:#eee;opacity:1}.form-control[disabled],fieldset[disabled] .form-control{cursor:not-allowed}textarea.form-control{height:auto}input[type=search]{-webkit-appearance:none}@media screen and (-webkit-min-device-pixel-ratio:0){input[type=date].form-control,input[type=datetime-local].form-control,input[type=month].form-control,input[type=time].form-control{line-height:34px}.input-group-sm input[type=date],.input-group-sm input[type=datetime-local],.input-group-sm input[type=month],.input-group-sm input[type=time],input[type=date].input-sm,input[type=datetime-local].input-sm,input[type=month].input-sm,input[type=time].input-sm{line-height:30px}.input-group-lg input[type=date],.input-group-lg input[type=datetime-local],.input-group-lg input[type=month],.input-group-lg input[type=time],input[type=date].input-lg,input[type=datetime-local].input-lg,input[type=month].input-lg,input[type=time].input-lg{line-height:46px}}.form-group{margin-bottom:15px}.checkbox,.radio{position:relative;display:block;margin-top:10px;margin-bottom:10px}.checkbox label,.radio label{min-height:20px;padding-left:20px;margin-bottom:0;font-weight:400;cursor:pointer}.checkbox input[type=checkbox],.checkbox-inline input[type=checkbox],.radio input[type=radio],.radio-inline input[type=radio]{position:absolute;margin-left:-20px}.checkbox+.checkbox,.radio+.radio{margin-top:-5px}.checkbox-inline,.radio-inline{position:relative;display:inline-block;padding-left:20px;margin-bottom:0;font-weight:400;vertical-align:middle;cursor:pointer}.checkbox-inline+.checkbox-inline,.radio-inline+.radio-inline{margin-top:0;margin-left:10px}fieldset[disabled] input[type=checkbox],fieldset[disabled] input[type=radio],input[type=checkbox].disabled,input[type=checkbox][disabled],input[type=radio].disabled,input[type=radio][disabled]{cursor:not-allowed}.checkbox-inline.disabled,.radio-inline.disabled,fieldset[disabled] .checkbox-inline,fieldset[disabled] .radio-inline{cursor:not-allowed}.checkbox.disabled label,.radio.disabled label,fieldset[disabled] .checkbox label,fieldset[disabled] .radio label{cursor:not-allowed}.form-control-static{min-height:34px;padding-top:7px;padding-bottom:7px;margin-bottom:0}.form-control-static.input-lg,.form-control-static.input-sm{padding-right:0;padding-left:0}.input-sm{height:30px;padding:5px 10px;font-size:12px;line-height:1.5;border-radius:3px}select.input-sm{height:30px;line-height:30px}select[multiple].input-sm,textarea.input-sm{height:auto}.form-group-sm .form-control{height:30px;padding:5px 10px;font-size:12px;line-height:1.5;border-radius:3px}.form-group-sm select.form-control{height:30px;line-height:30px}.form-group-sm select[multiple].form-control,.form-group-sm textarea.form-control{height:auto}.form-group-sm .form-control-static{height:30px;min-height:32px;padding:6px 10px;font-size:12px;line-height:1.5}.input-lg{height:46px;padding:10px 16px;font-size:18px;line-height:1.3333333;border-radius:6px}select.input-lg{height:46px;line-height:46px}select[multiple].input-lg,textarea.input-lg{height:auto}.form-group-lg .form-control{height:46px;padding:10px 16px;font-size:18px;line-height:1.3333333;border-radius:6px}.form-group-lg select.form-control{height:46px;line-height:46px}.form-group-lg select[multiple].form-control,.form-group-lg textarea.form-control{height:auto}.form-group-lg .form-control-static{height:46px;min-height:38px;padding:11px 16px;font-size:18px;line-height:1.3333333}.has-feedback{position:relative}.has-feedback .form-control{padding-right:42.5px}.form-control-feedback{position:absolute;top:0;right:0;z-index:2;display:block;width:34px;height:34px;line-height:34px;text-align:center;pointer-events:none}.form-group-lg .form-control+.form-control-feedback,.input-group-lg+.form-control-feedback,.input-lg+.form-control-feedback{width:46px;height:46px;line-height:46px}.form-group-sm .form-control+.form-control-feedback,.input-group-sm+.form-control-feedback,.input-sm+.form-control-feedback{width:30px;height:30px;line-height:30px}.has-success .checkbox,.has-success .checkbox-inline,.has-success .control-label,.has-success .help-block,.has-success .radio,.has-success .radio-inline,.has-success.checkbox label,.has-success.checkbox-inline label,.has-success.radio label,.has-success.radio-inline label{color:#3c763d}.has-success .form-control{border-color:#3c763d;-webkit-box-shadow:inset 0 1px 1px rgba(0,0,0,.075);box-shadow:inset 0 1px 1px rgba(0,0,0,.075)}.has-success .form-control:focus{border-color:#2b542c;-webkit-box-shadow:inset 0 1px 1px rgba(0,0,0,.075),0 0 6px #67b168;box-shadow:inset 0 1px 1px rgba(0,0,0,.075),0 0 6px #67b168}.has-success .input-group-addon{color:#3c763d;background-color:#dff0d8;border-color:#3c763d}.has-success .form-control-feedback{color:#3c763d}.has-warning .checkbox,.has-warning .checkbox-inline,.has-warning .control-label,.has-warning .help-block,.has-warning .radio,.has-warning .radio-inline,.has-warning.checkbox label,.has-warning.checkbox-inline label,.has-warning.radio label,.has-warning.radio-inline label{color:#8a6d3b}.has-warning .form-control{border-color:#8a6d3b;-webkit-box-shadow:inset 0 1px 1px rgba(0,0,0,.075);box-shadow:inset 0 1px 1px rgba(0,0,0,.075)}.has-warning .form-control:focus{border-color:#66512c;-webkit-box-shadow:inset 0 1px 1px rgba(0,0,0,.075),0 0 6px #c0a16b;box-shadow:inset 0 1px 1px rgba(0,0,0,.075),0 0 6px #c0a16b}.has-warning .input-group-addon{color:#8a6d3b;background-color:#fcf8e3;border-color:#8a6d3b}.has-warning .form-control-feedback{color:#8a6d3b}.has-error .checkbox,.has-error .checkbox-inline,.has-error .control-label,.has-error .help-block,.has-error .radio,.has-error .radio-inline,.has-error.checkbox label,.has-error.checkbox-inline label,.has-error.radio label,.has-error.radio-inline label{color:#a94442}.has-error .form-control{border-color:#a94442;-webkit-box-shadow:inset 0 1px 1px rgba(0,0,0,.075);box-shadow:inset 0 1px 1px rgba(0,0,0,.075)}.has-error .form-control:focus{border-color:#843534;-webkit-box-shadow:inset 0 1px 1px rgba(0,0,0,.075),0 0 6px #ce8483;box-shadow:inset 0 1px 1px rgba(0,0,0,.075),0 0 6px #ce8483}.has-error .input-group-addon{color:#a94442;background-color:#f2dede;border-color:#a94442}.has-error .form-control-feedback{color:#a94442}.has-feedback label~.form-control-feedback{top:25px}.has-feedback label.sr-only~.form-control-feedback{top:0}.help-block{display:block;margin-top:5px;margin-bottom:10px;color:#737373}@media (min-width:768px){.form-inline .form-group{display:inline-block;margin-bottom:0;vertical-align:middle}.form-inline .form-control{display:inline-block;width:auto;vertical-align:middle}.form-inline .form-control-static{display:inline-block}.form-inline .input-group{display:inline-table;vertical-align:middle}.form-inline .input-group .form-control,.form-inline .input-group .input-group-addon,.form-inline .input-group .input-group-btn{width:auto}.form-inline .input-group>.form-control{width:100%}.form-inline .control-label{margin-bottom:0;vertical-align:middle}.form-inline .checkbox,.form-inline .radio{display:inline-block;margin-top:0;margin-bottom:0;vertical-align:middle}.form-inline .checkbox label,.form-inline .radio label{padding-left:0}.form-inline .checkbox input[type=checkbox],.form-inline .radio input[type=radio]{position:relative;margin-left:0}.form-inline .has-feedback .form-control-feedback{top:0}}.form-horizontal .checkbox,.form-horizontal .checkbox-inline,.form-horizontal .radio,.form-horizontal .radio-inline{padding-top:7px;margin-top:0;margin-bottom:0}.form-horizontal .checkbox,.form-horizontal .radio{min-height:27px}.form-horizontal .form-group{margin-right:-15px;margin-left:-15px}@media (min-width:768px){.form-horizontal .control-label{padding-top:7px;margin-bottom:0;text-align:right}}.form-horizontal .has-feedback .form-control-feedback{right:15px}@media (min-width:768px){.form-horizontal .form-group-lg .control-label{padding-top:11px;font-size:18px}}@media (min-width:768px){.form-horizontal .form-group-sm .control-label{padding-top:6px;font-size:12px}}.btn{display:inline-block;padding:6px 12px;margin-bottom:0;font-size:14px;font-weight:400;line-height:1.42857143;text-align:center;white-space:nowrap;vertical-align:middle;-ms-touch-action:manipulation;touch-action:manipulation;cursor:pointer;-webkit-user-select:none;-moz-user-select:none;-ms-user-select:none;user-select:none;background-image:none;border:1px solid transparent;border-radius:4px}.btn.active.focus,.btn.active:focus,.btn.focus,.btn:active.focus,.btn:active:focus,.btn:focus{outline:5px auto -webkit-focus-ring-color;outline-offset:-2px}.btn.focus,.btn:focus,.btn:hover{color:#333;text-decoration:none}.btn.active,.btn:active{background-image:none;outline:0;-webkit-box-shadow:inset 0 3px 5px rgba(0,0,0,.125);box-shadow:inset 0 3px 5px rgba(0,0,0,.125)}.btn.disabled,.btn[disabled],fieldset[disabled] .btn{cursor:not-allowed;-webkit-box-shadow:none;box-shadow:none;opacity:.65}a.btn.disabled,fieldset[disabled] a.btn{pointer-events:none}.btn-default{color:#333;background-color:#fff;border-color:#ccc}.btn-default.focus,.btn-default:focus{color:#333;background-color:#e6e6e6;border-color:#8c8c8c}.btn-default:hover{color:#333;background-color:#e6e6e6;border-color:#adadad}.btn-default.active,.btn-default:active,.open>.dropdown-toggle.btn-default{color:#333;background-color:#e6e6e6;border-color:#adadad}.btn-default.active.focus,.btn-default.active:focus,.btn-default.active:hover,.btn-default:active.focus,.btn-default:active:focus,.btn-default:active:hover,.open>.dropdown-toggle.btn-default.focus,.open>.dropdown-toggle.btn-default:focus,.open>.dropdown-toggle.btn-default:hover{color:#333;background-color:#d4d4d4;border-color:#8c8c8c}.btn-default.active,.btn-default:active,.open>.dropdown-toggle.btn-default{background-image:none}.btn-default.disabled.focus,.btn-default.disabled:focus,.btn-default.disabled:hover,.btn-default[disabled].focus,.btn-default[disabled]:focus,.btn-default[disabled]:hover,fieldset[disabled] .btn-default.focus,fieldset[disabled] .btn-default:focus,fieldset[disabled] .btn-default:hover{background-color:#fff;border-color:#ccc}.btn-default .badge{color:#fff;background-color:#333}.btn-primary{color:#fff;background-color:#337ab7;border-color:#2e6da4}.btn-primary.focus,.btn-primary:focus{color:#fff;background-color:#286090;border-color:#122b40}.btn-primary:hover{color:#fff;background-color:#286090;border-color:#204d74}.btn-primary.active,.btn-primary:active,.open>.dropdown-toggle.btn-primary{color:#fff;background-color:#286090;border-color:#204d74}.btn-primary.active.focus,.btn-primary.active:focus,.btn-primary.active:hover,.btn-primary:active.focus,.btn-primary:active:focus,.btn-primary:active:hover,.open>.dropdown-toggle.btn-primary.focus,.open>.dropdown-toggle.btn-primary:focus,.open>.dropdown-toggle.btn-primary:hover{color:#fff;background-color:#204d74;border-color:#122b40}.btn-primary.active,.btn-primary:active,.open>.dropdown-toggle.btn-primary{background-image:none}.btn-primary.disabled.focus,.btn-primary.disabled:focus,.btn-primary.disabled:hover,.btn-primary[disabled].focus,.btn-primary[disabled]:focus,.btn-primary[disabled]:hover,fieldset[disabled] .btn-primary.focus,fieldset[disabled] .btn-primary:focus,fieldset[disabled] .btn-primary:hover{background-color:#337ab7;border-color:#2e6da4}.btn-primary .badge{color:#337ab7;background-color:#fff}.btn-success{color:#fff;background-color:#5cb85c;border-color:#4cae4c}.btn-success.focus,.btn-success:focus{color:#fff;background-color:#449d44;border-color:#255625}.btn-success:hover{color:#fff;background-color:#449d44;border-color:#398439}.btn-success.active,.btn-success:active,.open>.dropdown-toggle.btn-success{color:#fff;background-color:#449d44;border-color:#398439}.btn-success.active.focus,.btn-success.active:focus,.btn-success.active:hover,.btn-success:active.focus,.btn-success:active:focus,.btn-success:active:hover,.open>.dropdown-toggle.btn-success.focus,.open>.dropdown-toggle.btn-success:focus,.open>.dropdown-toggle.btn-success:hover{color:#fff;background-color:#398439;border-color:#255625}.btn-success.active,.btn-success:active,.open>.dropdown-toggle.btn-success{background-image:none}.btn-success.disabled.focus,.btn-success.disabled:focus,.btn-success.disabled:hover,.btn-success[disabled].focus,.btn-success[disabled]:focus,.btn-success[disabled]:hover,fieldset[disabled] .btn-success.focus,fieldset[disabled] .btn-success:focus,fieldset[disabled] .btn-success:hover{background-color:#5cb85c;border-color:#4cae4c}.btn-success .badge{color:#5cb85c;background-color:#fff}.btn-info{color:#fff;background-color:#5bc0de;border-color:#46b8da}.btn-info.focus,.btn-info:focus{color:#fff;background-color:#31b0d5;border-color:#1b6d85}.btn-info:hover{color:#fff;background-color:#31b0d5;border-color:#269abc}.btn-info.active,.btn-info:active,.open>.dropdown-toggle.btn-info{color:#fff;background-color:#31b0d5;border-color:#269abc}.btn-info.active.focus,.btn-info.active:focus,.btn-info.active:hover,.btn-info:active.focus,.btn-info:active:focus,.btn-info:active:hover,.open>.dropdown-toggle.btn-info.focus,.open>.dropdown-toggle.btn-info:focus,.open>.dropdown-toggle.btn-info:hover{color:#fff;background-color:#269abc;border-color:#1b6d85}.btn-info.active,.btn-info:active,.open>.dropdown-toggle.btn-info{background-image:none}.btn-info.disabled.focus,.btn-info.disabled:focus,.btn-info.disabled:hover,.btn-info[disabled].focus,.btn-info[disabled]:focus,.btn-info[disabled]:hover,fieldset[disabled] .btn-info.focus,fieldset[disabled] .btn-info:focus,fieldset[disabled] .btn-info:hover{background-color:#5bc0de;border-color:#46b8da}.btn-info .badge{color:#5bc0de;background-color:#fff}.btn-warning{color:#fff;background-color:#f0ad4e;border-color:#eea236}.btn-warning.focus,.btn-warning:focus{color:#fff;background-color:#ec971f;border-color:#985f0d}.btn-warning:hover{color:#fff;background-color:#ec971f;border-color:#d58512}.btn-warning.active,.btn-warning:active,.open>.dropdown-toggle.btn-warning{color:#fff;background-color:#ec971f;border-color:#d58512}.btn-warning.active.focus,.btn-warning.active:focus,.btn-warning.active:hover,.btn-warning:active.focus,.btn-warning:active:focus,.btn-warning:active:hover,.open>.dropdown-toggle.btn-warning.focus,.open>.dropdown-toggle.btn-warning:focus,.open>.dropdown-toggle.btn-warning:hover{color:#fff;background-color:#d58512;border-color:#985f0d}.btn-warning.active,.btn-warning:active,.open>.dropdown-toggle.btn-warning{background-image:none}.btn-warning.disabled.focus,.btn-warning.disabled:focus,.btn-warning.disabled:hover,.btn-warning[disabled].focus,.btn-warning[disabled]:focus,.btn-warning[disabled]:hover,fieldset[disabled] .btn-warning.focus,fieldset[disabled] .btn-warning:focus,fieldset[disabled] .btn-warning:hover{background-color:#f0ad4e;border-color:#eea236}.btn-warning .badge{color:#f0ad4e;background-color:#fff}.btn-danger{color:#fff;background-color:#d9534f;border-color:#d43f3a}.btn-danger.focus,.btn-danger:focus{color:#fff;background-color:#c9302c;border-color:#761c19}.btn-danger:hover{color:#fff;background-color:#c9302c;border-color:#ac2925}.btn-danger.active,.btn-danger:active,.open>.dropdown-toggle.btn-danger{color:#fff;background-color:#c9302c;border-color:#ac2925}.btn-danger.active.focus,.btn-danger.active:focus,.btn-danger.active:hover,.btn-danger:active.focus,.btn-danger:active:focus,.btn-danger:active:hover,.open>.dropdown-toggle.btn-danger.focus,.open>.dropdown-toggle.btn-danger:focus,.open>.dropdown-toggle.btn-danger:hover{color:#fff;background-color:#ac2925;border-color:#761c19}.btn-danger.active,.btn-danger:active,.open>.dropdown-toggle.btn-danger{background-image:none}.btn-danger.disabled.focus,.btn-danger.disabled:focus,.btn-danger.disabled:hover,.btn-danger[disabled].focus,.btn-danger[disabled]:focus,.btn-danger[disabled]:hover,fieldset[disabled] .btn-danger.focus,fieldset[disabled] .btn-danger:focus,fieldset[disabled] .btn-danger:hover{background-color:#d9534f;border-color:#d43f3a}.btn-danger .badge{color:#d9534f;background-color:#fff}.btn-link{font-weight:400;color:#337ab7;border-radius:0}.btn-link,.btn-link.active,.btn-link:active,.btn-link[disabled],fieldset[disabled] .btn-link{background-color:transparent;-webkit-box-shadow:none;box-shadow:none}.btn-link,.btn-link:active,.btn-link:focus,.btn-link:hover{border-color:transparent}.btn-link:focus,.btn-link:hover{color:#23527c;text-decoration:underline;background-color:transparent}.btn-link[disabled]:focus,.btn-link[disabled]:hover,fieldset[disabled] .btn-link:focus,fieldset[disabled] .btn-link:hover{color:#777;text-decoration:none}.btn-group-lg>.btn,.btn-lg{padding:10px 16px;font-size:18px;line-height:1.3333333;border-radius:6px}.btn-group-sm>.btn,.btn-sm{padding:5px 10px;font-size:12px;line-height:1.5;border-radius:3px}.btn-group-xs>.btn,.btn-xs{padding:1px 5px;font-size:12px;line-height:1.5;border-radius:3px}.btn-block{display:block;width:100%}.btn-block+.btn-block{margin-top:5px}input[type=button].btn-block,input[type=reset].btn-block,input[type=submit].btn-block{width:100%}.fade{opacity:0;-webkit-transition:opacity .15s linear;-o-transition:opacity .15s linear;transition:opacity .15s linear}.fade.in{opacity:1}.collapse{display:none}.collapse.in{display:block}tr.collapse.in{display:table-row}tbody.collapse.in{display:table-row-group}.collapsing{position:relative;height:0;overflow:hidden;-webkit-transition-timing-function:ease;-o-transition-timing-function:ease;transition-timing-function:ease;-webkit-transition-duration:.35s;-o-transition-duration:.35s;transition-duration:.35s;-webkit-transition-property:height,visibility;-o-transition-property:height,visibility;transition-property:height,visibility}.caret{display:inline-block;width:0;height:0;margin-left:2px;vertical-align:middle;border-top:4px dashed;border-right:4px solid transparent;border-left:4px solid transparent}.dropdown,.dropup{position:relative}.dropdown-toggle:focus{outline:0}.dropdown-menu{position:absolute;top:100%;left:0;z-index:1000;display:none;float:left;min-width:160px;padding:5px 0;margin:2px 0 0;font-size:14px;text-align:left;list-style:none;background-color:#fff;-webkit-background-clip:padding-box;background-clip:padding-box;border:1px solid #ccc;border:1px solid rgba(0,0,0,.15);border-radius:4px;-webkit-box-shadow:0 6px 12px rgba(0,0,0,.175);box-shadow:0 6px 12px rgba(0,0,0,.175)}.dropdown-menu.pull-right{right:0;left:auto}.dropdown-menu .divider{height:1px;margin:9px 0;overflow:hidden;background-color:#e5e5e5}.dropdown-menu>li>a{display:block;padding:3px 20px;clear:both;font-weight:400;line-height:1.42857143;color:#333;white-space:nowrap}.dropdown-menu>li>a:focus,.dropdown-menu>li>a:hover{color:#262626;text-decoration:none;background-color:#f5f5f5}.dropdown-menu>.active>a,.dropdown-menu>.active>a:focus,.dropdown-menu>.active>a:hover{color:#fff;text-decoration:none;background-color:#337ab7;outline:0}.dropdown-menu>.disabled>a,.dropdown-menu>.disabled>a:focus,.dropdown-menu>.disabled>a:hover{color:#777}.dropdown-menu>.disabled>a:focus,.dropdown-menu>.disabled>a:hover{text-decoration:none;cursor:not-allowed;background-color:transparent;background-image:none}.open>.dropdown-menu{display:block}.open>a{outline:0}.dropdown-menu-right{right:0;left:auto}.dropdown-menu-left{right:auto;left:0}.dropdown-header{display:block;padding:3px 20px;font-size:12px;line-height:1.42857143;color:#777;white-space:nowrap}.dropdown-backdrop{position:fixed;top:0;right:0;bottom:0;left:0;z-index:990}.pull-right>.dropdown-menu{right:0;left:auto}.dropup .caret,.navbar-fixed-bottom .dropdown .caret{content:"";border-top:0;border-bottom:4px dashed}.dropup .dropdown-menu,.navbar-fixed-bottom .dropdown .dropdown-menu{top:auto;bottom:100%;margin-bottom:2px}@media (min-width:768px){.navbar-right .dropdown-menu{right:0;left:auto}.navbar-right .dropdown-menu-left{right:auto;left:0}}.btn-group,.btn-group-vertical{position:relative;display:inline-block;vertical-align:middle}.btn-group-vertical>.btn,.btn-group>.btn{position:relative;float:left}.btn-group-vertical>.btn.active,.btn-group-vertical>.btn:active,.btn-group-vertical>.btn:focus,.btn-group-vertical>.btn:hover,.btn-group>.btn.active,.btn-group>.btn:active,.btn-group>.btn:focus,.btn-group>.btn:hover{z-index:2}.btn-group .btn+.btn,.btn-group .btn+.btn-group,.btn-group .btn-group+.btn,.btn-group .btn-group+.btn-group{margin-left:-1px}.btn-toolbar{margin-left:-5px}.btn-toolbar .btn,.btn-toolbar .btn-group,.btn-toolbar .input-group{float:left}.btn-toolbar>.btn,.btn-toolbar>.btn-group,.btn-toolbar>.input-group{margin-left:5px}.btn-group>.btn:not(:first-child):not(:last-child):not(.dropdown-toggle){border-radius:0}.btn-group>.btn:first-child{margin-left:0}.btn-group>.btn:first-child:not(:last-child):not(.dropdown-toggle){border-top-right-radius:0;border-bottom-right-radius:0}.btn-group>.btn:last-child:not(:first-child),.btn-group>.dropdown-toggle:not(:first-child){border-top-left-radius:0;border-bottom-left-radius:0}.btn-group>.btn-group{float:left}.btn-group>.btn-group:not(:first-child):not(:last-child)>.btn{border-radius:0}.btn-group>.btn-group:first-child:not(:last-child)>.btn:last-child,.btn-group>.btn-group:first-child:not(:last-child)>.dropdown-toggle{border-top-right-radius:0;border-bottom-right-radius:0}.btn-group>.btn-group:last-child:not(:first-child)>.btn:first-child{border-top-left-radius:0;border-bottom-left-radius:0}.btn-group .dropdown-toggle:active,.btn-group.open .dropdown-toggle{outline:0}.btn-group>.btn+.dropdown-toggle{padding-right:8px;padding-left:8px}.btn-group>.btn-lg+.dropdown-toggle{padding-right:12px;padding-left:12px}.btn-group.open .dropdown-toggle{-webkit-box-shadow:inset 0 3px 5px rgba(0,0,0,.125);box-shadow:inset 0 3px 5px rgba(0,0,0,.125)}.btn-group.open .dropdown-toggle.btn-link{-webkit-box-shadow:none;box-shadow:none}.btn .caret{margin-left:0}.btn-lg .caret{border-width:5px 5px 0;border-bottom-width:0}.dropup .btn-lg .caret{border-width:0 5px 5px}.btn-group-vertical>.btn,.btn-group-vertical>.btn-group,.btn-group-vertical>.btn-group>.btn{display:block;float:none;width:100%;max-width:100%}.btn-group-vertical>.btn-group>.btn{float:none}.btn-group-vertical>.btn+.btn,.btn-group-vertical>.btn+.btn-group,.btn-group-vertical>.btn-group+.btn,.btn-group-vertical>.btn-group+.btn-group{margin-top:-1px;margin-left:0}.btn-group-vertical>.btn:not(:first-child):not(:last-child){border-radius:0}.btn-group-vertical>.btn:first-child:not(:last-child){border-top-left-radius:4px;border-top-right-radius:4px;border-bottom-right-radius:0;border-bottom-left-radius:0}.btn-group-vertical>.btn:last-child:not(:first-child){border-top-left-radius:0;border-top-right-radius:0;border-bottom-right-radius:4px;border-bottom-left-radius:4px}.btn-group-vertical>.btn-group:not(:first-child):not(:last-child)>.btn{border-radius:0}.btn-group-vertical>.btn-group:first-child:not(:last-child)>.btn:last-child,.btn-group-vertical>.btn-group:first-child:not(:last-child)>.dropdown-toggle{border-bottom-right-radius:0;border-bottom-left-radius:0}.btn-group-vertical>.btn-group:last-child:not(:first-child)>.btn:first-child{border-top-left-radius:0;border-top-right-radius:0}.btn-group-justified{display:table;width:100%;table-layout:fixed;border-collapse:separate}.btn-group-justified>.btn,.btn-group-justified>.btn-group{display:table-cell;float:none;width:1%}.btn-group-justified>.btn-group .btn{width:100%}.btn-group-justified>.btn-group .dropdown-menu{left:auto}[data-toggle=buttons]>.btn input[type=checkbox],[data-toggle=buttons]>.btn input[type=radio],[data-toggle=buttons]>.btn-group>.btn input[type=checkbox],[data-toggle=buttons]>.btn-group>.btn input[type=radio]{position:absolute;clip:rect(0,0,0,0);pointer-events:none}.input-group{position:relative;display:table;border-collapse:separate}.input-group[class*=col-]{float:none;padding-right:0;padding-left:0}.input-group .form-control{position:relative;z-index:2;float:left;width:100%;margin-bottom:0}.input-group .form-control:focus{z-index:3}.input-group-lg>.form-control,.input-group-lg>.input-group-addon,.input-group-lg>.input-group-btn>.btn{height:46px;padding:10px 16px;font-size:18px;line-height:1.3333333;border-radius:6px}select.input-group-lg>.form-control,select.input-group-lg>.input-group-addon,select.input-group-lg>.input-group-btn>.btn{height:46px;line-height:46px}select[multiple].input-group-lg>.form-control,select[multiple].input-group-lg>.input-group-addon,select[multiple].input-group-lg>.input-group-btn>.btn,textarea.input-group-lg>.form-control,textarea.input-group-lg>.input-group-addon,textarea.input-group-lg>.input-group-btn>.btn{height:auto}.input-group-sm>.form-control,.input-group-sm>.input-group-addon,.input-group-sm>.input-group-btn>.btn{height:30px;padding:5px 10px;font-size:12px;line-height:1.5;border-radius:3px}select.input-group-sm>.form-control,select.input-group-sm>.input-group-addon,select.input-group-sm>.input-group-btn>.btn{height:30px;line-height:30px}select[multiple].input-group-sm>.form-control,select[multiple].input-group-sm>.input-group-addon,select[multiple].input-group-sm>.input-group-btn>.btn,textarea.input-group-sm>.form-control,textarea.input-group-sm>.input-group-addon,textarea.input-group-sm>.input-group-btn>.btn{height:auto}.input-group .form-control,.input-group-addon,.input-group-btn{display:table-cell}.input-group .form-control:not(:first-child):not(:last-child),.input-group-addon:not(:first-child):not(:last-child),.input-group-btn:not(:first-child):not(:last-child){border-radius:0}.input-group-addon,.input-group-btn{width:1%;white-space:nowrap;vertical-align:middle}.input-group-addon{padding:6px 12px;font-size:14px;font-weight:400;line-height:1;color:#555;text-align:center;background-color:#eee;border:1px solid #ccc;border-radius:4px}.input-group-addon.input-sm{padding:5px 10px;font-size:12px;border-radius:3px}.input-group-addon.input-lg{padding:10px 16px;font-size:18px;border-radius:6px}.input-group-addon input[type=checkbox],.input-group-addon input[type=radio]{margin-top:0}.input-group .form-control:first-child,.input-group-addon:first-child,.input-group-btn:first-child>.btn,.input-group-btn:first-child>.btn-group>.btn,.input-group-btn:first-child>.dropdown-toggle,.input-group-btn:last-child>.btn-group:not(:last-child)>.btn,.input-group-btn:last-child>.btn:not(:last-child):not(.dropdown-toggle){border-top-right-radius:0;border-bottom-right-radius:0}.input-group-addon:first-child{border-right:0}.input-group .form-control:last-child,.input-group-addon:last-child,.input-group-btn:first-child>.btn-group:not(:first-child)>.btn,.input-group-btn:first-child>.btn:not(:first-child),.input-group-btn:last-child>.btn,.input-group-btn:last-child>.btn-group>.btn,.input-group-btn:last-child>.dropdown-toggle{border-top-left-radius:0;border-bottom-left-radius:0}.input-group-addon:last-child{border-left:0}.input-group-btn{position:relative;font-size:0;white-space:nowrap}.input-group-btn>.btn{position:relative}.input-group-btn>.btn+.btn{margin-left:-1px}.input-group-btn>.btn:active,.input-group-btn>.btn:focus,.input-group-btn>.btn:hover{z-index:2}.input-group-btn:first-child>.btn,.input-group-btn:first-child>.btn-group{margin-right:-1px}.input-group-btn:last-child>.btn,.input-group-btn:last-child>.btn-group{z-index:2;margin-left:-1px}.nav{padding-left:0;margin-bottom:0;list-style:none}.nav>li{position:relative;display:block}.nav>li>a{position:relative;display:block;padding:10px 15px}.nav>li>a:focus,.nav>li>a:hover{text-decoration:none;background-color:#eee}.nav>li.disabled>a{color:#777}.nav>li.disabled>a:focus,.nav>li.disabled>a:hover{color:#777;text-decoration:none;cursor:not-allowed;background-color:transparent}.nav .open>a,.nav .open>a:focus,.nav .open>a:hover{background-color:#eee;border-color:#337ab7}.nav .nav-divider{height:1px;margin:9px 0;overflow:hidden;background-color:#e5e5e5}.nav>li>a>img{max-width:none}.nav-tabs{border-bottom:1px solid #ddd}.nav-tabs>li{float:left;margin-bottom:-1px}.nav-tabs>li>a{margin-right:2px;line-height:1.42857143;border:1px solid transparent;border-radius:4px 4px 0 0}.nav-tabs>li>a:hover{border-color:#eee #eee #ddd}.nav-tabs>li.active>a,.nav-tabs>li.active>a:focus,.nav-tabs>li.active>a:hover{color:#555;cursor:default;background-color:#fff;border:1px solid #ddd;border-bottom-color:transparent}.nav-tabs.nav-justified{width:100%;border-bottom:0}.nav-tabs.nav-justified>li{float:none}.nav-tabs.nav-justified>li>a{margin-bottom:5px;text-align:center}.nav-tabs.nav-justified>.dropdown .dropdown-menu{top:auto;left:auto}@media (min-width:768px){.nav-tabs.nav-justified>li{display:table-cell;width:1%}.nav-tabs.nav-justified>li>a{margin-bottom:0}}.nav-tabs.nav-justified>li>a{margin-right:0;border-radius:4px}.nav-tabs.nav-justified>.active>a,.nav-tabs.nav-justified>.active>a:focus,.nav-tabs.nav-justified>.active>a:hover{border:1px solid #ddd}@media (min-width:768px){.nav-tabs.nav-justified>li>a{border-bottom:1px solid #ddd;border-radius:4px 4px 0 0}.nav-tabs.nav-justified>.active>a,.nav-tabs.nav-justified>.active>a:focus,.nav-tabs.nav-justified>.active>a:hover{border-bottom-color:#fff}}.nav-pills>li{float:left}.nav-pills>li>a{border-radius:4px}.nav-pills>li+li{margin-left:2px}.nav-pills>li.active>a,.nav-pills>li.active>a:focus,.nav-pills>li.active>a:hover{color:#fff;background-color:#337ab7}.nav-stacked>li{float:none}.nav-stacked>li+li{margin-top:2px;margin-left:0}.nav-justified{width:100%}.nav-justified>li{float:none}.nav-justified>li>a{margin-bottom:5px;text-align:center}.nav-justified>.dropdown .dropdown-menu{top:auto;left:auto}@media (min-width:768px){.nav-justified>li{display:table-cell;width:1%}.nav-justified>li>a{margin-bottom:0}}.nav-tabs-justified{border-bottom:0}.nav-tabs-justified>li>a{margin-right:0;border-radius:4px}.nav-tabs-justified>.active>a,.nav-tabs-justified>.active>a:focus,.nav-tabs-justified>.active>a:hover{border:1px solid #ddd}@media (min-width:768px){.nav-tabs-justified>li>a{border-bottom:1px solid #ddd;border-radius:4px 4px 0 0}.nav-tabs-justified>.active>a,.nav-tabs-justified>.active>a:focus,.nav-tabs-justified>.active>a:hover{border-bottom-color:#fff}}.tab-content>.tab-pane{display:none}.tab-content>.active{display:block}.nav-tabs .dropdown-menu{margin-top:-1px;border-top-left-radius:0;border-top-right-radius:0}.navbar{position:relative;min-height:50px;margin-bottom:20px;border:1px solid transparent}@media (min-width:768px){.navbar{border-radius:4px}}@media (min-width:768px){.navbar-header{float:left}}.navbar-collapse{padding-right:15px;padding-left:15px;overflow-x:visible;-webkit-overflow-scrolling:touch;border-top:1px solid transparent;-webkit-box-shadow:inset 0 1px 0 rgba(255,255,255,.1);box-shadow:inset 0 1px 0 rgba(255,255,255,.1)}.navbar-collapse.in{overflow-y:auto}@media (min-width:768px){.navbar-collapse{width:auto;border-top:0;-webkit-box-shadow:none;box-shadow:none}.navbar-collapse.collapse{display:block!important;height:auto!important;padding-bottom:0;overflow:visible!important}.navbar-collapse.in{overflow-y:visible}.navbar-fixed-bottom .navbar-collapse,.navbar-fixed-top .navbar-collapse,.navbar-static-top .navbar-collapse{padding-right:0;padding-left:0}}.navbar-fixed-bottom .navbar-collapse,.navbar-fixed-top .navbar-collapse{max-height:340px}@media (max-device-width:480px) and (orientation:landscape){.navbar-fixed-bottom .navbar-collapse,.navbar-fixed-top .navbar-collapse{max-height:200px}}.container-fluid>.navbar-collapse,.container-fluid>.navbar-header,.container>.navbar-collapse,.container>.navbar-header{margin-right:-15px;margin-left:-15px}@media (min-width:768px){.container-fluid>.navbar-collapse,.container-fluid>.navbar-header,.container>.navbar-collapse,.container>.navbar-header{margin-right:0;margin-left:0}}.navbar-static-top{z-index:1000;border-width:0 0 1px}@media (min-width:768px){.navbar-static-top{border-radius:0}}.navbar-fixed-bottom,.navbar-fixed-top{position:fixed;right:0;left:0;z-index:1030}@media (min-width:768px){.navbar-fixed-bottom,.navbar-fixed-top{border-radius:0}}.navbar-fixed-top{top:0;border-width:0 0 1px}.navbar-fixed-bottom{bottom:0;margin-bottom:0;border-width:1px 0 0}.navbar-brand{float:left;height:50px;padding:15px 15px;font-size:18px;line-height:20px}.navbar-brand:focus,.navbar-brand:hover{text-decoration:none}.navbar-brand>img{display:block}@media (min-width:768px){.navbar>.container .navbar-brand,.navbar>.container-fluid .navbar-brand{margin-left:-15px}}.navbar-toggle{position:relative;float:right;padding:9px 10px;margin-top:8px;margin-right:15px;margin-bottom:8px;background-color:transparent;background-image:none;border:1px solid transparent;border-radius:4px}.navbar-toggle:focus{outline:0}.navbar-toggle .icon-bar{display:block;width:22px;height:2px;border-radius:1px}.navbar-toggle .icon-bar+.icon-bar{margin-top:4px}@media (min-width:768px){.navbar-toggle{display:none}}.navbar-nav{margin:7.5px -15px}.navbar-nav>li>a{padding-top:10px;padding-bottom:10px;line-height:20px}@media (max-width:767px){.navbar-nav .open .dropdown-menu{position:static;float:none;width:auto;margin-top:0;background-color:transparent;border:0;-webkit-box-shadow:none;box-shadow:none}.navbar-nav .open .dropdown-menu .dropdown-header,.navbar-nav .open .dropdown-menu>li>a{padding:5px 15px 5px 25px}.navbar-nav .open .dropdown-menu>li>a{line-height:20px}.navbar-nav .open .dropdown-menu>li>a:focus,.navbar-nav .open .dropdown-menu>li>a:hover{background-image:none}}@media (min-width:768px){.navbar-nav{float:left;margin:0}.navbar-nav>li{float:left}.navbar-nav>li>a{padding-top:15px;padding-bottom:15px}}.navbar-form{padding:10px 15px;margin-top:8px;margin-right:-15px;margin-bottom:8px;margin-left:-15px;border-top:1px solid transparent;border-bottom:1px solid transparent;-webkit-box-shadow:inset 0 1px 0 rgba(255,255,255,.1),0 1px 0 rgba(255,255,255,.1);box-shadow:inset 0 1px 0 rgba(255,255,255,.1),0 1px 0 rgba(255,255,255,.1)}@media (min-width:768px){.navbar-form .form-group{display:inline-block;margin-bottom:0;vertical-align:middle}.navbar-form .form-control{display:inline-block;width:auto;vertical-align:middle}.navbar-form .form-control-static{display:inline-block}.navbar-form .input-group{display:inline-table;vertical-align:middle}.navbar-form .input-group .form-control,.navbar-form .input-group .input-group-addon,.navbar-form .input-group .input-group-btn{width:auto}.navbar-form .input-group>.form-control{width:100%}.navbar-form .control-label{margin-bottom:0;vertical-align:middle}.navbar-form .checkbox,.navbar-form .radio{display:inline-block;margin-top:0;margin-bottom:0;vertical-align:middle}.navbar-form .checkbox label,.navbar-form .radio label{padding-left:0}.navbar-form .checkbox input[type=checkbox],.navbar-form .radio input[type=radio]{position:relative;margin-left:0}.navbar-form .has-feedback .form-control-feedback{top:0}}@media (max-width:767px){.navbar-form .form-group{margin-bottom:5px}.navbar-form .form-group:last-child{margin-bottom:0}}@media (min-width:768px){.navbar-form{width:auto;padding-top:0;padding-bottom:0;margin-right:0;margin-left:0;border:0;-webkit-box-shadow:none;box-shadow:none}}.navbar-nav>li>.dropdown-menu{margin-top:0;border-top-left-radius:0;border-top-right-radius:0}.navbar-fixed-bottom .navbar-nav>li>.dropdown-menu{margin-bottom:0;border-top-left-radius:4px;border-top-right-radius:4px;border-bottom-right-radius:0;border-bottom-left-radius:0}.navbar-btn{margin-top:8px;margin-bottom:8px}.navbar-btn.btn-sm{margin-top:10px;margin-bottom:10px}.navbar-btn.btn-xs{margin-top:14px;margin-bottom:14px}.navbar-text{margin-top:15px;margin-bottom:15px}@media (min-width:768px){.navbar-text{float:left;margin-right:15px;margin-left:15px}}@media (min-width:768px){.navbar-left{float:left!important}.navbar-right{float:right!important;margin-right:-15px}.navbar-right~.navbar-right{margin-right:0}}.navbar-default{background-color:#f8f8f8;border-color:#e7e7e7}.navbar-default .navbar-brand{color:#777}.navbar-default .navbar-brand:focus,.navbar-default .navbar-brand:hover{color:#5e5e5e;background-color:transparent}.navbar-default .navbar-text{color:#777}.navbar-default .navbar-nav>li>a{color:#777}.navbar-default .navbar-nav>li>a:focus,.navbar-default .navbar-nav>li>a:hover{color:#333;background-color:transparent}.navbar-default .navbar-nav>.active>a,.navbar-default .navbar-nav>.active>a:focus,.navbar-default .navbar-nav>.active>a:hover{color:#555;background-color:#e7e7e7}.navbar-default .navbar-nav>.disabled>a,.navbar-default .navbar-nav>.disabled>a:focus,.navbar-default .navbar-nav>.disabled>a:hover{color:#ccc;background-color:transparent}.navbar-default .navbar-toggle{border-color:#ddd}.navbar-default .navbar-toggle:focus,.navbar-default .navbar-toggle:hover{background-color:#ddd}.navbar-default .navbar-toggle .icon-bar{background-color:#888}.navbar-default .navbar-collapse,.navbar-default .navbar-form{border-color:#e7e7e7}.navbar-default .navbar-nav>.open>a,.navbar-default .navbar-nav>.open>a:focus,.navbar-default .navbar-nav>.open>a:hover{color:#555;background-color:#e7e7e7}@media (max-width:767px){.navbar-default .navbar-nav .open .dropdown-menu>li>a{color:#777}.navbar-default .navbar-nav .open .dropdown-menu>li>a:focus,.navbar-default .navbar-nav .open .dropdown-menu>li>a:hover{color:#333;background-color:transparent}.navbar-default .navbar-nav .open .dropdown-menu>.active>a,.navbar-default .navbar-nav .open .dropdown-menu>.active>a:focus,.navbar-default .navbar-nav .open .dropdown-menu>.active>a:hover{color:#555;background-color:#e7e7e7}.navbar-default .navbar-nav .open .dropdown-menu>.disabled>a,.navbar-default .navbar-nav .open .dropdown-menu>.disabled>a:focus,.navbar-default .navbar-nav .open .dropdown-menu>.disabled>a:hover{color:#ccc;background-color:transparent}}.navbar-default .navbar-link{color:#777}.navbar-default .navbar-link:hover{color:#333}.navbar-default .btn-link{color:#777}.navbar-default .btn-link:focus,.navbar-default .btn-link:hover{color:#333}.navbar-default .btn-link[disabled]:focus,.navbar-default .btn-link[disabled]:hover,fieldset[disabled] .navbar-default .btn-link:focus,fieldset[disabled] .navbar-default .btn-link:hover{color:#ccc}.navbar-inverse{background-color:#222;border-color:#080808}.navbar-inverse .navbar-brand{color:#9d9d9d}.navbar-inverse .navbar-brand:focus,.navbar-inverse .navbar-brand:hover{color:#fff;background-color:transparent}.navbar-inverse .navbar-text{color:#9d9d9d}.navbar-inverse .navbar-nav>li>a{color:#9d9d9d}.navbar-inverse .navbar-nav>li>a:focus,.navbar-inverse .navbar-nav>li>a:hover{color:#fff;background-color:transparent}.navbar-inverse .navbar-nav>.active>a,.navbar-inverse .navbar-nav>.active>a:focus,.navbar-inverse .navbar-nav>.active>a:hover{color:#fff;background-color:#080808}.navbar-inverse .navbar-nav>.disabled>a,.navbar-inverse .navbar-nav>.disabled>a:focus,.navbar-inverse .navbar-nav>.disabled>a:hover{color:#444;background-color:transparent}.navbar-inverse .navbar-toggle{border-color:#333}.navbar-inverse .navbar-toggle:focus,.navbar-inverse .navbar-toggle:hover{background-color:#333}.navbar-inverse .navbar-toggle .icon-bar{background-color:#fff}.navbar-inverse .navbar-collapse,.navbar-inverse .navbar-form{border-color:#101010}.navbar-inverse .navbar-nav>.open>a,.navbar-inverse .navbar-nav>.open>a:focus,.navbar-inverse .navbar-nav>.open>a:hover{color:#fff;background-color:#080808}@media (max-width:767px){.navbar-inverse .navbar-nav .open .dropdown-menu>.dropdown-header{border-color:#080808}.navbar-inverse .navbar-nav .open .dropdown-menu .divider{background-color:#080808}.navbar-inverse .navbar-nav .open .dropdown-menu>li>a{color:#9d9d9d}.navbar-inverse .navbar-nav .open .dropdown-menu>li>a:focus,.navbar-inverse .navbar-nav .open .dropdown-menu>li>a:hover{color:#fff;background-color:transparent}.navbar-inverse .navbar-nav .open .dropdown-menu>.active>a,.navbar-inverse .navbar-nav .open .dropdown-menu>.active>a:focus,.navbar-inverse .navbar-nav .open .dropdown-menu>.active>a:hover{color:#fff;background-color:#080808}.navbar-inverse .navbar-nav .open .dropdown-menu>.disabled>a,.navbar-inverse .navbar-nav .open .dropdown-menu>.disabled>a:focus,.navbar-inverse .navbar-nav .open .dropdown-menu>.disabled>a:hover{color:#444;background-color:transparent}}.navbar-inverse .navbar-link{color:#9d9d9d}.navbar-inverse .navbar-link:hover{color:#fff}.navbar-inverse .btn-link{color:#9d9d9d}.navbar-inverse .btn-link:focus,.navbar-inverse .btn-link:hover{color:#fff}.navbar-inverse .btn-link[disabled]:focus,.navbar-inverse .btn-link[disabled]:hover,fieldset[disabled] .navbar-inverse .btn-link:focus,fieldset[disabled] .navbar-inverse .btn-link:hover{color:#444}.breadcrumb{padding:8px 15px;margin-bottom:20px;list-style:none;background-color:#f5f5f5;border-radius:4px}.breadcrumb>li{display:inline-block}.breadcrumb>li+li:before{padding:0 5px;color:#ccc;content:"/\00a0"}.breadcrumb>.active{color:#777}.label{display:inline;padding:.2em .6em .3em;font-size:75%;font-weight:700;line-height:1;color:#fff;text-align:center;white-space:nowrap;vertical-align:baseline;border-radius:.25em}a.label:focus,a.label:hover{color:#fff;text-decoration:none;cursor:pointer}.label:empty{display:none}.btn .label{position:relative;top:-1px}.label-default{background-color:#777}.label-default[href]:focus,.label-default[href]:hover{background-color:#5e5e5e}.label-primary{background-color:#337ab7}.label-primary[href]:focus,.label-primary[href]:hover{background-color:#286090}.label-success{background-color:#5cb85c}.label-success[href]:focus,.label-success[href]:hover{background-color:#449d44}.label-info{background-color:#5bc0de}.label-info[href]:focus,.label-info[href]:hover{background-color:#31b0d5}.label-warning{background-color:#f0ad4e}.label-warning[href]:focus,.label-warning[href]:hover{background-color:#ec971f}.label-danger{background-color:#d9534f}.label-danger[href]:focus,.label-danger[href]:hover{background-color:#c9302c}.badge{display:inline-block;min-width:10px;padding:3px 7px;font-size:12px;font-weight:700;line-height:1;color:#fff;text-align:center;white-space:nowrap;vertical-align:middle;background-color:#777;border-radius:10px}.badge:empty{display:none}.btn .badge{position:relative;top:-1px}.btn-group-xs>.btn .badge,.btn-xs .badge{top:0;padding:1px 5px}a.badge:focus,a.badge:hover{color:#fff;text-decoration:none;cursor:pointer}.list-group-item.active>.badge,.nav-pills>.active>a>.badge{color:#337ab7;background-color:#fff}.list-group-item>.badge{float:right}.list-group-item>.badge+.badge{margin-right:5px}.nav-pills>li>a>.badge{margin-left:3px}.jumbotron{padding-top:30px;padding-bottom:30px;margin-bottom:30px;color:inherit;background-color:#eee}.jumbotron .h1,.jumbotron h1{color:inherit}.jumbotron p{margin-bottom:15px;font-size:21px;font-weight:200}.jumbotron>hr{border-top-color:#d5d5d5}.container .jumbotron,.container-fluid .jumbotron{padding-right:15px;padding-left:15px;border-radius:6px}.jumbotron .container{max-width:100%}@media screen and (min-width:768px){.jumbotron{padding-top:48px;padding-bottom:48px}.container .jumbotron,.container-fluid .jumbotron{padding-right:60px;padding-left:60px}.jumbotron .h1,.jumbotron h1{font-size:63px}}.thumbnail{display:block;padding:4px;margin-bottom:20px;line-height:1.42857143;background-color:#fff;border:1px solid #ddd;border-radius:4px;-webkit-transition:border .2s ease-in-out;-o-transition:border .2s ease-in-out;transition:border .2s ease-in-out}.thumbnail a>img,.thumbnail>img{margin-right:auto;margin-left:auto}a.thumbnail.active,a.thumbnail:focus,a.thumbnail:hover{border-color:#337ab7}.thumbnail .caption{padding:9px;color:#333}.alert{padding:15px;margin-bottom:20px;border:1px solid transparent;border-radius:4px}.alert h4{margin-top:0;color:inherit}.alert .alert-link{font-weight:700}.alert>p,.alert>ul{margin-bottom:0}.alert>p+p{margin-top:5px}.alert-dismissable,.alert-dismissible{padding-right:35px}.alert-dismissable .close,.alert-dismissible .close{position:relative;top:-2px;right:-21px;color:inherit}.alert-success{color:#3c763d;background-color:#dff0d8;border-color:#d6e9c6}.alert-success hr{border-top-color:#c9e2b3}.alert-success .alert-link{color:#2b542c}.alert-info{color:#31708f;background-color:#d9edf7;border-color:#bce8f1}.alert-info hr{border-top-color:#a6e1ec}.alert-info .alert-link{color:#245269}.alert-warning{color:#8a6d3b;background-color:#fcf8e3;border-color:#faebcc}.alert-warning hr{border-top-color:#f7e1b5}.alert-warning .alert-link{color:#66512c}.alert-danger{color:#a94442;background-color:#f2dede;border-color:#ebccd1}.alert-danger hr{border-top-color:#e4b9c0}.alert-danger .alert-link{color:#843534}@-webkit-keyframes progress-bar-stripes{from{background-position:40px 0}to{background-position:0 0}}@-o-keyframes progress-bar-stripes{from{background-position:40px 0}to{background-position:0 0}}@keyframes progress-bar-stripes{from{background-position:40px 0}to{background-position:0 0}}.media{margin-top:15px}.media:first-child{margin-top:0}.media,.media-body{overflow:hidden;zoom:1}.media-body{width:10000px}.media-object{display:block}.media-object.img-thumbnail{max-width:none}.media-right,.media>.pull-right{padding-left:10px}.media-left,.media>.pull-left{padding-right:10px}.media-body,.media-left,.media-right{display:table-cell;vertical-align:top}.media-middle{vertical-align:middle}.media-bottom{vertical-align:bottom}.media-heading{margin-top:0;margin-bottom:5px}.media-list{padding-left:0;list-style:none}.list-group{padding-left:0;margin-bottom:20px}.list-group-item{position:relative;display:block;padding:10px 15px;margin-bottom:-1px;background-color:#fff;border:1px solid #ddd}.list-group-item:first-child{border-top-left-radius:4px;border-top-right-radius:4px}.list-group-item:last-child{margin-bottom:0;border-bottom-right-radius:4px;border-bottom-left-radius:4px}a.list-group-item,button.list-group-item{color:#555}a.list-group-item .list-group-item-heading,button.list-group-item .list-group-item-heading{color:#333}a.list-group-item:focus,a.list-group-item:hover,button.list-group-item:focus,button.list-group-item:hover{color:#555;text-decoration:none;background-color:#f5f5f5}button.list-group-item{width:100%;text-align:left}.list-group-item.disabled,.list-group-item.disabled:focus,.list-group-item.disabled:hover{color:#777;cursor:not-allowed;background-color:#eee}.list-group-item.disabled .list-group-item-heading,.list-group-item.disabled:focus .list-group-item-heading,.list-group-item.disabled:hover .list-group-item-heading{color:inherit}.list-group-item.disabled .list-group-item-text,.list-group-item.disabled:focus .list-group-item-text,.list-group-item.disabled:hover .list-group-item-text{color:#777}.list-group-item.active,.list-group-item.active:focus,.list-group-item.active:hover{z-index:2;color:#fff;background-color:#337ab7;border-color:#337ab7}.list-group-item.active .list-group-item-heading,.list-group-item.active .list-group-item-heading>.small,.list-group-item.active .list-group-item-heading>small,.list-group-item.active:focus .list-group-item-heading,.list-group-item.active:focus .list-group-item-heading>.small,.list-group-item.active:focus .list-group-item-heading>small,.list-group-item.active:hover .list-group-item-heading,.list-group-item.active:hover .list-group-item-heading>.small,.list-group-item.active:hover .list-group-item-heading>small{color:inherit}.list-group-item.active .list-group-item-text,.list-group-item.active:focus .list-group-item-text,.list-group-item.active:hover .list-group-item-text{color:#c7ddef}.list-group-item-success{color:#3c763d;background-color:#dff0d8}a.list-group-item-success,button.list-group-item-success{color:#3c763d}a.list-group-item-success .list-group-item-heading,button.list-group-item-success .list-group-item-heading{color:inherit}a.list-group-item-success:focus,a.list-group-item-success:hover,button.list-group-item-success:focus,button.list-group-item-success:hover{color:#3c763d;background-color:#d0e9c6}a.list-group-item-success.active,a.list-group-item-success.active:focus,a.list-group-item-success.active:hover,button.list-group-item-success.active,button.list-group-item-success.active:focus,button.list-group-item-success.active:hover{color:#fff;background-color:#3c763d;border-color:#3c763d}.list-group-item-info{color:#31708f;background-color:#d9edf7}a.list-group-item-info,button.list-group-item-info{color:#31708f}a.list-group-item-info .list-group-item-heading,button.list-group-item-info .list-group-item-heading{color:inherit}a.list-group-item-info:focus,a.list-group-item-info:hover,button.list-group-item-info:focus,button.list-group-item-info:hover{color:#31708f;background-color:#c4e3f3}a.list-group-item-info.active,a.list-group-item-info.active:focus,a.list-group-item-info.active:hover,button.list-group-item-info.active,button.list-group-item-info.active:focus,button.list-group-item-info.active:hover{color:#fff;background-color:#31708f;border-color:#31708f}.list-group-item-warning{color:#8a6d3b;background-color:#fcf8e3}a.list-group-item-warning,button.list-group-item-warning{color:#8a6d3b}a.list-group-item-warning .list-group-item-heading,button.list-group-item-warning .list-group-item-heading{color:inherit}a.list-group-item-warning:focus,a.list-group-item-warning:hover,button.list-group-item-warning:focus,button.list-group-item-warning:hover{color:#8a6d3b;background-color:#faf2cc}a.list-group-item-warning.active,a.list-group-item-warning.active:focus,a.list-group-item-warning.active:hover,button.list-group-item-warning.active,button.list-group-item-warning.active:focus,button.list-group-item-warning.active:hover{color:#fff;background-color:#8a6d3b;border-color:#8a6d3b}.list-group-item-danger{color:#a94442;background-color:#f2dede}a.list-group-item-danger,button.list-group-item-danger{color:#a94442}a.list-group-item-danger .list-group-item-heading,button.list-group-item-danger .list-group-item-heading{color:inherit}a.list-group-item-danger:focus,a.list-group-item-danger:hover,button.list-group-item-danger:focus,button.list-group-item-danger:hover{color:#a94442;background-color:#ebcccc}a.list-group-item-danger.active,a.list-group-item-danger.active:focus,a.list-group-item-danger.active:hover,button.list-group-item-danger.active,button.list-group-item-danger.active:focus,button.list-group-item-danger.active:hover{color:#fff;background-color:#a94442;border-color:#a94442}.list-group-item-heading{margin-top:0;margin-bottom:5px}.list-group-item-text{margin-bottom:0;line-height:1.3}.panel{margin-bottom:20px;background-color:#fff;border:1px solid transparent;border-radius:4px;-webkit-box-shadow:0 1px 1px rgba(0,0,0,.05);box-shadow:0 1px 1px rgba(0,0,0,.05)}.panel-body{padding:15px}.panel-heading{padding:10px 15px;border-bottom:1px solid transparent;border-top-left-radius:3px;border-top-right-radius:3px}.panel-heading>.dropdown .dropdown-toggle{color:inherit}.panel-title{margin-top:0;margin-bottom:0;font-size:16px;color:inherit}.panel-title>.small,.panel-title>.small>a,.panel-title>a,.panel-title>small,.panel-title>small>a{color:inherit}.panel-footer{padding:10px 15px;background-color:#f5f5f5;border-top:1px solid #ddd;border-bottom-right-radius:3px;border-bottom-left-radius:3px}.panel>.list-group,.panel>.panel-collapse>.list-group{margin-bottom:0}.panel>.list-group .list-group-item,.panel>.panel-collapse>.list-group .list-group-item{border-width:1px 0;border-radius:0}.panel>.list-group:first-child .list-group-item:first-child,.panel>.panel-collapse>.list-group:first-child .list-group-item:first-child{border-top:0;border-top-left-radius:3px;border-top-right-radius:3px}.panel>.list-group:last-child .list-group-item:last-child,.panel>.panel-collapse>.list-group:last-child .list-group-item:last-child{border-bottom:0;border-bottom-right-radius:3px;border-bottom-left-radius:3px}.panel>.panel-heading+.panel-collapse>.list-group .list-group-item:first-child{border-top-left-radius:0;border-top-right-radius:0}.panel-heading+.list-group .list-group-item:first-child{border-top-width:0}.list-group+.panel-footer{border-top-width:0}.panel>.panel-collapse>.table,.panel>.table,.panel>.table-responsive>.table{margin-bottom:0}.panel>.panel-collapse>.table caption,.panel>.table caption,.panel>.table-responsive>.table caption{padding-right:15px;padding-left:15px}.panel>.table-responsive:first-child>.table:first-child,.panel>.table:first-child{border-top-left-radius:3px;border-top-right-radius:3px}.panel>.table-responsive:first-child>.table:first-child>tbody:first-child>tr:first-child,.panel>.table-responsive:first-child>.table:first-child>thead:first-child>tr:first-child,.panel>.table:first-child>tbody:first-child>tr:first-child,.panel>.table:first-child>thead:first-child>tr:first-child{border-top-left-radius:3px;border-top-right-radius:3px}.panel>.table-responsive:first-child>.table:first-child>tbody:first-child>tr:first-child td:first-child,.panel>.table-responsive:first-child>.table:first-child>tbody:first-child>tr:first-child th:first-child,.panel>.table-responsive:first-child>.table:first-child>thead:first-child>tr:first-child td:first-child,.panel>.table-responsive:first-child>.table:first-child>thead:first-child>tr:first-child th:first-child,.panel>.table:first-child>tbody:first-child>tr:first-child td:first-child,.panel>.table:first-child>tbody:first-child>tr:first-child th:first-child,.panel>.table:first-child>thead:first-child>tr:first-child td:first-child,.panel>.table:first-child>thead:first-child>tr:first-child th:first-child{border-top-left-radius:3px}.panel>.table-responsive:first-child>.table:first-child>tbody:first-child>tr:first-child td:last-child,.panel>.table-responsive:first-child>.table:first-child>tbody:first-child>tr:first-child th:last-child,.panel>.table-responsive:first-child>.table:first-child>thead:first-child>tr:first-child td:last-child,.panel>.table-responsive:first-child>.table:first-child>thead:first-child>tr:first-child th:last-child,.panel>.table:first-child>tbody:first-child>tr:first-child td:last-child,.panel>.table:first-child>tbody:first-child>tr:first-child th:last-child,.panel>.table:first-child>thead:first-child>tr:first-child td:last-child,.panel>.table:first-child>thead:first-child>tr:first-child th:last-child{border-top-right-radius:3px}.panel>.table-responsive:last-child>.table:last-child,.panel>.table:last-child{border-bottom-right-radius:3px;border-bottom-left-radius:3px}.panel>.table-responsive:last-child>.table:last-child>tbody:last-child>tr:last-child,.panel>.table-responsive:last-child>.table:last-child>tfoot:last-child>tr:last-child,.panel>.table:last-child>tbody:last-child>tr:last-child,.panel>.table:last-child>tfoot:last-child>tr:last-child{border-bottom-right-radius:3px;border-bottom-left-radius:3px}.panel>.table-responsive:last-child>.table:last-child>tbody:last-child>tr:last-child td:first-child,.panel>.table-responsive:last-child>.table:last-child>tbody:last-child>tr:last-child th:first-child,.panel>.table-responsive:last-child>.table:last-child>tfoot:last-child>tr:last-child td:first-child,.panel>.table-responsive:last-child>.table:last-child>tfoot:last-child>tr:last-child th:first-child,.panel>.table:last-child>tbody:last-child>tr:last-child td:first-child,.panel>.table:last-child>tbody:last-child>tr:last-child th:first-child,.panel>.table:last-child>tfoot:last-child>tr:last-child td:first-child,.panel>.table:last-child>tfoot:last-child>tr:last-child th:first-child{border-bottom-left-radius:3px}.panel>.table-responsive:last-child>.table:last-child>tbody:last-child>tr:last-child td:last-child,.panel>.table-responsive:last-child>.table:last-child>tbody:last-child>tr:last-child th:last-child,.panel>.table-responsive:last-child>.table:last-child>tfoot:last-child>tr:last-child td:last-child,.panel>.table-responsive:last-child>.table:last-child>tfoot:last-child>tr:last-child th:last-child,.panel>.table:last-child>tbody:last-child>tr:last-child td:last-child,.panel>.table:last-child>tbody:last-child>tr:last-child th:last-child,.panel>.table:last-child>tfoot:last-child>tr:last-child td:last-child,.panel>.table:last-child>tfoot:last-child>tr:last-child th:last-child{border-bottom-right-radius:3px}.panel>.panel-body+.table,.panel>.panel-body+.table-responsive,.panel>.table+.panel-body,.panel>.table-responsive+.panel-body{border-top:1px solid #ddd}.panel>.table>tbody:first-child>tr:first-child td,.panel>.table>tbody:first-child>tr:first-child th{border-top:0}.panel>.table-bordered,.panel>.table-responsive>.table-bordered{border:0}.panel>.table-bordered>tbody>tr>td:first-child,.panel>.table-bordered>tbody>tr>th:first-child,.panel>.table-bordered>tfoot>tr>td:first-child,.panel>.table-bordered>tfoot>tr>th:first-child,.panel>.table-bordered>thead>tr>td:first-child,.panel>.table-bordered>thead>tr>th:first-child,.panel>.table-responsive>.table-bordered>tbody>tr>td:first-child,.panel>.table-responsive>.table-bordered>tbody>tr>th:first-child,.panel>.table-responsive>.table-bordered>tfoot>tr>td:first-child,.panel>.table-responsive>.table-bordered>tfoot>tr>th:first-child,.panel>.table-responsive>.table-bordered>thead>tr>td:first-child,.panel>.table-responsive>.table-bordered>thead>tr>th:first-child{border-left:0}.panel>.table-bordered>tbody>tr>td:last-child,.panel>.table-bordered>tbody>tr>th:last-child,.panel>.table-bordered>tfoot>tr>td:last-child,.panel>.table-bordered>tfoot>tr>th:last-child,.panel>.table-bordered>thead>tr>td:last-child,.panel>.table-bordered>thead>tr>th:last-child,.panel>.table-responsive>.table-bordered>tbody>tr>td:last-child,.panel>.table-responsive>.table-bordered>tbody>tr>th:last-child,.panel>.table-responsive>.table-bordered>tfoot>tr>td:last-child,.panel>.table-responsive>.table-bordered>tfoot>tr>th:last-child,.panel>.table-responsive>.table-bordered>thead>tr>td:last-child,.panel>.table-responsive>.table-bordered>thead>tr>th:last-child{border-right:0}.panel>.table-bordered>tbody>tr:first-child>td,.panel>.table-bordered>tbody>tr:first-child>th,.panel>.table-bordered>thead>tr:first-child>td,.panel>.table-bordered>thead>tr:first-child>th,.panel>.table-responsive>.table-bordered>tbody>tr:first-child>td,.panel>.table-responsive>.table-bordered>tbody>tr:first-child>th,.panel>.table-responsive>.table-bordered>thead>tr:first-child>td,.panel>.table-responsive>.table-bordered>thead>tr:first-child>th{border-bottom:0}.panel>.table-bordered>tbody>tr:last-child>td,.panel>.table-bordered>tbody>tr:last-child>th,.panel>.table-bordered>tfoot>tr:last-child>td,.panel>.table-bordered>tfoot>tr:last-child>th,.panel>.table-responsive>.table-bordered>tbody>tr:last-child>td,.panel>.table-responsive>.table-bordered>tbody>tr:last-child>th,.panel>.table-responsive>.table-bordered>tfoot>tr:last-child>td,.panel>.table-responsive>.table-bordered>tfoot>tr:last-child>th{border-bottom:0}.panel>.table-responsive{margin-bottom:0;border:0}.panel-group{margin-bottom:20px}.panel-group .panel{margin-bottom:0;border-radius:4px}.panel-group .panel+.panel{margin-top:5px}.panel-group .panel-heading{border-bottom:0}.panel-group .panel-heading+.panel-collapse>.list-group,.panel-group .panel-heading+.panel-collapse>.panel-body{border-top:1px solid #ddd}.panel-group .panel-footer{border-top:0}.panel-group .panel-footer+.panel-collapse .panel-body{border-bottom:1px solid #ddd}.panel-default{border-color:#ddd}.panel-default>.panel-heading{color:#333;background-color:#f5f5f5;border-color:#ddd}.panel-default>.panel-heading+.panel-collapse>.panel-body{border-top-color:#ddd}.panel-default>.panel-heading .badge{color:#f5f5f5;background-color:#333}.panel-default>.panel-footer+.panel-collapse>.panel-body{border-bottom-color:#ddd}.panel-primary{border-color:#337ab7}.panel-primary>.panel-heading{color:#fff;background-color:#337ab7;border-color:#337ab7}.panel-primary>.panel-heading+.panel-collapse>.panel-body{border-top-color:#337ab7}.panel-primary>.panel-heading .badge{color:#337ab7;background-color:#fff}.panel-primary>.panel-footer+.panel-collapse>.panel-body{border-bottom-color:#337ab7}.panel-success{border-color:#d6e9c6}.panel-success>.panel-heading{color:#3c763d;background-color:#dff0d8;border-color:#d6e9c6}.panel-success>.panel-heading+.panel-collapse>.panel-body{border-top-color:#d6e9c6}.panel-success>.panel-heading .badge{color:#dff0d8;background-color:#3c763d}.panel-success>.panel-footer+.panel-collapse>.panel-body{border-bottom-color:#d6e9c6}.panel-info{border-color:#bce8f1}.panel-info>.panel-heading{color:#31708f;background-color:#d9edf7;border-color:#bce8f1}.panel-info>.panel-heading+.panel-collapse>.panel-body{border-top-color:#bce8f1}.panel-info>.panel-heading .badge{color:#d9edf7;background-color:#31708f}.panel-info>.panel-footer+.panel-collapse>.panel-body{border-bottom-color:#bce8f1}.panel-warning{border-color:#faebcc}.panel-warning>.panel-heading{color:#8a6d3b;background-color:#fcf8e3;border-color:#faebcc}.panel-warning>.panel-heading+.panel-collapse>.panel-body{border-top-color:#faebcc}.panel-warning>.panel-heading .badge{color:#fcf8e3;background-color:#8a6d3b}.panel-warning>.panel-footer+.panel-collapse>.panel-body{border-bottom-color:#faebcc}.panel-danger{border-color:#ebccd1}.panel-danger>.panel-heading{color:#a94442;background-color:#f2dede;border-color:#ebccd1}.panel-danger>.panel-heading+.panel-collapse>.panel-body{border-top-color:#ebccd1}.panel-danger>.panel-heading .badge{color:#f2dede;background-color:#a94442}.panel-danger>.panel-footer+.panel-collapse>.panel-body{border-bottom-color:#ebccd1}.embed-responsive{position:relative;display:block;height:0;padding:0;overflow:hidden}.embed-responsive .embed-responsive-item,.embed-responsive embed,.embed-responsive iframe,.embed-responsive object,.embed-responsive video{position:absolute;top:0;bottom:0;left:0;width:100%;height:100%;border:0}.embed-responsive-16by9{padding-bottom:56.25%}.embed-responsive-4by3{padding-bottom:75%}.well{min-height:20px;padding:19px;margin-bottom:20px;background-color:#f5f5f5;border:1px solid #e3e3e3;border-radius:4px;-webkit-box-shadow:inset 0 1px 1px rgba(0,0,0,.05);box-shadow:inset 0 1px 1px rgba(0,0,0,.05)}.well blockquote{border-color:#ddd;border-color:rgba(0,0,0,.15)}.well-lg{padding:24px;border-radius:6px}.well-sm{padding:9px;border-radius:3px}.close{float:right;font-size:21px;font-weight:700;line-height:1;color:#000;text-shadow:0 1px 0 #fff;opacity:.2}.close:focus,.close:hover{color:#000;text-decoration:none;cursor:pointer;opacity:.5}button.close{-webkit-appearance:none;padding:0;cursor:pointer;background:0 0;border:0}.modal-open{overflow:hidden}.modal{position:fixed;top:0;right:0;bottom:0;left:0;z-index:1050;display:none;overflow:hidden;-webkit-overflow-scrolling:touch;outline:0}.modal.fade .modal-dialog{-webkit-transition:-webkit-transform .3s ease-out;-o-transition:-o-transform .3s ease-out;transition:transform .3s ease-out;-webkit-transform:translate(0,-25%);-ms-transform:translate(0,-25%);-o-transform:translate(0,-25%);transform:translate(0,-25%)}.modal.in .modal-dialog{-webkit-transform:translate(0,0);-ms-transform:translate(0,0);-o-transform:translate(0,0);transform:translate(0,0)}.modal-open .modal{overflow-x:hidden;overflow-y:auto}.modal-dialog{position:relative;width:auto;margin:10px}.modal-content{position:relative;background-color:#fff;-webkit-background-clip:padding-box;background-clip:padding-box;border:1px solid #999;border:1px solid rgba(0,0,0,.2);border-radius:6px;outline:0;-webkit-box-shadow:0 3px 9px rgba(0,0,0,.5);box-shadow:0 3px 9px rgba(0,0,0,.5)}.modal-backdrop{position:fixed;top:0;right:0;bottom:0;left:0;z-index:1040;background-color:#000}.modal-backdrop.fade{opacity:0}.modal-backdrop.in{opacity:.5}.modal-header{padding:15px;border-bottom:1px solid #e5e5e5}.modal-header .close{margin-top:-2px}.modal-title{margin:0;line-height:1.42857143}.modal-body{position:relative;padding:15px}.modal-footer{padding:15px;text-align:right;border-top:1px solid #e5e5e5}.modal-footer .btn+.btn{margin-bottom:0;margin-left:5px}.modal-footer .btn-group .btn+.btn{margin-left:-1px}.modal-footer .btn-block+.btn-block{margin-left:0}.modal-scrollbar-measure{position:absolute;top:-9999px;width:50px;height:50px;overflow:scroll}@media (min-width:768px){.modal-dialog{width:600px;margin:30px auto}.modal-content{-webkit-box-shadow:0 5px 15px rgba(0,0,0,.5);box-shadow:0 5px 15px rgba(0,0,0,.5)}.modal-sm{width:300px}}@media (min-width:992px){.modal-lg{width:900px}}.tooltip{position:absolute;z-index:1070;display:block;font-family:"Helvetica Neue",Helvetica,Arial,sans-serif;font-size:12px;font-style:normal;font-weight:400;line-height:1.42857143;text-align:left;text-align:start;text-decoration:none;text-shadow:none;text-transform:none;letter-spacing:normal;word-break:normal;word-spacing:normal;word-wrap:normal;white-space:normal;opacity:0;line-break:auto}.tooltip.in{opacity:.9}.tooltip.top{padding:5px 0;margin-top:-3px}.tooltip.right{padding:0 5px;margin-left:3px}.tooltip.bottom{padding:5px 0;margin-top:3px}.tooltip.left{padding:0 5px;margin-left:-3px}.tooltip-inner{max-width:200px;padding:3px 8px;color:#fff;text-align:center;background-color:#000;border-radius:4px}.tooltip-arrow{position:absolute;width:0;height:0;border-color:transparent;border-style:solid}.tooltip.top .tooltip-arrow{bottom:0;left:50%;margin-left:-5px;border-width:5px 5px 0;border-top-color:#000}.tooltip.top-left .tooltip-arrow{right:5px;bottom:0;margin-bottom:-5px;border-width:5px 5px 0;border-top-color:#000}.tooltip.top-right .tooltip-arrow{bottom:0;left:5px;margin-bottom:-5px;border-width:5px 5px 0;border-top-color:#000}.tooltip.right .tooltip-arrow{top:50%;left:0;margin-top:-5px;border-width:5px 5px 5px 0;border-right-color:#000}.tooltip.left .tooltip-arrow{top:50%;right:0;margin-top:-5px;border-width:5px 0 5px 5px;border-left-color:#000}.tooltip.bottom .tooltip-arrow{top:0;left:50%;margin-left:-5px;border-width:0 5px 5px;border-bottom-color:#000}.tooltip.bottom-left .tooltip-arrow{top:0;right:5px;margin-top:-5px;border-width:0 5px 5px;border-bottom-color:#000}.tooltip.bottom-right .tooltip-arrow{top:0;left:5px;margin-top:-5px;border-width:0 5px 5px;border-bottom-color:#000}.btn-group-vertical>.btn-group:after,.btn-group-vertical>.btn-group:before,.btn-toolbar:after,.btn-toolbar:before,.clearfix:after,.clearfix:before,.container-fluid:after,.container-fluid:before,.container:after,.container:before,.dl-horizontal dd:after,.dl-horizontal dd:before,.form-horizontal .form-group:after,.form-horizontal .form-group:before,.modal-footer:after,.modal-footer:before,.modal-header:after,.modal-header:before,.nav:after,.nav:before,.navbar-collapse:after,.navbar-collapse:before,.navbar-header:after,.navbar-header:before,.navbar:after,.navbar:before,.pager:after,.pager:before,.panel-body:after,.panel-body:before,.row:after,.row:before{display:table;content:" "}.btn-group-vertical>.btn-group:after,.btn-toolbar:after,.clearfix:after,.container-fluid:after,.container:after,.dl-horizontal dd:after,.form-horizontal .form-group:after,.modal-footer:after,.modal-header:after,.nav:after,.navbar-collapse:after,.navbar-header:after,.navbar:after,.pager:after,.panel-body:after,.row:after{clear:both}.center-block{display:block;margin-right:auto;margin-left:auto}.pull-right{float:right!important}.pull-left{float:left!important}.hide{display:none!important}.show{display:block!important}.invisible{visibility:hidden}.text-hide{font:0/0 a;color:transparent;text-shadow:none;background-color:transparent;border:0}.hidden{display:none!important}.affix{position:fixed}@-ms-viewport{width:device-width}.visible-lg,.visible-md,.visible-sm,.visible-xs{display:none!important}.visible-lg-block,.visible-lg-inline,.visible-lg-inline-block,.visible-md-block,.visible-md-inline,.visible-md-inline-block,.visible-sm-block,.visible-sm-inline,.visible-sm-inline-block,.visible-xs-block,.visible-xs-inline,.visible-xs-inline-block{display:none!important}@media (max-width:767px){.visible-xs{display:block!important}table.visible-xs{display:table!important}tr.visible-xs{display:table-row!important}td.visible-xs,th.visible-xs{display:table-cell!important}}@media (max-width:767px){.visible-xs-block{display:block!important}}@media (max-width:767px){.visible-xs-inline{display:inline!important}}@media (max-width:767px){.visible-xs-inline-block{display:inline-block!important}}@media (min-width:768px) and (max-width:991px){.visible-sm{display:block!important}table.visible-sm{display:table!important}tr.visible-sm{display:table-row!important}td.visible-sm,th.visible-sm{display:table-cell!important}}@media (min-width:768px) and (max-width:991px){.visible-sm-block{display:block!important}}@media (min-width:768px) and (max-width:991px){.visible-sm-inline{display:inline!important}}@media (min-width:768px) and (max-width:991px){.visible-sm-inline-block{display:inline-block!important}}@media (min-width:992px) and (max-width:1199px){.visible-md{display:block!important}table.visible-md{display:table!important}tr.visible-md{display:table-row!important}td.visible-md,th.visible-md{display:table-cell!important}}@media (min-width:992px) and (max-width:1199px){.visible-md-block{display:block!important}}@media (min-width:992px) and (max-width:1199px){.visible-md-inline{display:inline!important}}@media (min-width:992px) and (max-width:1199px){.visible-md-inline-block{display:inline-block!important}}@media (min-width:1200px){.visible-lg{display:block!important}table.visible-lg{display:table!important}tr.visible-lg{display:table-row!important}td.visible-lg,th.visible-lg{display:table-cell!important}}@media (min-width:1200px){.visible-lg-block{display:block!important}}@media (min-width:1200px){.visible-lg-inline{display:inline!important}}@media (min-width:1200px){.visible-lg-inline-block{display:inline-block!important}}@media (max-width:767px){.hidden-xs{display:none!important}}@media (min-width:768px) and (max-width:991px){.hidden-sm{display:none!important}}@media (min-width:992px) and (max-width:1199px){.hidden-md{display:none!important}}@media (min-width:1200px){.hidden-lg{display:none!important}}.visible-print{display:none!important}@media print{.visible-print{display:block!important}table.visible-print{display:table!important}tr.visible-print{display:table-row!important}td.visible-print,th.visible-print{display:table-cell!important}}.visible-print-block{display:none!important}@media print{.visible-print-block{display:block!important}}.visible-print-inline{display:none!important}@media print{.visible-print-inline{display:inline!important}}.visible-print-inline-block{display:none!important}@media print{.visible-print-inline-block{display:inline-block!important}}@media print{.hidden-print{display:none!important}}
 </style>
 BOOTS;
-
     }
 
-    private function runUtilCombo($array, $select) {
+    private function runUtilCombo($array, $select)
+    {
         $r = '';
         foreach ($array as $item) {
-            $r .= "<option value='{$item}' " . (($select == $item) ? "selected" : "") . " >{$item}</option>";
+            $r .= "<option value='{$item}' " . (($select == $item) ? "selected"
+                    : "")
+                . " >{$item}</option>";
         }
+
         return $r;
     }
 
@@ -2380,7 +2431,8 @@ BOOTS;
      *
      * @test void this('travisdb')
      */
-    public function db($dbName) {
+    public function db($dbName)
+    {
         if (!$this->isOpen) {
             return;
         }
@@ -2394,7 +2446,8 @@ BOOTS;
      * @return bool
      * @test equals false,this(),'the database is read only'
      */
-    public function readonly() {
+    public function readonly()
+    {
         return $this->readonly;
     }
 
@@ -2407,7 +2460,8 @@ BOOTS;
      * @test exception this(false)
      * @see  PdoOne::connect()
      */
-    public function open($failIfConnected = true) {
+    public function open($failIfConnected = true)
+    {
         $this->connect($failIfConnected);
     }
 
@@ -2416,7 +2470,8 @@ BOOTS;
      *
      * @test void this()
      */
-    public function close() {
+    public function close()
+    {
         $this->isOpen = false;
         if ($this->conn1 === null) {
             return;
@@ -2429,21 +2484,29 @@ BOOTS;
      * It returns the next sequence.
      * It gets a collision free number if we don't do more than one operation
      * every 0.0001 seconds.
-     * But, if we do 2 or more operations per seconds then, it adds a sequence number from
+     * But, if we do 2 or more operations per seconds then, it adds a sequence
+     * number from
      * 0 to 4095
      * So, the limit of this function is 4096 operations per 0.0001 second.
      *
-     * @see \eftec\PdoOne::getSequencePHP It's the same but it uses less resources but lacks of a sequence.
+     * @see \eftec\PdoOne::getSequencePHP It's the same but it uses less
+     *      resources but lacks of a sequence.
      *
      * @param bool   $asFloat
      * @param bool   $unpredictable
-     * @param string $sequenceName (optional) the name of the sequence. If not then it uses $this->tableSequence
+     * @param string $sequenceName     (optional) the name of the sequence. If
+     *                                 not then it uses $this->tableSequence
      *
      * @return string . Example string(19) "3639032938181434317"
      * @throws Exception
      */
-    public function getSequence($asFloat = false, $unpredictable = false, $sequenceName = '') {
-        $sequenceName = ($sequenceName == '') ? $this->tableSequence : $sequenceName;
+    public function getSequence(
+        $asFloat = false,
+        $unpredictable = false,
+        $sequenceName = ''
+    ) {
+        $sequenceName = ($sequenceName == '') ? $this->tableSequence
+            : $sequenceName;
         $sql = "select next_{$sequenceName}({$this->nodeId}) id";
         $r = $this->runRawQuery($sql, null, true);
         if ($unpredictable) {
@@ -2463,22 +2526,26 @@ BOOTS;
 
     /**
      * <p>This function returns an unique sequence<p>
-     * It ensures a collision free number only if we don't do more than one operation
-     * per 0.0001 second However,it also adds a pseudo random number (0-4095)
-     * so the chances of collision is 1/4095 (per two operations done every 0.0001 second).<br>
-     * It is based on Twitter's Snowflake number
+     * It ensures a collision free number only if we don't do more than one
+     * operation per 0.0001 second However,it also adds a pseudo random number
+     * (0-4095) so the chances of collision is 1/4095 (per two operations done
+     * every 0.0001 second).<br> It is based on Twitter's Snowflake number
      *
      * @param bool $unpredictable
      *
      * @return float
      * @see \eftec\PdoOne::getSequence
      */
-    public function getSequencePHP($unpredictable = false) {
+    public function getSequencePHP($unpredictable = false)
+    {
         $ms = microtime(true);
         //$ms=1000;
         $timestamp = (double)round($ms * 1000);
-        $rand = (fmod($ms, 1) * 1000000) % 4096; // 4096= 2^12 It is the millionth of seconds
-        $calc = (($timestamp - 1459440000000) << 22) + ($this->nodeId << 12) + $rand;
+        $rand = (fmod($ms, 1) * 1000000)
+            % 4096; // 4096= 2^12 It is the millionth of seconds
+        $calc = (($timestamp - 1459440000000) << 22) + ($this->nodeId
+                << 12)
+            + $rand;
         usleep(1);
 
         if ($unpredictable) {
@@ -2489,13 +2556,15 @@ BOOTS;
                 return '' . $this->encryption->encryptInteger($calc);
             }
         }
+
         return '' . $calc;
     }
 
     /**
      * It uses \eftec\PdoOne::$masks0 and \eftec\PdoOne::$masks1 to flip
      * the number, so they are not as predictable.
-     * This function doesn't add entrophy. However, the generation of Snowflakes id
+     * This function doesn't add entrophy. However, the generation of Snowflakes
+     * id
      * (getSequence/getSequencePHP) generates its own entrophy. Also,
      * both masks0[] and masks1[] adds an extra secrecy.
      *
@@ -2503,7 +2572,8 @@ BOOTS;
      *
      * @return mixed
      */
-    public function getUnpredictable($number) {
+    public function getUnpredictable($number)
+    {
         $string = "" . $number;
         $maskSize = count($this->masks0);
 
@@ -2514,6 +2584,7 @@ BOOTS;
             $string = substr_replace($string, $string[$init], $end, 1);
             $string = substr_replace($string, $tmp, $init, 1);
         }
+
         return $string;
     }
 
@@ -2526,7 +2597,8 @@ BOOTS;
      * @see \eftec\PdoOne::$masks0
      * @see \eftec\PdoOne::$masks1
      */
-    public function getUnpredictableInv($number) {
+    public function getUnpredictableInv($number)
+    {
         $maskSize = count($this->masks0);
         for ($i = $maskSize - 1; $i >= 0; $i--) {
             $init = $this->masks1[$i];
@@ -2535,6 +2607,7 @@ BOOTS;
             $number = substr_replace($number, $number[$init], $end, 1);
             $number = substr_replace($number, $tmp, $init, 1);
         }
+
         return $number;
     }
 
@@ -2546,7 +2619,8 @@ BOOTS;
      * @return bool true if the table exist
      * @throws Exception
      */
-    public function tableExist($tableName) {
+    public function tableExist($tableName)
+    {
         return $this->objectExist($tableName, 'table');
     }
 
@@ -2560,36 +2634,98 @@ BOOTS;
      * @return bool
      * @throws Exception
      */
-    public function objectExist($objectName, $type = 'table') {
-
+    public function objectExist($objectName, $type = 'table')
+    {
         $query = $this->service->objectExist($type);
-        
+
         $arr = $this->runRawQuery($query, [PDO::PARAM_STR, $objectName], true);
         if (is_array($arr) && count($arr) > 0) {
             return true;
         }
+
         return false;
+    }
+
+    /**
+     * It returns a list of tables ordered by dependency (from no dependent to
+     * more dependent)<br>
+     * <b>Note:</b>: This operation is not foolproof because the tables could
+     * have circular reference.
+     *
+     * @param int  $maxLoop            The number of tests. If the sort is
+     *                                 correct, then it ends as fast as it can.
+     * @param bool $returnProblems     [false] if true then it returns all the
+     *                                 tables with problem
+     * @param bool $debugTrace         [false] if true then it shows the
+     *                                 operations done.
+     *
+     * @return array List of table.
+     * @throws Exception
+     */
+    public function tableSorted($maxLoop = 5, $returnProblems = false, $debugTrace = false)
+    {
+        $tables = $this->objectList('table', true);
+        $after = [];
+        $before = [];
+        foreach ($tables as $table) {
+            $before[$table] = [];
+        }
+        foreach ($tables as $table) {
+            $arr = $this->getDefTableKeys($table, false);
+            $deps = [];
+            foreach ($arr as $k => $v) {
+                if ($v['key'] === 'FOREIGN KEY') {
+                    $deps[] = $v['reftable'];
+                    $before[$v['reftable']][] = $table;
+                }
+            }
+            $after[$table] = $deps; // ['city']=>['country','location']
+        }
+        $tableSorted = [];
+        // initial load
+        foreach ($tables as $k => $table) {
+            $tableSorted[] = $table;
+        }
+        $problems = [];
+        for ($i = 0; $i < $maxLoop; $i++) {
+            if ($this->reSort(
+                $tables, $tableSorted, $after, $before, $problems, $debugTrace
+            )
+            ) {
+                break;
+            }
+        }
+        if ($returnProblems) {
+            return $problems;
+        }
+
+        return $tableSorted;
     }
 
     /**
      * Returns a list of objects from the current schema/db<br>
      *
-     * @param string $type     =['table','function'][$i] The type of the object
-     * @param bool   $onlyName If true then it only returns the name of the objects.
+     * @param string $type         =['table','function'][$i] The type of the
+     *                             object
+     * @param bool   $onlyName     If true then it only returns the name of the
+     *                             objects.
      *
-     * @return bool
+     * @return bool|array
      * @throws Exception
      */
-    public function objectList($type = 'table', $onlyName = false) {
+    public function objectList($type = 'table', $onlyName = false)
+    {
         $query = $this->service->objectList($type, $onlyName);
         if ($onlyName) {
             return $this->select($query)->toListSimple();
         }
+
         return $this->runRawQuery($query, [], true);
     }
 
     /**
-     * It returns an array of simple columns (not declarative). It uses the first column<br>
+     * It returns an array of simple columns (not declarative). It uses the
+     * first column<br>
      * <b>Example:</b><br>
      * <pre>
      * select('select id from table')->toListSimple() // ['1','2','3','4']
@@ -2598,32 +2734,166 @@ BOOTS;
      * @return array|bool
      * @throws Exception
      */
-    public function toListSimple() {
+    public function toListSimple()
+    {
         $useCache = $this->useCache; // because builderReset cleans this value
         $rows = $this->runGen(true, PDO::FETCH_COLUMN, 'tolistsimple');
         if ($this->uid) {
             // we store the information of the cache.
-            $this->cacheService->setCache($this->uid, $this->cacheFamily, $rows, $useCache);
+            $this->cacheService->setCache(
+                $this->uid, $this->cacheFamily, $rows, $useCache
+            );
         }
+
         return $rows;
     }
 
     /**
-     * It returns the statistics (minimum,maximum,average,sum and count) of a column of a table
+     * It adds a select to the query builder.
+     * <br><b>Example</b>:<br>
+     * <pre>
+     * ->select("\*")->from('table') = <i>"select * from table"</i><br>
+     * ->select(['col1','col2'])->from('table') = <i>"select col1,col2 from
+     * table"</i><br>
+     * ->select('col1,col2')->from('table') = <i>"select col1,col2 from
+     * table"</i><br>
+     * ->select('select *')->from('table') = <i>"select * from table"</i><br>
+     * ->select('select * from table') = <i>"select * from table"</i><br>
+     * ->select('select * from table where id=1') = <i>"select * from table
+     * where id=1"</i><br>
+     * </pre>
+     *
+     * @param string|array $sql
+     *
+     * @return PdoOne
+     * @test InstanceOf PdoOne::class,this('select 1 from DUAL')
+     */
+    public function select($sql)
+    {
+        if (is_array($sql)) {
+            $this->select .= implode(', ', $sql);
+        } else {
+            if ($this->select === '') {
+                $this->select = $sql;
+            } else {
+                $this->select .= ', ' . $sql;
+            }
+        }
+
+        return $this;
+    }
+
+    /**
+     * Resort the tableSorted list based in dependencies.
+     *
+     * @param array $tables            An associative array with the name of the
+     *                                 tables
+     * @param array $tableSorted       (ref) An associative array with the name
+     *                                 of the tables
+     * @param array $after             $after[city]=[country,..]
+     * @param array $before            $before[city]=[address]
+     * @param array $tableProblems     (ref) an associative array whtn the name
+     *                                 of the tables with problem.
+     * @param bool  $debugTrace        If true then it shows a debug per
+     *                                 operation.
+     *
+     * @return bool true if the sort is finished and there is nothing wrong.
+     */
+    protected function reSort(
+        $tables,
+        &$tableSorted,
+        $after,
+        $before,
+        &$tableProblems,
+        $debugTrace = false
+    ) {
+        shuffle($tables);
+        $tableProblems = [];
+        $nothingWrong = true;
+        foreach ($tables as $k => $table) {
+            $pos = array_search($table, $tableSorted);
+            // search for after in the wrong position
+            $wrong = false;
+            $pairProblem = '';
+            for ($i = 0; $i < $pos; $i++) {
+                if (in_array($tableSorted[$i], $before[$table])) {
+                    $wrong = true;
+                    $nothingWrong = false;
+                    $pairProblem = $tableSorted[$i];
+                    if ($debugTrace) {
+                        echo "reSort: [wrong position] $table ($pos) is after "
+                            . $tableSorted[$i] . " ($i)<br>";
+                    }
+                    break;
+                }
+            }
+            if ($wrong) {
+                // the value is already in the list, we start removing it
+                for ($i = $pos + 1; $i < count($tableSorted); $i++) {
+                    $tableSorted[$i - 1] = $tableSorted[$i];
+                }
+                unset(
+                    $tableSorted[count($tableSorted) - 1]
+                ); // we removed the last element.
+                // We found the initial position to add.
+                $pInitial = 0;
+                foreach ($tableSorted as $k2 => $v2) {
+                    if (in_array($v2, $after[$table])) {
+                        $pInitial = $k2 + 1;
+                    }
+                }
+                // we found the last position
+                $pEnd = count($tableSorted);
+                foreach ($tableSorted as $k2 => $v2) {
+                    if (in_array($v2, $before[$table])) {
+                        $pEnd = $k2 - 1;
+                    }
+                }
+                if ($pEnd < $pInitial) {
+                    $tableProblems[] = $table;
+                    $tableProblems[] = $pairProblem;
+                    if ($debugTrace) {
+                        echo "reSort: $table There is a circular reference (From $pInitial to $pEnd)<br>";
+                    }
+                }
+                if (isset($tableSorted[$pInitial])) {
+                    if ($debugTrace) {
+                        echo "reSort: moving $table to $pInitial<br>";
+                    }
+                    // the space is used, so we stack the values
+                    for ($i = count($tableSorted) - 1; $i >= $pInitial; $i--) {
+                        $tableSorted[$i + 1] = $tableSorted[$i];
+                    }
+                    $tableSorted[$pInitial] = $table;
+                } else {
+                    $tableSorted[$pInitial] = $table;
+                }
+            }
+        }
+
+        return $nothingWrong;
+    }
+
+    /**
+     * It returns the statistics (minimum,maximum,average,sum and count) of a
+     * column of a table
      *
      * @param string $tableName  Name of the table
      * @param string $columnName The column name to analyze.
      *
-     * @return array|bool Returns an array of the type ['min','max','avg','sum','count']
+     * @return array|bool Returns an array of the type
+     *                    ['min','max','avg','sum','count']
      * @throws Exception
      */
-    public function statValue($tableName, $columnName) {
+    public function statValue($tableName, $columnName)
+    {
         $query = "select min($columnName) min
 						,max($columnName) max
 						,avg($columnName) avg
 						,sum($columnName) sum
 						,count($columnName) count
 						 from $tableName";
+
         return $this->runRawQuery($query, null, true);
     }
 
@@ -2635,8 +2905,10 @@ BOOTS;
      * @return array|bool=['colname','coltype','colsize','colpres','colscale','iskey','isidentity','isnullable']
      * @throws Exception
      */
-    public function columnTable($tableName) {
-        $query=$this->service->columnTable($tableName);
+    public function columnTable($tableName)
+    {
+        $query = $this->service->columnTable($tableName);
+
         return $this->runRawQuery($query, null, true);
     }
 
@@ -2648,8 +2920,10 @@ BOOTS;
      * @return array|bool
      * @throws Exception
      */
-    public function foreignKeyTable($tableName) {
+    public function foreignKeyTable($tableName)
+    {
         $query = $this->service->foreignKeyTable($tableName);
+
         return $this->runRawQuery($query, null, true);
     }
 
@@ -2662,22 +2936,27 @@ BOOTS;
      * @return array|bool|PDOStatement
      * @throws Exception
      */
-    public function dropTable($tableName, $extra = '') {
+    public function dropTable($tableName, $extra = '')
+    {
         return $this->drop($tableName, 'table', $extra);
     }
 
     /**
      * It drops (DDL) an object
      *
-     * @param string $objectName The name of the object.
-     * @param string $type       =['table','view','columns','function'][$i] The type of object to drop.
-     * @param string $extra      (optional) An extra value added at the end of the query
+     * @param string $objectName     The name of the object.
+     * @param string $type           =['table','view','columns','function'][$i]
+     *                               The type of object to drop.
+     * @param string $extra          (optional) An extra value added at the end
+     *                               of the query
      *
      * @return array|bool|PDOStatement
      * @throws Exception
      */
-    public function drop($objectName, $type, $extra = '') {
+    public function drop($objectName, $type, $extra = '')
+    {
         $sql = "drop $type " . $this->addDelimiter($objectName) . " $extra";
+
         return $this->runRawQuery($sql, null, true);
     }
 
@@ -2685,31 +2964,42 @@ BOOTS;
      * It truncates (DDL)  a table
      *
      * @param string $tableName
-     * @param string $extra (optional) An extra value added at the end of the query
+     * @param string $extra     (optional) An extra value added at the end of the
+     *                          query
      *
      * @return array|bool|PDOStatement
      * @throws Exception
      */
-    public function truncate($tableName, $extra = '') {
+    public function truncate($tableName, $extra = '')
+    {
         $sql = "truncate table " . $this->addDelimiter($tableName) . " $extra";
+
         return $this->runRawQuery($sql, null, true);
     }
 
     /**
      * Create a table used for a sequence<br>
-     * The operation will fail if the table, sequence, function or procedure already exists.
+     * The operation will fail if the table, sequence, function or procedure
+     * already exists.
      *
-     * @param string|null $tableSequence The table to use<br>
-     *                                   If null then it uses the table defined in
-     *                                   $pdoOne->tableSequence.
-     * @param string      $method        =['snowflake','sequence'][$i] snowflake=it generates a value based on snowflake<br>
-     *                                   sequence= it generates a regular sequence number (1,2,3...)<br>
+     * @param string|null $tableSequence     The table to use<br>
+     *                                       If null then it uses the table
+     *                                       defined in
+     *                                       $pdoOne->tableSequence.
+     * @param string      $method            =['snowflake','sequence'][$i]
+     *                                       snowflake=it generates a value
+     *                                       based on snowflake<br> sequence= it generates a regular sequence
+     *                                       number
+     *                                       (1,2,3...)<br>
      *
      * @throws Exception
      */
-    public function createSequence($tableSequence = null, $method = 'snowflake') {
-        $tableSequence = ($tableSequence === null) ? $this->tableSequence : $tableSequence;
-        $sql = $this->service->createSequence($tableSequence, $method);
+    public function createSequence($tableSequence = null, $method = 'snowflake')
+    {
+        $tableSequence = ($tableSequence === null) ? $this->tableSequence
+            : $tableSequence;
+        $sql = $this->service->createSequence($tableSequence,
+            $method);
         $this->runRawQuery($sql);
     }
 
@@ -2717,23 +3007,46 @@ BOOTS;
      * Create a table<br>
      * <b>Example:</b><br>
      * <pre>
-     * createTable('products',['id'=>'int not null','name'=>'varchar(50) not null'],'id');
+     * createTable('products',['id'=>'int not null','name'=>'varchar(50) not
+     * null'],'id');
      * </pre>
      *
-     * @param string            $tableName    The name of the new table. This method will fail if the table exists.
-     * @param array             $definition   An associative array with the definition of the columns.<br>
-     *                                        Example ['id'=>'integer not null','name'=>'varchar(50) not null']
-     * @param string|null|array $primaryKey   The column's name that is primary key.<br>
-     *                                        If the value is an associative array then it generates all keys
-     * @param string            $extra        An extra operation inside of the definition of the table.
-     * @param string            $extraOutside An extra operation outside of the definition of the table.<br>
-     *                                        It replaces the default values outside of the table
+     * @param string            $tableName        The name of the new table. This
+     *                                            method will fail if the table
+     *                                            exists.
+     * @param array             $definition       An associative array with the
+     *                                            definition of the
+     *                                            columns.<br>
+     *                                            Example ['id'=>'integer not
+     *                                            null','name'=>'varchar(50)
+     *                                            not
+     *                                            null']
+     * @param string|null|array $primaryKey       The column's name that is
+     *                                            primary key.<br> If the value
+     *                                            is an associative array then
+     *                                            it generates all keys
+     * @param string            $extra            An extra operation inside of
+     *                                            the definition of the table.
+     * @param string            $extraOutside     An extra operation outside of
+     *                                            the definition of the
+     *                                            table.<br> It replaces the
+     *                                            default values outside of the
+     *                                            table
      *
      * @return array|bool|PDOStatement
      * @throws Exception
      */
-    public function createTable($tableName, $definition, $primaryKey = null, $extra = '', $extraOutside = '') {
-        $sql = $this->service->createTable($tableName, $definition, $primaryKey, $extra, $extraOutside);
+    public function createTable(
+        $tableName,
+        $definition,
+        $primaryKey = null,
+        $extra = '',
+        $extraOutside = ''
+    ) {
+        $sql = $this->service->createTable(
+            $tableName, $definition, $primaryKey, $extra, $extraOutside
+        );
+
         return $this->runRawQuery($sql, null, true);
     }
 
@@ -2741,18 +3054,23 @@ BOOTS;
      * Run many  unprepared query separated by ;<br>
      * <b>Example:</b><br>
      * <pre>
-     * ->runMultipleRawQuery("insert into() values(1); insert into() values(2)");<br>
+     * ->runMultipleRawQuery("insert into() values(1); insert into()
+     * values(2)");<br>
      * </pre>
      *
-     * @param string|array $listSql         SQL multiples queries separated by ";" or an array
-     * @param bool         $continueOnError if true then it continues on error.
+     * @param string|array $listSql             SQL multiples queries separated
+     *                                          by ";" or an array
+     * @param bool         $continueOnError     if true then it continues on
+     *                                          error.
      *
      * @return bool
      * @throws Exception
      */
-    public function runMultipleRawQuery($listSql, $continueOnError = false) {
+    public function runMultipleRawQuery($listSql, $continueOnError = false)
+    {
         if (!$this->isOpen) {
             $this->throwError("RMRQ: It's not connected to the database", "");
+
             return false;
         }
         $arr = (is_array($listSql)) ? $listSql : explode(';', $listSql);
@@ -2761,13 +3079,15 @@ BOOTS;
         foreach ($arr as $rawSql) {
             if (trim($rawSql) != '') {
                 if ($this->readonly) {
-                    if (stripos($rawSql, 'insert ') === 0 || stripos($rawSql, 'update ') === 0
+                    if (stripos($rawSql, 'insert ') === 0
+                        || stripos($rawSql, 'update ') === 0
                         || stripos($rawSql, 'delete ') === 0
                     ) {
                         // we aren't checking SQL-DCL queries. Also, "insert into" is stopped but "  insert into" not.
                         $ok = false;
                         if (!$continueOnError) {
-                            $this->throwError("Database is in READ ONLY MODE", "");
+                            $this->throwError("Database is in READ ONLY MODE",
+                                "");
                         }
                     }
                 }
@@ -2778,7 +3098,8 @@ BOOTS;
                 if ($r === false) {
                     $ok = false;
                     if (!$continueOnError) {
-                        $this->throwError("Unable to run raw query", $this->lastQuery);
+                        $this->throwError("Unable to run raw query",
+                            $this->lastQuery);
                     }
                 } else {
                     $counter += $r->rowCount();
@@ -2786,6 +3107,7 @@ BOOTS;
             }
         }
         $this->affected_rows = $counter;
+
         return $ok;
     }
 
@@ -2797,12 +3119,14 @@ BOOTS;
      * @posttest execution $this->pdoOne->commit();
      * @example  examples/testdb.php 92,4
      */
-    public function startTransaction() {
+    public function startTransaction()
+    {
         if ($this->transactionOpen || !$this->isOpen) {
             return false;
         }
         $this->transactionOpen = true;
         $this->conn1->beginTransaction();
+
         return true;
     }
 
@@ -2815,16 +3139,20 @@ BOOTS;
      * @throws Exception
      * @test equals false,(false),'transaction is not open'
      */
-    public function commit($throw = true) {
+    public function commit($throw = true)
+    {
         if (!$this->transactionOpen && $throw) {
             $this->throwError("Transaction not open to commit()", "");
+
             return false;
         }
         if (!$this->isOpen) {
             $this->throwError("It's not connected to the database", "");
+
             return false;
         }
         $this->transactionOpen = false;
+
         return @$this->conn1->commit();
     }
 
@@ -2837,15 +3165,18 @@ BOOTS;
      * @throws Exception
      * @test equals false,(false),'transaction is not open'
      */
-    public function rollback($throw = true) {
+    public function rollback($throw = true)
+    {
         if (!$this->transactionOpen && $throw) {
             $this->throwError("Transaction not open  to rollback()", "");
         }
         if (!$this->isOpen) {
             $this->throwError("It's not connected to the database", "");
+
             return false;
         }
         $this->transactionOpen = false;
+
         return @$this->conn1->rollback();
     }
 
@@ -2853,10 +3184,13 @@ BOOTS;
      * It generates a query for "count". It is a macro of select()
      * <br><b>Example</b>:<br>
      * <pre>
-     * ->count('')->from('table')->firstScalar() // select count(*) from table<br>
+     * ->count('')->from('table')->firstScalar() // select count(*) from
+     * table<br>
      * ->count('from table')->firstScalar() // select count(*) from table<br>
-     * ->count('from table where condition=1')->firstScalar() // select count(*) from table where condition=1<br>
-     * ->count('from table','col')->firstScalar() // select count(col) from table<br>
+     * ->count('from table where condition=1')->firstScalar() // select count(*)
+     * from table where condition=1<br>
+     * ->count('from table','col')->firstScalar() // select count(col) from
+     * table<br>
      * </pre>
      *
      * @param string|null $sql
@@ -2864,88 +3198,111 @@ BOOTS;
      *
      * @return PdoOne
      */
-    public function count($sql = '', $arg = '*') {
+    public function count($sql = '', $arg = '*')
+    {
         return $this->_aggFn('count', $sql, $arg);
     }
 
-    private function _aggFn($method, $sql = '', $arg = '') {
+    private function _aggFn($method, $sql = '', $arg = '')
+    {
         if ($arg === '') {
-            $arg = $sql; // if the argument is empty then it uses sql as argument
+            $arg
+                = $sql; // if the argument is empty then it uses sql as argument
             $sql = ''; // and it lefts sql as empty
         }
+
         return $this->select("select $method($arg) $sql");
     }
 
     /**
      * It generates a query for "sum". It is a macro of select()
      * <br><b>Example</b>:<br>
-     * ->sum('from table','col')->firstScalar() // select sum(col) from table<br>
-     * ->sum('col')->from('table')->firstScalar() // select sum(col) from table<br>
-     * ->sum('','col')->from('table')->firstScalar() // select sum(col) from table<br>
+     * ->sum('from table','col')->firstScalar() // select sum(col) from
+     * table<br>
+     * ->sum('col')->from('table')->firstScalar() // select sum(col) from
+     * table<br>
+     * ->sum('','col')->from('table')->firstScalar() // select sum(col) from
+     * table<br>
      *
-     * @param string $sql [optional] it could be the name of column or part of the query ("from table..")
-     * @param string $arg [optiona] it could be the name of the column
+     * @param string $sql     [optional] it could be the name of column or part
+     *                        of the query ("from table..")
+     * @param string $arg     [optiona] it could be the name of the column
      *
      * @return PdoOne
      */
-    public function sum($sql = '', $arg = '') {
+    public function sum($sql = '', $arg = '')
+    {
         return $this->_aggFn('sum', $sql, $arg);
     }
 
     /**
      * It generates a query for "min". It is a macro of select()
      * <br><b>Example</b>:<br>
-     * ->min('from table','col')->firstScalar() // select min(col) from table<br>
-     * ->min('col')->from('table')->firstScalar() // select min(col) from table<br>
-     * ->min('','col')->from('table')->firstScalar() // select min(col) from table<br>
+     * ->min('from table','col')->firstScalar() // select min(col) from
+     * table<br>
+     * ->min('col')->from('table')->firstScalar() // select min(col) from
+     * table<br>
+     * ->min('','col')->from('table')->firstScalar() // select min(col) from
+     * table<br>
      *
      * @param string $sql
      * @param string $arg
      *
      * @return PdoOne
      */
-    public function min($sql = '', $arg = '') {
+    public function min($sql = '', $arg = '')
+    {
         return $this->_aggFn('min', $sql, $arg);
     }
 
     /**
      * It generates a query for "max". It is a macro of select()
      * <br><b>Example</b>:<br>
-     * ->max('from table','col')->firstScalar() // select max(col) from table<br>
-     * ->max('col')->from('table')->firstScalar() // select max(col) from table<br>
-     * ->max('','col')->from('table')->firstScalar() // select max(col) from table<br>
+     * ->max('from table','col')->firstScalar() // select max(col) from
+     * table<br>
+     * ->max('col')->from('table')->firstScalar() // select max(col) from
+     * table<br>
+     * ->max('','col')->from('table')->firstScalar() // select max(col) from
+     * table<br>
      *
      * @param string $sql
      * @param string $arg
      *
      * @return PdoOne
      */
-    public function max($sql = '', $arg = '') {
+    public function max($sql = '', $arg = '')
+    {
         return $this->_aggFn('max', $sql, $arg);
     }
 
     /**
      * It generates a query for "avg". It is a macro of select()
      * <br><b>Example</b>:<br>
-     * ->avg('from table','col')->firstScalar() // select avg(col) from table<br>
-     * ->avg('col')->from('table')->firstScalar() // select avg(col) from table<br>
-     * ->avg('','col')->from('table')->firstScalar() // select avg(col) from table<br>
+     * ->avg('from table','col')->firstScalar() // select avg(col) from
+     * table<br>
+     * ->avg('col')->from('table')->firstScalar() // select avg(col) from
+     * table<br>
+     * ->avg('','col')->from('table')->firstScalar() // select avg(col) from
+     * table<br>
      *
      * @param string $sql
      * @param string $arg
      *
      * @return PdoOne
      */
-    public function avg($sql = '', $arg = '') {
+    public function avg($sql = '', $arg = '')
+    {
         return $this->_aggFn('avg', $sql, $arg);
     }
 
     /**
-     * Adds a left join to the pipeline. It is possible to chain more than one join<br>
+     * Adds a left join to the pipeline. It is possible to chain more than one
+     * join<br>
      * <b>Example:</b><br>
      * <pre>
      *      left('table on t1.c1=t2.c2')
-     *      left('table on table.c1=t2.c2').left('table2 on table1.c1=table2.c2')
+     *      left('table on table.c1=t2.c2').left('table2 on
+     * table1.c1=table2.c2')
      * </pre>
      *
      * @param string $sql Input SQL query
@@ -2953,7 +3310,8 @@ BOOTS;
      * @return PdoOne
      * @test InstanceOf PdoOne::class,this('table2 on table1.t1=table2.t2')
      */
-    public function left($sql) {
+    public function left($sql)
+    {
         if ($sql === null) {
             return $this;
         }
@@ -2961,21 +3319,25 @@ BOOTS;
             return $this->from($sql);
         }
         $this->from .= ($sql) ? " left join $sql" : '';
+
         return $this;
     }
 
     /**
-     * Adds a right join to the pipeline. It is possible to chain more than one join<br>
+     * Adds a right join to the pipeline. It is possible to chain more than one
+     * join<br>
      * <b>Example:</b><br>
      *      right('table on t1.c1=t2.c2')<br>
-     *      right('table on table.c1=t2.c2').right('table2 on table1.c1=table2.c2')<br>
+     *      right('table on table.c1=t2.c2').right('table2 on
+     *      table1.c1=table2.c2')<br>
      *
      * @param string $sql Input SQL query
      *
      * @return PdoOne
      * @test InstanceOf PdoOne::class,this('table2 on table1.t1=table2.t2')
      */
-    public function right($sql) {
+    public function right($sql)
+    {
         if ($sql === null) {
             return $this;
         }
@@ -2983,6 +3345,7 @@ BOOTS;
             return $this->from($sql);
         }
         $this->from .= ($sql) ? " right join $sql" : '';
+
         return $this;
     }
 
@@ -2997,9 +3360,11 @@ BOOTS;
      * @param array|mixed  $param
      *
      * @return PdoOne
-     * @test InstanceOf PdoOne::class,this('field1=?,field2=?',['i',20,'s','hello'])
+     * @test InstanceOf
+     *       PdoOne::class,this('field1=?,field2=?',['i',20,'s','hello'])
      */
-    public function set($sqlOrArray, $param = self::NULL) {
+    public function set($sqlOrArray, $param = self::NULL)
+    {
         if ($sqlOrArray === null) {
             return $this;
         }
@@ -3016,7 +3381,8 @@ BOOTS;
             if (is_array($param)) {
                 for ($i = 0; $i < count($param); $i += 2) {
                     $this->whereParamType[] = $param[$i];
-                    $this->whereParamValue['i_' . $this->whereCounter] = $param[$i + 1];
+                    $this->whereParamValue['i_' . $this->whereCounter] = $param[$i
+                    + 1];
                     $this->whereCounter++;
                 }
             } else {
@@ -3025,18 +3391,163 @@ BOOTS;
                 $this->whereCounter++;
             }
         } else {
-            $col = array();
-            $colT = array();
-            $p = array();
+            $col = [];
+            $colT = [];
+            $p = [];
             $this->constructParam($sqlOrArray, $param, $col, $colT, $p);
             foreach ($col as $k => $c) {
-                $this->set[] = $this->addDelimiter($c) . "=?";
+                $this->set[] = $this->addDelimiter(
+                        $c
+                    ) . "=?";
                 $this->whereParamType[] = $p[$k * 2];
-                $this->whereParamValue['i_' . $this->whereCounter] = $p[$k * 2 + 1];
+                $this->whereParamValue['i_' . $this->whereCounter] = $p[$k * 2
+                + 1];
                 $this->whereCounter++;
             }
         }
+
         return $this;
+    }
+
+    /**
+     * @param array|null $tableDefs       It could be a definition with or
+     *                                    without values. If null then it is
+     *                                    defined automatically by $arrayValue.
+     * @param array|int  $values          if value is self::NULL then it's
+     *                                    calculated without this value
+     * @param array      $col
+     * @param array      $colT
+     * @param array      $param
+     */
+    private function constructParam($tableDefs, $values, &$col, &$colT, &$param)
+    {
+        if ($tableDefs === null || $this->isAssoc($tableDefs)) {
+            if ($values === self::NULL && $tableDefs !== null) {
+                // the type is calculated automatically. It could fails and it doesn't work with blob
+                reset($tableDefs);
+                foreach ($tableDefs as $k => $v) {
+                    if ($colT === null) {
+                        $col[] = $this->addDelimiter($k) . '=?';
+                    } else {
+                        $col[] = $this->addDelimiter($k);
+                        $colT[] = '?';
+                    }
+                    $vt = $this->getType($v);
+                    $param[] = $vt;
+                    $param[] = $v;
+                }
+            } else {
+                if ($tableDefs === null) {
+                    $tableDefs = $values;
+                    if (is_array($tableDefs)) {
+                        foreach ($tableDefs as $k => $v) {
+                            $tableDefs[$k] = 's';
+                        }
+                    }
+                }
+                // it uses two associative array, one for the type and another for the value
+                if (is_array($tableDefs)) {
+                    foreach ($tableDefs as $k => $v) {
+                        if ($colT === null) {
+                            $col[] = $this->addDelimiter($k) . "=?";
+                        } else {
+                            $col[] = $this->addDelimiter($k);
+                            $colT[] = '?';
+                        }
+
+                        $param[] = $v;
+                        $param[] = @$values[$k];
+                    }
+                }
+            }
+        } else {
+            if ($values === self::NULL) {
+                // it uses a single list, the first value is the column, the second value
+                // is the type and the third is the value
+                if (is_array($tableDefs)) {
+                    for ($i = 0; $i < count($tableDefs); $i += 3) {
+                        if ($colT === null) {
+                            $col[] = $this->addDelimiter($tableDefs[$i]) . "=?";
+                        } else {
+                            $col[] = $tableDefs[$i];
+                            $colT[] = '?';
+                        }
+                        $param[] = $tableDefs[$i + 1];
+                        $param[] = $tableDefs[$i + 2];
+                    }
+                }
+            } else {
+                // it uses two list, the first value of the first list is the column, the second value is the type
+                // , the second list only contains values.
+                for ($i = 0; $i < count($tableDefs); $i += 2) {
+                    if ($colT === null) {
+                        $col[] = $this->addDelimiter($tableDefs[$i]) . "=?";
+                    } else {
+                        $col[] = $tableDefs[$i];
+                        $colT[] = '?';
+                    }
+                    $param[] = $tableDefs[$i + 1];
+                    $param[] = $values[$i / 2];
+                }
+            }
+        }
+    }
+
+    /**
+     * It returns true if the array is an associative array.  False
+     * otherwise.<br>
+     * <b>Example:</b><br>
+     * isAssoc(['a1'=>1,'a2'=>2]); // true<br/>
+     * isAssoc(['a1','a2']); // false<br/>
+     * isAssoc('aaa'); isAssoc(null); // false<br/>
+     *
+     * @param mixed $array
+     *
+     * @return bool
+     */
+    private function isAssoc($array)
+    {
+        if ($array === null) {
+            return false;
+        }
+        if (!is_array($array)) {
+            return false;
+        }
+
+        return (array_values($array) !== $array);
+    }
+
+    /**
+     * @param mixed $v Variable
+     *
+     * @return int=[PDO::PARAM_STR,PDO::PARAM_INT,PDO::PARAM_BOOL][$i]
+     * @test equals PDO::PARAM_STR,(20.3)
+     * @test equals PDO::PARAM_STR,('hello')
+     */
+    private function getType(&$v)
+    {
+        switch (1) {
+            case (is_double($v)):
+            case ($v === null):
+                $vt = PDO::PARAM_STR;
+                break;
+            case (is_numeric($v)):
+                $vt = PDO::PARAM_INT;
+                break;
+            case (is_bool($v)):
+
+                $vt = PDO::PARAM_INT;
+                $v = ($v) ? 1 : 0;
+                break;
+            case (is_object($v) && get_class($v) == 'DateTime'):
+                $vt = PDO::PARAM_STR;
+                $v = PdoOne::dateTimePHP2Sql($v);
+                break;
+            default:
+                $vt = PDO::PARAM_STR;
+        }
+
+        return $vt;
     }
 
     /**
@@ -3049,11 +3560,13 @@ BOOTS;
      * @return PdoOne
      * @test InstanceOf PdoOne::class,this('fieldgroup')
      */
-    public function group($sql) {
+    public function group($sql)
+    {
         if ($sql === null) {
             return $this;
         }
         $this->group = ($sql) ? ' group by ' . $sql : '';
+
         return $this;
     }
 
@@ -3067,22 +3580,126 @@ BOOTS;
      *      having(['field',['i',20]] ) // array type defined
      *      having('field=20') // literal value
      *      having('field=?',[20]) // automatic type
-     *      having('field',[20]) // automatic type (it's the same than where('field=?',[20])
-     *      having('field=?', ['i',20] ) // type(i,d,s,b) defined
-     *      having('field=?,field2=?', ['i',20,'s','hello'] )
+     *      having('field',[20]) // automatic type (it's the same than
+     *      where('field=?',[20]) having('field=?', ['i',20] ) // type(i,d,s,b)
+     *      defined having('field=?,field2=?', ['i',20,'s','hello'] )
      *
      * @param string|array $sql
      * @param array|mixed  $param
      *
      * @return PdoOne
      * @see  http://php.net/manual/en/mysqli-stmt.bind-param.php for types
-     * @test InstanceOf PdoOne::class,this('field1=?,field2=?',['i',20,'s','hello'])
+     * @test InstanceOf
+     *       PdoOne::class,this('field1=?,field2=?',['i',20,'s','hello'])
      */
-    public function having($sql, $param = self::NULL) {
+    public function having($sql, $param = self::NULL)
+    {
         if ($sql === null) {
             return $this;
         }
+
         return $this->where($sql, $param, true);
+    }
+
+    /**
+     * <b>Example:</b><br>
+     *      where( ['field'=>20] ) // associative array with automatic type
+     *      where( ['field'=>['i',20]] ) // associative array with type defined
+     *      where( ['field',20] ) // array automatic type
+     *      where (['field',['i',20]] ) // array type defined
+     *      where('field=20') // literal value
+     *      where('field=?',[20]) // automatic type
+     *      where('field',[20]) // automatic type (it's the same than
+     *      where('field=?',[20]) where('field=?', ['i',20] ) // type(i,d,s,b)
+     *      defined where('field=?,field2=?', ['i',20,'s','hello'] )
+     *      where('field=:field,field2=:field2',
+     *      ['field'=>'hello','field2'=>'world'] ) // associative array as value
+     *
+     * @param string|array $sql          Input SQL query or associative/indexed
+     *                                   array
+     * @param array|mixed  $param        Associative or indexed array with the
+     *                                   conditions.
+     * @param bool         $isHaving     if true then it is a HAVING sql commando
+     *                                   instead of a WHERE.
+     *
+     * @return PdoOne
+     * @see  http://php.net/manual/en/mysqli-stmt.bind-param.php for types
+     * @test InstanceOf
+     *       PdoOne::class,this('field1=?,field2=?',['i',20,'s','hello'])
+     */
+    public function where($sql, $param = self::NULL, $isHaving = false)
+    {
+        if ($sql === null) {
+            return $this;
+        }
+        if (is_string($sql)) {
+            if ($param === self::NULL) {
+                if ($isHaving) {
+                    $this->having[] = $sql;
+                } else {
+                    $this->where[] = $sql;
+                }
+
+                return $this;
+            }
+            switch (true) {
+                case $this->isAssoc($param):
+                    $this->whereParamAssoc = $param;
+                    $this->whereParamType = [];
+                    $this->whereParamValue = [];
+                    $this->whereCounter = 0;
+                    break;
+                case !is_array($param):
+                    if (strpos($sql, '?') === false) {
+                        $sql .= '=?';
+                    } // transform 'condition' to 'condition=?'
+                    $this->whereParamType[] = $this->getType(
+                        $param
+                    );
+                    $this->whereParamValue['i_' . $this->whereCounter] = $param;
+                    $this->whereCounter++;
+                    break;
+                case count($param) == 1:
+                    $this->whereParamType[] = $this->getType(
+                        $param[0]
+                    );
+                    $this->whereParamValue['i_' . $this->whereCounter]
+                        = $param[0];
+                    $this->whereCounter++;
+                    break;
+                default:
+                    for ($i = 0; $i < count($param); $i += 2) {
+                        $this->whereParamType[] = $param[$i];
+                        $this->whereParamValue['i_' . $this->whereCounter]
+                            = $param[$i + 1];
+                        $this->whereCounter++;
+                    }
+            }
+            if ($isHaving) {
+                $this->having[] = $sql;
+            } else {
+                $this->where[] = $sql;
+            }
+        } else {
+            $col = [];
+            $colT = [];
+            $p = [];
+            $this->constructParam($sql, $param, $col, $colT, $p);
+
+            foreach ($col as $k => $c) {
+                if ($isHaving) {
+                    $this->having[] = "$c=?";
+                } else {
+                    $this->where[] = "$c=?";
+                }
+                $this->whereParamType[] = $p[$k * 2];
+                $this->whereParamValue['i_' . $this->whereCounter] = $p[$k * 2
+                + 1];
+                $this->whereCounter++;
+            }
+        }
+
+        return $this;
     }
 
     /**
@@ -3098,16 +3715,19 @@ BOOTS;
      * @throws Exception
      * @test InstanceOf PdoOne::class,this('1,10')
      */
-    public function limit($sql) {
+    public function limit($sql)
+    {
         if ($sql === null) {
             return $this;
         }
         $this->service->limit($sql);
+
         return $this;
     }
 
     /**
-     * Adds a distinct to the query. The value is ignored if the select() is written complete.<br>
+     * Adds a distinct to the query. The value is ignored if the select() is
+     * written complete.<br>
      * <pre>
      *      ->select("*")->distinct() // works
      *      ->select("select *")->distinct() // distinct is ignored.
@@ -3118,30 +3738,38 @@ BOOTS;
      * @return PdoOne
      * @test InstanceOf PdoOne::class,this()
      */
-    public function distinct($sql = 'distinct') {
+    public function distinct($sql = 'distinct')
+    {
         if ($sql === null) {
             return $this;
         }
         $this->distinct = ($sql) ? $sql . ' ' : '';
+
         return $this;
     }
 
     /**
-     * It returns an associative array where the first value is the key and the second is the value<br>
-     * If the second value does not exist then it uses the index as value (first value)<br>
+     * It returns an associative array where the first value is the key and the
+     * second is the value<br> If the second value does not exist then it uses
+     * the index as value (first value)<br>
      * <b>Example:</b><br>
      * <pre>
-     * select('select cod,name from table')->toListKeyValue() // ['cod1'=>'name1','cod2'=>'name2']
-     * select('select cod,name,ext from table')->toListKeyValue('|') // ['cod1'=>'name1|ext1','cod2'=>'name2|ext2']
+     * select('select cod,name from table')->toListKeyValue() //
+     * ['cod1'=>'name1','cod2'=>'name2'] select('select cod,name,ext from
+     * table')->toListKeyValue('|') //
+     * ['cod1'=>'name1|ext1','cod2'=>'name2|ext2']
      * </pre>
      *
-     * @param string|null $extraValueSeparator (optional) It allows to read a third value and returns
-     *                                         it concatenated with the value.  Example '|'
+     * @param string|null $extraValueSeparator     (optional) It allows to read a
+     *                                             third value and returns it
+     *                                             concatenated with the value.
+     *                                             Example '|'
      *
      * @return array|bool|null
      * @throws Exception
      */
-    public function toListKeyValue($extraValueSeparator = null) {
+    public function toListKeyValue($extraValueSeparator = null)
+    {
         $list = $this->toList(PDO::FETCH_NUM);
         if (!is_array($list)) {
             return null;
@@ -3155,7 +3783,35 @@ BOOTS;
                     . $extraValueSeparator . @$item[2];
             }
         }
+
         return $result;
+    }
+
+    /**
+     * It returns an declarative array of rows.<br>
+     * Example:
+     * <pre>
+     * select('select id,name from table')->toList() //
+     * [['id'=>'1','name'='john'],['id'=>'2','name'=>'anna']]
+     * </pre>
+     *
+     * @param int $pdoMode (optional) By default is PDO::FETCH_ASSOC
+     *
+     * @return array|bool
+     * @throws Exception
+     */
+    public function toList($pdoMode = PDO::FETCH_ASSOC)
+    {
+        $useCache = $this->useCache; // because builderReset cleans this value
+        $rows = $this->runGen(true, $pdoMode, 'tolist');
+        if ($this->uid) {
+            // we store the information of the cache.
+            $this->cacheService->setCache(
+                $this->uid, $this->cacheFamily, $rows, $useCache
+            );
+        }
+
+        return $rows;
     }
 
     /**
@@ -3165,7 +3821,8 @@ BOOTS;
      * @return PDOStatement
      * @throws Exception
      */
-    public function toResult() {
+    public function toResult()
+    {
         return $this->runGen(false);
     }
 
@@ -3173,21 +3830,28 @@ BOOTS;
      * It returns the first row.  If there is not row then it returns empty.
      * <br><b>Example</b>:<br>
      * <pre>
-     *      $con->select('*')->from('table')->first(); // select * from table (first value)
+     *      $con->select('*')->from('table')->first(); // select * from table
+     *      (first value)
      * </pre>
      *
      * @return array|null
      * @throws Exception
      */
-    public function first() {
+    public function first()
+    {
         $useCache = $this->useCache; // because builderReset cleans this value
         if ($useCache !== false) {
             $sql = $this->sqlGen();
-            $this->uid = hash('sha256', $sql . PDO::FETCH_ASSOC . serialize($this->whereParamType)
-                . serialize($this->whereParamValue) . 'first');
-            $rows = $this->cacheService->getCache($this->uid, $this->cacheFamily);
+            $this->uid = hash(
+                'sha256', $sql . PDO::FETCH_ASSOC . serialize($this->whereParamType)
+                . serialize($this->whereParamValue) . 'first'
+            );
+            $rows = $this->cacheService->getCache(
+                $this->uid, $this->cacheFamily
+            );
             if ($rows !== false) {
                 $this->builderReset();
+
                 return $rows;
             }
         }
@@ -3207,35 +3871,46 @@ BOOTS;
         }
         if ($this->uid) {
             // we store the information of the cache.
-            $this->cacheService->setCache($this->uid, $this->cacheFamily, $row, $useCache);
+            $this->cacheService->setCache(
+                $this->uid, $this->cacheFamily, $row, $useCache
+            );
         }
+
         return $row;
     }
 
     /**
-     * Executes the query, and returns the first column of the first row in the result set returned by the query.
-     * Additional columns or rows are ignored.
+     * Executes the query, and returns the first column of the first row in the
+     * result set returned by the query. Additional columns or rows are ignored.
      * If value is found then it returns null.
      * <br><b>Example</b>:<br>
      * <pre>
-     *      $con->select('*')->from('table')->firstScalar(); // select * from table (first scalar value)
+     *      $con->select('*')->from('table')->firstScalar(); // select * from
+     *      table (first scalar value)
      * </pre>
      *
-     * @param string|null $colName If it's null then it uses the first column.
+     * @param string|null $colName     If it's null then it uses the first
+     *                                 column.
      *
      * @return mixed|null
      * @throws Exception
      */
-    public function firstScalar($colName = null) {
+    public function firstScalar($colName = null)
+    {
         $rows = null;
         $useCache = $this->useCache; // because builderReset cleans this value
         if ($useCache !== false) {
             $sql = $this->sqlGen();
-            $this->uid = hash('sha256', $sql . PDO::FETCH_ASSOC . serialize($this->whereParamType)
-                . serialize($this->whereParamValue) . 'firstscalar');
-            $rows = $this->cacheService->getCache($this->uid, $this->cacheFamily);
+            $this->uid = hash(
+                'sha256', $sql . PDO::FETCH_ASSOC . serialize($this->whereParamType)
+                . serialize($this->whereParamValue) . 'firstscalar'
+            );
+            $rows = $this->cacheService->getCache(
+                $this->uid, $this->cacheFamily
+            );
             if ($rows !== false) {
                 $this->builderReset();
+
                 return $rows;
             }
         }
@@ -3261,31 +3936,42 @@ BOOTS;
         }
         if ($this->uid) {
             // we store the information of the cache.
-            $this->cacheService->setCache($this->uid, $this->cacheFamily, $row, $useCache);
+            $this->cacheService->setCache(
+                $this->uid, $this->cacheFamily, $row, $useCache
+            );
         }
+
         return $row;
     }
 
     /**
-     * Returns the last row. It's not recommended. Use instead first() and change the order.
+     * Returns the last row. It's not recommended. Use instead first() and
+     * change the order.
      * <br><b>Example</b>:<br>
      * <pre>
-     *      $con->select('*')->from('table')->last(); // select * from table (last scalar value)
+     *      $con->select('*')->from('table')->last(); // select * from table
+     *      (last scalar value)
      * </pre>
      *
      * @return array|null
      * @throws Exception
      * @see \eftec\PdoOne::first
      */
-    public function last() {
+    public function last()
+    {
         $useCache = $this->useCache; // because builderReset cleans this value
         if ($useCache !== false) {
             $sql = $this->sqlGen();
-            $this->uid = hash('sha256', $sql . PDO::FETCH_ASSOC . serialize($this->whereParamType)
-                . serialize($this->whereParamValue) . 'last');
-            $rows = $this->cacheService->getCache($this->uid, $this->cacheFamily);
+            $this->uid = hash(
+                'sha256', $sql . PDO::FETCH_ASSOC . serialize($this->whereParamType)
+                . serialize($this->whereParamValue) . 'last'
+            );
+            $rows = $this->cacheService->getCache(
+                $this->uid, $this->cacheFamily
+            );
             if ($rows !== false) {
                 $this->builderReset();
+
                 return $rows;
             }
         }
@@ -3305,8 +3991,11 @@ BOOTS;
         }
         if ($this->uid) {
             // we store the information of the cache.
-            $this->cacheService->setCache($this->uid, $this->cacheFamily, $row, $useCache);
+            $this->cacheService->setCache(
+                $this->uid, $this->cacheFamily, $row, $useCache
+            );
         }
+
         return $row;
     }
     //</editor-fold>
@@ -3314,23 +4003,28 @@ BOOTS;
     //<editor-fold desc="Encryption functions" defaultstate="collapsed" >
 
     /**
-     * It sets to use cache (if the cacheservice is set) for the current pipelines.
+     * It sets to use cache (if the cacheservice is set) for the current
+     * pipelines.
      *
-     * @param null|bool|int $ttl    If null then the cache never expires.<br>
-     *                              If false then we don't use cache.<br>
-     *                              If int then it is the duration of the cache (in seconds)
-     * @param string        $family [optional] It is the family or group of the cache. It could be used to identify
-     *                              a group of cache to invalidate the whole group (for example, invalidate all cache
-     *                              from a specific table).
+     * @param null|bool|int $ttl        If null then the cache never expires.<br>
+     *                                  If false then we don't use cache.<br>
+     *                                  If int then it is the duration of the
+     *                                  cache (in seconds)
+     * @param string        $family     [optional] It is the family or group of
+     *                                  the cache. It could be used to identify
+     *                                  a group of cache to invalidate the whole group (for example,
+     *                                  invalidate all cache from a specific table).
      *
      * @return $this
      */
-    public function useCache($ttl = null, $family = '') {
+    public function useCache($ttl = null, $family = '')
+    {
         if ($this->cacheService === null) {
             $ttl = false;
         }
         $this->cacheFamily = $family;
         $this->useCache = $ttl;
+
         return $this;
     }
 
@@ -3338,8 +4032,10 @@ BOOTS;
      * Generate and run an update in the database.
      * <br><b>Example</b>:<br>
      * <pre>
-     *      update('table',['col1','i',10,'col2','s','hello world'],['where','i',10]);
-     *      update('table',['col1','i','col2','s'],[10,'hello world'],['where','i'],[10]);
+     *      update('table',['col1','i',10,'col2','s','hello
+     *      world'],['where','i',10]);
+     *      update('table',['col1','i','col2','s'],[10,'hello
+     *      world'],['where','i'],[10]);
      *      ->from("producttype")
      *          ->set("name=?",['s','Captain-Crunch'])
      *          ->where('idproducttype=?',['i',6])
@@ -3347,7 +4043,8 @@ BOOTS;
      *      update('product_category set col1=10 where idproducttype=1')
      * </pre>
      *
-     * @param string       $tableName The name of the table or the whole query.
+     * @param string       $tableName     The name of the table or the whole
+     *                                    query.
      * @param string[]     $tableDef
      * @param string[]|int $values
      * @param string[]     $tableDefWhere
@@ -3367,16 +4064,20 @@ BOOTS;
             // using builder. from()->set()->where()->update()
             $errorCause = '';
             if ($this->from == "") {
-                $errorCause = "you can't execute an empty update() without a from()";
+                $errorCause
+                    = "you can't execute an empty update() without a from()";
             }
             if (count($this->set) === 0) {
-                $errorCause = "you can't execute an empty update() without a set()";
+                $errorCause
+                    = "you can't execute an empty update() without a set()";
             }
             if (count($this->where) === 0) {
-                $errorCause = "you can't execute an empty update() without a where()";
+                $errorCause
+                    = "you can't execute an empty update() without a where()";
             }
             if ($errorCause) {
                 $this->throwError($errorCause, "");
+
                 return false;
             }
             $sql = "update " . $this->addDelimiter($this->from) . " "
@@ -3388,6 +4089,7 @@ BOOTS;
             }
             $this->builderReset();
             $stmt = $this->runRawQuery($sql, $param, true);
+
             return $this->affected_rows($stmt);
         } else {
             $col = [];
@@ -3395,17 +4097,23 @@ BOOTS;
             $colWhere = [];
             $param = [];
             if ($tableDefWhere === null) {
-                $this->constructParam($tableDef, self::NULL, $col, $colT, $param);
-                $this->constructParam($values, self::NULL, $colWhere, $colT, $param);
+                $this->constructParam($tableDef, self::NULL, $col, $colT,
+                    $param);
+                $this->constructParam($values, self::NULL, $colWhere, $colT,
+                    $param);
             } else {
                 $this->constructParam($tableDef, $values, $col, $colT, $param);
-                $this->constructParam($tableDefWhere, $valueWhere, $colWhere, $colT, $param);
+                $this->constructParam(
+                    $tableDefWhere, $valueWhere, $colWhere, $colT, $param
+                );
             }
             $sql = "update " . $this->addDelimiter($tableName);
             $sql .= count($col) ? " set " . implode(',', $col) : '';
-            $sql .= count($colWhere) ? " where " . implode(' and ', $colWhere) : '';
+            $sql .= count($colWhere) ? " where " . implode(' and ', $colWhere)
+                : '';
             $this->builderReset();
             $this->runRawQuery($sql, $param);
+
             return $this->insert_id();
         }
     }
@@ -3413,12 +4121,14 @@ BOOTS;
     /**
      * @return string
      */
-    private function constructSet() {
+    private function constructSet()
+    {
         if (count($this->set)) {
             $where = " set " . implode(',', $this->set);
         } else {
             $where = '';
         }
+
         return $where;
     }
     //</editor-fold>
@@ -3427,12 +4137,14 @@ BOOTS;
     /**
      * @return string
      */
-    private function constructWhere() {
+    private function constructWhere()
+    {
         if (count($this->where)) {
             $where = ' where ' . implode(' and ', $this->where);
         } else {
             $where = '';
         }
+
         return $where;
     }
 
@@ -3443,12 +4155,14 @@ BOOTS;
      *
      * @return mixed
      */
-    public function affected_rows($stmt = null) {
+    public function affected_rows($stmt = null)
+    {
         if ($stmt instanceof PDOStatement) {
             if (!$this->isOpen) {
                 return $stmt->rowCount();
             }
         }
+
         return $this->affected_rows; // returns previous calculated information
     }
 
@@ -3457,45 +4171,60 @@ BOOTS;
      *
      * @return mixed
      */
-    public function insert_id() {
+    public function insert_id()
+    {
         if (!$this->isOpen) {
             return -1;
         }
+
         return $this->conn1->lastInsertId();
     }
 
     /**
-     * It allows to insert a declarative array. It uses "s" (string) as filetype.
+     * It allows to insert a declarative array. It uses "s" (string) as
+     * filetype.
      * <p>Example: ->insertObject('table',['field1'=>1,'field2'=>'aaa']);
      *
-     * @param string $tableName     The name of the table.
-     * @param array  $object        associative array with the colums and values
-     * @param array  $excludeColumn (optional) columns to exclude. Example ['col1','col2']
+     * @param string $tableName         The name of the table.
+     * @param array  $object            associative array with the colums and
+     *                                  values
+     * @param array  $excludeColumn     (optional) columns to exclude. Example
+     *                                  ['col1','col2']
      *
      * @return mixed
      * @throws Exception
      */
-    public function insertObject($tableName, $object, $excludeColumn = []) {
+    public function insertObject($tableName, $object, $excludeColumn = [])
+    {
         $tabledef = [];
         foreach ($object as $k => $field) {
-            if (!in_array($k, $excludeColumn, true)) { // avoid $k=0 is always valid for numeric columns
+            if (!in_array(
+                $k, $excludeColumn, true
+            )
+            ) { // avoid $k=0 is always valid for numeric columns
                 $tabledef[$k] = 's';
             }
         }
         foreach ($excludeColumn as $ex) {
             unset($object[$ex]);
         }
+
         return $this->insert($tableName, $tabledef, $object);
     }
 
     /**
      * Generates and execute an insert command. Example:
      * Example:
-     *      insert('table',['col1','i',10,'col2','s','hello world']); // ternary colname,type,value,...
-     *      insert('table',null,['col1'=>10,'col2'=>'hello world']); // definition is obtained from the values
-     *      insert('table',['col1'=>10,'col2'=>'hello world']); // definition is obtained from the values
-     *      insert('table',['col1','i','col2','s'],[10,'hello world']); // definition (binary) and value
-     *      insert('table',['col1'=>'i','col2'=>'s'],['col1'=>10,'col2'=>'hello world']); // definition declarative array)
+     *      insert('table',['col1','i',10,'col2','s','hello world']); //
+     * ternary
+     *      colname,type,value,...
+     * insert('table',null,['col1'=>10,'col2'=>'hello world']); // definition
+     * is obtained from the values insert('table',['col1'=>10,'col2'=>'hello
+     * world']); // definition is obtained from the values
+     * insert('table',['col1','i','col2','s'],[10,'hello world']); //
+     * definition (binary) and value
+     * insert('table',['col1'=>'i','col2'=>'s'],['col1'=>10,'col2'=>'hello
+     * world']); // definition declarative array)
      *      ->set(['col1','i',10,'col2','s','hello world'])
      *          ->from('table')
      *          ->insert();
@@ -3507,18 +4236,25 @@ BOOTS;
      * @return mixed
      * @throws Exception
      */
-    public function insert($tableName = null, $tableDef = null, $values = self::NULL) {
+    public function insert(
+        $tableName = null,
+        $tableDef = null,
+        $values = self::NULL
+    ) {
         if ($tableName === null) {
             // using builder. from()->set()->insert()
             $errorCause = '';
             if ($this->from == "") {
-                $errorCause = "you can't execute an empty insert() without a from()";
+                $errorCause
+                    = "you can't execute an empty insert() without a from()";
             }
             if (count($this->set) === 0) {
-                $errorCause = "you can't execute an empty insert() without a set()";
+                $errorCause
+                    = "you can't execute an empty insert() without a set()";
             }
             if ($errorCause) {
                 $this->throwError($errorCause, "");
+
                 return false;
             }
             $sql
@@ -3533,18 +4269,22 @@ BOOTS;
             }
             $this->builderReset();
             $this->runRawQuery($sql, $param, true);
+
             return $this->insert_id();
         } else {
             $col = [];
             $colT = [];
             $param = [];
             $this->constructParam($tableDef, $values, $col, $colT, $param);
-            $sql = "insert into " . $this->addDelimiter($tableName) . "  (" . implode(',',
-                    $col)
+            $sql = "insert into " . $this->addDelimiter($tableName) . "  (" . implode(
+                    ',',
+                    $col
+                )
                 . ") values(" . implode(',', $colT) . ")";
             $this->builderReset();
 
             $this->runRawQuery($sql, $param);
+
             return $this->insert_id();
         }
     }
@@ -3555,7 +4295,8 @@ BOOTS;
     /**
      * @return string
      */
-    private function constructInsert() {
+    private function constructInsert()
+    {
         if (count($this->set)) {
             $arr = [];
             $val = [];
@@ -3567,7 +4308,8 @@ BOOTS;
                     $arr[] = $tmp[0];
                     $val[] = $tmp[1];
                 }
-                $where = "(" . implode(',', $arr) . ') values (' . implode(',', $val) . ')';
+                $where = "(" . implode(',', $arr) . ') values (' . implode(',', $val)
+                    . ')';
             } else {
                 // set('(a,b,c) values(?,?,?)',[])
                 $where = $first;
@@ -3575,6 +4317,7 @@ BOOTS;
         } else {
             $where = '';
         }
+
         return $where;
     }
 
@@ -3595,18 +4338,25 @@ BOOTS;
      * @return mixed
      * @throws Exception
      */
-    public function delete($tableName = null, $tableDefWhere = null, $valueWhere = self::NULL) {
+    public function delete(
+        $tableName = null,
+        $tableDefWhere = null,
+        $valueWhere = self::NULL
+    ) {
         if ($tableName === null) {
             // using builder. from()->where()->delete()
             $errorCause = '';
             if ($this->from == "") {
-                $errorCause = "you can't execute an empty delete() without a from()";
+                $errorCause
+                    = "you can't execute an empty delete() without a from()";
             }
             if (count($this->where) === 0) {
-                $errorCause = "you can't execute an empty delete() without a where()";
+                $errorCause
+                    = "you can't execute an empty delete() without a where()";
             }
             if ($errorCause) {
                 $this->throwError($errorCause, "");
+
                 return false;
             }
             $sql = "delete from " . $this->addDelimiter($this->from) . " ";
@@ -3618,17 +4368,22 @@ BOOTS;
             }
             $this->builderReset();
             $stmt = $this->runRawQuery($sql, $param, true);
+
             return $this->affected_rows($stmt);
         } else {
             // using table/tabldefwhere/valuewhere
             $colWhere = [];
             $colT = null;
             $param = [];
-            $this->constructParam($tableDefWhere, $valueWhere, $colWhere, $colT, $param);
+            $this->constructParam(
+                $tableDefWhere, $valueWhere, $colWhere, $colT, $param
+            );
             $sql = "delete from " . $this->addDelimiter($tableName);
-            $sql .= (count($colWhere)) ? " where " . implode(' and ', $colWhere) : '';
+            $sql .= (count($colWhere)) ? " where " . implode(' and ', $colWhere)
+                : '';
             $this->builderReset();
             $stmt = $this->runRawQuery($sql, $param, true);
+
             return $this->affected_rows($stmt);
         }
     }
@@ -3636,7 +4391,8 @@ BOOTS;
     /**
      * @return IPdoOneCache
      */
-    public function getCacheService() {
+    public function getCacheService()
+    {
         return $this->cacheService;
     }
 
@@ -3647,8 +4403,10 @@ BOOTS;
      *
      * @return $this
      */
-    public function setCacheService($cacheService) {
+    public function setCacheService($cacheService)
+    {
         $this->cacheService = $cacheService;
+
         return $this;
     }
 
@@ -3656,35 +4414,49 @@ BOOTS;
     //<editor-fold desc="cli functions" defaultstate="collapsed" >
 
     /**
-     * Invalidate a single cache or a list of cache based in a single uid or in a family/group of cache.
+     * Invalidate a single cache or a list of cache based in a single uid or in
+     * a family/group of cache.
      *
-     * @param string|string[] $uid    The unique id. It is generate by sha256 based in the query, parameters, type of
-     *                                query and method.
-     * @param string|string[] $family [optional] It is the family or group of the cache. It could be used to invalidate
-     *                                the whole group. For example, to invalidate all the cache related with a table.
+     * @param string|string[] $uid        The unique id. It is generate by sha256
+     *                                    based in the query, parameters, type
+     *                                    of query and method.
+     * @param string|string[] $family     [optional] It is the family or group
+     *                                    of
+     *                                    the cache. It could be used to
+     *                                    invalidate the whole group. For
+     *                                    example, to invalidate all the cache
+     *                                    related with a table.
      *
      * @return $this
      */
-    public function invalidateCache($uid = '', $family = '') {
-
+    public function invalidateCache($uid = '', $family = '')
+    {
         if ($this->cacheService !== null) {
             $this->cacheService->invalidateCache($uid, $family);
         }
+
         return $this;
     }
 
     /**
-     * @param string|int $password  <p>Use a integer if the method is INTEGER</p>
-     * @param string     $salt      <p>Salt is not used by SIMPLE or INTEGER</p>
-     * @param string     $encMethod <p>Example : AES-256-CTR See http://php.net/manual/en/function.openssl-get-cipher-methods.php </p>
-     *                              <p>if SIMPLE then the encryption is simplified (generates a short result)</p>
-     *                              <p>if INTEGER then the encryption is even simple (generates an integer)</p>
+     * @param string|int $password      <p>Use a integer if the method is
+     *                                  INTEGER</p>
+     * @param string     $salt          <p>Salt is not used by SIMPLE or
+     *                                  INTEGER</p>
+     * @param string     $encMethod     <p>Example : AES-256-CTR See
+     *                                  http://php.net/manual/en/function.openssl-get-cipher-methods.php
+     *                                  </p>
+     *                                  <p>if SIMPLE then the encryption is
+     *                                  simplified (generates a short
+     *                                  result)</p>
+     *                                  <p>if INTEGER then the encryption is
+     *                                  even simple (generates an integer)</p>
      *
      * @throws Exception
      * @test void this('123','somesalt','AES-128-CTR')
      */
-    public function setEncryption($password, $salt, $encMethod) {
-
+    public function setEncryption($password, $salt, $encMethod)
+    {
         if (!extension_loaded('openssl')) {
             $this->encryption->encEnabled = false;
             $this->throwError("OpenSSL not loaded, encryption disabled", "");
@@ -3703,7 +4475,8 @@ BOOTS;
      * @see \eftec\PdoOneEncryption::encrypt
      */
 
-    public function encrypt($data) {
+    public function encrypt($data)
+    {
         return $this->encryption->encrypt($data);
     }
 
@@ -3715,20 +4488,27 @@ BOOTS;
      * @return bool|string
      * @see \eftec\PdoOneEncryption::decrypt
      */
-    public function decrypt($data) {
+    public function decrypt($data)
+    {
         return $this->encryption->decrypt($data);
     }
+
     //</editor-fold>
 }
 
-if (PdoOne::isCli() && basename(strtolower(@$_SERVER['SCRIPT_NAME'])) !== 'pdoone') {
+if (PdoOne::isCli()
+    && basename(strtolower(@$_SERVER['SCRIPT_NAME'])) !== 'pdoone'
+) {
     // this code only runs on CLI
-    if (! defined('PHPUNIT_COMPOSER_INSTALL') && ! defined('__PHPUNIT_PHAR__')) {
+    if (!defined('PHPUNIT_COMPOSER_INSTALL')
+        && !defined('__PHPUNIT_PHAR__')
+    ) {
         // we also excluded it if it is called by phpunit.
         include "PdoOneEncryption.php";
-        $pdo = new PdoOne('test', '127.0.0.1', 'root', 'root', 'db'); // mockup database connection
+        $pdo = new PdoOne(
+            'test', '127.0.0.1', 'root', 'root', 'db'
+        ); // mockup database connection
         /** @noinspection PhpUnhandledExceptionInspection */
         $pdo->cliEngine();
-        
     }
 }

@@ -8,61 +8,67 @@ use PDO;
 /**
  * Class PdoOne_Sqlsrv
  *
- * @package       eftec
+ * @see           https://github.com/EFTEC/PdoOne
  * @author        Jorge Castro Castillo
  * @copyright (c) Jorge Castro C. MIT License  https://github.com/EFTEC/PdoOne
- * @see           https://github.com/EFTEC/PdoOne
+ * @package       eftec
  */
 class PdoOne_Sqlsrv implements PdoOne_IExt
 {
+
     /** @var PdoOne */
     protected $parent;
 
     /**
      * PdoOne_Mysql constructor.
      *
-     * @param PdoOne $parent
+     * @param  PdoOne  $parent
      */
-    public function __construct(PdoOne $parent) {
+    public function __construct(PdoOne $parent)
+    {
         $this->parent = $parent;
     }
 
-    public function construct($charset) {
+    public function construct($charset)
+    {
         $this->parent->database_delimiter0 = '[';
         $this->parent->database_delimiter1 = ']';
-        PdoOne::$isoDate = 'Ymd';
-        PdoOne::$isoDateTime = 'Ymd H:i:s';
-        PdoOne::$isoDateTimeMs = 'Ymd H:i:s.u';
+        PdoOne::$isoDate                   = 'Ymd';
+        PdoOne::$isoDateTime               = 'Ymd H:i:s';
+        PdoOne::$isoDateTimeMs             = 'Ymd H:i:s.u';
+
         return '';
     }
 
-    public function connect($cs) {
+    public function connect($cs)
+    {
         $this->parent->conn1
             = new PDO("{$this->parent->databaseType}:server={$this->parent->server};database={$this->parent->db}{$cs}",
             $this->parent->user, $this->parent->pwd);
     }
 
-    public function getDefTable($table) {
+    public function getDefTable($table)
+    {
         /** @var array $result =array(["name"=>'',"is_identity"=>0,"increment_value"=>0,"seed_value"=>0]) */
         $findIdentity = $this->parent
             ->select("name,is_identity,increment_value,seed_value")
             ->from("sys.identity_columns")
             ->where("OBJECT_NAME(object_id)=?", $table)
             ->toList();
-        $findIdentity = (!is_array($findIdentity)) ? [] : $findIdentity; // it's always an arry
+        $findIdentity = ( ! is_array($findIdentity)) ? [] : $findIdentity; // it's always an arry
 
         $defArray = $this->parent->select('COLUMN_NAME,IS_NULLABLE,DATA_TYPE,CHARACTER_MAXIMUM_LENGTH
                         ,NUMERIC_PRECISION,NUMERIC_SCALE,COLUMN_DEFAULT,IDENT_SEED(\'".$table."\') HASIDENTITY')
-            ->from('INFORMATION_SCHEMA.COLUMNS')
-            ->where('TABLE_NAME = ?', $table)
-            ->order('ORDINAL_POSITION')
-            ->toList();
+                                 ->from('INFORMATION_SCHEMA.COLUMNS')
+                                 ->where('TABLE_NAME = ?', $table)
+                                 ->order('ORDINAL_POSITION')
+                                 ->toList();
 
         $result = [];
         foreach ($defArray as $col) {
-            $value = self::sqlsrv_getType($col);
-            $value .= ($col['IS_NULLABLE'] == 'NO') ? ' NOT NULL' : '';
-            $value .= ($col['COLUMN_DEFAULT']) ? ' DEFAULT ' . $col['COLUMN_DEFAULT'] : '';
+            $value   = self::sqlsrv_getType($col);
+            $value   .= ($col['IS_NULLABLE'] == 'NO') ? ' NOT NULL' : '';
+            $value   .= ($col['COLUMN_DEFAULT']) ? ' DEFAULT '.$col['COLUMN_DEFAULT'] : '';
             $colName = $col['COLUMN_NAME'];
             foreach ($findIdentity as $fi) {
                 if ($colName == $fi['name']) {
@@ -72,6 +78,7 @@ class PdoOne_Sqlsrv implements PdoOne_IExt
             }
             $result[$colName] = $value;
         }
+
         return $result;
     }
 
@@ -79,11 +86,12 @@ class PdoOne_Sqlsrv implements PdoOne_IExt
      * It gets a column from INFORMATION_SCHEMA.COLUMNS and returns a type of the form type,type(size)
      * or type(size,size)
      *
-     * @param array $col
+     * @param  array  $col
      *
      * @return string
      */
-    protected static function sqlsrv_getType($col) {
+    protected static function sqlsrv_getType($col)
+    {
         /** @var array $exclusion type of columns that don't use size */
         $exclusion = ['int', 'long', 'tinyint', 'year', 'bigint', 'bit', 'smallint', 'float', 'money'];
         if (in_array($col['DATA_TYPE'], $exclusion) !== false) {
@@ -93,15 +101,17 @@ class PdoOne_Sqlsrv implements PdoOne_IExt
             $result = "{$col['DATA_TYPE']}({$col['NUMERIC_PRECISION']},{$col['NUMERIC_SCALE']})";
         } else {
             if ($col['NUMERIC_PRECISION'] || $col['CHARACTER_MAXIMUM_LENGTH']) {
-                $result = "{$col['DATA_TYPE']}(" . ($col['CHARACTER_MAXIMUM_LENGTH'] + $col['NUMERIC_PRECISION']) . ")";
+                $result = "{$col['DATA_TYPE']}(".($col['CHARACTER_MAXIMUM_LENGTH'] + $col['NUMERIC_PRECISION']).")";
             } else {
                 $result = $col['DATA_TYPE'];
             }
         }
+
         return $result;
     }
 
-    public function getDefTableKeys($table) {
+    public function getDefTableKeys($table, $returnSimple)
+    {
         $columns = [];
         /** @var array $result =array(["IndexName"=>'',"ColumnName"=>'',"is_unique"=>0,"is_primary_key"=>0,"TYPE"=>0]) */
         $result = $this->parent
@@ -122,7 +132,14 @@ class PdoOne_Sqlsrv implements PdoOne_IExt
                     $type = 'KEY';
                 }
             }
-            $columns[$item['ColumnName']] = $type;
+            if ($returnSimple) {
+                $columns[$item['ColumnName']] = $type;
+            } else {
+                $columns[$item['ColumnName']]['key']      = $type;
+                $columns[$item['ColumnName']]['refcol']   = '';
+                $columns[$item['ColumnName']]['reftable'] = '';
+                $columns[$item['ColumnName']]['extra']    = '';
+            }
         }
 
         /** @var array $result =array(["foreign_key_name"=>'',"referencing_table_name"=>'',"ColumnName"=>''
@@ -143,15 +160,29 @@ class PdoOne_Sqlsrv implements PdoOne_IExt
             ->toList();
 
         foreach ($result as $item) {
-
+            $extra = ($item['update_referential_action_desc'] != 'NO_ACTION') ? ' ON UPDATE '
+                                                                                .str_replace('_', ' ',
+                    $item['update_referential_action_desc']) : '';
+            $extra .= ($item['delete_referential_action_desc'] != 'NO_ACTION') ? ' ON DELETE '
+                                                                                 .str_replace('_', ' ',
+                    $item['delete_referential_action_desc']) : '';
             //FOREIGN KEY REFERENCES TABLEREF(COLREF)
-            $columns[$item['ColumnName']] = 'FOREIGN KEY REFERENCES ' . $item['referenced_table_name'] . '(' .
-                $item['referenced_column_name'] . ')';
+            if ($returnSimple) {
+                $columns[$item['ColumnName']] = 'FOREIGN KEY REFERENCES '.$item['referenced_table_name'].'('.
+                                                $item['referenced_column_name'].')'.$extra;
+            } else {
+                $columns[$item['ColumnName']]['key']      = 'FOREIGN KEY';
+                $columns[$item['ColumnName']]['refcol']   = $item['referenced_column_name'];
+                $columns[$item['ColumnName']]['reftable'] = $item['referenced_table_name'];
+                $columns[$item['ColumnName']]['extra']    = $extra;
+            }
         }
+
         return $columns;
     }
 
-    function typeDict($row, $default = true) {
+    function typeDict($row, $default = true)
+    {
         $type = @$row['sqlsrv:decl_type'];
         switch ($type) {
             case 'varchar':
@@ -190,11 +221,12 @@ class PdoOne_Sqlsrv implements PdoOne_IExt
             case 'float':
                 return ($default) ? "0.0" : 'float';
             default:
-                return "???sqlsrv:" . $type;
+                return "???sqlsrv:".$type;
         }
     }
 
-    public function objectExist($type = 'table') {
+    public function objectExist($type = 'table')
+    {
         switch ($type) {
             case 'table':
                 $query = "SELECT * FROM sys.objects where name=? and type_desc='USER_TABLE'";
@@ -208,10 +240,12 @@ class PdoOne_Sqlsrv implements PdoOne_IExt
                 die(1);
                 break;
         }
+
         return $query;
     }
 
-    public function objectList($type = 'table', $onlyName = false) {
+    public function objectList($type = 'table', $onlyName = false)
+    {
         switch ($type) {
             case 'table':
                 $query = "SELECT * FROM sys.objects where type_desc='USER_TABLE'";
@@ -231,10 +265,12 @@ class PdoOne_Sqlsrv implements PdoOne_IExt
                 die(1);
                 break;
         }
+
         return $query;
     }
 
-    public function columnTable($tableName) {
+    public function columnTable($tableName)
+    {
         return "SELECT col.name colname
 							,st.name coltype
 							,col.max_length colsize
@@ -251,7 +287,8 @@ class PdoOne_Sqlsrv implements PdoOne_IExt
 						where  obj.name='$tableName'";
     }
 
-    public function foreignKeyTable($tableName) {
+    public function foreignKeyTable($tableName)
+    {
         return "SELECT col.name collocal
 					,objrem.name tablerem
 					,colrem.name colrem
@@ -264,7 +301,8 @@ class PdoOne_Sqlsrv implements PdoOne_IExt
 					where obj.name='$tableName' ";
     }
 
-    public function createSequence($tableSequence = null, $method = 'snowflake') {
+    public function createSequence($tableSequence = null, $method = 'snowflake')
+    {
         $sql = "CREATE SEQUENCE [{$tableSequence}]
 				    START WITH 1  
 				    INCREMENT BY 1
@@ -285,12 +323,14 @@ class PdoOne_Sqlsrv implements PdoOne_IExt
 						set @return=(@current_ms*cast(4194304 as bigint)) + (@node *4096) + (@incr % 4096);
 						select @return
 					END";
+
         return $sql;
     }
 
-    public function createTable($tableName, $definition, $primaryKey = null, $extra = '', $extraOutside = '') {
+    public function createTable($tableName, $definition, $primaryKey = null, $extra = '', $extraOutside = '')
+    {
         $extraOutside = ($extraOutside === '') ? "ON [PRIMARY]" : $extraOutside;
-        $sql = "set nocount on;
+        $sql          = "set nocount on;
 				CREATE TABLE [{$tableName}] (";
         foreach ($definition as $key => $type) {
             $sql .= "[$key] $type,";
@@ -299,19 +339,19 @@ class PdoOne_Sqlsrv implements PdoOne_IExt
 
         $sql .= "$extra ) ON [PRIMARY]; ";
 
-        if (!is_array($primaryKey)) {
+        if ( ! is_array($primaryKey)) {
             $sql .= "
 						ALTER TABLE [$tableName] ADD CONSTRAINT
 							PK_$tableName PRIMARY KEY CLUSTERED ([$primaryKey]) $extraOutside;";
         } else {
             foreach ($primaryKey as $key => $value) {
-                $p0 = stripos($value . ' ', "KEY ");
+                $p0 = stripos($value.' ', "KEY ");
                 if ($p0 === false) {
                     trigger_error('createTable: Key with a wrong syntax. Example: "PRIMARY KEY.." ,
                                  "KEY...", "UNIQUE KEY..." "FOREIGN KEY.." ');
                     break;
                 }
-                $type = trim(strtoupper(substr($value, 0, $p0)));
+                $type  = trim(strtoupper(substr($value, 0, $p0)));
                 $value = substr($value, $p0 + 4);
                 switch ($type) {
                     case 'PRIMARY':
@@ -333,25 +373,30 @@ class PdoOne_Sqlsrv implements PdoOne_IExt
                 }
             }
         }
+
         return $sql;
     }
 
-    public function limit($sql) {
-        if (!$this->parent->order) {
+    public function limit($sql)
+    {
+        if ( ! $this->parent->order) {
             $this->parent->throwError("limit without a sort", "");
         }
         if (strpos($sql, ',')) {
-            $arr = explode(',', $sql);
+            $arr                 = explode(',', $sql);
             $this->parent->limit = " OFFSET {$arr[0]} ROWS FETCH NEXT {$arr[1]} ROWS ONLY";
         } else {
             $this->parent->limit = " OFFSET 0 ROWS FETCH NEXT $sql ROWS ONLY";
         }
     }
 
-    public function getPK($query, $pk) {
-        if (!$pk) {
+    public function getPK($query, $pk)
+    {
+        if ( ! $pk) {
             return "SQLSRV: requires to specify the primary key using the argument -pk <name of the pk>";
         }
+
         return $pk;
     }
+
 }

@@ -32,12 +32,16 @@ interface PdoOne_IExt
      * Returns an associative array with the definition of keys of a table.<br>
      * It includes primary key, key, unique keys and foreign keys.
      *
-     * @param string $table
+     * @param string $table The name of the table to analize.
+     * @param bool   $returnSimple true= returns as a simple associative array<br>
+     *                             example:['id'=>'PRIMARY KEY','name'=>'FOREIGN KEY...']<br>
+     *                             false= returns as an associative array separated by parts<br>
+     *                             ['key','refcol','reftable','extra']
      *
      * @return array
      * @throws Exception
      */
-    public function getDefTableKeys($table);
+    public function getDefTableKeys($table,$returnSimple);
 
     /**
      * It returns a default value depending on the type of the column.

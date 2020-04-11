@@ -8,50 +8,56 @@ use stdClass;
 /**
  * Class PdoOne_Test
  *
- * @package       eftec
+ * @see           https://github.com/EFTEC/PdoOne
  * @author        Jorge Castro Castillo
  * @copyright (c) Jorge Castro C. MIT License  https://github.com/EFTEC/PdoOne
- * @see           https://github.com/EFTEC/PdoOne
+ * @package       eftec
  */
 class PdoOne_TestMockup implements PdoOne_IExt
 {
+
     /** @var PdoOne */
     protected $parent;
 
     /**
      * PdoOne_Mysql constructor.
      *
-     * @param PdoOne $parent
+     * @param  PdoOne  $parent
      */
-    public function __construct(PdoOne $parent) {
+    public function __construct(PdoOne $parent)
+    {
         $this->parent = $parent;
     }
 
-    public function construct($charset) {
+    public function construct($charset)
+    {
         $this->parent->database_delimiter0 = '';
         $this->parent->database_delimiter1 = '';
-        PdoOne::$isoDate = 'Ymd';
-        PdoOne::$isoDateTime = 'Ymd H:i:s';
-        PdoOne::$isoDateTimeMs = 'Ymd H:i:s.u';
+        PdoOne::$isoDate                   = 'Ymd';
+        PdoOne::$isoDateTime               = 'Ymd H:i:s';
+        PdoOne::$isoDateTimeMs             = 'Ymd H:i:s.u';
+
         return "";
     }
 
-    public function connect($cs) {
+    public function connect($cs)
+    {
         $this->parent->conn1 = new stdClass();
     }
 
-    public function getDefTable($table) {
+    public function getDefTable($table)
+    {
         $defArray = [
             [
                 'Field' >= 'id',
-                'Key' => 'PRI',
-                'Type' => 'int',
-                'Null' => 'NO',
+                'Key'     => 'PRI',
+                'Type'    => 'int',
+                'Null'    => 'NO',
                 'Default' => '',
-                'Extra' => ''
-            ]
+                'Extra'   => '',
+            ],
         ];
-        $result = [];
+        $result   = [];
         foreach ($defArray as $col) {
             /*if ($col['Key'] === 'PRI') {
                 $pk = $col['Field'];
@@ -61,25 +67,33 @@ class PdoOne_TestMockup implements PdoOne_IExt
             if ($col['Default'] === 'CURRENT_TIMESTAMP') {
                 $value .= ' default CURRENT_TIMESTAMP';
             } else {
-                $value .= ($col['Default']) ? ' default \'' . $col['Default'] . '\'' : '';
+                $value .= ($col['Default']) ? ' default \''.$col['Default'].'\'' : '';
             }
             $col['Extra'] = str_replace('DEFAULT_GENERATED ', '', $col['Extra']);
-            $value .= ($col['Extra']) ? ' ' . $col['Extra'] : '';
+            $value        .= ($col['Extra']) ? ' '.$col['Extra'] : '';
 
             $result[$col['Field']] = $value;
         }
+
         return $result;
     }
 
-    public function getDefTableKeys($table) {
-        return ['col1' => 'int'];
+    public function getDefTableKeys($table, $returnSimple)
+    {
+        if ($returnSimple) {
+            return ['col1' => 'FOREIGN KEY'];
+        } else {
+            return ['col1' => ['key' => 'FOREIGN KEY', 'refcol' => 'col', 'reftable' => 'table2', 'extra' => '']];
+        }
     }
 
-    function typeDict($row, $default = true) {
+    function typeDict($row, $default = true)
+    {
         return '';
     }
 
-    public function objectExist($type = 'table') {
+    public function objectExist($type = 'table')
+    {
         switch ($type) {
             case 'function':
                 $query
@@ -95,10 +109,12 @@ class PdoOne_TestMockup implements PdoOne_IExt
                 die(1);
                 break;
         }
+
         return $query;
     }
 
-    public function objectList($type = 'table', $onlyName = false) {
+    public function objectList($type = 'table', $onlyName = false)
+    {
         switch ($type) {
             case 'table':
                 $query
@@ -120,10 +136,12 @@ class PdoOne_TestMockup implements PdoOne_IExt
                 die(1);
                 break;
         }
+
         return $query;
     }
 
-    public function columnTable($tableName) {
+    public function columnTable($tableName)
+    {
         return "SELECT column_name colname
 								,data_type coltype
 								,character_maximum_length colsize
@@ -136,7 +154,8 @@ class PdoOne_TestMockup implements PdoOne_IExt
 						where table_schema='{$this->parent->db}' and table_name='$tableName'";
     }
 
-    public function foreignKeyTable($tableName) {
+    public function foreignKeyTable($tableName)
+    {
         return "SELECT col.name collocal
 					,objrem.name tablerem
 					,colrem.name colrem
@@ -144,11 +163,13 @@ class PdoOne_TestMockup implements PdoOne_IExt
 					where obj.name='$tableName' ";
     }
 
-    public function createSequence($tableSequence = null, $method = 'snowflake') {
+    public function createSequence($tableSequence = null, $method = 'snowflake')
+    {
         return "CREATE TABLE";
     }
 
-    public function createTable($tableName, $definition, $primaryKey = null, $extra = '', $extraOutside = '') {
+    public function createTable($tableName, $definition, $primaryKey = null, $extra = '', $extraOutside = '')
+    {
         $sql = "CREATE TABLE {$tableName} (";
         foreach ($definition as $key => $type) {
             $sql .= "$key $type,";
@@ -159,22 +180,26 @@ class PdoOne_TestMockup implements PdoOne_IExt
             $sql = substr($sql, 0, -1);
         }
         $sql .= "$extra ) $extraOutside";
+
         return $sql;
     }
 
-    public function limit($sql) {
-        if (!$this->parent->order) {
+    public function limit($sql)
+    {
+        if ( ! $this->parent->order) {
             $this->parent->throwError("limit without a sort", "");
         }
         if (strpos($sql, ',')) {
-            $arr = explode(',', $sql);
+            $arr                 = explode(',', $sql);
             $this->parent->limit = " OFFSET {$arr[0]} ROWS FETCH NEXT {$arr[1]} ROWS ONLY";
         } else {
             $this->parent->limit = " OFFSET 0 ROWS FETCH NEXT $sql ROWS ONLY";
         }
     }
 
-    public function getPK($query, $pk) {
+    public function getPK($query, $pk)
+    {
         return 'primary_key';
     }
+
 }
