@@ -37,6 +37,7 @@ class PdoOne_Mysql implements PdoOne_IExt
         PdoOne::$isoDate                   = 'Y-m-d';
         PdoOne::$isoDateTime               = 'Y-m-d H:i:s';
         PdoOne::$isoDateTimeMs             = 'Y-m-d H:i:s.u';
+        $this->parent->isOpen=false;
 
         return $charset;
     }
@@ -71,35 +72,10 @@ class PdoOne_Mysql implements PdoOne_IExt
 
         return $result;
     }
-
-    public function getDefTableKeys($table, $returnSimple)
+    
+    public function getDefTableFK($table, $returnSimple,$filter=null)
     {
         $columns = [];
-        $struct  = [];
-        /** @var array $indexArr =array(["Table"=>'',"Non_unique"=>0,"Key_name"=>'',"Seq_in_index"=>0
-         * ,"Column_name"=>'',"Collation"=>'',"Cardinality"=>0,"Sub_part"=>0,"Packed"=>'',"Null"=>''
-         * ,"Index_type"=>'',"Comment"=>'',"Index_comment"=>'',"Visible"=>'',"Expression"=>''])
-         */
-        $indexArr = $this->parent->runRawQuery('show index from '.$table);
-        foreach ($indexArr as $item) {
-            if ($item['Key_name'] == 'PRIMARY') {
-                $tk = "PRIMARY KEY";
-            } else {
-                if ($item['Non_unique'] != 0) {
-                    $tk = "KEY";
-                } else {
-                    $tk = "UNIQUE KEY";
-                }
-            }
-            if ($returnSimple) {
-                $columns[$item['Column_name']] = $tk;
-            } else {
-                $columns[$item['Column_name']]['key']      = $tk;
-                $columns[$item['Column_name']]['refcol']   = '';
-                $columns[$item['Column_name']]['reftable'] = '';
-                $columns[$item['Column_name']]['extra']    = '';
-            }
-        }
         /** @var array $result =array(["CONSTRAINT_NAME"=>'',"COLUMN_NAME"=>'',"REFERENCED_TABLE_NAME"=>''
          * ,"REFERENCED_COLUMN_NAME"=>'',"UPDATE_RULE"=>'',"DELETE_RULE"=>''])
          */
@@ -129,7 +105,7 @@ class PdoOne_Mysql implements PdoOne_IExt
             }
         }
 
-        return $columns;
+        return $this->parent->filterKey($filter,$columns,$returnSimple);
     }
 
     public function typeDict($row, $default = true)
@@ -241,8 +217,9 @@ class PdoOne_Mysql implements PdoOne_IExt
             , [
                 'id'   => 'bigint(20) unsigned NOT NULL AUTO_INCREMENT',
                 'stub' => "char(1) NOT NULL DEFAULT ''",
-            ], 'id'
-            , ',UNIQUE KEY `stub` (`stub`)', 'ENGINE=MyISAM AUTO_INCREMENT=1 DEFAULT CHARSET=utf8');
+            ], ['id' => 'PRIMARY KEY',
+                'stub'=> 'UNIQUE KEY `stub` (`stub`)']
+            , '', 'ENGINE=MyISAM AUTO_INCREMENT=1 DEFAULT CHARSET=utf8');
         if ( ! $ok) {
             $this->parent->throwError("Unable to create table $tableSequence", "");
 
@@ -281,7 +258,8 @@ class PdoOne_Mysql implements PdoOne_IExt
         return $sql;
     }
 
-    public function createTable($tableName, $definition, $primaryKey = null, $extra = '', $extraOutside = '')
+    public function createTable($tableName, $definition, $primaryKey = null, $extra = '', 
+        $extraOutside = '')
     {
         $extraOutside = ($extraOutside === '') ? "ENGINE=InnoDB DEFAULT CHARSET={$this->parent->charset};"
             : $extraOutside;
@@ -310,9 +288,6 @@ class PdoOne_Mysql implements PdoOne_IExt
                         case 'UNIQUE':
                             $sql .= "UNIQUE KEY `{$tableName}_{$key}_idx` (`$key`) $value,";
                             break;
-                        case 'FOREIGN':
-                            $sql .= " CONSTRAINT `fk_{$tableName}_{$key}` FOREIGN KEY(`$key`) $value,";
-                            break;
                         default:
                             trigger_error("createTable: [$type KEY] not defined");
                             break;
@@ -331,6 +306,28 @@ class PdoOne_Mysql implements PdoOne_IExt
         return $sql;
     }
 
+    public function createFK($tableName,$foreignKey) {
+        $sql='';
+        foreach ($foreignKey as $key => $value) {
+            $p0 = stripos($value.' ', "KEY ");
+            if ($p0 === false) {
+                trigger_error('createTable: Key with a wrong syntax: "FOREIGN KEY.." ');
+                break;
+            }
+            $type  = trim(strtoupper(substr($value, 0, $p0)));
+            $value = substr($value, $p0 + 4);
+            switch ($type) {                 
+                case 'FOREIGN':
+                    $sql .= "ALTER TABLE `{$tableName}` ADD CONSTRAINT `fk_{$tableName}_{$key}` FOREIGN KEY(`$key`) $value;";
+                    break;
+                default:
+                    trigger_error("createTable: [$type KEY] not defined");
+                    break;
+            }
+        }
+        return $sql;
+    }
+
     public function limit($sql)
     {
         $this->parent->limit = ($sql) ? ' limit '.$sql : '';
@@ -338,17 +335,58 @@ class PdoOne_Mysql implements PdoOne_IExt
 
     public function getPK($query, $pk)
     {
-        $q = $this->parent->toMeta($query);
-        if ( ! $pk) {
-            foreach ($q as $item) {
-                if (in_array('primary_key', $item['flags'])) {
-                    $pk = $item['name'];
-                    break;
+        if($this->parent->isQuery($query)) {
+            $q = $this->parent->toMeta($query);
+            if (!$pk) {
+                foreach ($q as $item) {
+                    if (in_array('primary_key', $item['flags'])) {
+                        $pk = $item['name'];
+                        break;
+                    }
                 }
+            }
+        } else {
+            // get the pk by table name
+            $r=$this->getDefTableKeys($query,true,'PRIMARY KEY');
+            if(count($r)>=1) {
+                $pk=array_keys($r)[0];
+            } else {
+                $pk='??nopk??';
             }
         }
 
         return $pk;
+    }
+
+    public function getDefTableKeys($table, $returnSimple,$filter=null)
+    {
+        $columns = [];
+        $struct  = [];
+        /** @var array $indexArr =array(["Table"=>'',"Non_unique"=>0,"Key_name"=>'',"Seq_in_index"=>0
+         * ,"Column_name"=>'',"Collation"=>'',"Cardinality"=>0,"Sub_part"=>0,"Packed"=>'',"Null"=>''
+         * ,"Index_type"=>'',"Comment"=>'',"Index_comment"=>'',"Visible"=>'',"Expression"=>''])
+         */
+        $indexArr = $this->parent->runRawQuery('show index from '.$table);
+        foreach ($indexArr as $item) {
+            if (strtoupper($item['Key_name']) == 'PRIMARY') {
+                $tk = "PRIMARY KEY";
+            } else {
+                if ($item['Non_unique'] != 0) {
+                    $tk = "KEY";
+                } else {
+                    $tk = "UNIQUE KEY";
+                }
+            }
+            if ($returnSimple) {
+                $columns[$item['Column_name']] = $tk;
+            } else {
+                $columns[$item['Column_name']]['key']      = $tk;
+                $columns[$item['Column_name']]['refcol']   = '';
+                $columns[$item['Column_name']]['reftable'] = '';
+                $columns[$item['Column_name']]['extra']    = '';
+            }
+        }
+        return $this->parent->filterKey($filter,$columns,$returnSimple);
     }
 
 }

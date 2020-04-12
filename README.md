@@ -1313,6 +1313,14 @@ PdoOne adds a bit of ovehead over PDO, however it is simple a wrapper to pdo.
 
 ## Changelist
 
+* 1.31.1 2020-04-11
+    * CLI: Primary key is not required anymore.
+    * new method createFK();
+    * Foreign keys are not created separately of other keys.
+    * new method camelize()
+    * new method isQuery()
+    * new method filterKey()
+    * new method getDefTableFK()
 * 1.31 2020-04-11
     * new method tableSorted()
 * 1.30 2020-04-10

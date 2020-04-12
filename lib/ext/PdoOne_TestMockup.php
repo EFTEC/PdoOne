@@ -36,7 +36,7 @@ class PdoOne_TestMockup implements PdoOne_IExt
         PdoOne::$isoDate                   = 'Ymd';
         PdoOne::$isoDateTime               = 'Ymd H:i:s';
         PdoOne::$isoDateTimeMs             = 'Ymd H:i:s.u';
-
+        $this->parent->isOpen=false;
         return "";
     }
 
@@ -78,15 +78,25 @@ class PdoOne_TestMockup implements PdoOne_IExt
         return $result;
     }
 
-    public function getDefTableKeys($table, $returnSimple)
+    public function getDefTableKeys($table, $returnSimple,$filter=null)
     {
         if ($returnSimple) {
-            return ['col1' => 'FOREIGN KEY'];
+            $columns= ['col1' => 'PRIMARY KEY'];
         } else {
-            return ['col1' => ['key' => 'FOREIGN KEY', 'refcol' => 'col', 'reftable' => 'table2', 'extra' => '']];
+            $columns= ['col1' => ['key' => 'PRIMARY KEY', 'refcol' => 'col', 'reftable' => 'table2', 'extra' => '']];
         }
+        return $this->parent->filterKey($filter,$columns,$returnSimple);
     }
-
+    
+    public function getDefTableFK($table, $returnSimple,$filter=null)
+    {
+        if ($returnSimple) {
+            $columns= ['col1' => 'FOREIGN KEY REFERENCES col [tableref](colref)'];
+        } else {
+            $columns= ['col1' => ['key' => 'FOREIGN KEY', 'refcol' => 'col', 'reftable' => 'table2', 'extra' => '']];
+        }
+        return $this->parent->filterKey($filter,$columns,$returnSimple);
+    }
     function typeDict($row, $default = true)
     {
         return '';
@@ -168,7 +178,8 @@ class PdoOne_TestMockup implements PdoOne_IExt
         return "CREATE TABLE";
     }
 
-    public function createTable($tableName, $definition, $primaryKey = null, $extra = '', $extraOutside = '')
+    public function createTable($tableName, $definition, $primaryKey = null, $extra = ''
+        , $extraOutside = '')
     {
         $sql = "CREATE TABLE {$tableName} (";
         foreach ($definition as $key => $type) {
@@ -182,6 +193,9 @@ class PdoOne_TestMockup implements PdoOne_IExt
         $sql .= "$extra ) $extraOutside";
 
         return $sql;
+    }
+    public function createFK($tableName,$foreignKey) {
+        return "ALTER TABLE `{$tableName}` ADD CONSTRAINT `fk_{$tableName}_{key1}` FOREIGN KEY(`key1`);";
     }
 
     public function limit($sql)

@@ -30,19 +30,37 @@ interface PdoOne_IExt
 
     /**
      * Returns an associative array with the definition of keys of a table.<br>
-     * It includes primary key, key, unique keys and foreign keys.
+     * It includes primary key, key and unique keys
      *
-     * @param string $table The name of the table to analize.
+     * @param string $table        The name of the table to analize.
      * @param bool   $returnSimple true= returns as a simple associative array<br>
      *                             example:['id'=>'PRIMARY KEY','name'=>'FOREIGN KEY...']<br>
      *                             false= returns as an associative array separated by parts<br>
      *                             ['key','refcol','reftable','extra']
+     * @param null|string   $filter if not null then it only returns keys that matches the condition 
      *
      * @return array
      * @throws Exception
      */
-    public function getDefTableKeys($table,$returnSimple);
+    public function getDefTableKeys($table,$returnSimple,$filter=null);
 
+    /**
+     * Returns an associative array with the definition of foreign keys of a table.<br>
+     * It includes foreign keys.
+     *
+     * @param string $table        The name of the table to analize.
+     * @param bool   $returnSimple true= returns as a simple associative array<br>
+     *                             example:['id'=>'PRIMARY KEY','name'=>'FOREIGN KEY...']<br>
+     *                             false= returns as an associative array separated by parts<br>
+     *                             ['key','refcol','reftable','extra']
+     * @param null|string   $filter if not null then it only returns keys that matches the condition
+     *
+     * @return array
+     * @throws Exception
+     */
+    public function getDefTableFK($table,$returnSimple,$filter=null);
+    
+    
     /**
      * It returns a default value depending on the type of the column.
      *
@@ -111,13 +129,27 @@ interface PdoOne_IExt
      *                                        'field'=>'KEY'<br>
      *                                        'field'=>'UNIQUE KEY'<br>
      *                                        'field'=>'FOREIGN KEY REFERENCES TABLEREF(COLREF) ...'
+     *
      * @param string            $extra        An extra definition inside the operation of create
      * @param string            $extraOutside An extra definition after the operation of create
      *
      * @return string
      */
-    public function createTable($tableName, $definition, $primaryKey = null, $extra = '', $extraOutside = '');
+    public function createTable($tableName, $definition, $primaryKey = null, $extra = '', 
+        $extraOutside = '');
 
+    /**
+     * Create foreign keys
+     *
+     * @param string       $tableName    The name of the table
+     * @param array        $foreignKey   Associative array with the foreign key.
+     *
+     * @return mixed
+     * @throws Exception
+     */
+    public function createFK($tableName,$foreignKey); 
+    
+    
     /**
      * It adds a limit operation for the query. It depends on the type of the database.
      * <b>Example:</b><br>
@@ -135,7 +167,7 @@ interface PdoOne_IExt
      * It gets a primary key based in a query.<br>
      * It only works in MYSQL.
      *
-     * @param string $query
+     * @param string $query query or name of the table
      * @param string $pk Previous primary key (if the key is not found)
      *
      * @return mixed

@@ -24,12 +24,12 @@ use PDOStatement;
  * @package       eftec
  * @author        Jorge Castro Castillo
  * @copyright (c) Jorge Castro C. MIT License  https://github.com/EFTEC/PdoOne
- * @version       1.31 2020-04-10
+ * @version       1.31.1 2020-04-11
  */
 class PdoOne
 {
 
-    const VERSION = '1.31';
+    const VERSION = '1.31.1';
 
     const NULL = PHP_INT_MAX;
 
@@ -217,42 +217,26 @@ class PdoOne
     /**
      * PdoOne constructor.  It doesn't open the connection to the database.
      *
-     * @param string $database     =['mysql','sqlsrv','oracle','test'][$i]
-     * @param string $server       server ip. Ex. 127.0.0.1 127.0.0.1:3306
-     * @param string $user         Ex. root
-     * @param string $pwd          Ex. 12345
-     * @param string $db           Ex. mybase
-     * @param string $logFile      Optional  log file. Example c:\\temp\log.log
-     * @param string $charset      Example utf8mb4
-     * @param int    $nodeId       It is the id of the node (server). It is used
+     * @param string $database =['mysql','sqlsrv','oracle','test'][$i]
+     * @param string $server server ip. Ex. 127.0.0.1 127.0.0.1:3306
+     * @param string $user Ex. root
+     * @param string $pwd Ex. 12345
+     * @param string $db Ex. mybase
+     * @param string $logFile Optional  log file. Example c:\\temp\log.log
+     * @param string $charset Example utf8mb4
+     * @param int $nodeId It is the id of the node (server). It is used
      *                             for sequence. Form 0 to 1023
      *
      * @see PdoOne::connect()
      */
     public function __construct(
-        $database,
-        $server,
-        $user,
-        $pwd,
-        $db,
-        $logFile = "",
-        $charset = null,
-        $nodeId = 1
+        $database, $server, $user, $pwd, $db, $logFile = "", $charset = null, $nodeId = 1
     ) {
-        $this->construct(
-            $database, $server, $user, $pwd, $db, $logFile, $charset, $nodeId
-        );
+        $this->construct($database, $server, $user, $pwd, $db, $logFile, $charset, $nodeId);
     }
 
     protected function construct(
-        $database,
-        $server,
-        $user,
-        $pwd,
-        $db,
-        $logFile = "",
-        $charset = null,
-        $nodeId = 1
+        $database, $server, $user, $pwd, $db, $logFile = "", $charset = null, $nodeId = 1
     ) {
         $this->databaseType = $database;
         switch ($this->databaseType) {
@@ -300,7 +284,7 @@ class PdoOne
      * Convert date, from mysql date -> text (using a format pre-established)
      *
      * @param string $sqlField
-     * @param bool   $hasTime if true then the date contains time.
+     * @param bool $hasTime if true then the date contains time.
      *
      * @return string Returns a text with the date formatted (human readable)
      */
@@ -311,11 +295,8 @@ class PdoOne
             return null;
         }
         if ($hasTime) {
-            return $tmpDate->format(
-                (strpos($sqlField, '.') !== false)
-                    ? self::$dateTimeMicroHumanFormat
-                    : self::$dateTimeHumanFormat
-            );
+            return $tmpDate->format((strpos($sqlField, '.') !== false) ? self::$dateTimeMicroHumanFormat
+                                        : self::$dateTimeHumanFormat);
         } else {
             return $tmpDate->format(self::$dateHumanFormat);
         }
@@ -325,7 +306,7 @@ class PdoOne
      * Convert date, from mysql -> php
      *
      * @param string $sqlField
-     * @param bool   $hasTime
+     * @param bool $hasTime
      *
      * @return bool|DateTime|null
      */
@@ -338,9 +319,7 @@ class PdoOne
                 return null;
             }
 
-            return DateTime::createFromFormat(
-                self::$isoDateTimeMs, PdoOne::$dateEpoch
-            );
+            return DateTime::createFromFormat(self::$isoDateTimeMs, PdoOne::$dateEpoch);
         }
 
         if (strpos($sqlField, '.')) {
@@ -356,8 +335,7 @@ class PdoOne
                 // date with time
                 $hasTime = true;
 
-                return DateTime::createFromFormat(self::$isoDateTime,
-                    $sqlField);
+                return DateTime::createFromFormat(self::$isoDateTime, $sqlField);
             } else {
                 // only date
                 $hasTime = false;
@@ -374,8 +352,8 @@ class PdoOne
      * $pdoOne->dateConvert('01/01/2019','human','sql'); // 2019-01-01
      * </pre>
      *
-     * @param string $sqlField         The date to convert
-     * @param string $inputFormat      =['iso','human','sql','class'][$i]<br>
+     * @param string $sqlField The date to convert
+     * @param string $inputFormat =['iso','human','sql','class'][$i]<br>
      *                                 <b>iso</b> depends on the database.
      *                                 Example: Y-m-d H:i:s<br>
      *                                 <b>human</b> is based in d/m/Y H:i:s but
@@ -383,7 +361,7 @@ class PdoOne
      *                                 (self::dateHumanFormat)<br>
      *                                 <b>sql</b> depends on the database<br>
      *                                 <b>class</b> is a DateTime() object<br>
-     * @param string $outputFormat     =['iso','human','sql','class'][$i]<br>
+     * @param string $outputFormat =['iso','human','sql','class'][$i]<br>
      *                                 <b>iso</b> depends on the database.
      *                                 Example: Y-m-d H:i:s<br>
      *                                 <b>human</b> is based in d/m/Y H:i:s but
@@ -403,55 +381,39 @@ class PdoOne
             case 'iso':
                 if (strpos($sqlField, '.') !== false) {
                     $ms = true;
-                    $tmpDate = DateTime::createFromFormat(
-                        self::$dateTimeMicroFormat, $sqlField
-                    );
+                    $tmpDate = DateTime::createFromFormat(self::$dateTimeMicroFormat, $sqlField);
                 } else {
                     if (strpos($sqlField, ':') !== false) {
                         $time = true;
-                        $tmpDate = DateTime::createFromFormat(
-                            self::$dateTimeFormat, $sqlField
-                        );
+                        $tmpDate = DateTime::createFromFormat(self::$dateTimeFormat, $sqlField);
                     } else {
-                        $tmpDate = DateTime::createFromFormat(self::$dateFormat,
-                            $sqlField);
+                        $tmpDate = DateTime::createFromFormat(self::$dateFormat, $sqlField);
                     }
                 }
                 break;
             case 'human':
                 if (strpos($sqlField, '.') !== false) {
                     $ms = true;
-                    $tmpDate = DateTime::createFromFormat(
-                        self::$dateTimeMicroHumanFormat, $sqlField
-                    );
+                    $tmpDate = DateTime::createFromFormat(self::$dateTimeMicroHumanFormat, $sqlField);
                 } else {
                     if (strpos($sqlField, ':') !== false) {
                         $time = true;
-                        $tmpDate = DateTime::createFromFormat(
-                            self::$dateTimeHumanFormat, $sqlField
-                        );
+                        $tmpDate = DateTime::createFromFormat(self::$dateTimeHumanFormat, $sqlField);
                     } else {
-                        $tmpDate = DateTime::createFromFormat(
-                            self::$dateHumanFormat, $sqlField
-                        );
+                        $tmpDate = DateTime::createFromFormat(self::$dateHumanFormat, $sqlField);
                     }
                 }
                 break;
             case 'sql':
                 if (strpos($sqlField, '.') !== false) {
                     $ms = true;
-                    $tmpDate = DateTime::createFromFormat(
-                        self::$isoDateTimeMs, $sqlField
-                    );
+                    $tmpDate = DateTime::createFromFormat(self::$isoDateTimeMs, $sqlField);
                 } else {
                     if (strpos($sqlField, ':') !== false) {
                         $time = true;
-                        $tmpDate = DateTime::createFromFormat(
-                            self::$isoDateTime, $sqlField
-                        );
+                        $tmpDate = DateTime::createFromFormat(self::$isoDateTime, $sqlField);
                     } else {
-                        $tmpDate = DateTime::createFromFormat(self::$isoDate,
-                            $sqlField);
+                        $tmpDate = DateTime::createFromFormat(self::$isoDate, $sqlField);
                     }
                 }
                 break;
@@ -506,27 +468,23 @@ class PdoOne
     /**
      * Convert date, from text -> mysql (using a format pre-established)
      *
-     * @param string $textDate     Input date
-     * @param bool   $hasTime      If true then it works with date and time
+     * @param string $textDate Input date
+     * @param bool $hasTime If true then it works with date and time
      *                             (instead of date)
      *
      * @return string
      */
     public static function dateText2Sql($textDate, $hasTime = true)
     {
-        $tmpFormat = (($hasTime)
-            ? (strpos($textDate, '.') === false
-                ? self::$dateTimeFormat
-                : self::$dateTimeMicroFormat)
-            : self::$dateFormat);
+        $tmpFormat =
+            (($hasTime) ? (strpos($textDate, '.') === false ? self::$dateTimeFormat : self::$dateTimeMicroFormat)
+                : self::$dateFormat);
         $tmpDate = DateTime::createFromFormat($tmpFormat, $textDate);
         if (!$hasTime && $tmpDate) {
             $tmpDate->setTime(0, 0, 0);
         }
 
-        return self::dateTimePHP2Sql(
-            $tmpDate
-        ); // it always returns a date with time. Mysql Ignores it.
+        return self::dateTimePHP2Sql($tmpDate); // it always returns a date with time. Mysql Ignores it.
     }
 
     /**
@@ -562,15 +520,11 @@ class PdoOne
      * @see PdoOne::$dateTimeFormat
      */
     public static function dateTextNow(
-        $hasTime = true,
-        $hasMicroseconds = false
+        $hasTime = true, $hasMicroseconds = false
     ) {
         $tmpDate = new DateTime();
         if ($hasTime) {
-            return $tmpDate->format(
-                ($hasMicroseconds !== false) ? self::$dateTimeMicroFormat
-                    : self::$dateTimeFormat
-            );
+            return $tmpDate->format(($hasMicroseconds !== false) ? self::$dateTimeMicroFormat : self::$dateTimeFormat);
         } else {
             return $tmpDate->format(self::$dateFormat);
         }
@@ -584,10 +538,7 @@ class PdoOne
             $tmpDate = null;
         }
         if ($hasTime) {
-            return $tmpDate->format(
-                ($hasMicroseconds !== false) ? self::$isoDateTimeMs
-                    : self::$isoDateTime
-            );
+            return $tmpDate->format(($hasMicroseconds !== false) ? self::$isoDateTimeMs : self::$isoDateTime);
         } else {
             return $tmpDate->format(self::$isoDate);
         }
@@ -601,17 +552,18 @@ class PdoOne
     /**
      * It validates two definition of arrays.
      *
-     * @param string       $table    The name of the table to valdiate
-     * @param array        $defArray The definition of the table to compare
-     *
-     * @param string|array $defKeys
+     * @param string $table The name of the table to valdiate
+     * @param array $defArray The definition of the table to compare
+     * @param string|array $defKeys The primary key or definition of keys
+     * @param array $defFK The definition of the foreign keys
      *
      * @return array An array with all the errors or an empty array (if both
      *               matches)
      * @throws Exception
      */
-    public function validateDefTable($table, $defArray, $defKeys)
+    public function validateDefTable($table, $defArray, $defKeys, $defFK)
     {
+        // columns
         $defCurrent = $this->getDefTable($table);
         // if keys exists
         $error = [];
@@ -626,15 +578,11 @@ class PdoOne
             }
         }
         foreach ($defCurrent as $k => $dc) {
-            if (isset($defArray[$k])
-                && strtolower($defArray[$k]) != strtolower(
-                    $dc
-                )
-            ) {
+            if (isset($defArray[$k]) && strtolower($defArray[$k]) != strtolower($dc)) {
                 $error[$k] = "$k $dc , $k {$defArray[$k]} are different";
             }
         }
-
+        // keys
         if (!is_array($defKeys)) {
             $k = $defKeys;
             $defKeys[$k] = "PRIMARY KEY";
@@ -655,6 +603,23 @@ class PdoOne
                 $error[$k] = "key: $dc , {$defKeys[$k]} are different";
             }
         }
+        // fk
+        $defCurrentFK = $this->getDefTableFK($table);
+        foreach ($defCurrentFK as $k => $dc) {
+            if (!isset($defFK[$k])) {
+                $error[] = "fk: $dc deleted";
+            }
+        }
+        foreach ($defFK as $k => $dc) {
+            if (!isset($defCurrentFK[$k])) {
+                $error[] = "fk: $dc added";
+            }
+        }
+        foreach ($defCurrentFK as $k => $dc) {
+            if (strtolower($defFK[$k]) != strtolower($dc)) {
+                $error[$k] = "fk: $dc , {$defFK[$k]} are different";
+            }
+        }
 
         return $error;
     }
@@ -673,8 +638,8 @@ class PdoOne
     }
 
     /**
-     * @param string $table            The name of the table to analize.
-     * @param bool   $returnSimple     true= returns as a simple associative
+     * @param string $table The name of the table to analize.
+     * @param bool $returnSimple true= returns as a simple associative
      *                                 array<br> example:['id'=>'PRIMARY
      *                                 KEY','name'=>'FOREIGN KEY...']<br> false=
      *                                 returns as an associative array separated
@@ -687,6 +652,23 @@ class PdoOne
     public function getDefTableKeys($table, $returnSimple = true)
     {
         return $this->service->getDefTableKeys($table, $returnSimple);
+    }
+
+    /**
+     * @param string $table The name of the table to analize.
+     * @param bool $returnSimple true= returns as a simple associative
+     *                                 array<br> example:['id'=>'PRIMARY
+     *                                 KEY','name'=>'FOREIGN KEY...']<br> false=
+     *                                 returns as an associative array separated
+     *                                 by parts<br>
+     *                                 ['key','refcol','reftable','extra']
+     *
+     * @return array
+     * @throws Exception
+     */
+    public function getDefTableFK($table, $returnSimple = true)
+    {
+        return $this->service->getDefTableFK($table, $returnSimple);
     }
 
     /**
@@ -799,13 +781,10 @@ class PdoOne
         $db = self::getParameterCli('db');
         $input = self::getParameterCli('input');
         $output = self::getParameterCli('output');
-        $pk = self::getParameterCli('pk');
+        $namespace = self::getParameterCli('namespace');
         $v = self::VERSION;
 
-        if ($database === '' || $server === '' || $user === '' || $pwd === ''
-            || $input === ''
-            || $output === ''
-        ) {
+        if ($database === '' || $server === '' || $user === '' || $pwd === '' || $input === '' || $output === '') {
             echo <<<eot
  _____    _       _____           
 |  _  | _| | ___ |     | ___  ___ 
@@ -833,22 +812,20 @@ Syntax:php PdoOne.php <args>
     arraycode: it shows a php code with the definition of an array Ex: ['idfield'=0,'name'=>'']
     csv: it returns a csv result
     json: it returns the value of the queries as json
--pk [optional] the primary key. It is requerido for SQLSERVER and output classcode [$pk]
+-namespace [optional] the namespace  [$namespace]
     Example: "customerid"    
 
 eot;
 
             return;
         } else {
-            echo $this->run(
-                $database, $server, $user, $pwd, $db, $input, $output, $pk
-            );
+            echo $this->run($database, $server, $user, $pwd, $db, $input, $output, $namespace);
         }
     }
 
     /**
      * @param           $key
-     * @param string    $default  is the defalut value is the parameter is set
+     * @param string $default is the defalut value is the parameter is set
      *                            without value.
      *
      * @return string
@@ -883,20 +860,13 @@ eot;
      * @param string $db
      * @param string $input
      * @param string $output
-     * @param string $pk
+     * @param string $namespace
      *
      * @return false|string
      * @throws Exception
      */
     protected function run(
-        $database,
-        $server,
-        $user,
-        $pwd,
-        $db,
-        $input,
-        $output,
-        $pk
+        $database, $server, $user, $pwd, $db, $input, $output, $namespace
     ) {
         $this->construct($database, $server, $user, $pwd, $db);
         //$this->logLevel = 3;
@@ -907,9 +877,7 @@ eot;
 
             return $r;
         }
-        if (stripos($input, 'select ') !== false
-            || stripos($input, 'show ') !== false
-        ) {
+        if (stripos($input, 'select ') !== false || stripos($input, 'show ') !== false) {
             $query = $input;
         } else {
             $query = 'select * from ' . $this->addDelimiter($input);
@@ -955,12 +923,7 @@ eot;
                 return $this->generateCodeCreate($input);
                 break;
             case 'classcode':
-                $pk = $this->service->getPK($query, $pk);
-                if (!$pk) {
-                    return "Unable to find primary key on query $query or primary key not specified with -pk";
-                }
-
-                return $this->generateCodeClass($input, $query, $pk);
+                return $this->generateCodeClass($input, $namespace);
                 break;
             default:
                 return "Output $output not defined. Use csv/json/selectcode/arraycode/createcode/classcode";
@@ -971,7 +934,7 @@ eot;
     /**
      * Connects to the database.
      *
-     * @param bool $failIfConnected     true=it throw an error if it's connected,
+     * @param bool $failIfConnected true=it throw an error if it's connected,
      *                                  otherwise it does nothing
      *
      * @throws Exception
@@ -988,22 +951,17 @@ eot;
         }
         try {
             if ($this->logLevel >= 2) {
-                $this->storeInfo(
-                    "connecting to {$this->server} {$this->user}/*** {$this->db}"
-                );
+                $this->storeInfo("connecting to {$this->server} {$this->user}/*** {$this->db}");
             }
             $cs = ($this->charset != '') ? ';charset=' . $this->charset : '';
             $this->service->connect($cs);
-            $this->conn1->setAttribute(PDO::ATTR_ERRMODE,
-                PDO::ERRMODE_EXCEPTION);
+            $this->conn1->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
             $this->isOpen = true;
         } catch (Exception $ex) {
             $this->isOpen = false;
-            $this->throwError(
-                "Failed to connect to {$this->databaseType}", $ex->getMessage(),
-                '\nTRACE:' . $ex->getTraceAsString()
-            );
+            $this->throwError("Failed to connect to {$this->databaseType}", $ex->getMessage(),
+                              '\nTRACE:' . $ex->getTraceAsString());
         }
     }
 
@@ -1011,10 +969,10 @@ eot;
      * Write a log line for debug, clean the command chain then throw an error
      * (if throwOnError==true)
      *
-     * @param string       $txt            The message to show.
-     * @param string       $txtExtra       It's only used if $logLevel>=2. It
+     * @param string $txt The message to show.
+     * @param string $txtExtra It's only used if $logLevel>=2. It
      *                                     shows an extra message
-     * @param string|array $extraParam     It's only used if $logLevel>=3  It
+     * @param string|array $extraParam It's only used if $logLevel>=3  It
      *                                     shows parameters (if any)
      *
      * @throws Exception
@@ -1173,23 +1131,13 @@ eot;
         if (strpos($txt, $this->database_delimiter0) === false) {
             $pos = $this->strposa($txt, [' ', '=']);
             if ($pos === false) {
-                $quoted = $this->database_delimiter0 . $txt
-                    . $this->database_delimiter1;
-                $quoted = str_replace(
-                    '.',
-                    $this->database_delimiter1 . '.' . $this->database_delimiter0,
-                    $quoted
-                );
+                $quoted = $this->database_delimiter0 . $txt . $this->database_delimiter1;
+                $quoted = str_replace('.', $this->database_delimiter1 . '.' . $this->database_delimiter0, $quoted);
             } else {
                 $arr = explode(substr($txt, $pos, 1), $txt, 2);
-                $quoted = $this->database_delimiter0 . $arr[0]
-                    . $this->database_delimiter1 . substr($txt, $pos, 1)
-                    . $arr[1];
-                $quoted = str_replace(
-                    '.',
-                    $this->database_delimiter1 . '.' . $this->database_delimiter0,
-                    $quoted
-                );
+                $quoted =
+                    $this->database_delimiter0 . $arr[0] . $this->database_delimiter1 . substr($txt, $pos, 1) . $arr[1];
+                $quoted = str_replace('.', $this->database_delimiter1 . '.' . $this->database_delimiter0, $quoted);
             }
 
             return $quoted;
@@ -1223,9 +1171,9 @@ eot;
      *      $values=$con->runRawQuery('select * from table where
      *      id=?',["i",20]',true)
      *
-     * @param string     $rawSql
+     * @param string $rawSql
      * @param array|null $param
-     * @param bool       $returnArray
+     * @param bool $returnArray
      *
      * @return bool|PDOStatement|array an array of associative or a pdo
      *     statement
@@ -1240,17 +1188,14 @@ eot;
             return false;
         }
         if ($this->readonly) {
-            if (stripos($rawSql, 'insert ') === 0
-                || stripos($rawSql, 'update ') === 0
-                || stripos($rawSql, 'delete ') === 0
-            ) {
+            if (stripos($rawSql, 'insert ') === 0 || stripos($rawSql, 'update ') === 0 ||
+                stripos($rawSql, 'delete ') === 0) {
                 // we aren't checking SQL-DLC queries. Also, "insert into" is stopped but "  insert into" not.
                 $this->throwError("Database is in READ ONLY MODE", '');
             }
         }
         if (!is_array($param) && $param !== null) {
-            $this->throwError("runRawQuery, param must be null or an array",
-                '');
+            $this->throwError("runRawQuery, param must be null or an array", '');
 
             return false;
         }
@@ -1272,19 +1217,11 @@ eot;
             $counter++;
             $typeP = $this->stringToPdoParam($param[$i]);
             $this->lastBindParam[$counter] = $param[$i + 1];
-            $stmt->bindParam(
-                $counter
-                , $param[$i + 1]
-                , $typeP
-            );
+            $stmt->bindParam($counter, $param[$i + 1], $typeP);
         }
         if ($this->useCache !== false && $returnArray) {
-            $this->uid = hash(
-                'sha256', $this->lastQuery . serialize($this->lastBindParam)
-            );
-            $result = $this->cacheService->getCache(
-                $this->uid, $this->cacheFamily
-            );
+            $this->uid = hash('sha256', $this->lastQuery . serialize($this->lastBindParam));
+            $result = $this->cacheService->getCache($this->uid, $this->cacheFamily);
             if ($result !== false) {
                 // it's found in the cache.
                 if (is_array($result)) {
@@ -1301,9 +1238,7 @@ eot;
         $this->runQuery($stmt);
 
         if ($returnArray && $stmt instanceof PDOStatement) {
-            $rows = ($stmt->columnCount() > 0) ? $stmt->fetchAll(
-                PDO::FETCH_ASSOC
-            ) : [];
+            $rows = ($stmt->columnCount() > 0) ? $stmt->fetchAll(PDO::FETCH_ASSOC) : [];
             $this->affected_rows = $stmt->rowCount();
             $stmt = null;
 
@@ -1323,7 +1258,7 @@ eot;
      * Internal Use: It runs a raw query
      *
      * @param string $rawSql
-     * @param bool   $returnArray
+     * @param bool $returnArray
      *
      * @return array|bool|false|PDOStatement
      * @throws Exception
@@ -1336,16 +1271,11 @@ eot;
             $rows = $this->conn1->query($rawSql);
         } catch (Exception $ex) {
             $rows = false;
-            $this->throwError(
-                "Exception in runRawQueryParamLess :", $rawSql,
-                json_encode($this->lastParam) . '\nTRACE:' . $ex->getTraceAsString()
-            );
+            $this->throwError("Exception in runRawQueryParamLess :", $rawSql,
+                              json_encode($this->lastParam) . '\nTRACE:' . $ex->getTraceAsString());
         }
         if ($rows === false) {
-            $this->throwError(
-                "Unable to run raw runRawQueryParamLess", $rawSql,
-                $this->lastParam
-            );
+            $this->throwError("Unable to run raw runRawQueryParamLess", $rawSql, $this->lastParam);
         }
 
         if ($returnArray && $rows instanceof PDOStatement) {
@@ -1388,10 +1318,8 @@ eot;
         }
         $this->lastQuery = $statement;
         if ($this->readonly) {
-            if (stripos($statement, 'insert ') === 0
-                || stripos($statement, 'update ') === 0
-                || stripos($statement, 'delete ') === 0
-            ) {
+            if (stripos($statement, 'insert ') === 0 || stripos($statement, 'update ') === 0 ||
+                stripos($statement, 'delete ') === 0) {
                 // we aren't checking SQL-DCL queries.
                 $this->throwError("Database is in READ ONLY MODE", "");
             }
@@ -1404,16 +1332,11 @@ eot;
             $stmt = $this->conn1->prepare($statement);
         } catch (Exception $ex) {
             $stmt = false;
-            $this->throwError(
-                "Failed to prepare", $ex->getMessage(),
-                json_encode($this->lastParam) . '\nTRACE:' . $ex->getTraceAsString()
-            );
+            $this->throwError("Failed to prepare", $ex->getMessage(),
+                              json_encode($this->lastParam) . '\nTRACE:' . $ex->getTraceAsString());
         }
         if ($stmt === false) {
-            $this->throwError(
-                "Unable to prepare query", $this->lastQuery,
-                json_encode($this->lastParam)
-            );
+            $this->throwError("Unable to prepare query", $this->lastQuery, json_encode($this->lastParam));
         }
 
         return $stmt;
@@ -1442,8 +1365,8 @@ eot;
      * <br><b>Example</b>:<br>
      *      $con->runQuery($con->prepare('select * from table'));
      *
-     * @param PDOStatement $stmt          PDOStatement
-     * @param array|null   $namedArgument (optional)
+     * @param PDOStatement $stmt PDOStatement
+     * @param array|null $namedArgument (optional)
      *
      * @return bool returns true if the operation is correct, otherwise false
      * @throws Exception
@@ -1461,20 +1384,16 @@ eot;
             return null;
         }
         try {
-            $namedArgument = ($namedArgument === null) ? $this->whereParamAssoc
-                : $namedArgument;
+            $namedArgument = ($namedArgument === null) ? $this->whereParamAssoc : $namedArgument;
             $r = $stmt->execute($namedArgument);
         } catch (Exception $ex) {
             $r = false;
-            $this->throwError(
-                $this->databaseType . ":Failed to run query ",
-                $this->lastQuery . "\nCAUSE: " . $ex->getMessage(),
-                json_encode($this->lastParam) . '\nTRACE:' . $ex->getTraceAsString()
-            );
+            $this->throwError($this->databaseType . ":Failed to run query ",
+                              $this->lastQuery . "\nCAUSE: " . $ex->getMessage(),
+                              json_encode($this->lastParam) . '\nTRACE:' . $ex->getTraceAsString());
         }
         if ($r === false) {
-            $this->throwError("Exception query ", $this->lastQuery,
-                $this->lastParam);
+            $this->throwError("Exception query ", $this->lastQuery, $this->lastParam);
         }
 
         return true;
@@ -1496,11 +1415,10 @@ eot;
      * @return string
      * @throws Exception
      */
-    protected function generateCodeSelect($query)
+    public function generateCodeSelect($query)
     {
         $q = self::splitQuery($query);
-        $code = '/** @var array $result=array(' . $this->generateCodeArray($query)
-            . ') */' . "\n";
+        $code = '/** @var array $result=array(' . $this->generateCodeArray($query) . ') */' . "\n";
 
         $code .= '$result=$pdo' . "\n";
         foreach ($q as $k => $v) {
@@ -1521,29 +1439,25 @@ eot;
         $result = [];
         $parts = [
             'select',
-            'from'
-            ,
+            'from',
             'inner join',
             'inner join',
             'inner join',
             'inner join',
             'inner join',
-            'inner join'
-            ,
+            'inner join',
             'left join',
             'left join',
             'left join',
             'left join',
             'left join',
-            'left join'
-            ,
+            'left join',
             'right join',
             'right join',
             'right join',
             'right join',
             'right join',
-            'right join'
-            ,
+            'right join',
             'where',
             'group by',
             'having',
@@ -1553,29 +1467,25 @@ eot;
         ];
         $partsRealIndex = [
             'select',
-            'from'
-            ,
+            'from',
             'innerjoin',
             'innerjoin',
             'innerjoin',
             'innerjoin',
             'innerjoin',
-            'innerjoin'
-            ,
+            'innerjoin',
             'left',
             'left',
             'left',
             'left',
             'left',
-            'left'
-            ,
+            'left',
             'right',
             'right',
             'right',
             'right',
             'right',
-            'right'
-            ,
+            'right',
             'where',
             'group',
             'having',
@@ -1584,11 +1494,8 @@ eot;
             '*END*',
         ];
         $query = str_replace(["\r\n", "\n", "\t"], " ", $query);
-        $query = str_replace(
-            ["   ", "  "], " ", $query
-        ); // remove 3 or 2 space and put instead 1 space
-        $query = ' ' . trim($query, " \t\n\r\0\x0B;")
-            . '*END*'; // we also trim the last ; (if any)
+        $query = str_replace(["   ", "  "], " ", $query); // remove 3 or 2 space and put instead 1 space
+        $query = ' ' . trim($query, " \t\n\r\0\x0B;") . '*END*'; // we also trim the last ; (if any)
         $pfin = 0;
         foreach ($parts as $kp => $part) {
             $ri = $partsRealIndex[$kp];
@@ -1610,8 +1517,7 @@ eot;
                         if (!isset($result[$ri])) {
                             $result[$ri] = [];
                         }
-                        $result[$ri][] = trim(substr($query, $pini,
-                            $pfin - $pini));
+                        $result[$ri][] = trim(substr($query, $pini, $pfin - $pini));
                     }
                 }
             }
@@ -1626,7 +1532,7 @@ eot;
      * @return string
      * @throws Exception
      */
-    protected function generateCodeArray($query)
+    public function generateCodeArray($query)
     {
         $r = ($this->toMeta($query));
 
@@ -1659,11 +1565,11 @@ eot;
      * It returns an array with the metadata of each columns (i.e. name, type,
      * size, etc.) or false if error.
      *
-     * @param null|string $sql     If null then it uses the generation of query
+     * @param null|string $sql If null then it uses the generation of query
      *                             (if any).<br> if string then get the
      *                             statement of the query
      *
-     * @param array       $args
+     * @param array $args
      *
      * @return array|bool
      * @throws Exception
@@ -1695,13 +1601,13 @@ eot;
     /**
      * Run builder query and returns a PDOStatement.
      *
-     * @param bool   $returnArray      true=return an array. False returns a
+     * @param bool $returnArray true=return an array. False returns a
      *                                 PDOStatement
-     * @param int    $extraMode        PDO::FETCH_ASSOC,PDO::FETCH_BOTH,PDO::FETCH_NUM,etc.
+     * @param int $extraMode PDO::FETCH_ASSOC,PDO::FETCH_BOTH,PDO::FETCH_NUM,etc.
      *                                 By default it returns
      *                                 $extraMode=PDO::FETCH_ASSOC
      *
-     * @param string $extraIdCache     [optional] if 'rungen' then cache is
+     * @param string $extraIdCache [optional] if 'rungen' then cache is
      *                                 stored. If false the cache could be
      *                                 stored
      *
@@ -1709,9 +1615,7 @@ eot;
      * @throws Exception
      */
     public function runGen(
-        $returnArray = true,
-        $extraMode = PDO::FETCH_ASSOC,
-        $extraIdCache = 'rungen'
+        $returnArray = true, $extraMode = PDO::FETCH_ASSOC, $extraIdCache = 'rungen'
     ) {
         $sql = $this->sqlGen();
         /** @var PDOStatement $stmt */
@@ -1726,37 +1630,22 @@ eot;
             $this->lastBindParam = [];
             foreach ($this->whereParamType as $k => $v) {
                 $counter++;
-                $typeP = $this->stringToPdoParam(
-                    $this->whereParamType[$k]
-                );
+                $typeP = $this->stringToPdoParam($this->whereParamType[$k]);
                 $this->lastBindParam[$counter] = $values[$k];
-                $reval = $reval
-                    && $stmt->bindParam(
-                        $counter
-                        , $values[$k]
-                        , $typeP
-                    );
+                $reval = $reval && $stmt->bindParam($counter, $values[$k], $typeP);
             }
             if (!$reval) {
-                $this->throwError(
-                    "Error in bind", "",
-                    "type: " . json_encode($this->whereParamType) . " values:"
-                    . json_encode($values)
-                );
+                $this->throwError("Error in bind", "",
+                                  "type: " . json_encode($this->whereParamType) . " values:" . json_encode($values));
 
                 return false;
             }
         }
         $useCache = $this->useCache; // because builderReset cleans this value
         if ($useCache !== false && $returnArray) {
-            $this->uid = hash(
-                'sha256',
-                $this->lastQuery . $extraMode . serialize($this->lastBindParam)
-                . $extraIdCache
-            );
-            $result = $this->cacheService->getCache(
-                $this->uid, $this->cacheFamily
-            );
+            $this->uid =
+                hash('sha256', $this->lastQuery . $extraMode . serialize($this->lastBindParam) . $extraIdCache);
+            $result = $this->cacheService->getCache($this->uid, $this->cacheFamily);
             if ($result !== false) {
                 // it's found in the cache.
                 $this->builderReset();
@@ -1773,16 +1662,12 @@ eot;
         $this->builderReset();
 
         if ($returnArray && $stmt instanceof PDOStatement) {
-            $result = ($stmt->columnCount() > 0) ? $stmt->fetchAll(
-                $extraMode
-            ) : [];
+            $result = ($stmt->columnCount() > 0) ? $stmt->fetchAll($extraMode) : [];
             $this->affected_rows = $stmt->rowCount();
             $stmt = null; // close
             if ($extraIdCache == 'rungen' && $this->uid) {
                 // we store the information of the cache.
-                $this->cacheService->setCache(
-                    $this->uid, $this->cacheFamily, $result, $useCache
-                );
+                $this->cacheService->setCache($this->uid, $this->cacheFamily, $result, $useCache);
             }
 
             return $result;
@@ -1794,7 +1679,7 @@ eot;
     /**
      * Generates the sql (script). It doesn't run or execute the query.
      *
-     * @param bool $resetStack     if true then it reset all the values of the
+     * @param bool $resetStack if true then it reset all the values of the
      *                             stack, including parameters.
      *
      * @return string
@@ -1810,8 +1695,7 @@ eot;
         if (!in_array('select', $words)) {
             $sql = 'select ' . $this->distinct . $this->select;
         } else {
-            $sql
-                = $this->select; // the query already constains "select", so we don't want "select select * from".
+            $sql = $this->select; // the query already constains "select", so we don't want "select select * from".
         }
         if (!in_array('from', $words)) {
             $sql .= ' from ' . $this->from;
@@ -1860,14 +1744,17 @@ eot;
      * @return string
      * @throws Exception
      */
-    protected function generateCodeCreate($tableName)
+    public function generateCodeCreate($tableName)
     {
         $code = "\$pdo->createTable('" . $tableName . "',\n";
         $arr = $this->getDefTable($tableName);
         $arrKey = $this->getDefTableKeys($tableName);
+        $arrFK = self::varExport($this->getDefTableFK($tableName));
         $keys = self::varExport($arrKey);
         $code .= "\t" . self::varExport($arr);
-        $code .= ",$keys);";
+        $code .= ",$keys);\n";
+        $code .= "\$pdo->createFk('" . $tableName . "',\n";
+        $code .= "$arrFK);\n";
 
         return $code;
     }
@@ -1881,9 +1768,8 @@ eot;
                 $indexed = array_keys($input) === range(0, count($input) - 1);
                 $r = [];
                 foreach ($input as $key => $value) {
-                    $r[] = "$indent    "
-                        . ($indexed ? "" : self::varExport($key) . " => ")
-                        . self::varExport($value, "$indent    ");
+                    $r[] = "$indent    " . ($indexed ? "" : self::varExport($key) . " => ") .
+                        self::varExport($value, "$indent    ");
                 }
 
                 return "[\n" . implode(",\n", $r) . "\n" . $indent . "]";
@@ -1897,31 +1783,32 @@ eot;
     /**
      * It generates a class
      *
-     * @param string $input
-     * @param string $query
-     * @param string $pk
+     * @param string $tableName
+     * @param string $namespace
      *
      * @return string|string[]
      * @throws Exception
      */
-    protected function generateCodeClass($input, $query, $pk)
+    public function generateCodeClass($tableName, $namespace = '')
     {
         $r = <<<'eot'
 <?php
 /** @noinspection PhpUnused */
+{namespace}
 use eftec\PdoOne;
 use Exception;
 use PDOStatement;
 /**
  * Generated by PdoOne Version {version}
- * Class {table}Repo
+ * Class {class}Repo
  */
-class {table}Repo
+class {class}Repo
 {
     const TABLE = '{table}';
     const PK = '{pk}';   
     const DEF={def};
     const DEFKEY={defkey};
+    const DEFFK={deffk};
     
     /** @var PdoOne */
     public static $pdoOne = null;
@@ -1930,20 +1817,28 @@ class {table}Repo
      * It creates a new table<br>
      * If the table exists then the operation is ignored (and it returns false)
      * 
-     * @param array $definition
      * @param null  $extra
      *
      * @return array|bool|PDOStatement
      * @throws Exception
      */
-    public static function createTable($definition=null, $extra = null) {
+    public static function createTable( $extra = null) {
         if (!self::getPdoOne()->tableExist(self::TABLE)) {
-            if($definition===null) $definition=self::DEF;
-            return self::getPdoOne()->createTable(self::TABLE, $definition, self::DEFKEY, $extra);
+            return self::getPdoOne()->createTable(self::TABLE, $definition=self::DEF, self::DEFKEY, $extra);
         }
         return false; // table already exist
     }
-
+    
+    /**
+     * It creates a foreign keys<br>
+     *
+     * @return array|bool|PDOStatement
+     * @throws Exception
+     */    
+    public static function createFk() {        
+        return self::getPdoOne()->createFk(self::TABLE,self::DEFFK);                
+    }
+    
     /**
      * It validates the table and returns an associative array with the errors.
      * 
@@ -1951,7 +1846,7 @@ class {table}Repo
      * @throws Exception
      */
     public static function validTable() {
-        return PdoOne::validateDefTable(self::getPdoOne(),self::TABLE,self::DEF,self::DEFKEY);
+        return self::getPdoOne()->validateDefTable(self::TABLE,self::DEF,self::DEFKEY,self::DEFFK);
     }
 
     /**
@@ -2054,7 +1949,7 @@ class {table}Repo
      * 
      * @param mixed $pk
      *
-     * @return {array}
+     * @return array {array}
      * @throws Exception
      */
     public static function get($pk) {
@@ -2071,7 +1966,7 @@ class {table}Repo
      * @param null|string $order
      * @param null|string $limit
      *
-     * @return [{array}]
+     * @return array [{array}]
      * @throws Exception
      */
     public static function select($where = null, $order = null, $limit = null) {
@@ -2100,16 +1995,26 @@ class {table}Repo
 }
 eot;
         $r = str_replace('{version}', self::VERSION, $r);
-        $r = str_replace('{table}', $input, $r);
+        $className = self::camelize($tableName);
+
+        $r = str_replace('{class}', $className, $r);
+        $r = str_replace('{table}', $tableName, $r);
+        $r = str_replace('{namespace}', ($namespace) ? "namespace $namespace;" : '', $r);
+        $pk = '??';
+
+        $pk = $this->service->getPK($tableName, $pk);
         $r = str_replace('{pk}', $pk, $r);
-        $r = str_replace('{def}', self::varExport($this->getDefTable($input)),
-            $r);
-        $r = str_replace(
-            '{defkey}', self::varExport($this->getDefTableKeys($input)), $r
-        );
-        $r = str_replace('{array}', $this->generateCodeArray($query), $r);
+        $r = str_replace('{def}', self::varExport($this->getDefTable($tableName)), $r);
+        $r = str_replace('{defkey}', self::varExport($this->getDefTableKeys($tableName)), $r);
+        $r = str_replace('{deffk}', self::varExport($this->getDefTableFK($tableName)), $r);
+        $r = str_replace('{array}', $this->generateCodeArray('select * from ' . $this->addDelimiter($tableName)), $r);
 
         return $r;
+    }
+
+    public static function camelize($input, $separator = '_')
+    {
+        return str_replace($separator, '', ucwords($input, $separator));
     }
 
     public function render()
@@ -2144,7 +2049,7 @@ LOGS;
                 <h3 class="panel-title">Login Screen</h3>
               </div>
               <div class="panel-body">
-                <form class="form-horizontal" role="form" method="post">
+                <form class="form-horizontal" role="form" method="post" spellcheck="false">
                   <div class="form-group">
                     <div class="col-sm-2">
                       <label for="inputEmail3" class="control-label">User</label>
@@ -2308,10 +2213,9 @@ TEM1;
                       <label class="control-label">pk <span class="text-danger">(Opt)</span> </label>
                     </div>
                     <div class="col-sm-10">
-                      <input type="text" class="form-control" placeholder="primary key"
-                      name="pk" value="{{pk}}">
-                      <em><b>Examples:</b> customer_id, paymentPK</em>
-                      <p>Some operations using sqlsrv requires it.</p>
+                      <input type="text" class="form-control" placeholder="namespace"
+                      name="namespace" value="{{namespace}}">
+                      <em><b>Examples:</b> namespace1\namespace2</em>
                     </div>
                   </div>
                   <!-- end pk -->                                                                         
@@ -2357,15 +2261,12 @@ TEM1;
             $db = @$_POST['db'];
             $input = @$_POST['input'];
             $output = @$_POST['output'];
-            $pk = @$_POST['pk'];
+            $namespace = @$_POST['namespace'];
             $button = @$_POST['button'];
             $log = '';
             if ($button) {
                 try {
-                    $log = $this->run(
-                        $database, $server, $user, $pwd, $db, $input, $output,
-                        $pk
-                    );
+                    $log = $this->run($database, $server, $user, $pwd, $db, $input, $output, $namespace);
                 } catch (Exception $e) {
                     $log = $e->getMessage();
                 }
@@ -2374,9 +2275,7 @@ TEM1;
             $web = str_replace('{{version}}', $this::VERSION, $web);
             $valid = ['mysql', 'sqlsrv'];
 
-            $web = str_replace(
-                "{{database}}", $this->runUtilCombo($valid, $database), $web
-            );
+            $web = str_replace("{{database}}", $this->runUtilCombo($valid, $database), $web);
             $web = str_replace('{{server}}', $server, $web);
             $web = str_replace('{{user}}', $user, $web);
             $web = str_replace('{{pwd}}', $pwd, $web);
@@ -2390,10 +2289,8 @@ TEM1;
                 'csv',
                 'json',
             ];
-            $web = str_replace(
-                '{{output}}', $this->runUtilCombo($valid, $output), $web
-            );
-            $web = str_replace('{{pk}}', $pk, $web);
+            $web = str_replace('{{output}}', $this->runUtilCombo($valid, $output), $web);
+            $web = str_replace('{{namespace}}', $namespace, $web);
             $web = str_replace('{{log}}', $log, $web);
 
             $ms = 1;
@@ -2416,9 +2313,7 @@ BOOTS;
     {
         $r = '';
         foreach ($array as $item) {
-            $r .= "<option value='{$item}' " . (($select == $item) ? "selected"
-                    : "")
-                . " >{$item}</option>";
+            $r .= "<option value='{$item}' " . (($select == $item) ? "selected" : "") . " >{$item}</option>";
         }
 
         return $r;
@@ -2492,21 +2387,18 @@ BOOTS;
      * @see \eftec\PdoOne::getSequencePHP It's the same but it uses less
      *      resources but lacks of a sequence.
      *
-     * @param bool   $asFloat
-     * @param bool   $unpredictable
-     * @param string $sequenceName     (optional) the name of the sequence. If
+     * @param bool $asFloat
+     * @param bool $unpredictable
+     * @param string $sequenceName (optional) the name of the sequence. If
      *                                 not then it uses $this->tableSequence
      *
      * @return string . Example string(19) "3639032938181434317"
      * @throws Exception
      */
     public function getSequence(
-        $asFloat = false,
-        $unpredictable = false,
-        $sequenceName = ''
+        $asFloat = false, $unpredictable = false, $sequenceName = ''
     ) {
-        $sequenceName = ($sequenceName == '') ? $this->tableSequence
-            : $sequenceName;
+        $sequenceName = ($sequenceName == '') ? $this->tableSequence : $sequenceName;
         $sql = "select next_{$sequenceName}({$this->nodeId}) id";
         $r = $this->runRawQuery($sql, null, true);
         if ($unpredictable) {
@@ -2541,11 +2433,8 @@ BOOTS;
         $ms = microtime(true);
         //$ms=1000;
         $timestamp = (double)round($ms * 1000);
-        $rand = (fmod($ms, 1) * 1000000)
-            % 4096; // 4096= 2^12 It is the millionth of seconds
-        $calc = (($timestamp - 1459440000000) << 22) + ($this->nodeId
-                << 12)
-            + $rand;
+        $rand = (fmod($ms, 1) * 1000000) % 4096; // 4096= 2^12 It is the millionth of seconds
+        $calc = (($timestamp - 1459440000000) << 22) + ($this->nodeId << 12) + $rand;
         usleep(1);
 
         if ($unpredictable) {
@@ -2652,11 +2541,11 @@ BOOTS;
      * <b>Note:</b>: This operation is not foolproof because the tables could
      * have circular reference.
      *
-     * @param int  $maxLoop            The number of tests. If the sort is
+     * @param int $maxLoop The number of tests. If the sort is
      *                                 correct, then it ends as fast as it can.
-     * @param bool $returnProblems     [false] if true then it returns all the
+     * @param bool $returnProblems [false] if true then it returns all the
      *                                 tables with problem
-     * @param bool $debugTrace         [false] if true then it shows the
+     * @param bool $debugTrace [false] if true then it shows the
      *                                 operations done.
      *
      * @return array List of table.
@@ -2671,13 +2560,11 @@ BOOTS;
             $before[$table] = [];
         }
         foreach ($tables as $table) {
-            $arr = $this->getDefTableKeys($table, false);
+            $arr = $this->getDefTableFK($table, false);
             $deps = [];
             foreach ($arr as $k => $v) {
-                if ($v['key'] === 'FOREIGN KEY') {
-                    $deps[] = $v['reftable'];
-                    $before[$v['reftable']][] = $table;
-                }
+                $deps[] = $v['reftable'];
+                $before[$v['reftable']][] = $table;
             }
             $after[$table] = $deps; // ['city']=>['country','location']
         }
@@ -2688,10 +2575,7 @@ BOOTS;
         }
         $problems = [];
         for ($i = 0; $i < $maxLoop; $i++) {
-            if ($this->reSort(
-                $tables, $tableSorted, $after, $before, $problems, $debugTrace
-            )
-            ) {
+            if ($this->reSort($tables, $tableSorted, $after, $before, $problems, $debugTrace)) {
                 break;
             }
         }
@@ -2705,9 +2589,9 @@ BOOTS;
     /**
      * Returns a list of objects from the current schema/db<br>
      *
-     * @param string $type         =['table','function'][$i] The type of the
+     * @param string $type =['table','function'][$i] The type of the
      *                             object
-     * @param bool   $onlyName     If true then it only returns the name of the
+     * @param bool $onlyName If true then it only returns the name of the
      *                             objects.
      *
      * @return bool|array
@@ -2740,9 +2624,7 @@ BOOTS;
         $rows = $this->runGen(true, PDO::FETCH_COLUMN, 'tolistsimple');
         if ($this->uid) {
             // we store the information of the cache.
-            $this->cacheService->setCache(
-                $this->uid, $this->cacheFamily, $rows, $useCache
-            );
+            $this->cacheService->setCache($this->uid, $this->cacheFamily, $rows, $useCache);
         }
 
         return $rows;
@@ -2786,26 +2668,21 @@ BOOTS;
     /**
      * Resort the tableSorted list based in dependencies.
      *
-     * @param array $tables            An associative array with the name of the
+     * @param array $tables An associative array with the name of the
      *                                 tables
-     * @param array $tableSorted       (ref) An associative array with the name
+     * @param array $tableSorted (ref) An associative array with the name
      *                                 of the tables
-     * @param array $after             $after[city]=[country,..]
-     * @param array $before            $before[city]=[address]
-     * @param array $tableProblems     (ref) an associative array whtn the name
+     * @param array $after $after[city]=[country,..]
+     * @param array $before $before[city]=[address]
+     * @param array $tableProblems (ref) an associative array whtn the name
      *                                 of the tables with problem.
-     * @param bool  $debugTrace        If true then it shows a debug per
+     * @param bool $debugTrace If true then it shows a debug per
      *                                 operation.
      *
      * @return bool true if the sort is finished and there is nothing wrong.
      */
     protected function reSort(
-        $tables,
-        &$tableSorted,
-        $after,
-        $before,
-        &$tableProblems,
-        $debugTrace = false
+        $tables, &$tableSorted, $after, $before, &$tableProblems, $debugTrace = false
     ) {
         shuffle($tables);
         $tableProblems = [];
@@ -2821,8 +2698,7 @@ BOOTS;
                     $nothingWrong = false;
                     $pairProblem = $tableSorted[$i];
                     if ($debugTrace) {
-                        echo "reSort: [wrong position] $table ($pos) is after "
-                            . $tableSorted[$i] . " ($i)<br>";
+                        echo "reSort: [wrong position] $table ($pos) is after " . $tableSorted[$i] . " ($i)<br>";
                     }
                     break;
                 }
@@ -2832,9 +2708,7 @@ BOOTS;
                 for ($i = $pos + 1; $i < count($tableSorted); $i++) {
                     $tableSorted[$i - 1] = $tableSorted[$i];
                 }
-                unset(
-                    $tableSorted[count($tableSorted) - 1]
-                ); // we removed the last element.
+                unset($tableSorted[count($tableSorted) - 1]); // we removed the last element.
                 // We found the initial position to add.
                 $pInitial = 0;
                 foreach ($tableSorted as $k2 => $v2) {
@@ -2878,7 +2752,7 @@ BOOTS;
      * It returns the statistics (minimum,maximum,average,sum and count) of a
      * column of a table
      *
-     * @param string $tableName  Name of the table
+     * @param string $tableName Name of the table
      * @param string $columnName The column name to analyze.
      *
      * @return array|bool Returns an array of the type
@@ -2931,7 +2805,7 @@ BOOTS;
      * It drops a table. It ises the method $this->drop();
      *
      * @param string $tableName the name of the table to drop
-     * @param string $extra     (optional) an extra value.
+     * @param string $extra (optional) an extra value.
      *
      * @return array|bool|PDOStatement
      * @throws Exception
@@ -2944,10 +2818,10 @@ BOOTS;
     /**
      * It drops (DDL) an object
      *
-     * @param string $objectName     The name of the object.
-     * @param string $type           =['table','view','columns','function'][$i]
+     * @param string $objectName The name of the object.
+     * @param string $type =['table','view','columns','function'][$i]
      *                               The type of object to drop.
-     * @param string $extra          (optional) An extra value added at the end
+     * @param string $extra (optional) An extra value added at the end
      *                               of the query
      *
      * @return array|bool|PDOStatement
@@ -2964,7 +2838,7 @@ BOOTS;
      * It truncates (DDL)  a table
      *
      * @param string $tableName
-     * @param string $extra     (optional) An extra value added at the end of the
+     * @param string $extra (optional) An extra value added at the end of the
      *                          query
      *
      * @return array|bool|PDOStatement
@@ -2982,11 +2856,11 @@ BOOTS;
      * The operation will fail if the table, sequence, function or procedure
      * already exists.
      *
-     * @param string|null $tableSequence     The table to use<br>
+     * @param string|null $tableSequence The table to use<br>
      *                                       If null then it uses the table
      *                                       defined in
      *                                       $pdoOne->tableSequence.
-     * @param string      $method            =['snowflake','sequence'][$i]
+     * @param string $method =['snowflake','sequence'][$i]
      *                                       snowflake=it generates a value
      *                                       based on snowflake<br> sequence= it generates a regular sequence
      *                                       number
@@ -2996,10 +2870,8 @@ BOOTS;
      */
     public function createSequence($tableSequence = null, $method = 'snowflake')
     {
-        $tableSequence = ($tableSequence === null) ? $this->tableSequence
-            : $tableSequence;
-        $sql = $this->service->createSequence($tableSequence,
-            $method);
+        $tableSequence = ($tableSequence === null) ? $this->tableSequence : $tableSequence;
+        $sql = $this->service->createSequence($tableSequence, $method);
         $this->runRawQuery($sql);
     }
 
@@ -3011,23 +2883,21 @@ BOOTS;
      * null'],'id');
      * </pre>
      *
-     * @param string            $tableName        The name of the new table. This
+     * @param string $tableName The name of the new table. This
      *                                            method will fail if the table
      *                                            exists.
-     * @param array             $definition       An associative array with the
+     * @param array $definition An associative array with the
      *                                            definition of the
      *                                            columns.<br>
      *                                            Example ['id'=>'integer not
      *                                            null','name'=>'varchar(50)
      *                                            not
      *                                            null']
-     * @param string|null|array $primaryKey       The column's name that is
-     *                                            primary key.<br> If the value
-     *                                            is an associative array then
-     *                                            it generates all keys
-     * @param string            $extra            An extra operation inside of
+     * @param string|null|array $primaryKey The column's name that is primary key.<br>
+     *                                            If the value is an associative array then it generates all keys
+     * @param string $extra An extra operation inside of
      *                                            the definition of the table.
-     * @param string            $extraOutside     An extra operation outside of
+     * @param string $extraOutside An extra operation outside of
      *                                            the definition of the
      *                                            table.<br> It replaces the
      *                                            default values outside of the
@@ -3037,17 +2907,11 @@ BOOTS;
      * @throws Exception
      */
     public function createTable(
-        $tableName,
-        $definition,
-        $primaryKey = null,
-        $extra = '',
-        $extraOutside = ''
+        $tableName, $definition, $primaryKey = null, $extra = '', $extraOutside = ''
     ) {
-        $sql = $this->service->createTable(
-            $tableName, $definition, $primaryKey, $extra, $extraOutside
-        );
+        $sql = $this->service->createTable($tableName, $definition, $primaryKey, $extra, $extraOutside);
 
-        return $this->runRawQuery($sql, null, true);
+        return $this->runMultipleRawQuery($sql);
     }
 
     /**
@@ -3058,9 +2922,9 @@ BOOTS;
      * values(2)");<br>
      * </pre>
      *
-     * @param string|array $listSql             SQL multiples queries separated
+     * @param string|array $listSql SQL multiples queries separated
      *                                          by ";" or an array
-     * @param bool         $continueOnError     if true then it continues on
+     * @param bool $continueOnError if true then it continues on
      *                                          error.
      *
      * @return bool
@@ -3079,15 +2943,12 @@ BOOTS;
         foreach ($arr as $rawSql) {
             if (trim($rawSql) != '') {
                 if ($this->readonly) {
-                    if (stripos($rawSql, 'insert ') === 0
-                        || stripos($rawSql, 'update ') === 0
-                        || stripos($rawSql, 'delete ') === 0
-                    ) {
+                    if (stripos($rawSql, 'insert ') === 0 || stripos($rawSql, 'update ') === 0 ||
+                        stripos($rawSql, 'delete ') === 0) {
                         // we aren't checking SQL-DCL queries. Also, "insert into" is stopped but "  insert into" not.
                         $ok = false;
                         if (!$continueOnError) {
-                            $this->throwError("Database is in READ ONLY MODE",
-                                "");
+                            $this->throwError("Database is in READ ONLY MODE", "");
                         }
                     }
                 }
@@ -3098,8 +2959,7 @@ BOOTS;
                 if ($r === false) {
                     $ok = false;
                     if (!$continueOnError) {
-                        $this->throwError("Unable to run raw query",
-                            $this->lastQuery);
+                        $this->throwError("Unable to run raw query", $this->lastQuery);
                     }
                 } else {
                     $counter += $r->rowCount();
@@ -3109,6 +2969,55 @@ BOOTS;
         $this->affected_rows = $counter;
 
         return $ok;
+    }
+
+    /**
+     * @param $tableName
+     * @param $definition
+     *
+     * @return bool
+     * @throws Exception
+     */
+    public function createFK($tableName, $definition)
+    {
+        $sql = $this->service->createFK($tableName, $definition);
+        return $this->runMultipleRawQuery($sql);
+    }
+
+    /**
+     * Returns true if the sql starts with "select " or with "show ".
+     *
+     * @param string $sql
+     *
+     * @return bool
+     */
+    public function isQuery($sql)
+    {
+        $sql = trim($sql);
+
+        return (stripos($sql, 'select ') === 0 || stripos($sql, 'show ') === 0);
+    }
+
+    public function filterKey($condition, $columns, $returnSimple)
+    {
+        if ($condition === null) {
+            // no filter.
+            return $columns;
+        }
+        $result = [];
+        foreach ($columns as $key => $col) {
+            if ($returnSimple) {
+                if ($col == $condition) {
+                    $result[$key] = $col;
+                }
+            } else {
+                if ($col['key'] == $condition) {
+                    $result[$key] = $col;
+                }
+            }
+        }
+
+        return $result;
     }
 
     /**
@@ -3194,7 +3103,7 @@ BOOTS;
      * </pre>
      *
      * @param string|null $sql
-     * @param string      $arg
+     * @param string $arg
      *
      * @return PdoOne
      */
@@ -3206,8 +3115,7 @@ BOOTS;
     private function _aggFn($method, $sql = '', $arg = '')
     {
         if ($arg === '') {
-            $arg
-                = $sql; // if the argument is empty then it uses sql as argument
+            $arg = $sql; // if the argument is empty then it uses sql as argument
             $sql = ''; // and it lefts sql as empty
         }
 
@@ -3224,9 +3132,9 @@ BOOTS;
      * ->sum('','col')->from('table')->firstScalar() // select sum(col) from
      * table<br>
      *
-     * @param string $sql     [optional] it could be the name of column or part
+     * @param string $sql [optional] it could be the name of column or part
      *                        of the query ("from table..")
-     * @param string $arg     [optiona] it could be the name of the column
+     * @param string $arg [optiona] it could be the name of the column
      *
      * @return PdoOne
      */
@@ -3357,7 +3265,7 @@ BOOTS;
      *      set("type=?",6) // automatic<br>
      *
      * @param string|array $sqlOrArray
-     * @param array|mixed  $param
+     * @param array|mixed $param
      *
      * @return PdoOne
      * @test InstanceOf
@@ -3381,8 +3289,7 @@ BOOTS;
             if (is_array($param)) {
                 for ($i = 0; $i < count($param); $i += 2) {
                     $this->whereParamType[] = $param[$i];
-                    $this->whereParamValue['i_' . $this->whereCounter] = $param[$i
-                    + 1];
+                    $this->whereParamValue['i_' . $this->whereCounter] = $param[$i + 1];
                     $this->whereCounter++;
                 }
             } else {
@@ -3396,12 +3303,9 @@ BOOTS;
             $p = [];
             $this->constructParam($sqlOrArray, $param, $col, $colT, $p);
             foreach ($col as $k => $c) {
-                $this->set[] = $this->addDelimiter(
-                        $c
-                    ) . "=?";
+                $this->set[] = $this->addDelimiter($c) . "=?";
                 $this->whereParamType[] = $p[$k * 2];
-                $this->whereParamValue['i_' . $this->whereCounter] = $p[$k * 2
-                + 1];
+                $this->whereParamValue['i_' . $this->whereCounter] = $p[$k * 2 + 1];
                 $this->whereCounter++;
             }
         }
@@ -3410,14 +3314,14 @@ BOOTS;
     }
 
     /**
-     * @param array|null $tableDefs       It could be a definition with or
+     * @param array|null $tableDefs It could be a definition with or
      *                                    without values. If null then it is
      *                                    defined automatically by $arrayValue.
-     * @param array|int  $values          if value is self::NULL then it's
+     * @param array|int $values if value is self::NULL then it's
      *                                    calculated without this value
-     * @param array      $col
-     * @param array      $colT
-     * @param array      $param
+     * @param array $col
+     * @param array $colT
+     * @param array $param
      */
     private function constructParam($tableDefs, $values, &$col, &$colT, &$param)
     {
@@ -3585,7 +3489,7 @@ BOOTS;
      *      defined having('field=?,field2=?', ['i',20,'s','hello'] )
      *
      * @param string|array $sql
-     * @param array|mixed  $param
+     * @param array|mixed $param
      *
      * @return PdoOne
      * @see  http://php.net/manual/en/mysqli-stmt.bind-param.php for types
@@ -3615,11 +3519,11 @@ BOOTS;
      *      where('field=:field,field2=:field2',
      *      ['field'=>'hello','field2'=>'world'] ) // associative array as value
      *
-     * @param string|array $sql          Input SQL query or associative/indexed
+     * @param string|array $sql Input SQL query or associative/indexed
      *                                   array
-     * @param array|mixed  $param        Associative or indexed array with the
+     * @param array|mixed $param Associative or indexed array with the
      *                                   conditions.
-     * @param bool         $isHaving     if true then it is a HAVING sql commando
+     * @param bool $isHaving if true then it is a HAVING sql commando
      *                                   instead of a WHERE.
      *
      * @return PdoOne
@@ -3653,25 +3557,19 @@ BOOTS;
                     if (strpos($sql, '?') === false) {
                         $sql .= '=?';
                     } // transform 'condition' to 'condition=?'
-                    $this->whereParamType[] = $this->getType(
-                        $param
-                    );
+                    $this->whereParamType[] = $this->getType($param);
                     $this->whereParamValue['i_' . $this->whereCounter] = $param;
                     $this->whereCounter++;
                     break;
                 case count($param) == 1:
-                    $this->whereParamType[] = $this->getType(
-                        $param[0]
-                    );
-                    $this->whereParamValue['i_' . $this->whereCounter]
-                        = $param[0];
+                    $this->whereParamType[] = $this->getType($param[0]);
+                    $this->whereParamValue['i_' . $this->whereCounter] = $param[0];
                     $this->whereCounter++;
                     break;
                 default:
                     for ($i = 0; $i < count($param); $i += 2) {
                         $this->whereParamType[] = $param[$i];
-                        $this->whereParamValue['i_' . $this->whereCounter]
-                            = $param[$i + 1];
+                        $this->whereParamValue['i_' . $this->whereCounter] = $param[$i + 1];
                         $this->whereCounter++;
                     }
             }
@@ -3693,8 +3591,7 @@ BOOTS;
                     $this->where[] = "$c=?";
                 }
                 $this->whereParamType[] = $p[$k * 2];
-                $this->whereParamValue['i_' . $this->whereCounter] = $p[$k * 2
-                + 1];
+                $this->whereParamValue['i_' . $this->whereCounter] = $p[$k * 2 + 1];
                 $this->whereCounter++;
             }
         }
@@ -3760,7 +3657,7 @@ BOOTS;
      * ['cod1'=>'name1|ext1','cod2'=>'name2|ext2']
      * </pre>
      *
-     * @param string|null $extraValueSeparator     (optional) It allows to read a
+     * @param string|null $extraValueSeparator (optional) It allows to read a
      *                                             third value and returns it
      *                                             concatenated with the value.
      *                                             Example '|'
@@ -3779,8 +3676,7 @@ BOOTS;
             if ($extraValueSeparator === null) {
                 $result[$item[0]] = isset($item[1]) ? $item[1] : $item[0];
             } else {
-                $result[$item[0]] = (isset($item[1]) ? $item[1] : $item[0])
-                    . $extraValueSeparator . @$item[2];
+                $result[$item[0]] = (isset($item[1]) ? $item[1] : $item[0]) . $extraValueSeparator . @$item[2];
             }
         }
 
@@ -3806,9 +3702,7 @@ BOOTS;
         $rows = $this->runGen(true, $pdoMode, 'tolist');
         if ($this->uid) {
             // we store the information of the cache.
-            $this->cacheService->setCache(
-                $this->uid, $this->cacheFamily, $rows, $useCache
-            );
+            $this->cacheService->setCache($this->uid, $this->cacheFamily, $rows, $useCache);
         }
 
         return $rows;
@@ -3842,13 +3736,9 @@ BOOTS;
         $useCache = $this->useCache; // because builderReset cleans this value
         if ($useCache !== false) {
             $sql = $this->sqlGen();
-            $this->uid = hash(
-                'sha256', $sql . PDO::FETCH_ASSOC . serialize($this->whereParamType)
-                . serialize($this->whereParamValue) . 'first'
-            );
-            $rows = $this->cacheService->getCache(
-                $this->uid, $this->cacheFamily
-            );
+            $this->uid = hash('sha256', $sql . PDO::FETCH_ASSOC . serialize($this->whereParamType) .
+                                      serialize($this->whereParamValue) . 'first');
+            $rows = $this->cacheService->getCache($this->uid, $this->cacheFamily);
             if ($rows !== false) {
                 $this->builderReset();
 
@@ -3871,9 +3761,7 @@ BOOTS;
         }
         if ($this->uid) {
             // we store the information of the cache.
-            $this->cacheService->setCache(
-                $this->uid, $this->cacheFamily, $row, $useCache
-            );
+            $this->cacheService->setCache($this->uid, $this->cacheFamily, $row, $useCache);
         }
 
         return $row;
@@ -3889,7 +3777,7 @@ BOOTS;
      *      table (first scalar value)
      * </pre>
      *
-     * @param string|null $colName     If it's null then it uses the first
+     * @param string|null $colName If it's null then it uses the first
      *                                 column.
      *
      * @return mixed|null
@@ -3901,13 +3789,9 @@ BOOTS;
         $useCache = $this->useCache; // because builderReset cleans this value
         if ($useCache !== false) {
             $sql = $this->sqlGen();
-            $this->uid = hash(
-                'sha256', $sql . PDO::FETCH_ASSOC . serialize($this->whereParamType)
-                . serialize($this->whereParamValue) . 'firstscalar'
-            );
-            $rows = $this->cacheService->getCache(
-                $this->uid, $this->cacheFamily
-            );
+            $this->uid = hash('sha256', $sql . PDO::FETCH_ASSOC . serialize($this->whereParamType) .
+                                      serialize($this->whereParamValue) . 'firstscalar');
+            $rows = $this->cacheService->getCache($this->uid, $this->cacheFamily);
             if ($rows !== false) {
                 $this->builderReset();
 
@@ -3936,9 +3820,7 @@ BOOTS;
         }
         if ($this->uid) {
             // we store the information of the cache.
-            $this->cacheService->setCache(
-                $this->uid, $this->cacheFamily, $row, $useCache
-            );
+            $this->cacheService->setCache($this->uid, $this->cacheFamily, $row, $useCache);
         }
 
         return $row;
@@ -3962,13 +3844,9 @@ BOOTS;
         $useCache = $this->useCache; // because builderReset cleans this value
         if ($useCache !== false) {
             $sql = $this->sqlGen();
-            $this->uid = hash(
-                'sha256', $sql . PDO::FETCH_ASSOC . serialize($this->whereParamType)
-                . serialize($this->whereParamValue) . 'last'
-            );
-            $rows = $this->cacheService->getCache(
-                $this->uid, $this->cacheFamily
-            );
+            $this->uid = hash('sha256', $sql . PDO::FETCH_ASSOC . serialize($this->whereParamType) .
+                                      serialize($this->whereParamValue) . 'last');
+            $rows = $this->cacheService->getCache($this->uid, $this->cacheFamily);
             if ($rows !== false) {
                 $this->builderReset();
 
@@ -3991,9 +3869,7 @@ BOOTS;
         }
         if ($this->uid) {
             // we store the information of the cache.
-            $this->cacheService->setCache(
-                $this->uid, $this->cacheFamily, $row, $useCache
-            );
+            $this->cacheService->setCache($this->uid, $this->cacheFamily, $row, $useCache);
         }
 
         return $row;
@@ -4006,11 +3882,11 @@ BOOTS;
      * It sets to use cache (if the cacheservice is set) for the current
      * pipelines.
      *
-     * @param null|bool|int $ttl        If null then the cache never expires.<br>
+     * @param null|bool|int $ttl If null then the cache never expires.<br>
      *                                  If false then we don't use cache.<br>
      *                                  If int then it is the duration of the
      *                                  cache (in seconds)
-     * @param string        $family     [optional] It is the family or group of
+     * @param string $family [optional] It is the family or group of
      *                                  the cache. It could be used to identify
      *                                  a group of cache to invalidate the whole group (for example,
      *                                  invalidate all cache from a specific table).
@@ -4043,45 +3919,38 @@ BOOTS;
      *      update('product_category set col1=10 where idproducttype=1')
      * </pre>
      *
-     * @param string       $tableName     The name of the table or the whole
+     * @param string $tableName The name of the table or the whole
      *                                    query.
-     * @param string[]     $tableDef
+     * @param string[] $tableDef
      * @param string[]|int $values
-     * @param string[]     $tableDefWhere
+     * @param string[] $tableDefWhere
      * @param string[]|int $valueWhere
      *
      * @return mixed
      * @throws Exception
      */
     public function update(
-        $tableName = null,
-        $tableDef = null,
-        $values = self::NULL,
-        $tableDefWhere = null,
-        $valueWhere = self::NULL
+        $tableName = null, $tableDef = null, $values = self::NULL, $tableDefWhere = null, $valueWhere = self::NULL
     ) {
         if ($tableName === null) {
             // using builder. from()->set()->where()->update()
             $errorCause = '';
             if ($this->from == "") {
-                $errorCause
-                    = "you can't execute an empty update() without a from()";
+                $errorCause = "you can't execute an empty update() without a from()";
             }
             if (count($this->set) === 0) {
-                $errorCause
-                    = "you can't execute an empty update() without a set()";
+                $errorCause = "you can't execute an empty update() without a set()";
             }
             if (count($this->where) === 0) {
-                $errorCause
-                    = "you can't execute an empty update() without a where()";
+                $errorCause = "you can't execute an empty update() without a where()";
             }
             if ($errorCause) {
                 $this->throwError($errorCause, "");
 
                 return false;
             }
-            $sql = "update " . $this->addDelimiter($this->from) . " "
-                . $this->constructSet() . ' ' . $this->constructWhere();
+            $sql = "update " . $this->addDelimiter($this->from) . " " . $this->constructSet() . ' ' .
+                $this->constructWhere();
             $param = [];
             for ($i = 0; $i < count($this->whereParamType); $i++) {
                 $param[] = $this->whereParamType[$i];
@@ -4097,20 +3966,15 @@ BOOTS;
             $colWhere = [];
             $param = [];
             if ($tableDefWhere === null) {
-                $this->constructParam($tableDef, self::NULL, $col, $colT,
-                    $param);
-                $this->constructParam($values, self::NULL, $colWhere, $colT,
-                    $param);
+                $this->constructParam($tableDef, self::NULL, $col, $colT, $param);
+                $this->constructParam($values, self::NULL, $colWhere, $colT, $param);
             } else {
                 $this->constructParam($tableDef, $values, $col, $colT, $param);
-                $this->constructParam(
-                    $tableDefWhere, $valueWhere, $colWhere, $colT, $param
-                );
+                $this->constructParam($tableDefWhere, $valueWhere, $colWhere, $colT, $param);
             }
             $sql = "update " . $this->addDelimiter($tableName);
             $sql .= count($col) ? " set " . implode(',', $col) : '';
-            $sql .= count($colWhere) ? " where " . implode(' and ', $colWhere)
-                : '';
+            $sql .= count($colWhere) ? " where " . implode(' and ', $colWhere) : '';
             $this->builderReset();
             $this->runRawQuery($sql, $param);
 
@@ -4185,10 +4049,10 @@ BOOTS;
      * filetype.
      * <p>Example: ->insertObject('table',['field1'=>1,'field2'=>'aaa']);
      *
-     * @param string $tableName         The name of the table.
-     * @param array  $object            associative array with the colums and
+     * @param string $tableName The name of the table.
+     * @param array $object associative array with the colums and
      *                                  values
-     * @param array  $excludeColumn     (optional) columns to exclude. Example
+     * @param array $excludeColumn (optional) columns to exclude. Example
      *                                  ['col1','col2']
      *
      * @return mixed
@@ -4198,10 +4062,7 @@ BOOTS;
     {
         $tabledef = [];
         foreach ($object as $k => $field) {
-            if (!in_array(
-                $k, $excludeColumn, true
-            )
-            ) { // avoid $k=0 is always valid for numeric columns
+            if (!in_array($k, $excludeColumn, true)) { // avoid $k=0 is always valid for numeric columns
                 $tabledef[$k] = 's';
             }
         }
@@ -4229,38 +4090,32 @@ BOOTS;
      *          ->from('table')
      *          ->insert();
      *
-     * @param string        $tableName
+     * @param string $tableName
      * @param string[]|null $tableDef
-     * @param string[]|int  $values
+     * @param string[]|int $values
      *
      * @return mixed
      * @throws Exception
      */
     public function insert(
-        $tableName = null,
-        $tableDef = null,
-        $values = self::NULL
+        $tableName = null, $tableDef = null, $values = self::NULL
     ) {
         if ($tableName === null) {
             // using builder. from()->set()->insert()
             $errorCause = '';
             if ($this->from == "") {
-                $errorCause
-                    = "you can't execute an empty insert() without a from()";
+                $errorCause = "you can't execute an empty insert() without a from()";
             }
             if (count($this->set) === 0) {
-                $errorCause
-                    = "you can't execute an empty insert() without a set()";
+                $errorCause = "you can't execute an empty insert() without a set()";
             }
             if ($errorCause) {
                 $this->throwError($errorCause, "");
 
                 return false;
             }
-            $sql
-                = /** @lang text */
-                "insert into " . $this->addDelimiter($this->from) . "  "
-                . $this->constructInsert();
+            $sql = /** @lang text */
+                "insert into " . $this->addDelimiter($this->from) . "  " . $this->constructInsert();
             $param = [];
 
             for ($i = 0; $i < count($this->whereParamType); $i++) {
@@ -4276,11 +4131,8 @@ BOOTS;
             $colT = [];
             $param = [];
             $this->constructParam($tableDef, $values, $col, $colT, $param);
-            $sql = "insert into " . $this->addDelimiter($tableName) . "  (" . implode(
-                    ',',
-                    $col
-                )
-                . ") values(" . implode(',', $colT) . ")";
+            $sql = "insert into " . $this->addDelimiter($tableName) . "  (" . implode(',', $col) . ") values(" .
+                implode(',', $colT) . ")";
             $this->builderReset();
 
             $this->runRawQuery($sql, $param);
@@ -4308,8 +4160,7 @@ BOOTS;
                     $arr[] = $tmp[0];
                     $val[] = $tmp[1];
                 }
-                $where = "(" . implode(',', $arr) . ') values (' . implode(',', $val)
-                    . ')';
+                $where = "(" . implode(',', $arr) . ') values (' . implode(',', $val) . ')';
             } else {
                 // set('(a,b,c) values(?,?,?)',[])
                 $where = $first;
@@ -4331,28 +4182,24 @@ BOOTS;
      *          ->delete() // running on a chain
      *      delete('table where condition=1');
      *
-     * @param string       $tableName
-     * @param string[]     $tableDefWhere
+     * @param string $tableName
+     * @param string[] $tableDefWhere
      * @param string[]|int $valueWhere
      *
      * @return mixed
      * @throws Exception
      */
     public function delete(
-        $tableName = null,
-        $tableDefWhere = null,
-        $valueWhere = self::NULL
+        $tableName = null, $tableDefWhere = null, $valueWhere = self::NULL
     ) {
         if ($tableName === null) {
             // using builder. from()->where()->delete()
             $errorCause = '';
             if ($this->from == "") {
-                $errorCause
-                    = "you can't execute an empty delete() without a from()";
+                $errorCause = "you can't execute an empty delete() without a from()";
             }
             if (count($this->where) === 0) {
-                $errorCause
-                    = "you can't execute an empty delete() without a where()";
+                $errorCause = "you can't execute an empty delete() without a where()";
             }
             if ($errorCause) {
                 $this->throwError($errorCause, "");
@@ -4375,12 +4222,9 @@ BOOTS;
             $colWhere = [];
             $colT = null;
             $param = [];
-            $this->constructParam(
-                $tableDefWhere, $valueWhere, $colWhere, $colT, $param
-            );
+            $this->constructParam($tableDefWhere, $valueWhere, $colWhere, $colT, $param);
             $sql = "delete from " . $this->addDelimiter($tableName);
-            $sql .= (count($colWhere)) ? " where " . implode(' and ', $colWhere)
-                : '';
+            $sql .= (count($colWhere)) ? " where " . implode(' and ', $colWhere) : '';
             $this->builderReset();
             $stmt = $this->runRawQuery($sql, $param, true);
 
@@ -4417,10 +4261,10 @@ BOOTS;
      * Invalidate a single cache or a list of cache based in a single uid or in
      * a family/group of cache.
      *
-     * @param string|string[] $uid        The unique id. It is generate by sha256
+     * @param string|string[] $uid The unique id. It is generate by sha256
      *                                    based in the query, parameters, type
      *                                    of query and method.
-     * @param string|string[] $family     [optional] It is the family or group
+     * @param string|string[] $family [optional] It is the family or group
      *                                    of
      *                                    the cache. It could be used to
      *                                    invalidate the whole group. For
@@ -4439,11 +4283,11 @@ BOOTS;
     }
 
     /**
-     * @param string|int $password      <p>Use a integer if the method is
+     * @param string|int $password <p>Use a integer if the method is
      *                                  INTEGER</p>
-     * @param string     $salt          <p>Salt is not used by SIMPLE or
+     * @param string $salt <p>Salt is not used by SIMPLE or
      *                                  INTEGER</p>
-     * @param string     $encMethod     <p>Example : AES-256-CTR See
+     * @param string $encMethod <p>Example : AES-256-CTR See
      *                                  http://php.net/manual/en/function.openssl-get-cipher-methods.php
      *                                  </p>
      *                                  <p>if SIMPLE then the encryption is
@@ -4496,18 +4340,12 @@ BOOTS;
     //</editor-fold>
 }
 
-if (PdoOne::isCli()
-    && basename(strtolower(@$_SERVER['SCRIPT_NAME'])) !== 'pdoone'
-) {
+if (PdoOne::isCli() && basename(strtolower(@$_SERVER['SCRIPT_NAME'])) !== 'pdoone') {
     // this code only runs on CLI
-    if (!defined('PHPUNIT_COMPOSER_INSTALL')
-        && !defined('__PHPUNIT_PHAR__')
-    ) {
+    if (!defined('PHPUNIT_COMPOSER_INSTALL') && !defined('__PHPUNIT_PHAR__')) {
         // we also excluded it if it is called by phpunit.
         include "PdoOneEncryption.php";
-        $pdo = new PdoOne(
-            'test', '127.0.0.1', 'root', 'root', 'db'
-        ); // mockup database connection
+        $pdo = new PdoOne('test', '127.0.0.1', 'root', 'root', 'db'); // mockup database connection
         /** @noinspection PhpUnhandledExceptionInspection */
         $pdo->cliEngine();
     }
