@@ -13,7 +13,7 @@ use Exception;
 use PHPUnit\Framework\TestCase;
 
 // it is an example of a CacheService
-class CacheService implements IPdoOneCache {
+class CacheServicesmysql implements IPdoOneCache {
     public $cacheData=[];
     public $cacheCounter=0; // for debug
     public  function getCache($uid,$family='') {
@@ -34,7 +34,7 @@ class CacheService implements IPdoOneCache {
 }
 
 
-class PdoOneTest extends TestCase
+class PdoOne_mysql_Test extends TestCase
 {
 	/** @var PdoOne */
     protected $pdoOne;
@@ -45,7 +45,7 @@ class PdoOneTest extends TestCase
         $this->pdoOne->connect();
         $this->pdoOne->logLevel=3;
 
-        $cache=new CacheService();
+        $cache=new CacheServicesmysql();
         $this->pdoOne->setCacheService($cache);
     }
 
@@ -69,6 +69,178 @@ class PdoOneTest extends TestCase
 	    $this->expectException(Exception::class);
         $this->pdoOne->connect();
     }
+    function test_chainresetErrorList() {
+        $this->pdoOne->logLevel=3;
+        $rows=$this->pdoOne->genError(false)->select('select 123 field1 from dual222')->toList();
+        $this->assertEquals(false,$rows);
+        try {
+            $rows = $this->pdoOne->genError(true)->select('select 123 field1 from dual222')->toList();
+        } catch(Exception $exception) {
+            $rows=false;
+        }
+        $this->assertEquals(false,$rows);
+        
+        try {
+            $rows = $this->pdoOne->genError(true)->select('select 123 field1 from dual222')->toList();
+        } catch(Exception $exception) {
+            $rows=false;
+        }
+        $this->assertEquals(false,$rows);
+        
+        $this->pdoOne->throwOnError=false;
+        $rows = $this->pdoOne->select('select 123 field1 from dual222')->toList();
+        $this->pdoOne->throwOnError=true;
+       
+        $this->assertEquals(false,$rows);
+
+        
+        $this->assertNotEmpty($this->pdoOne->errorText); // there is an error.
+    }
+    function test_chainresetErrorListSimple() {
+        $this->pdoOne->logLevel=3;
+        $rows=$this->pdoOne->genError(false)->select('select 123 field1 from dual222')->toListSimple();
+        $this->assertEquals(false,$rows);
+        try {
+            $rows = $this->pdoOne->genError(true)->select('select 123 field1 from dual222')->toListSimple();
+        } catch(Exception $exception) {
+            $rows=false;
+        }
+        $this->assertEquals(false,$rows);
+
+        try {
+            $rows = $this->pdoOne->genError(true)->select('select 123 field1 from dual222')->toListSimple();
+        } catch(Exception $exception) {
+            $rows=false;
+        }
+        $this->assertEquals(false,$rows);
+
+        $this->pdoOne->throwOnError=false;
+        $rows = $this->pdoOne->select('select 123 field1 from dual222')->toListSimple();
+        $this->pdoOne->throwOnError=true;
+
+        $this->assertEquals(false,$rows);
+
+
+        $this->assertNotEmpty($this->pdoOne->errorText); // there is an error.
+    }
+    function test_genCode() {
+        if(!$this->pdoOne->tableExist('table1')) {
+            $this->pdoOne->createTable('table1', ['id' => 'int']);
+        }
+        $this->assertNotEquals("",$this->pdoOne->generateCodeClass('table1'));
+        $this->assertEquals('["id"=>0]',$this->pdoOne->generateCodeArray('table1'));
+        $this->assertContains('array $result=array(["id"=>0])',$this->pdoOne->generateCodeSelect('table1'));
+        $this->assertContains('$pdo->createTable(\'table1',$this->pdoOne->generateCodeCreate('table1'));
+        
+    }
+    function test_debug() {
+        $file=__DIR__."/file.txt";
+        $this->pdoOne->logFile=$file;
+        $this->pdoOne->debugFile('dummy');
+        $this->assertEquals(true,file_exists($file));
+        @unlink($file);
+        $this->pdoOne->logFile='';
+    }
+    function test_chainresetErrorMeta() {
+        $this->pdoOne->logLevel=3;
+        $rows=$this->pdoOne->genError(false)->select('select 123 field1 from dual222')->toMeta();
+        $this->assertEquals(false,$rows);
+        try {
+            $rows = $this->pdoOne->genError(true)->select('select 123 field1 from dual222')->toMeta();
+        } catch(Exception $exception) {
+            $rows=false;
+        }
+        $this->assertEquals(false,$rows);
+
+        try {
+            $rows = $this->pdoOne->genError(true)->select('select 123 field1 from dual222')->toMeta();
+        } catch(Exception $exception) {
+            $rows=false;
+        }
+        $this->assertEquals(false,$rows);
+
+        $this->pdoOne->throwOnError=false;
+        $rows = $this->pdoOne->select('select 123 field1 from dual222')->toMeta();
+        $this->pdoOne->throwOnError=true;
+
+        $this->assertEquals(false,$rows);
+
+
+        $this->assertNotEmpty($this->pdoOne->errorText); // there is an error.
+    }
+    function test_chainresetErrorFirst() {
+        $this->pdoOne->logLevel=3;
+        $rows=$this->pdoOne->genError(false)->select('select 123 field1 from dual222')->first();
+        $this->assertEquals(false,$rows);
+        try {
+            $rows = $this->pdoOne->genError(true)->select('select 123 field1 from dual222')->first();
+        } catch(Exception $exception) {
+            $rows=false;
+        }
+        $this->assertEquals(false,$rows);
+
+        try {
+            $rows = $this->pdoOne->genError(true)->select('select 123 field1 from dual222')->first();
+        } catch(Exception $exception) {
+            $rows=false;
+        }
+        $this->assertEquals(false,$rows);
+
+        $this->pdoOne->throwOnError=false;
+        $rows = $this->pdoOne->select('select 123 field1 from dual222')->first();
+        $this->pdoOne->throwOnError=true;
+
+        $this->assertEquals(false,$rows);
+
+
+        $this->assertNotEmpty($this->pdoOne->errorText); // there is an error.
+
+        //$this->pdoOne->builderReset();
+        //$rows=$this->pdoOne->select('select 123 field1 from dual')->toList();
+        //$this->assertEquals([['field1'=>123]],$rows);
+    }
+    function test_chainresetErrorLast() {
+        $this->pdoOne->logLevel=3;
+        $rows=$this->pdoOne->genError(false)->select('select 123 field1 from dual222')->last();
+        $this->assertEquals(false,$rows);
+        try {
+            $rows = $this->pdoOne->genError(true)->select('select 123 field1 from dual222')->last();
+            $rows="XXX";
+        } catch(Exception $exception) {
+            $rows=false;
+        }
+        $this->assertEquals(false,$rows);
+
+        try {
+            $rows = $this->pdoOne->genError(true)->select('select 123 field1 from dual222')->last();
+        } catch(Exception $exception) {
+            $rows=false;
+        }
+        $this->assertEquals(false,$rows);
+
+        $this->pdoOne->throwOnError=false;
+        $rows = $this->pdoOne->select('select 123 field1 from dual222')->last();
+        $this->pdoOne->throwOnError=true;
+
+        $this->assertEquals(false,$rows);
+
+
+        $this->assertNotEmpty($this->pdoOne->errorText); // there is an error.
+
+    }
+    function test_createtable() {
+        if($this->pdoOne->tableExist('table5')) {
+            $this->pdoOne->dropTable('table5');
+        }
+        $r=$this->pdoOne->createTable('table5',
+                                      ['id'=>'int NOT NULL','name'=>'varchar(50)']
+            ,['id'=>'PRIMARY KEY']);
+        $this->assertEquals(true,$r);
+        $this->assertEquals(array('id' => 'int not null','name' => 'varchar(50)'),$this->pdoOne->getDefTable('table5'));
+        $this->assertEquals(array('id' => 'PRIMARY KEY'),$this->pdoOne->getDefTableKeys('table5'));
+        $this->assertEquals(array(),$this->pdoOne->getDefTableFK('table5'));
+    }
+    
     function test_chainreset() {
         $this->pdoOne->logLevel=3;
         $rows=$this->pdoOne->select('select 123 field1 from dual');
@@ -110,7 +282,7 @@ class PdoOneTest extends TestCase
         //$this->assertEquals(1,$this->pdoOne->getCacheService()->cacheCounter); // 1= cache used 1 time
         //$this->pdoOne->getCacheService()->cacheCounter=0;
 
-        $cache=new CacheService();
+        $cache=new CacheServicesmysql();
         $this->pdoOne->setCacheService($cache);
     }
     public function test_open()

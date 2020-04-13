@@ -1313,6 +1313,12 @@ PdoOne adds a bit of ovehead over PDO, however it is simple a wrapper to pdo.
 
 ## Changelist
 
+* 1.32 2020-04-12
+    * The generate class now extends _BasePdoOneRepo  
+        * It implements the default commands: insert,select,update,delete,create table,truncate.  
+    * Security: user/password is deleted from memory after connection.
+    * Mysql:createSequence() functions are now marked as "MODIFIES SQL DATA" and "NOT DETERMINISTIC"
+    * Added more test, including test for SQLSRV.
 * 1.31.1 2020-04-11
     * CLI: Primary key is not required anymore.
     * new method createFK();

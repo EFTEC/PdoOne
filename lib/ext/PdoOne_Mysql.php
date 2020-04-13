@@ -47,6 +47,8 @@ class PdoOne_Mysql implements PdoOne_IExt
         $this->parent->conn1
             = new PDO("{$this->parent->databaseType}:host={$this->parent->server};dbname={$this->parent->db}{$cs}",
             $this->parent->user, $this->parent->pwd);
+        $this->parent->user='';
+        $this->parent->pwd='';
     }
 
     public function getDefTable($table)
@@ -57,19 +59,20 @@ class PdoOne_Mysql implements PdoOne_IExt
             /*if ($col['Key'] === 'PRI') {
                 $pk = $col['Field'];
             }*/
-            $value = $col['Type'];
+            $type=$col['Type'];
+            $type=str_replace('int(11)','int',$type);
+            $value = $type;
             $value .= ($col['Null'] === 'NO') ? " not null" : '';
             if ($col['Default'] === 'CURRENT_TIMESTAMP') {
                 $value .= ' default CURRENT_TIMESTAMP';
             } else {
-                $value .= ($col['Default']) ? ' default \''.$col['Default'].'\'' : '';
+                $value .= ($col['Default']) ? ' default '.PdoOne::addParenthesis($col['Default'],"'","'").'' : '';
             }
             $col['Extra'] = str_replace('DEFAULT_GENERATED ', '', $col['Extra']);
             $value        .= ($col['Extra']) ? ' '.$col['Extra'] : '';
 
             $result[$col['Field']] = $value;
         }
-
         return $result;
     }
     
@@ -235,6 +238,8 @@ class PdoOne_Mysql implements PdoOne_IExt
         $this->parent->runRawQuery($sql);
         if ($method == 'snowflake') {
             $sql = "CREATE FUNCTION `next_{$tableSequence}`(node integer) RETURNS BIGINT(20)
+                    MODIFIES SQL DATA
+                    NOT DETERMINISTIC
 					BEGIN
 					    DECLARE epoch BIGINT(20);
 					    DECLARE current_ms BIGINT(20);
@@ -247,6 +252,8 @@ class PdoOne_Mysql implements PdoOne_IExt
 					END;";
         } else {
             $sql = "CREATE FUNCTION `next_{$tableSequence}`(node integer) RETURNS BIGINT(20)
+                    MODIFIES SQL DATA
+                    NOT DETERMINISTIC
 					BEGIN
 					    DECLARE incr BIGINT(20);
 					    REPLACE INTO {$tableSequence} (stub) VALUES ('a');
@@ -256,6 +263,11 @@ class PdoOne_Mysql implements PdoOne_IExt
         }
 
         return $sql;
+    }
+    
+    public function getSequence($sequenceName) {
+        $sequenceName = ($sequenceName == '') ? $this->parent->tableSequence : $sequenceName;
+        return "select next_{$sequenceName}({$this->parent->nodeId}) id";
     }
 
     public function createTable($tableName, $definition, $primaryKey = null, $extra = '', 

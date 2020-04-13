@@ -43,6 +43,9 @@ class PdoOne_TestMockup implements PdoOne_IExt
     public function connect($cs)
     {
         $this->parent->conn1 = new stdClass();
+        $this->parent->user='';
+        $this->parent->pwd='';
+
     }
 
     public function getDefTable($table)
@@ -177,6 +180,11 @@ class PdoOne_TestMockup implements PdoOne_IExt
     {
         return "CREATE TABLE";
     }
+    public function getSequence($sequenceName) {
+        $sequenceName = ($sequenceName == '') ? $this->parent->tableSequence : $sequenceName;
+        return "select next_{$sequenceName}({$this->parent->nodeId}) id";
+    }
+    
 
     public function createTable($tableName, $definition, $primaryKey = null, $extra = ''
         , $extraOutside = '')

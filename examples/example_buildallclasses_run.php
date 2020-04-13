@@ -15,7 +15,7 @@ $pdoOne->open();
 
 include 'gen/ProducttypesRepo.php';
 echo 'Producttypes:';
-var_dump(\eftec\pdoone\ProducttypesRepo::validTable());
+$result[]=(\eftec\pdoone\ProducttypesRepo::validTable());
 include 'gen/ChambertypesRepo.php';
 echo 'Chambertypes:';
 var_dump(\eftec\pdoone\ChambertypesRepo::validTable());

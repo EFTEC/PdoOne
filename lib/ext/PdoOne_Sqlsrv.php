@@ -44,6 +44,9 @@ class PdoOne_Sqlsrv implements PdoOne_IExt
     {
         $this->parent->conn1 = new PDO("{$this->parent->databaseType}:server={$this->parent->server};" .
                                        "database={$this->parent->db}{$cs}", $this->parent->user, $this->parent->pwd);
+        $this->parent->user='';
+        $this->parent->pwd='';
+
     }
 
     public function getDefTable($table)
@@ -229,7 +232,8 @@ class PdoOne_Sqlsrv implements PdoOne_IExt
                 $query = "SELECT * FROM sys.objects where name=? and type_desc='USER_TABLE'";
                 break;
             case 'function':
-                $query = "SELECT * FROM sys.objects where name=? and type_desc='CLR_SCALAR_FUNCTION'";
+            case 'sequence':
+                $query = "SELECT * FROM sys.objects where name=? and type_desc='SEQUENCE_OBJECT'";
                 break;
             default:
                 $this->parent->throwError("objectExist: type [$type] not defined for {$this->parent->databaseType}",
@@ -309,19 +313,23 @@ class PdoOne_Sqlsrv implements PdoOne_IExt
 				AS
 					BEGIN
 						-- Copyright Jorge Castro https://github.com/EFTEC/PdoOne
-						SET NOCOUNT ON;
+						SET NOCOUNT ON
 						declare @return bigint
-						declare @current_ms bigint; 
-						declare @incr bigint;
+						declare @current_ms bigint 
+						declare @incr bigint
 						-- 2018-01-01 is an arbitrary epoch
-						set @current_ms=cast(DATEDIFF(s, '2018-01-01 00:00:00', GETDATE()) as bigint) *cast(1000 as bigint)  + DATEPART(MILLISECOND,getutcdate());	
-						SELECT @incr= NEXT VALUE FOR {$tableSequence};  
-						-- current_ms << 22 | (node << 12) | (incr % 4096);
-						set @return=(@current_ms*cast(4194304 as bigint)) + (@node *4096) + (@incr % 4096);
-						select @return
+						set @current_ms=cast(DATEDIFF(s, '2018-01-01 00:00:00', GETDATE()) as bigint) *cast(1000 as bigint)  + DATEPART(MILLISECOND,getutcdate())	
+						SELECT @incr= NEXT VALUE FOR {$tableSequence}
+						-- current_ms << 22 | (node << 12) | (incr % 4096)
+						set @return=(@current_ms*cast(4194304 as bigint)) + (@node *4096) + (@incr % 4096)
+						select @return as id
 					END";
 
         return $sql;
+    }
+    public function getSequence($sequenceName) {
+        $sequenceName = ($sequenceName == '') ? $this->parent->tableSequence : $sequenceName;
+        return "exec next_{$sequenceName} {$this->parent->nodeId}";
     }
 
     public function createTable($tableName, $definition, $primaryKey = null, $extra = '', $extraOutside = '')

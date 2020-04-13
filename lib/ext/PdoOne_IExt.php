@@ -107,6 +107,8 @@ interface PdoOne_IExt
      */
     public function createSequence($tableSequence = null, $method = 'snowflake');
 
+    public function getSequence($sequenceName);
+    
     /**
      * DCL command. It creates a database.<br>
      * <b>Example:</b>
