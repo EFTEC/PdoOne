@@ -12,7 +12,7 @@ use PDOStatement;
 
 /**
  * Class _BaseRepo
- * @version       1.2
+ * @version       2.0
  * @package       eftec
  * @author        Jorge Castro Castillo
  * @copyright (c) Jorge Castro C. MIT License  https://github.com/EFTEC/PdoOne
@@ -172,7 +172,7 @@ abstract class _BasePdoOneRepo
      * @return array static::factory()
      * @throws Exception
      */
-    public static function findById($pk) {
+    public static function first($pk) {
         return self::getPdoOne()->select('*')->from(static::TABLE)->where(static::PK, $pk)->first();
     }
 
@@ -184,10 +184,12 @@ abstract class _BasePdoOneRepo
      * @return array [static::factory()]
      * @throws Exception
      */
-    public static function findAll($where = null) {
+    public static function toList($where = null) {
         self::getPdoOne()->select('*')->from(static::TABLE)->where($where);
         return self::getPdoOne()->toList();
     }
+    
+    
 
     /**
      * @param null $ttl
@@ -199,6 +201,16 @@ abstract class _BasePdoOneRepo
         return static::ME;
     }
 
+    /**
+     * It adds an "limit" in a query. It depends on the type of database<br>
+     * @param $sql
+     * @return self
+     * @throws Exception
+     */
+    public static function limit($sql) {
+        self::getPdoOne()->limit($sql);
+        return static::ME;
+    }
     /**
      * @param $order
      * @return self
@@ -228,7 +240,7 @@ abstract class _BasePdoOneRepo
     }
 
     /**
-     * @param $sql
+     * @param string $sql
      * @return self
      */
     public static function right($sql) {
@@ -237,7 +249,7 @@ abstract class _BasePdoOneRepo
     }
 
     /**
-     * @param $sql
+     * @param string $sql
      * @return self
      */
     public static function group($sql) {
@@ -246,7 +258,7 @@ abstract class _BasePdoOneRepo
     }
 
     /**
-     * @param $sql
+     * @param array|string $sql=static::factory()
      * @param null|array $param
      * @return static
      */

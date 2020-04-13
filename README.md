@@ -1313,6 +1313,7 @@ PdoOne adds a bit of ovehead over PDO, however it is simple a wrapper to pdo.
 
 ## Changelist
 
+* 1.32.1 BasePdoOneRepo added version 2.0
 * 1.32 2020-04-12
     * The generate class now extends _BasePdoOneRepo  
         * It implements the default commands: insert,select,update,delete,create table,truncate.  

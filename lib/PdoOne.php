@@ -24,12 +24,12 @@ use PDOStatement;
  * @package       eftec
  * @author        Jorge Castro Castillo
  * @copyright (c) Jorge Castro C. MIT License  https://github.com/EFTEC/PdoOne
- * @version       1.32 2020-04-12
+ * @version       1.32.1 2020-04-12
  */
 class PdoOne
 {
 
-    const VERSION = '1.32';
+    const VERSION = '1.32.1';
 
     const NULL = PHP_INT_MAX;
 
