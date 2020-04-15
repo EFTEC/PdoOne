@@ -1311,6 +1311,12 @@ PdoOne adds a bit of ovehead over PDO, however it is simple a wrapper to pdo.
 
 ## Changelist
 
+In a nutshell:
+
+* Every major version means that it breaks something. I.e. 1.0 -> 2.0  
+* Every minor version means that it adds a new functionality i.e. 1.5 -> 1.6 (new methods)  
+* Every decimal version means that it patches/fixes/refactoring a previous functionality i.e. 1.5.0 -> 1.5.1 (fix)  
+
 * 1.33 2020-04-15   
     * BasePdoOneRepo version 2.1     
     * new method hasWhere()    
