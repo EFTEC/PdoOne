@@ -12,7 +12,7 @@ use PDOStatement;
 
 /**
  * Class _BaseRepo
- * @version       2.0
+ * @version       2.1 2020-04-15
  * @package       eftec
  * @author        Jorge Castro Castillo
  * @copyright (c) Jorge Castro C. MIT License  https://github.com/EFTEC/PdoOne
@@ -167,13 +167,22 @@ abstract class _BasePdoOneRepo
     /**
      * It gets a registry using the primary key.
      *
-     * @param mixed $pk
+     * @param mixed $pk If mixe
      *
      * @return array static::factory()
      * @throws Exception
      */
-    public static function first($pk) {
-        return self::getPdoOne()->select('*')->from(static::TABLE)->where(static::PK, $pk)->first();
+    public static function first($pk=null) {
+        self::getPdoOne()->select('*')->from(static::TABLE);
+        if(self::getPdoOne()->hasWhere()) {
+            return self::getPdoOne()->first();
+        } else {
+            if($pk===null) {
+                throw new Exception('_BasePdoOneRepo: first() without primary key or where');
+            }
+            return self::getPdoOne()->where(static::PK, $pk)->first();    
+        }
+        
     }
 
     /**
@@ -181,17 +190,22 @@ abstract class _BasePdoOneRepo
      *
      * @param null|array $where =static::factory()
      *
+     * @param array|mixed $args The arguments of the method
      * @return array [static::factory()]
      * @throws Exception
      */
-    public static function toList($where = null) {
-        self::getPdoOne()->select('*')->from(static::TABLE)->where($where);
+    public static function toList($where = null,$args=PdoOne::NULL) {
+        self::getPdoOne()->select('*')->from(static::TABLE)->where($where,$args);
         return self::getPdoOne()->toList();
     }
     
-    
-
     /**
+     * The next operation (in the chain of function) must be cached<br>
+     * <b>Example</b>
+     * <pre>
+     * self::useCache(5000,'city')->toList();
+     * </pre>
+     * 
      * @param null $ttl
      * @param string $family
      * @return self
@@ -200,7 +214,22 @@ abstract class _BasePdoOneRepo
         self::getPdoOne()->useCache($ttl, $family);
         return static::ME;
     }
-
+    /**
+     * It invalidates a family/group of cache<br>
+     * <b>Example</b>
+     * <pre>
+     * $list=CityRepo::useCache(50000,'city')->toList(); // using the cache
+     * CityRepo::invalidateCache('city')->insert($city); // inserting a new value & flushing cache
+     * $list=CityRepo::useCache(50000,'city')->toList(); // not using the cache
+     * </pre>
+     * 
+     * @param string $family The family/grupo of cache(s) to invalidate.
+     * @return self
+     */
+    public static function invalidateCache($family = '') {
+        self::getPdoOne()->invalidateCache('',$family);
+        return static::ME;
+    }
     /**
      * It adds an "limit" in a query. It depends on the type of database<br>
      * @param $sql

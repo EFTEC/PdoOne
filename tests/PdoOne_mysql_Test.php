@@ -49,6 +49,25 @@ class PdoOne_mysql_Test extends TestCase
         $this->pdoOne->setCacheService($cache);
     }
 
+  
+    public function test_dep() {
+        // delete all tables
+        $tables=$this->pdoOne->objectList('table',true);
+        foreach($tables as $table) {
+            $this->assertEquals(true, $this->pdoOne->dropTable($table));
+        }
+        // create two tables
+        $this->assertEquals(true,$this->pdoOne->createTable('country'
+            ,['countryid'=>'int not null','name'=>'varchar(50)']
+            ,['countryid'=>'PRIMARY KEY']));
+        $this->assertEquals(true,$this->pdoOne->createTable('city'
+            ,['cityid'=>'int not null','name'=>'varchar(50)','countryfk'=>'int not null']
+            ,['cityid'=>'PRIMARY KEY']));
+        $this->pdoOne->createFK('city'
+            ,['countryfk'=>'FOREIGN KEY REFERENCES`country`(`countryid`)']);
+        echo str_replace(["\n","\t","    ","   ","  "," "],"", PdoOne::varExport( $this->pdoOne->tableDependency(true),''));
+        
+    }
 
 	/**
 	 * @doesNotPerformAssertions

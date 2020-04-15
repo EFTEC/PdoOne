@@ -5,8 +5,6 @@ PdoOne. It's a simple wrapper for PHP's PDO library.
 This library tries to work as fast as possible. Most of the operations are simple string/array managements and work in the bare metal of the PDO library.
 
 
-
-[![Build Status](https://travis-ci.org/EFTEC/PdoOne.svg?branch=master)](https://travis-ci.org/EFTEC/PdoOne)
 [![Packagist](https://img.shields.io/packagist/v/eftec/PdoOne.svg)](https://packagist.org/packages/eftec/PdoOne)
 [![Total Downloads](https://poser.pugx.org/eftec/PdoOne/downloads)](https://packagist.org/packages/eftec/PdoOne)
 [![Maintenance](https://img.shields.io/maintenance/yes/2020.svg)]()
@@ -1313,6 +1311,14 @@ PdoOne adds a bit of ovehead over PDO, however it is simple a wrapper to pdo.
 
 ## Changelist
 
+* 1.33 2020-04-15   
+    * BasePdoOneRepo version 2.1     
+    * new method hasWhere()    
+    * generateCodeArray() has a new argument (recursive)  
+    * toList(), first(), firstScalar(), toMeta(), toListSimple() and all related method throws error
+    more close to the method.  
+    * Travis has been removed (tests are done locally in my machine. Why? It's because travis is not fully compatible 
+    with sqlsrv)  
 * 1.32.1 BasePdoOneRepo added version 2.0
 * 1.32 2020-04-12
     * The generate class now extends _BasePdoOneRepo  

@@ -15,6 +15,7 @@ use eftec\ext\PdoOne_TestMockup;
 use Exception;
 use PDO;
 use PDOStatement;
+use stdClass;
 
 /**
  * Class PdoOne
@@ -24,12 +25,12 @@ use PDOStatement;
  * @package       eftec
  * @author        Jorge Castro Castillo
  * @copyright (c) Jorge Castro C. MIT License  https://github.com/EFTEC/PdoOne
- * @version       1.32.1 2020-04-12
+ * @version       1.33 2020-04-15
  */
 class PdoOne
 {
 
-    const VERSION = '1.32.1';
+    const VERSION = '1.33';
 
     const NULL = PHP_INT_MAX;
 
@@ -899,7 +900,7 @@ eot;
                 return $this->generateCodeSelect($query);
                 break;
             case 'arraycode':
-                return $this->generateCodeArray($query);
+                return $this->generateCodeArray($input,$query,false,false,false);
                 break;
             case 'createcode':
                 return $this->generateCodeCreate($input);
@@ -936,6 +937,10 @@ eot;
             }
             $cs = ($this->charset != '') ? ';charset=' . $this->charset : '';
             $this->service->connect($cs);
+            if($this->conn1 instanceof stdClass) {
+                $this->isOpen=true;
+                return;
+            }
             $this->conn1->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
             $this->isOpen = true;
@@ -1390,7 +1395,7 @@ eot;
      */
     public function generateCodeSelect($query) {
         $q = self::splitQuery($query);
-        $code = '/** @var array $result=array(' . $this->generateCodeArray($query) . ') */' . "\n";
+        $code = '/** @var array $result=array(' . $this->generateCodeArray($query,$query) . ') */' . "\n";
 
         $code .= '$result=$pdo' . "\n";
         foreach ($q as $k => $v) {
@@ -1498,21 +1503,28 @@ eot;
     }
 
     /**
-     * @param string $query
+     * @param $table
+     * @param null|string $sql
      * @param bool $defaultNull
+     * @param bool $inline
+     * @param bool $recursive
      * @return string
      * @throws Exception
      */
-    public function generateCodeArray($query,$defaultNull=false) {
-        if(!$this->isQuery($query)) {
-            $query="select * from $query";
+    public function generateCodeArray($table,$sql=null,$defaultNull=false,$inline=true,$recursive=false) {
+        if($sql===null) {
+            $sql='select * from ' . $this->addDelimiter($table);
         }
-        $r = ($this->toMeta($query));
-
-        $inline = true;
-
+        $r = ($this->toMeta($sql));
         $ln = ($inline) ? '' : "\n";
-
+        if($recursive) {
+            /** @noinspection PhpUnusedLocalVariableInspection */
+            list($tables,$after,$before)= $this->tableDependency(true);
+        } else {
+            $tables=null;
+            $after=null;
+            $before=null;
+        }
         $result = "[" . $ln;
         $used = [];
         foreach ($r as $row) {
@@ -1523,8 +1535,22 @@ eot;
                 } else {
                     $default = $this->typeDict($row, true);
                 }
+                if($recursive) {
+                    if(@$after[$table][$name]) {
+                        $default='(in_array(\''.$name.'\',$recursive))? '.$after[$table][$name].'Repo::factory() : null';    
+                    }
+                }
                 $result .= '"' . $name . "\"=>" . $default . "," . $ln;
+                if($recursive) {
+                    if(@$before[$table][$name]) {
+                        $colName=$name.'.'.$before[$table][$name];
+                        $default='(in_array(\''.$colName.'\',$recursive))? ['.$before[$table][$name].'Repo::factory()] : null';
+                        $result .= '"' . $colName . "\"=>" . $default . "," . $ln;
+                    }
+                }
             }
+
+            
             $used[] = $name;
         }
         $result .= "]" . $ln;
@@ -1732,7 +1758,7 @@ eot;
         return $code;
     }
 
-    protected static function varExport($input, $indent = "\t") {
+    public static function varExport($input, $indent = "\t") {
         switch (gettype($input)) {
             case "string":
                 return '"' . addcslashes($input, "\\\$\"\r\n\t\v\f") . '"';
@@ -1809,8 +1835,15 @@ eot;
         $r = str_replace('{def}', self::varExport($this->getDefTable($tableName)), $r);
         $r = str_replace('{defkey}', self::varExport($this->getDefTableKeys($tableName)), $r);
         $r = str_replace('{deffk}', self::varExport($this->getDefTableFK($tableName)), $r);
-        $r = str_replace('{array}', $this->generateCodeArray('select * from ' . $this->addDelimiter($tableName),false), $r);
-        $r = str_replace('{array_null}', $this->generateCodeArray('select * from ' . $this->addDelimiter($tableName),true), $r);
+        $r = str_replace('{array}'
+            ,str_replace("\n","\n\t\t", 
+                         rtrim($this->generateCodeArray($tableName,null,false,false),"\n")
+                         )
+            , $r);
+        $r = str_replace('{array_null}',
+            str_replace("\n","\n\t\t",
+                        rtrim($this->generateCodeArray($tableName,null,true,false),"\n")
+            ), $r);
 
         return $r;
     }
@@ -2342,21 +2375,7 @@ BOOTS;
      * @throws Exception
      */
     public function tableSorted($maxLoop = 5, $returnProblems = false, $debugTrace = false) {
-        $tables = $this->objectList('table', true);
-        $after = [];
-        $before = [];
-        foreach ($tables as $table) {
-            $before[$table] = [];
-        }
-        foreach ($tables as $table) {
-            $arr = $this->getDefTableFK($table, false);
-            $deps = [];
-            foreach ($arr as $k => $v) {
-                $deps[] = $v['reftable'];
-                $before[$v['reftable']][] = $table;
-            }
-            $after[$table] = $deps; // ['city']=>['country','location']
-        }
+        list($tables,$after,$before)= $this->tableDependency();
         $tableSorted = [];
         // initial load
         foreach ($tables as $k => $table) {
@@ -2373,6 +2392,50 @@ BOOTS;
         }
 
         return $tableSorted;
+    }
+
+    /**
+     * It returns an array with al the tables of the schema, also the foreign key and references  of each table<br>
+     * <b>Example:</b>
+     * <pre>
+     * $this->tableDependency();
+     * // ['table'=>['city','country'],
+     * //    'after'=>['city'=>['country'],'country=>[]],
+     * //    'before'=>['country'=>['city'],'city=>[]]
+     * //   ]
+     * $this->tableDependency(true);
+     * // ["tables" => ["city","country"]
+     * //    ,"after" => ["city" => ["countryfk" => "country"],"country" => []]
+     * //    ,"before" => ["city" => [],"country" => ["countryid" => "city"]]
+     * // ]
+     * </pre>
+     *
+     * @param bool $returnColumn If true then in "after" and "before", it returns the name of the columns
+     * @return array
+     * @throws Exception
+     */
+    public function tableDependency($returnColumn=false) {
+        $tables = $this->objectList('table', true);
+        $after = [];
+        $before = [];
+        foreach ($tables as $table) {
+            $before[$table] = [];
+        }
+        foreach ($tables as $table) {
+            $arr = $this->getDefTableFK($table, false);
+            $deps = [];
+            foreach ($arr as $k => $v) {
+                if($returnColumn) {
+                    $deps[$k] = $v['reftable'];
+                    $before[$v['reftable']][$v['refcol']] = $table;                    
+                } else {
+                    $deps[] = $v['reftable'];
+                    $before[$v['reftable']][] = $table;
+                }
+            }
+            $after[$table] = $deps; // ['city']=>['country','location']
+        }
+        return[$tables,$after,$before];
     }
 
     /**
@@ -2756,6 +2819,13 @@ BOOTS;
     }
 
     /**
+     * It adds foreign keys to a table<br>
+     * <b>Example:<b><br>
+     * <pre>
+     * $this->createFK('table',['col'=>"FOREIGN KEY REFERENCES`tableref`(`colref`)"]); // mysql
+     * $this->createFK('table',['col'=>"FOREIGN KEY REFERENCES[tableref]([colref])"]); // sqlsrv
+     * </pre>
+     * 
      * @param $tableName
      * @param $definition
      *
@@ -3393,6 +3463,22 @@ BOOTS;
     }
 
     /**
+     * Returns true if the current whery has where.
+     * 
+     * @param bool $having <b>true</b> it return the number of where<br>
+     *                     <b>false</b> it returns the number of having
+     * @return bool
+     */
+    public function hasWhere($having=false) {
+        if($having) {
+            return count($this->having)>0;    
+        } else {
+            return count($this->where)>0;
+        }
+        
+    }
+
+    /**
      * It adds an "limit" in a query. It depends on the type of database<br>
      * <b>Example:</b><br>
      * <pre>
@@ -3499,10 +3585,21 @@ BOOTS;
         }
         return $rows;
     }
+
+    /**
+     * Begin a try block. It marks the erroText as empty and it store the value of genError
+     */
     private function beginTry() {
         $this->errorText='';
         $this->isThrow=$this->genError; // this value is deleted when it trigger an error
     }
+
+    /**
+     * It ends a try block and throws the error (if any)
+     * 
+     * @return bool
+     * @throws Exception
+     */
     private function endTry() {
         if($this->errorText) {
             $this->throwError($this->errorText,'','',$this->isThrow);
@@ -4111,7 +4208,6 @@ BOOTS;
         if ($this->cacheService !== null) {
             $this->cacheService->invalidateCache($uid, $family);
         }
-
         return $this;
     }
 
