@@ -53,8 +53,8 @@ class PdoOne_Sqlsrv implements PdoOne_IExt
     {
         /** @var array $result =array(["name"=>'',"is_identity"=>0,"increment_value"=>0,"seed_value"=>0]) */
         $findIdentity =
-            $this->parent->select("name,is_identity,increment_value,seed_value")->from("sys.identity_columns")
-                         ->where("OBJECT_NAME(object_id)=?", $table)->toList();
+            $this->parent->select('name,is_identity,increment_value,seed_value')->from('sys.identity_columns')
+                         ->where('OBJECT_NAME(object_id)=?', $table)->toList();
         $findIdentity = (!is_array($findIdentity)) ? [] : $findIdentity; // it's always an arry
 
         $defArray = $this->parent->select('COLUMN_NAME,IS_NULLABLE,DATA_TYPE,CHARACTER_MAXIMUM_LENGTH
@@ -99,7 +99,7 @@ class PdoOne_Sqlsrv implements PdoOne_IExt
             $result = "{$col['DATA_TYPE']}({$col['NUMERIC_PRECISION']},{$col['NUMERIC_SCALE']})";
         } else {
             if ($col['NUMERIC_PRECISION'] || $col['CHARACTER_MAXIMUM_LENGTH']) {
-                $result = "{$col['DATA_TYPE']}(" . ($col['CHARACTER_MAXIMUM_LENGTH'] + $col['NUMERIC_PRECISION']) . ")";
+                $result = "{$col['DATA_TYPE']}(" . ($col['CHARACTER_MAXIMUM_LENGTH'] + $col['NUMERIC_PRECISION']) . ')';
             } else {
                 $result = $col['DATA_TYPE'];
             }
@@ -114,12 +114,12 @@ class PdoOne_Sqlsrv implements PdoOne_IExt
         /** @var array $result =array(["IndexName"=>'',"ColumnName"=>'',"is_unique"=>0,"is_primary_key"=>0,"TYPE"=>0]) */
 
         $result =
-            $this->parent->select("IndexName = ind.name,ColumnName = col.name,ind.is_unique,IND.is_primary_key,IND.TYPE")
-                         ->from("sys.indexes ind")
-                         ->innerjoin("sys.index_columns ic ON ind.object_id = ic.object_id and ind.index_id = ic.index_id")
-                         ->innerjoin("sys.columns col ON ic.object_id = col.object_id and ic.column_id = col.column_id")
+            $this->parent->select('IndexName = ind.name,ColumnName = col.name,ind.is_unique,IND.is_primary_key,IND.TYPE')
+                         ->from('sys.indexes ind')
+                         ->innerjoin('sys.index_columns ic ON ind.object_id = ic.object_id and ind.index_id = ic.index_id')
+                         ->innerjoin('sys.columns col ON ic.object_id = col.object_id and ic.column_id = col.column_id')
                          ->where("OBJECT_NAME( ind.object_id)='{$table}'")
-                         ->order("ind.name, ind.index_id, ic.index_column_id")->toList();
+                         ->order('ind.name, ind.index_id, ic.index_column_id')->toList();
 
         foreach ($result as $item) {
             if ($item['is_primary_key']) {
@@ -143,28 +143,28 @@ class PdoOne_Sqlsrv implements PdoOne_IExt
         return $this->parent->filterKey($filter, $columns, $returnSimple);
     }
 
-    public function getDefTableFK($table, $returnSimple, $filter = null)
+    public function getDefTableFK($table, $returnSimple, $filter = null, $assocArray =false)
     {
         $columns = [];
         /** @var array $result =array(["foreign_key_name"=>'',"referencing_table_name"=>'',"ColumnName"=>''
          * ,"referenced_table_name"=>'',"referenced_column_name"=>'',"referenced_schema_name"=>''
          * ,"update_referential_action_desc"=>'',"delete_referential_action_desc"=>''])
          */
-        $result = $this->parent->select("OBJECT_NAME(f.constraint_object_id) foreign_key_name 
+        $result = $this->parent->select('OBJECT_NAME(f.constraint_object_id) foreign_key_name 
                     ,OBJECT_NAME(f.parent_object_id) referencing_table_name 
                     ,COL_NAME(f.parent_object_id, f.parent_column_id) ColumnName 
                     ,OBJECT_NAME (f.referenced_object_id) referenced_table_name 
                     ,COL_NAME(f.referenced_object_id, f.referenced_column_id) referenced_column_name 
                     ,OBJECT_SCHEMA_NAME(f.referenced_object_id) referenced_schema_name
-                    , fk.update_referential_action_desc, fk.delete_referential_action_desc")
-                               ->from("sys.foreign_key_columns AS f")
-                               ->innerjoin("sys.foreign_keys as fk on fk.OBJECT_ID = f.constraint_object_id")
+                    , fk.update_referential_action_desc, fk.delete_referential_action_desc')
+                               ->from('sys.foreign_key_columns AS f')
+                               ->innerjoin('sys.foreign_keys as fk on fk.OBJECT_ID = f.constraint_object_id')
                                ->where("OBJECT_NAME(f.parent_object_id)='{$table}'")->toList();
 
         foreach ($result as $item) {
-            $extra = ($item['update_referential_action_desc'] != 'NO_ACTION') ? ' ON UPDATE ' .
+            $extra = ($item['update_referential_action_desc'] !== 'NO_ACTION') ? ' ON UPDATE ' .
                 str_replace('_', ' ', $item['update_referential_action_desc']) : '';
-            $extra .= ($item['delete_referential_action_desc'] != 'NO_ACTION') ? ' ON DELETE ' .
+            $extra .= ($item['delete_referential_action_desc'] !== 'NO_ACTION') ? ' ON DELETE ' .
                 str_replace('_', ' ', $item['delete_referential_action_desc']) : '';
             //FOREIGN KEY REFERENCES TABLEREF(COLREF)
             if ($returnSimple) {
@@ -178,6 +178,10 @@ class PdoOne_Sqlsrv implements PdoOne_IExt
                 $columns[$item['ColumnName']]['extra'] = $extra;
             }
         }
+        if($assocArray) {
+            return $columns;
+        }
+
         return $this->parent->filterKey($filter, $columns, $returnSimple);
     }
 
@@ -212,16 +216,16 @@ class PdoOne_Sqlsrv implements PdoOne_IExt
             case 'numeric':
             case 'bit':
             case 'smallint':
-                return ($default) ? "0" : 'int';
+                return ($default) ? '0' : 'int';
             case 'decimal':
             case 'smallmoney':
             case 'money':
             case 'double':
             case 'real':
             case 'float':
-                return ($default) ? "0.0" : 'float';
+                return ($default) ? '0.0' : 'float';
             default:
-                return "???sqlsrv:" . $type;
+                return '???sqlsrv:' . $type;
         }
     }
 
@@ -236,8 +240,7 @@ class PdoOne_Sqlsrv implements PdoOne_IExt
                 $query = "SELECT * FROM sys.objects where name=? and type_desc='SEQUENCE_OBJECT'";
                 break;
             default:
-                $this->parent->throwError("objectExist: type [$type] not defined for {$this->parent->databaseType}",
-                                          "");
+                $this->parent->throwError("objectExist: type [$type] not defined for {$this->parent->databaseType}", '');
                 die(1);
                 break;
         }
@@ -261,8 +264,7 @@ class PdoOne_Sqlsrv implements PdoOne_IExt
                 }
                 break;
             default:
-                $this->parent->throwError("objectExist: type [$type] not defined for {$this->parent->databaseType}",
-                                          "");
+                $this->parent->throwError("objectExist: type [$type] not defined for {$this->parent->databaseType}", '');
                 die(1);
                 break;
         }
@@ -334,7 +336,7 @@ class PdoOne_Sqlsrv implements PdoOne_IExt
 
     public function createTable($tableName, $definition, $primaryKey = null, $extra = '', $extraOutside = '')
     {
-        $extraOutside = ($extraOutside === '') ? "ON [PRIMARY]" : $extraOutside;
+        $extraOutside = ($extraOutside === '') ? 'ON [PRIMARY]' : $extraOutside;
         $sql = "set nocount on;
 				CREATE TABLE [{$tableName}] (";
         foreach ($definition as $key => $type) {
@@ -350,7 +352,7 @@ class PdoOne_Sqlsrv implements PdoOne_IExt
 							PK_$tableName PRIMARY KEY CLUSTERED ([$primaryKey]) $extraOutside;";
         } else {
             foreach ($primaryKey as $key => $value) {
-                $p0 = stripos($value . ' ', "KEY ");
+                $p0 = stripos($value . ' ', 'KEY ');
                 if ($p0 === false) {
                     trigger_error('createTable: Key with a wrong syntax. Example: "PRIMARY KEY.." ,
                                  "KEY...", "UNIQUE KEY..." "FOREIGN KEY.." ');
@@ -386,7 +388,7 @@ class PdoOne_Sqlsrv implements PdoOne_IExt
     {
         $sql = '';
         foreach ($foreignKey as $key => $value) {
-            $p0 = stripos($value . ' ', "KEY ");
+            $p0 = stripos($value . ' ', 'KEY ');
             if ($p0 === false) {
                 trigger_error('createFK: Key with a wrong syntax. Example: "PRIMARY KEY.." ,
                                  "KEY...", "UNIQUE KEY..." "FOREIGN KEY.." ');
@@ -409,7 +411,7 @@ class PdoOne_Sqlsrv implements PdoOne_IExt
     public function limit($sql)
     {
         if (!$this->parent->order) {
-            $this->parent->throwError("limit without a sort", "");
+            $this->parent->throwError('limit without a sort', '');
         }
         if (strpos($sql, ',')) {
             $arr = explode(',', $sql);
@@ -424,7 +426,7 @@ class PdoOne_Sqlsrv implements PdoOne_IExt
 
         if ($this->parent->isQuery($query)) {
             if (!$pk) {
-                return "SQLSRV: unable to fin pk via query. Use the name of the table";
+                return 'SQLSRV: unable to fin pk via query. Use the name of the table';
             }
         } else {
 

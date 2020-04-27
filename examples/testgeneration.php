@@ -10,10 +10,9 @@ $dao = new PdoOne('mysql', '127.0.0.1', 'root', 'abc.123', 'sakila', 'logpdoone.
 $dao->logLevel = 3;
 $dao->throwOnError = true;
 $dao->open();
-echo "<pre>";
+//header("Content-Type: plain/text");
+echo $dao->generateCodeClass('tablachild');
 
-var_dump(PdoOne::getDefTableKeys($dao,'film'));
-echo "</pre>";
 die(1);
 actorRepo::setPdoOne($dao);
 //actorRepo::createTable();

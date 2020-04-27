@@ -1317,8 +1317,11 @@ In a nutshell:
 * Every minor version means that it adds a new functionality i.e. 1.5 -> 1.6 (new methods)  
 * Every decimal version means that it patches/fixes/refactoring a previous functionality i.e. 1.5.0 -> 1.5.1 (fix)  
 
+* 1.34 2020-04-27
+    * _BasePdoOneRepo 2.2 now it allows load relation many by one.   
+    * sniffer is removed. Using Php Inspections ​(EA Extended)​   
 * 1.33 2020-04-15   
-    * BasePdoOneRepo version 2.1     
+    * _BasePdoOneRepo version 2.1     
     * new method hasWhere()    
     * generateCodeArray() has a new argument (recursive)  
     * toList(), first(), firstScalar(), toMeta(), toListSimple() and all related method throws error
@@ -1327,7 +1330,7 @@ In a nutshell:
     with sqlsrv)  
 * 1.32.1 BasePdoOneRepo added version 2.0
 * 1.32 2020-04-12
-    * The generate class now extends _BasePdoOneRepo  
+    * The class generated now extends _BasePdoOneRepo  
         * It implements the default commands: insert,select,update,delete,create table,truncate.  
     * Security: user/password is deleted from memory after connection.
     * Mysql:createSequence() functions are now marked as "MODIFIES SQL DATA" and "NOT DETERMINISTIC"

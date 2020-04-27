@@ -41,7 +41,7 @@ class PdoOne_mysql_Test extends TestCase
 
     public function setUp()
     {
-        $this->pdoOne=new PdoOne("mysql","127.0.0.1","travis","","travisdb");
+        $this->pdoOne=new PdoOne('mysql', '127.0.0.1', 'travis', '', 'travisdb');
         $this->pdoOne->connect();
         $this->pdoOne->logLevel=3;
 
@@ -65,7 +65,7 @@ class PdoOne_mysql_Test extends TestCase
             ,['cityid'=>'PRIMARY KEY']));
         $this->pdoOne->createFK('city'
             ,['countryfk'=>'FOREIGN KEY REFERENCES`country`(`countryid`)']);
-        echo str_replace(["\n","\t","    ","   ","  "," "],"", PdoOne::varExport( $this->pdoOne->tableDependency(true),''));
+        echo str_replace(["\n","\t", '    ', '   ', '  ', ' '], '', PdoOne::varExport($this->pdoOne->tableDependency(true), ''));
         
     }
 
@@ -146,14 +146,14 @@ class PdoOne_mysql_Test extends TestCase
         if(!$this->pdoOne->tableExist('table1')) {
             $this->pdoOne->createTable('table1', ['id' => 'int']);
         }
-        $this->assertNotEquals("",$this->pdoOne->generateCodeClass('table1'));
-        $this->assertEquals('["id"=>0]',$this->pdoOne->generateCodeArray('table1'));
-        $this->assertContains('array $result=array(["id"=>0])',$this->pdoOne->generateCodeSelect('table1'));
+        $this->assertNotEquals('', $this->pdoOne->generateCodeClass('table1'));
+        $this->assertEquals("['id'=>0]",$this->pdoOne->generateCodeArray('table1'));
+        $this->assertContains("array \$result=array(['id'=>0])",$this->pdoOne->generateCodeSelect('select * from table1'));
         $this->assertContains('$pdo->createTable(\'table1',$this->pdoOne->generateCodeCreate('table1'));
         
     }
     function test_debug() {
-        $file=__DIR__."/file.txt";
+        $file=__DIR__. '/file.txt';
         $this->pdoOne->logFile=$file;
         $this->pdoOne->debugFile('dummy');
         $this->assertEquals(true,file_exists($file));
@@ -224,7 +224,7 @@ class PdoOne_mysql_Test extends TestCase
         $this->assertEquals(false,$rows);
         try {
             $rows = $this->pdoOne->genError(true)->select('select 123 field1 from dual222')->last();
-            $rows="XXX";
+            $rows= 'XXX';
         } catch(Exception $exception) {
             $rows=false;
         }
@@ -259,6 +259,7 @@ class PdoOne_mysql_Test extends TestCase
         $this->assertEquals(array('id' => 'PRIMARY KEY'),$this->pdoOne->getDefTableKeys('table5'));
         $this->assertEquals(array(),$this->pdoOne->getDefTableFK('table5'));
     }
+
     
     function test_chainreset() {
         $this->pdoOne->logLevel=3;
@@ -272,12 +273,11 @@ class PdoOne_mysql_Test extends TestCase
         
         $rows=$this->pdoOne->select('select 123 field1 from dual')->useCache()->toList();
         $this->assertEquals([['field1'=>123]],$rows);
-        $rows=$this->pdoOne->select('select 123 field1 from dual')->where('1=1')->order('1')->useCache()->toList();
+        $this->pdoOne->select('select 123 field1 from dual')->where('1=1')->order('1')->useCache()->toList();
         $rows=$this->pdoOne->select('select 123 field1 from dual')->useCache()->toList();
         $this->assertEquals([['field1'=>123]],$rows);
         $this->assertEquals(1,$this->pdoOne->getCacheService()->cacheCounter); // 1= cache used 1 time
-        $rows=$this->pdoOne->invalidateCache();
-        
+        $this->pdoOne->invalidateCache();
         $rows=$this->pdoOne->select('select 123 field1 from dual')->useCache()->toList();
         $this->assertEquals([['field1'=>123]],$rows);
         $this->assertEquals(1,$this->pdoOne->getCacheService()->cacheCounter); // 1= cache used 1 time
@@ -310,24 +310,24 @@ class PdoOne_mysql_Test extends TestCase
         //$this->pdoOne->open(true);
 	    try {
 		    $r=$this->pdoOne->runRawQuery('drop table product_category');
-		    $this->assertEquals(true,$r,"Drop failed");
+		    $this->assertEquals(true, $r, 'Drop failed');
 	    } catch (Exception $e) {
 		    $r=false;
 	    	// drops silently
 	    }
 
 
-	    $sqlT2="CREATE TABLE `product_category` (
+	    $sqlT2= 'CREATE TABLE `product_category` (
 	    `id_category` INT NOT NULL,
 	    `catname` VARCHAR(45) NULL,
-	    PRIMARY KEY (`id_category`));";
+	    PRIMARY KEY (`id_category`));';
 
 	    try {
 		    $r=$this->pdoOne->runRawQuery($sqlT2);
 	    } catch (Exception $e) {
-		    echo $e->getMessage()."<br>";
+		    echo $e->getMessage(). '<br>';
 	    }
-	    $this->assertEquals(true,$r,"failed to create table");
+	    $this->assertEquals(true, $r, 'failed to create table');
 
         $this->assertGreaterThan(1,count($this->pdoOne->objectList('table')));
 	    // we add some values
@@ -422,8 +422,8 @@ class PdoOne_mysql_Test extends TestCase
         $this->assertEquals('`hello`=value',$this->pdoOne->addDelimiter('hello=value'));
         $this->assertEquals('`hello` =value',$this->pdoOne->addDelimiter('hello =value'));
         $this->assertEquals('2019-01-01',$this->pdoOne->dateConvert('01/01/2019','human','sql'));
-        $this->assertEquals('42143278901651563',$this->pdoOne->getUnpredictable("12345678901234561"));
-        $this->assertEquals('12345678901234561',$this->pdoOne->getUnpredictableInv("42143278901651563"));
+        $this->assertEquals('42143278901651563',$this->pdoOne->getUnpredictable('12345678901234561'));
+        $this->assertEquals('12345678901234561',$this->pdoOne->getUnpredictableInv('42143278901651563'));
         $this->assertNotEmpty($this->pdoOne->dateTextNow()); // '2020-01-25T22:17:41Z',
         $this->assertNotEmpty($this->pdoOne->dateSqlNow()); // '2020-01-25 22:18:32',
     }
@@ -434,33 +434,33 @@ class PdoOne_mysql_Test extends TestCase
         if($this->pdoOne->objectExist('product_category')) {
             $r = $this->pdoOne->drop('product_category', 'table');
         } 
-        $this->assertEquals(true,$r,"Drop failed");
+        $this->assertEquals(true, $r, 'Drop failed');
 
         if($this->pdoOne->objectExist('category')) {
             $r = $this->pdoOne->drop('category', 'table');
         }
 
-        $sqlT2="CREATE TABLE `product_category` (`id_category` INT NOT NULL,`catname` 
-                VARCHAR(45) NULL, PRIMARY KEY (`id_category`));";
+        $sqlT2= 'CREATE TABLE `product_category` (`id_category` INT NOT NULL,`catname` 
+                VARCHAR(45) NULL, PRIMARY KEY (`id_category`));';
         try {
             $r=$this->pdoOne->runRawQuery($sqlT2);
         } catch (Exception $e) {
-            echo $e->getMessage()."<br>";
+            echo $e->getMessage(). '<br>';
         }
-        $sqlT2="CREATE TABLE `category` (`id_category` INT NOT NULL,`catname` 
-                VARCHAR(45) NULL, PRIMARY KEY (`id_category`));";
+        $sqlT2= 'CREATE TABLE `category` (`id_category` INT NOT NULL,`catname` 
+                VARCHAR(45) NULL, PRIMARY KEY (`id_category`));';
         try {
             $r=$this->pdoOne->runRawQuery($sqlT2);
         } catch (Exception $e) {
-            echo $e->getMessage()."<br>";
+            echo $e->getMessage(). '<br>';
         }
-        $this->assertEquals(true,$r,"failed to create table");
+        $this->assertEquals(true, $r, 'failed to create table');
         // we add some values
         $this->pdoOne->set(['id_category' => 1, 'catname' => 'cheap'])
             ->from('product_category')->insert();
         $this->pdoOne->set(['id_category' => 2, 'catname' => 'cheap2'])
             ->from('product_category')->insert();
-        $this->pdoOne->set("id_category=2,catname='cheap1'")->where("id_category=2")
+        $this->pdoOne->set("id_category=2,catname='cheap1'")->where('id_category=2')
             ->from('product_category')->update();
 
         $sr=$this->pdoOne->update("product_category set catname='expensive' where id_category=1");
@@ -514,21 +514,27 @@ class PdoOne_mysql_Test extends TestCase
 		try {
 			$this->pdoOne->createSequence();
 		} catch(Exception $ex) {
-			
+			var_dump($ex->getMessage());
+            var_dump($this->pdoOne->lastError());
+            var_dump($this->pdoOne->lastQuery);
 		}
-		$this->assertLessThan(3639088446091303982,$this->pdoOne->getSequence(true),"sequence must be greater than 3639088446091303982");
+        
+		$this->assertLessThan(3639088446091303982
+            , $this->pdoOne->getSequence(true)
+            , 'sequence must be greater than 3639088446091303982');
 	}
 
 	public function test_sequence2()
 	{
-		$this->assertLessThan(3639088446091303982,$this->pdoOne->getSequencePHP(false),"sequence must be greater than 3639088446091303982");
+		$this->assertLessThan(3639088446091303982, $this->pdoOne->getSequencePHP(false),
+                              'sequence must be greater than 3639088446091303982');
 		$s1=$this->pdoOne->getSequencePHP(false);
 		$s2=$this->pdoOne->getSequencePHP(false);
-		$this->assertTrue($s1!=$s2,"sequence must not be the same");
+		$this->assertTrue($s1!=$s2, 'sequence must not be the same');
 		$this->pdoOne->encryption->encPassword=1020304050;
 		$s1=$this->pdoOne->getSequencePHP(true);
 		$s2=$this->pdoOne->getSequencePHP(true);
-		$this->assertTrue($s1!=$s2,"sequence must not be the same");
+		$this->assertTrue($s1!=$s2, 'sequence must not be the same');
 		
 
 		
@@ -573,30 +579,30 @@ class PdoOne_mysql_Test extends TestCase
 
 	public function test_sqlGen()
 	{
-		$this->assertEquals("select 1 from DUAL",$this->pdoOne->select('select 1 from DUAL')->sqlGen(true));
+		$this->assertEquals('select 1 from DUAL', $this->pdoOne->select('select 1 from DUAL')->sqlGen(true));
 
-		$this->assertEquals("select 1 from DUAL",$this->pdoOne->select('select 1')->from('DUAL')->sqlGen(true));
+		$this->assertEquals('select 1 from DUAL', $this->pdoOne->select('select 1')->from('DUAL')->sqlGen(true));
 
-		$this->assertEquals("select 1, 2 from DUAL",$this->pdoOne->select('1')->select('2')->from('DUAL')->sqlGen(true));
+		$this->assertEquals('select 1, 2 from DUAL', $this->pdoOne->select('1')->select('2')->from('DUAL')->sqlGen(true));
 
-		$this->assertEquals("select 1, 2 from DUAL",$this->pdoOne->select(['1','2'])->from('DUAL')->sqlGen(true));
+		$this->assertEquals('select 1, 2 from DUAL', $this->pdoOne->select(['1','2'])->from('DUAL')->sqlGen(true));
 
-		$this->assertEquals("select 1, 2 from DUAL where field=?"
-			,$this->pdoOne
+		$this->assertEquals('select 1, 2 from DUAL where field=?'
+			, $this->pdoOne
 				->select(['1','2'])
 				->from('DUAL')
 				->where('field=?',[20])
 				->sqlGen(true));
 
-        $this->assertEquals("select 1, 2 from DUAL where field=:field"
-            ,$this->pdoOne
+        $this->assertEquals('select 1, 2 from DUAL where field=:field'
+            , $this->pdoOne
                 ->select(['1','2'])
                 ->from('DUAL')
                 ->where('field=:field',[20])
                 ->sqlGen(true));
 
-		$this->assertEquals("select 1, 2 from DUAL where field=? group by 2 having field2=? order by 1"
-			,$this->pdoOne
+		$this->assertEquals('select 1, 2 from DUAL where field=? group by 2 having field2=? order by 1'
+			, $this->pdoOne
 				->select(['1','2'])
 				->from('DUAL')
 				->where('field=?',[20])
@@ -687,25 +693,25 @@ class PdoOne_mysql_Test extends TestCase
     {
         $this->pdoOne->setEncryption('123//*/*saass11___1212fgbl@#€€"','123//*/*saass11___1212fgbl@#€€"','AES-256-CTR');
         $value=$this->pdoOne->encrypt("bv `lfg+hlc ,vc´,c35'ddl ld_vcvñvc +*=/\\");
-        $this->assertTrue(strlen($value)>10,"Encrypted");
+        $this->assertTrue(strlen($value)>10, 'Encrypted');
         $return=$this->pdoOne->decrypt($value);
-	    $this->assertEquals("bv `lfg+hlc ,vc´,c35'ddl ld_vcvñvc +*=/\\",$return,"decrypt correct");
+	    $this->assertEquals("bv `lfg+hlc ,vc´,c35'ddl ld_vcvñvc +*=/\\", $return, 'decrypt correct');
 
-	    $return=$this->pdoOne->decrypt("wrong".$value);
-	    $this->assertEquals(false,$return,"decrypt must fail");
-	    $return=$this->pdoOne->decrypt("");
-	    $this->assertEquals(false,$return,"decrypt must fail");
+	    $return=$this->pdoOne->decrypt('wrong' .$value);
+	    $this->assertEquals(false, $return, 'decrypt must fail');
+	    $return=$this->pdoOne->decrypt('');
+	    $this->assertEquals(false, $return, 'decrypt must fail');
 	    $return=$this->pdoOne->decrypt(null);
-	    $this->assertEquals(false,$return,"decrypt must fail");
+	    $this->assertEquals(false, $return, 'decrypt must fail');
 	    // iv =true
-	    $value1=$this->pdoOne->encrypt("abc");
-	    $value2=$this->pdoOne->encrypt("abc");
-	    $this->assertTrue($value1!=$value2,"Values must be different");
+	    $value1=$this->pdoOne->encrypt('abc');
+	    $value2=$this->pdoOne->encrypt('abc');
+	    $this->assertTrue($value1!=$value2, 'Values must be different');
 	    // iv =true
 	    $this->pdoOne->encryption->iv=false;
-	    $value1=$this->pdoOne->encrypt("abc_ABC/abc*abc1234567890[]{[");
-	    $value2=$this->pdoOne->encrypt("abc_ABC/abc*abc1234567890[]{[");
-	    $this->assertTrue($value1==$value2,"Values must be equals");     
+	    $value1=$this->pdoOne->encrypt('abc_ABC/abc*abc1234567890[]{[');
+	    $value2=$this->pdoOne->encrypt('abc_ABC/abc*abc1234567890[]{[');
+	    $this->assertTrue($value1==$value2, 'Values must be equals');     
     }
 	/**
 	 * @throws Exception
@@ -717,26 +723,26 @@ class PdoOne_mysql_Test extends TestCase
 		$original=2147483640;
 		$value=$this->pdoOne->encrypt($original);
 		$this->assertTrue(strlen($value)>3
-			,"Encrypted");
+			, 'Encrypted');
 		$this->assertEquals($original
-			,$this->pdoOne->decrypt($value)
-			,"decrypt correct");
+			, $this->pdoOne->decrypt($value)
+			, 'decrypt correct');
 		// 1
 		$original=1;
 		$value=$this->pdoOne->encrypt($original);
 		$this->assertTrue(strlen($value)>3
-			,"Encrypted");
+			, 'Encrypted');
 		$this->assertEquals($original
-			,$this->pdoOne->decrypt($value)
-			,"decrypt correct");
+			, $this->pdoOne->decrypt($value)
+			, 'decrypt correct');
 		// 0
 		$original=0;
 		$value=$this->pdoOne->encrypt($original);
 		$this->assertTrue(strlen($value)>3
-			,"Encrypted");
+			, 'Encrypted');
 		$this->assertEquals($original
-			,$this->pdoOne->decrypt($value)
-			,"decrypt correct");		
+			, $this->pdoOne->decrypt($value)
+			, 'decrypt correct');		
 		
 	}
 	/**
@@ -744,38 +750,38 @@ class PdoOne_mysql_Test extends TestCase
 	 */
 	public function test_setEncryptionSIMPLE()
 	{
-		$this->pdoOne->setEncryption("Zoamelgusta",'','SIMPLE');
+		$this->pdoOne->setEncryption('Zoamelgusta', '', 'SIMPLE');
 		// 2147483640
-		$original="abc";
+		$original= 'abc';
 		$value=$this->pdoOne->encrypt($original);
-		$this->assertEquals("wrzS",$value
-			,"encrypt with problems");
+		$this->assertEquals('wrzS', $value
+			, 'encrypt with problems');
 		$this->assertEquals($original
-			,$this->pdoOne->decrypt($value)
-			,"decrypt with problems");
-		$original="Mary had a little lamb. Whose fleece was white as snow";
+			, $this->pdoOne->decrypt($value)
+			, 'decrypt with problems');
+		$original= 'Mary had a little lamb. Whose fleece was white as snow';
 		$value=$this->pdoOne->encrypt($original);
-		$this->assertEquals("rrvh2o3NzcuV1JTNw-PV2cqM09bg1o96xsnc2NGH29_Zxr3UgeTG34fs293Vv4_C4IXf1eTq",$value
-			,"encrypt with problems");
+		$this->assertEquals('rrvh2o3NzcuV1JTNw-PV2cqM09bg1o96xsnc2NGH29_Zxr3UgeTG34fs293Vv4_C4IXf1eTq', $value
+			, 'encrypt with problems');
 		$this->assertEquals($original
-			,$this->pdoOne->decrypt($value)
-			,"decrypt with problems");		
+			, $this->pdoOne->decrypt($value)
+			, 'decrypt with problems');		
 		// 1
 		$original=1222;
 		$value=$this->pdoOne->encrypt($original);
-		$this->assertEquals("koyhkw==",$value
-			,"encrypt with problems");
+		$this->assertEquals('koyhkw==', $value
+			, 'encrypt with problems');
 		$this->assertEquals($original
-			,$this->pdoOne->decrypt($value)
-			,"decrypt correct");
+			, $this->pdoOne->decrypt($value)
+			, 'decrypt correct');
 		// 0
 		$original=0;
 		$value=$this->pdoOne->encrypt($original);
-		$this->assertEquals("kQ==",$value
-			,"encrypt with problems");
+		$this->assertEquals('kQ==', $value
+			, 'encrypt with problems');
 		$this->assertEquals($original
-			,$this->pdoOne->decrypt($value)
-			,"decrypt correct");
+			, $this->pdoOne->decrypt($value)
+			, 'decrypt correct');
 
 	}
 }

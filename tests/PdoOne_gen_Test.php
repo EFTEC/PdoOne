@@ -35,15 +35,15 @@ class PdoOne_gen_Test extends TestCase
         ActorRepo::insert(['first_name'=>'xxx','last_name'=>'yyy']);
         ActorRepo::insert(['first_name'=>'yyy','last_name'=>'yyy']);
         ActorRepo::insert(['first_name'=>'zzz','last_name'=>'yyy']);
-        $this->assertEquals(3,count(ActorRepo::findAll()));
+        $this->assertEquals(3,count(ActorRepo::toList()));
         ActorRepo::where("first_name like ?",['s','%x']);
-        $rows=(ActorRepo::order('first_name'))::findAll();
+        $rows=(ActorRepo::order('first_name'))::toList();
         //ActorRepo::findAll();
         $this->assertEquals("select * from actor where first_name like ? order by first_name",$this->pdoOne->lastQuery);
         $this->assertEquals(1,count($rows));
         
         ActorRepo::order('first_name desc');
-        $rows=ActorRepo::findAll();
+        $rows=ActorRepo::toList();
         $this->assertEquals('zzz',$rows[0]['first_name']);
     }
 }

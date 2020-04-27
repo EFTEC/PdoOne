@@ -48,19 +48,19 @@ interface PdoOne_IExt
      * Returns an associative array with the definition of foreign keys of a table.<br>
      * It includes foreign keys.
      *
-     * @param string $table        The name of the table to analize.
-     * @param bool   $returnSimple true= returns as a simple associative array<br>
+     * @param string $table The name of the table to analize.
+     * @param bool $returnSimple true= returns as a simple associative array<br>
      *                             example:['id'=>'PRIMARY KEY','name'=>'FOREIGN KEY...']<br>
      *                             false= returns as an associative array separated by parts<br>
      *                             ['key','refcol','reftable','extra']
-     * @param null|string   $filter if not null then it only returns keys that matches the condition
+     * @param null|string $filter if not null then it only returns keys that matches the condition
      *
+     * @param bool $assocArray If true then it returns an associative array (as value)
      * @return array
-     * @throws Exception
      */
-    public function getDefTableFK($table,$returnSimple,$filter=null);
-    
-    
+    public function getDefTableFK($table,$returnSimple,$filter=null,$assocArray=false);
+
+
     /**
      * It returns a default value depending on the type of the column.
      *

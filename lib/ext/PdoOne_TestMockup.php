@@ -1,4 +1,6 @@
-<?php /** @noinspection DuplicatedCode */
+<?php /** @noinspection TypeUnsafeComparisonInspection */
+
+/** @noinspection DuplicatedCode */
 
 namespace eftec\ext;
 
@@ -37,7 +39,7 @@ class PdoOne_TestMockup implements PdoOne_IExt
         PdoOne::$isoDateTime               = 'Ymd H:i:s';
         PdoOne::$isoDateTimeMs             = 'Ymd H:i:s.u';
         $this->parent->isOpen=false;
-        return "";
+        return '';
     }
 
     public function connect($cs)
@@ -52,7 +54,7 @@ class PdoOne_TestMockup implements PdoOne_IExt
     {
         $defArray = [
             [
-                'Field' >= 'id',
+                'Field' => 'id',
                 'Key'     => 'PRI',
                 'Type'    => 'int',
                 'Null'    => 'NO',
@@ -66,7 +68,7 @@ class PdoOne_TestMockup implements PdoOne_IExt
                 $pk = $col['Field'];
             }*/
             $value = $col['Type'];
-            $value .= ($col['Null'] === 'NO') ? " not null" : '';
+            $value .= ($col['Null'] === 'NO') ? ' not null' : '';
             if ($col['Default'] === 'CURRENT_TIMESTAMP') {
                 $value .= ' default CURRENT_TIMESTAMP';
             } else {
@@ -91,16 +93,19 @@ class PdoOne_TestMockup implements PdoOne_IExt
         return $this->parent->filterKey($filter,$columns,$returnSimple);
     }
     
-    public function getDefTableFK($table, $returnSimple,$filter=null)
+    public function getDefTableFK($table, $returnSimple,$filter=null, $assocArray =false)
     {
         if ($returnSimple) {
             $columns= ['col1' => 'FOREIGN KEY REFERENCES col [tableref](colref)'];
         } else {
             $columns= ['col1' => ['key' => 'FOREIGN KEY', 'refcol' => 'col', 'reftable' => 'table2', 'extra' => '']];
         }
+        if($assocArray) {
+            return $columns;
+        }
         return $this->parent->filterKey($filter,$columns,$returnSimple);
     }
-    function typeDict($row, $default = true)
+    public function typeDict($row, $default = true)
     {
         return '';
     }
@@ -117,8 +122,7 @@ class PdoOne_TestMockup implements PdoOne_IExt
                     = "SELECT * FROM information_schema.tables where table_schema='{$this->parent->db}' and table_name=?";
                 break;
             default:
-                $this->parent->throwError("objectExist: type [$type] not defined for {$this->parent->databaseType}",
-                    "");
+                $this->parent->throwError("objectExist: type [$type] not defined for {$this->parent->databaseType}", '');
                 die(1);
                 break;
         }
@@ -144,8 +148,7 @@ class PdoOne_TestMockup implements PdoOne_IExt
                 }
                 break;
             default:
-                $this->parent->throwError("objectExist: type [$type] not defined for {$this->parent->databaseType}",
-                    "");
+                $this->parent->throwError("objectExist: type [$type] not defined for {$this->parent->databaseType}", '');
                 die(1);
                 break;
         }
@@ -178,7 +181,7 @@ class PdoOne_TestMockup implements PdoOne_IExt
 
     public function createSequence($tableSequence = null, $method = 'snowflake')
     {
-        return "CREATE TABLE";
+        return 'CREATE TABLE';
     }
     public function getSequence($sequenceName) {
         $sequenceName = ($sequenceName == '') ? $this->parent->tableSequence : $sequenceName;
@@ -209,7 +212,7 @@ class PdoOne_TestMockup implements PdoOne_IExt
     public function limit($sql)
     {
         if ( ! $this->parent->order) {
-            $this->parent->throwError("limit without a sort", "");
+            $this->parent->throwError('limit without a sort', '');
         }
         if (strpos($sql, ',')) {
             $arr                 = explode(',', $sql);

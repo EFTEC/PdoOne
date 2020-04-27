@@ -58,15 +58,17 @@ class FilmRepo
      * It creates a new table<br>
      * If the table exists then the operation is ignored (and it returns false)
      *
-     * @param array $definition
-     * @param null  $extra
+     * @param null $extra
      *
      * @return array|bool|PDOStatement
      * @throws Exception
      */
     public static function createTable( $extra = null) {
         if (!self::getPdoOne()->tableExist(self::TABLE)) {
-            return self::getPdoOne()->createTable(self::TABLE, $definition=self::DEF, self::DEFKEY,self::DEFFK, $extra);
+            return self::getPdoOne()->createTable(self::TABLE, $definition=self::DEF
+                , self::DEFKEY
+                ,self::DEFFK
+                , $extra);
         }
         return false; // table already exist
     }
@@ -181,7 +183,7 @@ class FilmRepo
      *
      * @param mixed $pk
      *
-     * @return ["film_id"=>0,"title"=>'',"description"=>'',"release_year"=>0,"language_id"=>0,"original_language_id"=>0,"rental_duration"=>0,"rental_rate"=>0.0,"length"=>0,"replacement_cost"=>0.0,"rating"=>'',"special_features"=>'',"last_update"=>'']
+     * @return array|null ["film_id"=>0,"title"=>'',"description"=>'',"release_year"=>0,"language_id"=>0,"original_language_id"=>0,"rental_duration"=>0,"rental_rate"=>0.0,"length"=>0,"replacement_cost"=>0.0,"rating"=>'',"special_features"=>'',"last_update"=>'']
      * @throws Exception
      */
     public static function get($pk) {
@@ -198,7 +200,7 @@ class FilmRepo
      * @param null|string $order
      * @param null|string $limit
      *
-     * @return [["film_id"=>0,"title"=>'',"description"=>'',"release_year"=>0,"language_id"=>0,"original_language_id"=>0,"rental_duration"=>0,"rental_rate"=>0.0,"length"=>0,"replacement_cost"=>0.0,"rating"=>'',"special_features"=>'',"last_update"=>'']]
+     * @return array|bool|PDOStatement [["film_id"=>0,"title"=>'',"description"=>'',"release_year"=>0,"language_id"=>0,"original_language_id"=>0,"rental_duration"=>0,"rental_rate"=>0.0,"length"=>0,"replacement_cost"=>0.0,"rating"=>'',"special_features"=>'',"last_update"=>'']]
      * @throws Exception
      */
     public static function select($where = null, $order = null, $limit = null) {

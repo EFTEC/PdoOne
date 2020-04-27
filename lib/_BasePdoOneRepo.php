@@ -1,4 +1,5 @@
-<?php /** @noinspection PhpUnused */
+<?php /** @noinspection NullPointerExceptionInspection */
+/** @noinspection PhpUnused */
 /** @noinspection PhpUndefinedMethodInspection */
 
 /** @noinspection PhpUndefinedClassConstantInspection */
@@ -9,10 +10,11 @@ namespace eftec;
 
 use Exception;
 use PDOStatement;
+use RuntimeException;
 
 /**
  * Class _BaseRepo
- * @version       2.1 2020-04-15
+ * @version       2.2 2020-04-27
  * @package       eftec
  * @author        Jorge Castro Castillo
  * @copyright (c) Jorge Castro C. MIT License  https://github.com/EFTEC/PdoOne
@@ -20,7 +22,7 @@ use PDOStatement;
 abstract class _BasePdoOneRepo
 {
     /** @var PdoOne */
-    public static $pdoOne = null;
+    public static $pdoOne;
 
 
     /**
@@ -35,7 +37,9 @@ abstract class _BasePdoOneRepo
     public static function createTable($extra = null) {
         if (!self::getPdoOne()->tableExist(static::TABLE)) {
             return self::getPdoOne()
-                       ->createTable(static::TABLE, $definition = static::getDef(), static::getDefKey(), $extra);
+                       ->createTable(static::TABLE, $definition = static::getDef()
+                           , static::getDefKey()
+                           , $extra);
         }
         return false; // table already exist
     }
@@ -45,7 +49,7 @@ abstract class _BasePdoOneRepo
      * It is used for DI.<br>
      * If the field is not null, it returns the field self::$pdoOne<br>
      * If the global function pdoOne exists, then it is used<br>
-     * if the globla variable $pdoOne exists, then it is used<br>
+     * if the global variable $pdoOne exists, then it is used<br>
      * Otherwise, it returns null
      *
      * @return PdoOne
@@ -173,16 +177,59 @@ abstract class _BasePdoOneRepo
      * @throws Exception
      */
     public static function first($pk=null) {
-        self::getPdoOne()->select('*')->from(static::TABLE);
+        $cols=self::buildSelect();
+        self::getPdoOne()->select($cols)->from(static::TABLE);
         if(self::getPdoOne()->hasWhere()) {
-            return self::getPdoOne()->first();
-        } else {
-            if($pk===null) {
-                throw new Exception('_BasePdoOneRepo: first() without primary key or where');
-            }
-            return self::getPdoOne()->where(static::PK, $pk)->first();    
+            return self::transform(self::getPdoOne()->first());
         }
-        
+
+        if($pk===null) {
+            throw new RuntimeException('_BasePdoOneRepo: first() without primary key or where');
+        }
+        return self::transform(self::getPdoOne()->where(static::PK, $pk)->first());
+    }
+    public static function buildSelect($prefixTable='',$prefix='') {
+        $cols='*';
+        $recursive=self::getPdoOne()->getRecursive();
+        $prefixTable=($prefixTable==='')?static::TABLE:$prefixTable;
+    
+        if(is_array($recursive) && count($recursive) > 0) {
+            $keys=array_keys(static::getDef());
+            $keyRel=static::getDefFK(false);
+            $cols='';
+            foreach($keys as $key=>$value) {
+                $cols.=self::getPdoOne()->addDelimiter($prefixTable)
+                    .".{$value} as ".self::getPdoOne()->addDelimiter($prefix.$value). ',';
+            }
+            // adding the relation many to one (if any).
+            foreach($keyRel as $key=>$value) {
+                $tableAlias=$prefixTable.':'.$key;
+                $ui=str_replace(':','/',substr($tableAlias,strpos($tableAlias,':')));
+                if(in_array($ui,$recursive)) {
+
+                    $table = $value['reftable'];
+                    $colLocal = self::getPdoOne()->addDelimiter($prefixTable . '.' . $key);
+
+                    $class = $table . 'Repo';
+                    //$tableAlias=$prefixTable.':'.$table.':'.$key;
+
+                    //$tableAlias2=$prefixTable.':'.$key;
+                    $colRef = self::getPdoOne()->addDelimiter($tableAlias . '.' . $value['refcol']);
+
+                    self::getPdoOne()->innerjoin("$table as `$tableAlias` on $colLocal=$colRef");
+                    /** @see \eftec\_BasePdoOneRepo::buildSelect however it uses static of each repo */
+                    $cols .= $class::buildSelect($tableAlias, $tableAlias . ':') . ','; // the comma is trimmed
+                }
+            }
+        }
+        return rtrim($cols,',');
+    }
+    public static function getRecursive() {
+        return self::getPdoOne()->getRecursive();
+    }
+    public static function setRecursive($recursive) {
+        self::getPdoOne()->recursive($recursive);
+        return static::ME;
     }
 
     /**
@@ -195,8 +242,55 @@ abstract class _BasePdoOneRepo
      * @throws Exception
      */
     public static function toList($where = null,$args=PdoOne::NULL) {
-        self::getPdoOne()->select('*')->from(static::TABLE)->where($where,$args);
-        return self::getPdoOne()->toList();
+        $cols=self::buildSelect();
+        self::getPdoOne()->select($cols)->from(static::TABLE)->where($where,$args);
+
+        $rows=self::getPdoOne()->toList();
+        $result=[];
+        foreach($rows as $row) {
+            $result[]=self::transForm($row);    
+        }
+        return $result;
+    }
+    public static function transform($inputRow) {
+        $row=[];
+        foreach($inputRow as $col=>$value) {
+            if(strpos($col,':')!==false) {
+                $arr=explode(':',$col);
+                $c=count($arr);
+                $k0='/'.$arr[1];
+                switch ($c) {
+                    case 2:
+                        $row[$k0][$arr[1]] = $value;
+                        break;
+                    case 3:
+                        $row[$k0][$arr[1]][$arr[2]] = $value;
+                        break;
+                    case 4:
+                        $k2=$k0.'/'.$arr[2];
+                        if(!isset($row[$k0][$arr[1]][$k2])) {
+                            $row[$k0][$arr[1]][$k2]=[];    
+                        }
+                        $row[$k0][$arr[1]][$k2][$arr[3]] = $value;
+                        break;
+                    case 5:
+                        $row[$k0][$arr[1]][$arr[2]][$arr[3]][$arr[4]]= $value;
+                        break;
+                    case 6:
+                        $k2=$k0.'/'.$arr[2];
+                        $k4=$k2.'/'.$arr[4];
+                        if(!isset($row[$k0][$arr[1]][$k2][$arr[3]][$k4])) {
+                            $row[$k0][$arr[1]][$k2][$arr[3]][$k4]=[];
+                        }
+                        $row[$k0][$arr[1]][$k2][$arr[3]][$k4][$arr[5]] = $value;
+                        break;
+                }
+               
+            } else {
+                $row[$col]=$value;
+            }
+        }
+        return $row;
     }
     
     /**
@@ -295,7 +389,7 @@ abstract class _BasePdoOneRepo
         self::getPdoOne()->where($sql, $param);
         return static::ME;
     }
-
+    
     /**
      * It returns the number of rows
      *
