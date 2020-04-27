@@ -148,10 +148,10 @@ where
 ### Run an unprepared query
 
 ```php
-$sql="CREATE TABLE `product` (
+$sql='CREATE TABLE `product` (
     `idproduct` INT NOT NULL AUTO_INCREMENT,
     `name` VARCHAR(45) NULL,
-    PRIMARY KEY (`idproduct`));";
+    PRIMARY KEY (`idproduct`));';
 $pdoOne->runRawQuery($sql);  
 ```
 
@@ -1283,6 +1283,64 @@ $dao->render();
 
 
 
+## Code generation.
+
+There are several ways to generate a Repository code, it is possible to generate a code using the CLI, the GUI or using the next code:
+
+```php
+$pdo=new PdoOne('mysql','127.0.0.1','root','abc.123','sakila');
+$pdo->connect();
+$table=$pdo->generateCodeClass('Tablename','repo'); // where Tablename is the name of the table to analyze. it must exsits.
+echo $clase;
+```
+
+The code generated looks like this one
+
+```php
+class TableNameRepo extends _BasePdoOneRepo
+{
+// ....
+}
+```
+
+### Using the Repository class.
+
+For started, you must set an instance of the PdoOne
+
+You could do it by creating a function called pdOne
+
+```php
+function pdoOne() {
+$pdo=new PdoOne('mysql','127.0.0.1','root','abc.123','sakila');
+$pdo->connect();
+}
+```
+
+Or creating a global variable called $pdoOne
+
+```php
+$pdoOne=new PdoOne('mysql','127.0.0.1','root','abc.123','sakila');
+$pdoOne->connect();
+```
+
+Or injecting the instance into the class
+
+```php
+$pdo=new PdoOne('mysql','127.0.0.1','root','abc.123','sakila');
+$pdo->connect();
+TableNameRepo::setPdoOne($pdo);
+```
+
+### Queries
+
+```php
+$data=TableNameRepo::toList(); // select * from tablerepo
+$data=TableNameRepo::first($pk); // select * from tablerepo where pk=$pk (it always returns 1 or zero values)
+$data=TableNameRepo::where('a1=?',['i',$value])::toList(); // select * from tablerepo where a1=$value 
+```
+
+
+
 
 
 ## Benchmark (mysql, estimated)
@@ -1316,6 +1374,9 @@ In a nutshell:
 * Every major version means that it breaks something. I.e. 1.0 -> 2.0  
 * Every minor version means that it adds a new functionality i.e. 1.5 -> 1.6 (new methods)  
 * Every decimal version means that it patches/fixes/refactoring a previous functionality i.e. 1.5.0 -> 1.5.1 (fix)  
+
+* 1.34.1 2020-04-27
+    * _BasePdoOneRepo 2.2.1 fixed.
 
 * 1.34 2020-04-27
     * _BasePdoOneRepo 2.2 now it allows load relation many by one.   

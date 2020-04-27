@@ -197,6 +197,12 @@ abstract class _BasePdoOneRepo
             $keys=array_keys(static::getDef());
             $keyRel=static::getDefFK(false);
             $cols='';
+            if(strpos(static::class,'\\')) { // we assume that every repo class lives in the same namespace.
+                $ns=explode('\\',static::class,2);
+                $ns=$ns[0].'\\';
+            } else {
+                $ns='';
+            }
             foreach($keys as $key=>$value) {
                 $cols.=self::getPdoOne()->addDelimiter($prefixTable)
                     .".{$value} as ".self::getPdoOne()->addDelimiter($prefix.$value). ',';
@@ -210,7 +216,7 @@ abstract class _BasePdoOneRepo
                     $table = $value['reftable'];
                     $colLocal = self::getPdoOne()->addDelimiter($prefixTable . '.' . $key);
 
-                    $class = $table . 'Repo';
+                    $class = $ns.$table . 'Repo';
                     //$tableAlias=$prefixTable.':'.$table.':'.$key;
 
                     //$tableAlias2=$prefixTable.':'.$key;
@@ -258,31 +264,31 @@ abstract class _BasePdoOneRepo
             if(strpos($col,':')!==false) {
                 $arr=explode(':',$col);
                 $c=count($arr);
-                $k0='/'.$arr[1];
+                $k1='/'.$arr[1];
                 switch ($c) {
                     case 2:
-                        $row[$k0][$arr[1]] = $value;
+                        $row[$k1] = $value;
                         break;
                     case 3:
-                        $row[$k0][$arr[1]][$arr[2]] = $value;
+                        $row[$k1][$arr[2]] = $value;
                         break;
                     case 4:
-                        $k2=$k0.'/'.$arr[2];
-                        if(!isset($row[$k0][$arr[1]][$k2])) {
-                            $row[$k0][$arr[1]][$k2]=[];    
+                        $k2=$k1.'/'.$arr[2];
+                        if(!isset($row[$k1][$k2])) {
+                            $row[$k1][$arr[1]][$k2]=[];    
                         }
-                        $row[$k0][$arr[1]][$k2][$arr[3]] = $value;
+                        $row[$k1][$k2][$arr[3]] = $value;
                         break;
                     case 5:
-                        $row[$k0][$arr[1]][$arr[2]][$arr[3]][$arr[4]]= $value;
+                        $row[$k1][$arr[2]][$arr[3]][$arr[4]]= $value;
                         break;
                     case 6:
-                        $k2=$k0.'/'.$arr[2];
+                        $k2=$k1.'/'.$arr[2];
                         $k4=$k2.'/'.$arr[4];
-                        if(!isset($row[$k0][$arr[1]][$k2][$arr[3]][$k4])) {
-                            $row[$k0][$arr[1]][$k2][$arr[3]][$k4]=[];
+                        if(!isset($row[$k1][$k2][$arr[3]][$k4])) {
+                            $row[$k1][$k2][$arr[3]][$k4]=[];
                         }
-                        $row[$k0][$arr[1]][$k2][$arr[3]][$k4][$arr[5]] = $value;
+                        $row[$k1][$k2][$arr[3]][$k4][$arr[5]] = $value;
                         break;
                 }
                
