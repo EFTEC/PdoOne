@@ -1,4 +1,7 @@
-<?php /** @noinspection DuplicatedCode */
+<?php /** @noinspection AccessModifierPresentedInspection */
+/** @noinspection TypeUnsafeComparisonInspection */
+
+/** @noinspection DuplicatedCode */
 
 namespace eftec\ext;
 
@@ -65,11 +68,11 @@ class PdoOne_Sqlsrv implements PdoOne_IExt
         $result = [];
         foreach ($defArray as $col) {
             $value = self::sqlsrv_getType($col);
-            $value .= ($col['IS_NULLABLE'] == 'NO') ? ' NOT NULL' : '';
+            $value .= ($col['IS_NULLABLE'] === 'NO') ? ' NOT NULL' : '';
             $value .= ($col['COLUMN_DEFAULT']) ? ' DEFAULT ' . $col['COLUMN_DEFAULT'] : '';
             $colName = $col['COLUMN_NAME'];
             foreach ($findIdentity as $fi) {
-                if ($colName == $fi['name']) {
+                if ($colName === $fi['name']) {
                     $value .= " IDENTITY({$fi['seed_value']},{$fi['increment_value']})";
                     break;
                 }
@@ -97,12 +100,10 @@ class PdoOne_Sqlsrv implements PdoOne_IExt
         }
         if ($col['NUMERIC_SCALE']) {
             $result = "{$col['DATA_TYPE']}({$col['NUMERIC_PRECISION']},{$col['NUMERIC_SCALE']})";
+        } elseif ($col['NUMERIC_PRECISION'] || $col['CHARACTER_MAXIMUM_LENGTH']) {
+            $result = "{$col['DATA_TYPE']}(" . ($col['CHARACTER_MAXIMUM_LENGTH'] + $col['NUMERIC_PRECISION']) . ')';
         } else {
-            if ($col['NUMERIC_PRECISION'] || $col['CHARACTER_MAXIMUM_LENGTH']) {
-                $result = "{$col['DATA_TYPE']}(" . ($col['CHARACTER_MAXIMUM_LENGTH'] + $col['NUMERIC_PRECISION']) . ')';
-            } else {
-                $result = $col['DATA_TYPE'];
-            }
+            $result = $col['DATA_TYPE'];
         }
 
         return $result;
@@ -124,12 +125,10 @@ class PdoOne_Sqlsrv implements PdoOne_IExt
         foreach ($result as $item) {
             if ($item['is_primary_key']) {
                 $type = 'PRIMARY KEY';
+            } elseif ($item['is_unique']) {
+                $type = 'UNIQUE KEY';
             } else {
-                if ($item['is_unique']) {
-                    $type = 'UNIQUE KEY';
-                } else {
-                    $type = 'KEY';
-                }
+                $type = 'KEY';
             }
             if ($returnSimple) {
                 $columns[$item['ColumnName']] = $type;
@@ -358,7 +357,7 @@ class PdoOne_Sqlsrv implements PdoOne_IExt
                                  "KEY...", "UNIQUE KEY..." "FOREIGN KEY.." ');
                     break;
                 }
-                $type = trim(strtoupper(substr($value, 0, $p0)));
+                $type = strtoupper(trim(substr($value, 0, $p0)));
                 $value = substr($value, $p0 + 4);
                 switch ($type) {
                     case 'PRIMARY':
@@ -392,17 +391,16 @@ class PdoOne_Sqlsrv implements PdoOne_IExt
             if ($p0 === false) {
                 trigger_error('createFK: Key with a wrong syntax. Example: "PRIMARY KEY.." ,
                                  "KEY...", "UNIQUE KEY..." "FOREIGN KEY.." ');
+                return null;
                 break;
             }
-            $type = trim(strtoupper(substr($value, 0, $p0)));
+            $type = strtoupper(trim(substr($value, 0, $p0)));
             $value = substr($value, $p0 + 4);
-            switch ($type) {
-                case 'FOREIGN':
-                    $sql .= "ALTER TABLE {$tableName} ADD FOREIGN KEY ($key) $value;";
-                    break;
-                default:
-                    trigger_error("createFK: [$type KEY] not defined");
-                    break;
+            if($type==='FOREIGN') {
+                $sql .= "ALTER TABLE {$tableName} ADD FOREIGN KEY ($key) $value;";
+            } else {
+                trigger_error("createFK: [$type KEY] not defined");
+                return null;
             }
         }
         return $sql;

@@ -29,7 +29,7 @@ use stdClass;
  * @package       eftec
  * @author        Jorge Castro Castillo
  * @copyright (c) Jorge Castro C. MIT License  https://github.com/EFTEC/PdoOne
- * @version       1.34.1 2020-04-27
+ * @version       1.34.2 2020-04-27
  */
 class PdoOne
 {
@@ -650,6 +650,7 @@ class PdoOne
      *
      * @param bool $assocArray
      * @return array
+     * @throws Exception
      */
     public function getDefTableFK($table, $returnSimple = true, $assocArray = false) {
         return $this->service->getDefTableFK($table, $returnSimple, null, $assocArray);
@@ -3060,9 +3061,6 @@ BOOTS;
         if ($sql === null) {
             return $this;
         }
-        if ($this->from == '') {
-            return $this->from($sql);
-        }
         $this->from .= ($sql) ? " left join $sql" : '';
 
         return $this;
@@ -3084,9 +3082,6 @@ BOOTS;
     public function right($sql) {
         if ($sql === null) {
             return $this;
-        }
-        if ($this->from == '') {
-            return $this->from($sql);
         }
         $this->from .= ($sql) ? " right join $sql" : '';
 

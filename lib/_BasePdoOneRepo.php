@@ -222,7 +222,7 @@ abstract class _BasePdoOneRepo
                     //$tableAlias2=$prefixTable.':'.$key;
                     $colRef = self::getPdoOne()->addDelimiter($tableAlias . '.' . $value['refcol']);
 
-                    self::getPdoOne()->innerjoin("$table as `$tableAlias` on $colLocal=$colRef");
+                    self::getPdoOne()->left("$table as `$tableAlias` on $colLocal=$colRef");
                     /** @see \eftec\_BasePdoOneRepo::buildSelect however it uses static of each repo */
                     $cols .= $class::buildSelect($tableAlias, $tableAlias . ':') . ','; // the comma is trimmed
                 }

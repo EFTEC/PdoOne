@@ -56,6 +56,7 @@ interface PdoOne_IExt
      * @param null|string $filter if not null then it only returns keys that matches the condition
      *
      * @param bool $assocArray If true then it returns an associative array (as value)
+     * @throws Exception
      * @return array
      */
     public function getDefTableFK($table,$returnSimple,$filter=null,$assocArray=false);
@@ -69,7 +70,7 @@ interface PdoOne_IExt
      *
      * @return mixed
      */
-    function typeDict($row, $default = true);
+     public function typeDict($row, $default = true);
 
     /**
      * Returns an associative array if the object exists. Otherwise it will return an empty array<br>
