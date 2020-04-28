@@ -1375,6 +1375,12 @@ In a nutshell:
 * Every minor version means that it adds a new functionality i.e. 1.5 -> 1.6 (new methods)  
 * Every decimal version means that it patches/fixes/refactoring a previous functionality i.e. 1.5.0 -> 1.5.1 (fix)  
 
+
+
+* 1.35 2020-04-28
+    * _BasePdoOneRepo 2.3 added relation ONETOMANY
+    * generateCodeClass() supports for _BasePdoOneRepo 2.3
+
 * 1.34.2 2020-04-27
     * Updated other components.
     * left(), right() and innerjoin() don't replace where() anymore

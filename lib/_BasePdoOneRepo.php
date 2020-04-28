@@ -14,7 +14,7 @@ use RuntimeException;
 
 /**
  * Class _BaseRepo
- * @version       2.2 2020-04-27
+ * @version       2.3 2020-04-28
  * @package       eftec
  * @author        Jorge Castro Castillo
  * @copyright (c) Jorge Castro C. MIT License  https://github.com/EFTEC/PdoOne
@@ -188,21 +188,25 @@ abstract class _BasePdoOneRepo
         }
         return self::transform(self::getPdoOne()->where(static::PK, $pk)->first());
     }
+    public static function getNamespace() {
+        if(strpos(static::class,'\\')) { // we assume that every repo class lives in the same namespace.
+            $ns=explode('\\',static::class,2);
+            $ns=$ns[0].'\\';
+        } else {
+            $ns='';
+        }
+        return $ns;
+    }
     public static function buildSelect($prefixTable='',$prefix='') {
         $cols='*';
         $recursive=self::getPdoOne()->getRecursive();
         $prefixTable=($prefixTable==='')?static::TABLE:$prefixTable;
-    
+        $ns=self::getNamespace();
         if(is_array($recursive) && count($recursive) > 0) {
             $keys=array_keys(static::getDef());
             $keyRel=static::getDefFK(false);
             $cols='';
-            if(strpos(static::class,'\\')) { // we assume that every repo class lives in the same namespace.
-                $ns=explode('\\',static::class,2);
-                $ns=$ns[0].'\\';
-            } else {
-                $ns='';
-            }
+
             foreach($keys as $key=>$value) {
                 $cols.=self::getPdoOne()->addDelimiter($prefixTable)
                     .".{$value} as ".self::getPdoOne()->addDelimiter($prefix.$value). ',';
@@ -294,6 +298,15 @@ abstract class _BasePdoOneRepo
                
             } else {
                 $row[$col]=$value;
+            }
+        }
+        
+        $relations=static::getDefFK(false);
+        $ns=self::getNamespace();
+        foreach($relations as $col=>$rel) {
+            if($rel['key']==='ONETOMANY') {
+                $class = $ns.$rel['reftable'] . 'Repo';
+                $row[$col]=($class::where($rel['refcol'],['s',$row[$rel['col']] ]))::toList();
             }
         }
         return $row;

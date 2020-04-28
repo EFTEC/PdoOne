@@ -330,8 +330,6 @@ class PdoOne_Mysql implements PdoOne_IExt
             $value = substr($value, $p0 + 4);
             if($type === 'FOREIGN') {
                 $sql .= "ALTER TABLE `{$tableName}` ADD CONSTRAINT `fk_{$tableName}_{$key}` FOREIGN KEY(`$key`) $value;";
-            } else {
-                trigger_error("createTable: [$type KEY] not defined");
             }
         }
         return $sql;

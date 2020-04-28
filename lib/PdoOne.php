@@ -29,12 +29,12 @@ use stdClass;
  * @package       eftec
  * @author        Jorge Castro Castillo
  * @copyright (c) Jorge Castro C. MIT License  https://github.com/EFTEC/PdoOne
- * @version       1.34.2 2020-04-27
+ * @version       1.35 2020-04-28
  */
 class PdoOne
 {
 
-    const VERSION = '1.34.1';
+    const VERSION = '1.35';
 
     const NULL = PHP_INT_MAX;
 
@@ -1530,16 +1530,18 @@ eot;
                 }
                 $result .= "'" . $name . "'=>" . $default . ',' . $ln;
                 if ($recursive) {
-                    if (@$before[$table][$name]) {
-                        $colName = $name . '.' . $before[$table][$name];
+                    if (@$before[$table][$name][1]) { // before is defined as [colremote,tableremote]
+                        //$colName = $name . '.' . $before[$table][$name];
+                        $colName = '/' . $before[$table][$name][1];
                         $default = '(in_array(\'' . $colName . '\',$recursive))
                         ? [] 
                         : null';
                         $result .= "'" . $colName . "'=>" . $default . ', /* onetomany */' . $ln;
                     }
                     if (@$after[$table][$name]) {
-                        $colName = $name . '.' . $after[$table][$name];
-                        $default = '(in_array(\'' . $name . '\',$recursive))
+                        //$colName = $name . '.' . $after[$table][$name];
+                        $colName = '/' . $after[$table][$name];
+                        $default = '(in_array(\'' . $colName . '\',$recursive))
                     ? ' . $after[$table][$name] . 'Repo::factory() 
                     : null';
                         $result .= "'" . $colName . "'=>" . $default . ', /* manytoone */' . $ln;
@@ -1831,6 +1833,20 @@ eot;
         $pk = '??';
 
         $pk = $this->service->getPK($tableName, $pk);
+        
+        
+        $relation=$this->getDefTableFK($tableName, false, true);
+        
+        $deps=$this->tableDependency(true); //  ["city"]=> {["city_id"]=> "address"}
+        $after=@$deps[1][$tableName];
+        $before=@$deps[2][$tableName];
+        if(is_array($after) && is_array($before)) {
+            foreach($before as $key=>$value) { // $value is [relcol,table]
+                $relation['/'.$value[1]]=['key'=>'ONETOMANY','col'=>$key,'reftable'=>$value[1],'refcol'=>$value[0]];
+            }
+        }
+        
+
         $r = str_replace(array(
                              '{pk}',
                              '{def}',
@@ -1844,7 +1860,7 @@ eot;
                              self::varExport($this->getDefTable($tableName)),
                              self::varExport($this->getDefTableKeys($tableName)),
                              self::varExport($this->getDefTableFK($tableName), "\t\t\t"), //{deffk}
-                             self::varExport($this->getDefTableFK($tableName, false, true), "\t\t"),
+                             self::varExport($relation, "\t\t"), //{deffktype}
                              str_replace("\n", "\n\t\t",
                                          rtrim($this->generateCodeArray($tableName, null, false, false, true), "\n")),
                              str_replace("\n", "\n\t\t",
@@ -2392,7 +2408,7 @@ BOOTS;
     }
 
     /**
-     * It returns an array with al the tables of the schema, also the foreign key and references  of each table<br>
+     * It returns an array with all the tables of the schema, also the foreign key and references  of each table<br>
      * <b>Example:</b>
      * <pre>
      * $this->tableDependency();
@@ -2403,7 +2419,7 @@ BOOTS;
      * $this->tableDependency(true);
      * // ["tables" => ["city","country"]
      * //    ,"after" => ["city" => ["countryfk" => "country"],"country" => []]
-     * //    ,"before" => ["city" => [],"country" => ["countryid" => "city"]]
+     * //    ,"before" => ["city" => [],"country" => ["country_id" => "country_id","city"]]
      * // ]
      * </pre>
      *
@@ -2423,8 +2439,8 @@ BOOTS;
             $deps = [];
             foreach ($arr as $k => $v) {
                 if ($returnColumn) {
-                    $deps[$k] = $v['reftable'];
-                    $before[$v['reftable']][$v['refcol']] = $table;
+                    $deps[$k] = $v['reftable'];;
+                    $before[$v['reftable']][$v['refcol']] = [$k,$table]; // remote column and remote table
                 } else {
                     $deps[] = $v['reftable'];
                     $before[$v['reftable']][] = $table;

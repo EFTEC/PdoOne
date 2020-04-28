@@ -1,4 +1,8 @@
 <?php /** @noinspection PhpLanguageLevelInspection */
+
+
+use repo\TablaParentRepo;
+
 include '../../vendor/autoload.php';
 include 'TablaParentRepo.php';
 include 'TablachildRepo.php';
@@ -11,13 +15,13 @@ $pdoOne->logLevel=3;
 $pdoOne->recursive(['country_id']);
 //$city=CityRepo::factory();
 
-$city=TablaparentRepo::setRecursive(['/idchild','/idchild2','/idchild2/idgrandchildFK'])::toList();
+$city= TablaparentRepo::setRecursive(['/idchild','/idchild2','/idchild2/idgrandchildFK'])::toList();
 
 echo '<pre>';
 var_dump($city);
 echo '</pre>';
 
-$city=TablaparentRepo::toList();
+$city= \repo\TablachildRepo::toList();
 
 echo '<pre>';
 var_dump($city);

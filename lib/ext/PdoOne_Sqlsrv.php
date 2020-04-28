@@ -398,9 +398,6 @@ class PdoOne_Sqlsrv implements PdoOne_IExt
             $value = substr($value, $p0 + 4);
             if($type==='FOREIGN') {
                 $sql .= "ALTER TABLE {$tableName} ADD FOREIGN KEY ($key) $value;";
-            } else {
-                trigger_error("createFK: [$type KEY] not defined");
-                return null;
             }
         }
         return $sql;

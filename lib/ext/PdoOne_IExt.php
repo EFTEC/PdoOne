@@ -142,7 +142,7 @@ interface PdoOne_IExt
         $extraOutside = '');
 
     /**
-     * Create foreign keys
+     * Create foreign keys (other keys are ignored).
      *
      * @param string       $tableName    The name of the table
      * @param array        $foreignKey   Associative array with the foreign key.

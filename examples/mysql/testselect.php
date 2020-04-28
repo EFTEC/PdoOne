@@ -26,7 +26,14 @@ echo "<h1>Stat</h1>";
 echo build_table($dao->statValue('actor','actor_id'));
 
 	echo build_table($dao->columnTable('actor'));
-	echo build_table($dao->foreignKeyTable('payment'));
+	echo "<hr>city:";
+	echo build_table($dao->foreignKeyTable('city'));
+    echo "<hr>all table dependencies:";
+    $deps=$dao->tableDependency(true);
+    echo "<pre>";
+    var_dump($deps);
+    echo "</pre>";
+    echo build_table($deps);
 die(1);
 
 
@@ -234,7 +241,12 @@ function build_table($array){
     foreach( $array as $key=>$value){
         $html .= '<tr>';
         foreach($value as $key2=>$value2){
-            $html .= '<td>' . htmlspecialchars($value2) . '</td>';
+            if(is_array($value2)) {
+                $html .= '<td>' . json_encode($value2,JSON_PRETTY_PRINT) . '</td>';
+            } else {
+                $html .= '<td>' . htmlspecialchars($value2) . '</td>';    
+            }
+            
         }
         $html .= '</tr>';
     }
