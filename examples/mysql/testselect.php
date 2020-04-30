@@ -22,6 +22,8 @@ try {
 }
 
 echo "<h1>Stat</h1>";
+var_dump($dao->getDefTable('actor'));
+die(1);
 
 echo build_table($dao->statValue('actor','actor_id'));
 
