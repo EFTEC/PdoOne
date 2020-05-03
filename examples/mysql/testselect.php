@@ -22,7 +22,11 @@ try {
 }
 
 echo "<h1>Stat</h1>";
-var_dump($dao->getDefTable('actor'));
+
+echo "<pre>";
+var_dump($dao->getDefTableKeys('actor'));
+echo "</pre>";
+echo $dao->lastQuery;
 die(1);
 
 echo build_table($dao->statValue('actor','actor_id'));

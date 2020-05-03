@@ -1,5 +1,6 @@
-<?php /** @noinspection NullPointerExceptionInspection */
-/** @noinspection PhpUnused */
+<?php /** @noinspection PhpUnused */
+/** @noinspection NullPointerExceptionInspection */
+
 /** @noinspection PhpUndefinedMethodInspection */
 
 /** @noinspection PhpUndefinedClassConstantInspection */
@@ -14,7 +15,7 @@ use RuntimeException;
 
 /**
  * Class _BaseRepo
- * @version       2.3 2020-04-28
+ * @version       2.4 2020-05-03
  * @package       eftec
  * @author        Jorge Castro Castillo
  * @copyright (c) Jorge Castro C. MIT License  https://github.com/EFTEC/PdoOne
@@ -199,10 +200,9 @@ abstract class _BasePdoOneRepo
     }
     public static function buildSelect($prefixTable='',$prefix='') {
         $cols='*';
-        $recursive=self::getPdoOne()->getRecursive();
         $prefixTable=($prefixTable==='')?static::TABLE:$prefixTable;
         $ns=self::getNamespace();
-        if(is_array($recursive) && count($recursive) > 0) {
+        if(count(self::getPdoOne()->getRecursive()) > 0) {
             $keys=array_keys(static::getDef());
             $keyRel=static::getDefFK(false);
             $cols='';
@@ -215,8 +215,7 @@ abstract class _BasePdoOneRepo
             foreach($keyRel as $key=>$value) {
                 $tableAlias=$prefixTable.':'.$key;
                 $ui=str_replace(':','/',substr($tableAlias,strpos($tableAlias,':')));
-                if(in_array($ui,$recursive)) {
-
+                if(self::getPdoOne()->hasRecursive($ui)) {
                     $table = $value['reftable'];
                     $colLocal = self::getPdoOne()->addDelimiter($prefixTable . '.' . $key);
 

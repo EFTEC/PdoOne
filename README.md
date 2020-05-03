@@ -232,6 +232,43 @@ It commits a transaction.
 It rollbacks a transaction. 
 * If $throw is true then it throws an exception if the transaction fails to rollback.  If false, then it ignores if the rollback fail or if the transaction is not open.
 
+### Recursive array
+
+A recursive array is a array of  strings with values that it could be read or obtained or compared.  For example, to join a table conditionally.
+PdoOne does not use it directly but _BasePdoOneRepo uses it (_BasePdoOneRepo is a class used when we generate a repository service class automatically).
+
+> 
+
+Example
+
+```php
+$this->select('*')->from('table')->recursive(['table1','table1.table2']);
+// some operations that involves recursive
+if($this->hasRecursive('table1')) {
+    $this->innerJoin('table1 on table.c=table1.c');
+}
+if($this->hasRecursive('table1.table2')) {
+    $this->innerJoin('table1 on table1.c=table2.c');
+}
+$r=$this->toList(); // recursive is resetted.
+```
+
+#### recursive()
+It sets a recursive array.  
+
+> This value is resets each time a chain methods ends.   
+
+#### getRecursive()
+It gets the recursive array.   
+
+#### hasRecursive()
+It returns true if recursive has some needle.  
+
+If needle is '*' then it always returns true.
+
+
+
+
 ### Fields
 
 ### throwOnError=true
@@ -239,6 +276,8 @@ If true (default), then it throws an error if happens an error. If false, then t
 
 ### isOpen=true
 It is true if the database is connected otherwise,it's false.
+
+
 
 ## Custom Queries
 
@@ -523,7 +562,7 @@ $results = $pdoOne->select("col1,col2")->distinct(); //...
 >Note: ->distinct('unique') returns select **unique** ..
 
 ### from($tables)
-Generates a from command.
+Generates a "from" sql command.
 ```php
 $results = $pdoOne->select("*")->from('table'); //...
 ```
@@ -1372,12 +1411,21 @@ PdoOne adds a bit of ovehead over PDO, however it is simple a wrapper to pdo.
 In a nutshell:
 
 * Every major version means that it breaks something. I.e. 1.0 -> 2.0  
+
 * Every minor version means that it adds a new functionality i.e. 1.5 -> 1.6 (new methods)  
+
 * Every decimal version means that it patches/fixes/refactoring a previous functionality i.e. 1.5.0 -> 1.5.1 (fix)  
 
+    
 
+* 1.36 2020-05-03
+    
+    * added method hasRecursive()  
+    
 * 1.35.1 2020-04-30
+    
     * autoload.php delete (it's a trash file)   
+    
 * 1.35 2020-04-28
     * _BasePdoOneRepo 2.3 added relation ONETOMANY
     * generateCodeClass() supports for _BasePdoOneRepo 2.3

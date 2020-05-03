@@ -29,12 +29,12 @@ use stdClass;
  * @package       eftec
  * @author        Jorge Castro Castillo
  * @copyright (c) Jorge Castro C. MIT License  https://github.com/EFTEC/PdoOne
- * @version       1.35.1 2020-04-28
+ * @version       1.36 2020-05-03
  */
 class PdoOne
 {
 
-    const VERSION = '1.35.1';
+    const VERSION = '1.36';
 
     const NULL = PHP_INT_MAX;
 
@@ -2439,7 +2439,7 @@ BOOTS;
             $deps = [];
             foreach ($arr as $k => $v) {
                 if ($returnColumn) {
-                    $deps[$k] = $v['reftable'];;
+                    $deps[$k] = $v['reftable'];
                     $before[$v['reftable']][$v['refcol']] = [$k,$table]; // remote column and remote table
                 } else {
                     $deps[] = $v['reftable'];
@@ -3319,6 +3319,12 @@ BOOTS;
     }
 
     /**
+     * It sets a recursive array.<br>
+     * <b>example:</b>:<br>
+     * <pre>
+     * $this->recursive(['field1','field2']);
+     * </pre>
+     * 
      * @param array|mixed $rec
      * @return $this
      */
@@ -3331,10 +3337,28 @@ BOOTS;
         return $this;
     }
 
+    /**
+     * It gets the recursive array.
+     * 
+     * @return array
+     */
     public function getRecursive() {
         return $this->recursive;
     }
 
+    /**
+     * It returns true if recursive has some needle.<br>
+     * If needle is '*' then it always returns true.
+     * 
+     * @param string $needle
+     * @return bool
+     */
+    public function hasRecursive($needle) {
+        if ($needle==='*') {
+            return true;
+        }
+        return in_array($needle,$this->recursive,true);
+    }
     /**
      * If false then it wont generate an error.<br>
      * If true (default), then on error, it behave normally<br>
