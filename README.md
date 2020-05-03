@@ -264,7 +264,12 @@ It gets the recursive array.
 #### hasRecursive()
 It returns true if recursive has some needle.  
 
-If needle is '*' then it always returns true.
+If $this->recursive is ['*'] then it always returns true.
+
+```php
+$this->select('*')->from('table')->recursive(['*']);
+$this->hasRecursive('anything'); // it always returns true.
+```
 
 
 
@@ -1411,25 +1416,21 @@ PdoOne adds a bit of ovehead over PDO, however it is simple a wrapper to pdo.
 In a nutshell:
 
 * Every major version means that it breaks something. I.e. 1.0 -> 2.0  
-
 * Every minor version means that it adds a new functionality i.e. 1.5 -> 1.6 (new methods)  
-
 * Every decimal version means that it patches/fixes/refactoring a previous functionality i.e. 1.5.0 -> 1.5.1 (fix)  
 
-    
+
+
+* 1.37 2020-05-03
+  * added method setNoReset()
 
 * 1.36 2020-05-03
-    
     * added method hasRecursive()  
-    
 * 1.35.1 2020-04-30
-    
     * autoload.php delete (it's a trash file)   
-    
 * 1.35 2020-04-28
     * _BasePdoOneRepo 2.3 added relation ONETOMANY
     * generateCodeClass() supports for _BasePdoOneRepo 2.3
-
 * 1.34.2 2020-04-27
     * Updated other components.
     * left(), right() and innerjoin() don't replace where() anymore

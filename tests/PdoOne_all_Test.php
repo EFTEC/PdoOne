@@ -15,13 +15,50 @@ class PdoOne_mysql_Test extends TestCase
         $this->pdoOne->logLevel = 3;
 
     }
+    public function test_missingerr() {
 
+        try {
+            $this->pdoOne->select('*')->from('missintable')->toList();
+        } catch (Exception $e) {
+            $this->assertContains('Failed to run query',$this->pdoOne->errorText);
+            $this->assertEquals('select * from missintable',$this->pdoOne->lastQuery);
+            try {
+                $this->pdoOne->toList();
+            } catch (Exception $e) {
+                // stack was deleted so the columns and table are not keeped
+                $this->assertEquals('select  from ',$this->pdoOne->lastQuery);
+            
+            }
+        }
+        try {
+            $this->pdoOne->select('*')->from('missintable')->setNoReset(true)->toList();
+        } catch (Exception $e) {
+            $this->assertContains('Failed to run query',$this->pdoOne->errorText);
+            $this->assertEquals('select * from missintable',$this->pdoOne->lastQuery);
+            try {
+                $this->pdoOne->toList();
+            } catch (Exception $e) {
+                // stack is not deleted (even on error so the columns and table are not keeped
+                $this->assertEquals('select * from missintable',$this->pdoOne->lastQuery);
+                $this->pdoOne->builderReset(true); // reset the stack
+                try {
+                    $this->pdoOne->toList();
+                } catch (Exception $e) {
+                    // stack was reset (manually) so the columns and table are not keeped
+                    $this->assertEquals('select  from ',$this->pdoOne->lastQuery);
+
+                }
+
+            }
+        }
+    }
 
     public function test_1()
     {
         $this->pdoOne->render();
         $a1=1;
         $this->assertEquals(1,$a1);
+ 
     }
 
     public function test_2()
@@ -29,6 +66,7 @@ class PdoOne_mysql_Test extends TestCase
         $a1=1;
         $this->pdoOne->cliEngine();
         $this->assertEquals(1,$a1);
+        
         
         
     }

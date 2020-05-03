@@ -29,12 +29,11 @@ use stdClass;
  * @package       eftec
  * @author        Jorge Castro Castillo
  * @copyright (c) Jorge Castro C. MIT License  https://github.com/EFTEC/PdoOne
- * @version       1.36 2020-05-03
+ * @version       1.37 2020-05-03
  */
 class PdoOne
 {
-
-    const VERSION = '1.36';
+    const VERSION = '1.37';
 
     const NULL = PHP_INT_MAX;
 
@@ -180,6 +179,8 @@ class PdoOne
      *                         (in seconds)
      */
     private $useCache = false;
+    /** @var bool if true then builderReset will not reset (unless it is force), if false then it will reset */
+    private $noReset=false;
 
     /** @var null|string the unique id generate by sha256 and based in the query, arguments, type and methods */
     private $uid;
@@ -993,10 +994,30 @@ eot;
     }
 
     /**
-     * It reset the parameters used to Build Query.
-     *
+     * If true then the stack/query builder will not reset the stack (even on error) when it is finished<br>
+     * <b>Example:</b><br>
+     * <pre>
+     * $this->pdoOne->select('*')->from('missintable')->setNoReset(true)->toList();
+     * // we do something with the stack
+     * $this->pdoOne->builderReset(true); // reset the stack manually
+     * </pre>
+     * 
+     * @param bool $noReset
+     * @return $this
      */
-    public function builderReset() {
+    public function setNoReset($noReset=true) {
+        $this->noReset=$noReset;
+        return $this;
+    }
+    /**
+     * It reset the parameters used to Build Query.
+     * @param bool $forced if true then calling this method resets the stacks of variables<br>
+     *                     if false then it only resets the stack if $this->noreset=false; (default is false)
+     */
+    public function builderReset($forced=false) {
+        if ($this->noReset && !$forced) {
+            return;
+        }
         $this->select = '';
 
         $this->useCache = false;
@@ -3348,13 +3369,13 @@ BOOTS;
 
     /**
      * It returns true if recursive has some needle.<br>
-     * If needle is '*' then it always returns true.
+     * If $this->recursive is '*' then it always returns true.
      * 
      * @param string $needle
      * @return bool
      */
     public function hasRecursive($needle) {
-        if ($needle==='*') {
+        if (count($this->recursive)===1 && $this->recursive[0]==='*') {
             return true;
         }
         return in_array($needle,$this->recursive,true);
