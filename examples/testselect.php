@@ -9,6 +9,7 @@ include "dBug.php";
 echo "<body><div>";
 // connecting to database sakila at 127.0.0.1 with user root and password abc.123
 $dao=new PdoOne("mysql","127.0.0.1","root","abc.123","sakila","logpdoone.txt");
+$dao->logLevel=3;
 try {
     echo "<h1>Connection. The instance {$dao->server}, base:{$dao->db}  user:{$dao->user} and password:{$dao->pwd} must exists</h1>";
     $dao->connect();
@@ -18,19 +19,16 @@ try {
     echo $dao->lastError()."-".$e->getMessage()."<br>";
     die(1);
 }
-$sqlT1="set nocount on;
-	CREATE TABLE `typetable` (
+$sqlT1="CREATE TABLE `typetable` (
     `type` INT NOT NULL,
     `name` VARCHAR(45) NULL,
     PRIMARY KEY (`type`));";
 
-$sqlT2="
-	set nocount on;
-	CREATE TABLE `producttype` (
+$sqlT2="CREATE TABLE `producttype` (
     `idproducttype` INT NOT NULL,
     `name` VARCHAR(45) NULL,
     `type` int not NULL,
-    PRIMARY KEY (`idproducttype`));";
+    PRIMARY KEY (`idproducttype`))";
 
 $now=new DateTime();
 // running a raw query (unprepared statement)
@@ -130,7 +128,7 @@ try {
 
     echo "<hr>toList (join left):";
     $results = $dao->select("pt.*,tt.name typetable_name")
-        ->join("producttype pt")
+        ->from("producttype pt")
         ->left("typetable tt on pt.type=tt.type")
         ->toList();
     echo $dao->lastQuery;
@@ -138,7 +136,7 @@ try {
 
     echo "<hr>toList (join left):";
     $results = $dao->select("pt.*,tt.name typetable_name")
-        ->join("producttype pt")
+        ->from("producttype pt")
         ->left("typetable tt on pt.type=tt.type")
         ->first();
     echo $dao->lastQuery;
@@ -149,6 +147,14 @@ try {
         ->where('idproducttype>=?', [PDO::PARAM_INT, 1])
         ->order('idproducttype desc')
         ->toList();
+    echo $dao->lastQuery;
+    echo Collection::generateTable($results);
+
+    echo "<hr>toList: (2) ";
+    $results = $dao->select("*")->from("producttype")
+                   ->where('idproducttype>0')
+                   ->order('idproducttype desc')
+                   ->toList();
     echo $dao->lastQuery;
     echo Collection::generateTable($results);
 

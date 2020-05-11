@@ -350,6 +350,7 @@ class PdoOne_Sqlsrv implements PdoOne_IExt
 						ALTER TABLE [$tableName] ADD CONSTRAINT
 							PK_$tableName PRIMARY KEY CLUSTERED ([$primaryKey]) $extraOutside;";
         } else {
+            $hasPK=false;
             foreach ($primaryKey as $key => $value) {
                 $p0 = stripos($value . ' ', 'KEY ');
                 if ($p0 === false) {
@@ -361,8 +362,13 @@ class PdoOne_Sqlsrv implements PdoOne_IExt
                 $value = substr($value, $p0 + 4);
                 switch ($type) {
                     case 'PRIMARY':
-                        $sql .= "ALTER TABLE [$tableName] ADD CONSTRAINT
-							            PK_$tableName PRIMARY KEY CLUSTERED ([$key]) $extraOutside;";
+                        if(!$hasPK) {
+                            $sql .= "ALTER TABLE [$tableName] ADD CONSTRAINT
+							            PK_$tableName PRIMARY KEY CLUSTERED ([$key]*pk*) $extraOutside;";
+                            $hasPK=true;
+                        } else {
+                            $sql=str_replace('*pk*',",[$key]",$sql);
+                        }
                         break;
                     case '':
                         $sql .= "CREATE INDEX {$tableName}_{$key}_idx ON {$tableName} ({$key}) $value;";
@@ -378,6 +384,7 @@ class PdoOne_Sqlsrv implements PdoOne_IExt
                         break;
                 }
             }
+            $sql=str_replace('*pk*','',$sql);
         }
 
         return $sql;

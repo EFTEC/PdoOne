@@ -35,21 +35,7 @@ class PdoOne_mysql_Test extends TestCase
         } catch (Exception $e) {
             $this->assertContains('Failed to run query',$this->pdoOne->errorText);
             $this->assertEquals('select * from missintable',$this->pdoOne->lastQuery);
-            try {
-                $this->pdoOne->toList();
-            } catch (Exception $e) {
-                // stack is not deleted (even on error so the columns and table are not keeped
-                $this->assertEquals('select * from missintable',$this->pdoOne->lastQuery);
-                $this->pdoOne->builderReset(true); // reset the stack
-                try {
-                    $this->pdoOne->toList();
-                } catch (Exception $e) {
-                    // stack was reset (manually) so the columns and table are not keeped
-                    $this->assertEquals('select  from ',$this->pdoOne->lastQuery);
-
-                }
-
-            }
+            $this->assertFalse($this->pdoOne->hasWhere());
         }
     }
 
@@ -74,10 +60,10 @@ class PdoOne_mysql_Test extends TestCase
     
     public function test_3() {
         
-        $this->assertEquals('2020-01-30',$this->pdoOne->dateConvert('30/01/2020','human','sql'));
-        $this->assertEquals('2020-01-30',$this->pdoOne->dateConvert('30/01/2020','human','iso'));
-        $this->assertEquals(new DateTime('01/30/2020 00:00:00'),$this->pdoOne->dateConvert('30/01/2020','human','class'));
-        $this->assertEquals('30/01/2020',$this->pdoOne->dateConvert('2020-01-30','sql','human'));
+        $this->assertEquals('2020-01-30',PdoOne::dateConvert('30/01/2020','human','sql'));
+        $this->assertEquals('2020-01-30',PdoOne::dateConvert('30/01/2020','human','iso'));
+        $this->assertEquals(new DateTime('01/30/2020 00:00:00'),PdoOne::dateConvert('30/01/2020','human','class'));
+        $this->assertEquals('30/01/2020',PdoOne::dateConvert('2020-01-30','sql','human'));
     }
     public function test_4() {
         $this->assertGreaterThan(0,count($this->pdoOne->tableSorted()));

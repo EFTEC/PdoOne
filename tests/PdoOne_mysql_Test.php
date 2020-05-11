@@ -514,6 +514,7 @@ class PdoOne_mysql_Test extends TestCase
 		try {
 			$this->pdoOne->createSequence();
 		} catch(Exception $ex) {
+		    var_dump("it should show some errors:");
 			var_dump($ex->getMessage());
             var_dump($this->pdoOne->lastError());
             var_dump($this->pdoOne->lastQuery);

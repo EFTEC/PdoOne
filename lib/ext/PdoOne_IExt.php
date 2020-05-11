@@ -171,9 +171,9 @@ interface PdoOne_IExt
      * It only works in MYSQL.
      *
      * @param string $query query or name of the table
-     * @param string $pk Previous primary key (if the key is not found)
+     * @param string|array $pk Previous primary key (if the key is not found)
      *
-     * @return mixed
+     * @return array|mixed|string
      * @throws Exception
      */
     public function getPK($query, $pk);

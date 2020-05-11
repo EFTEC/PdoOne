@@ -1,12 +1,13 @@
-<?php /** @noinspection OnlyWritesOnParameterInspection */
-/** @noinspection TypeUnsafeComparisonInspection */
-/** @noinspection NestedTernaryOperatorInspection */
-/** @noinspection DuplicatedCode */
-
-/** @noinspection SqlDialectInspection */
-/** @noinspection SqlWithoutWhere */
-/** @noinspection SqlResolve */
-/** @noinspection SqlNoDataSourceInspection */
+<?php
+/** @noinspection OnlyWritesOnParameterInspection
+ * @noinspection TypeUnsafeComparisonInspection
+ * @noinspection NestedTernaryOperatorInspection
+ * @noinspection DuplicatedCode
+ * @noinspection SqlDialectInspection
+ * @noinspection SqlWithoutWhere
+ * @noinspection SqlResolve
+ * @noinspection SqlNoDataSourceInspection
+ */
 
 namespace eftec;
 
@@ -29,7 +30,7 @@ use stdClass;
  * @package       eftec
  * @author        Jorge Castro Castillo
  * @copyright (c) Jorge Castro C. MIT License  https://github.com/EFTEC/PdoOne
- * @version       1.37 2020-05-03
+ * @version       1.38 2020-05-10
  */
 class PdoOne
 {
@@ -180,7 +181,10 @@ class PdoOne
      */
     private $useCache = false;
     /** @var bool if true then builderReset will not reset (unless it is force), if false then it will reset */
-    private $noReset=false;
+    private $noReset = false;
+    /** @var null|array it stores the values obtained by $this->tableDependency()  */
+    private $tableDependencyArrayCol;
+    private $tableDependencyArray;
 
     /** @var null|string the unique id generate by sha256 and based in the query, arguments, type and methods */
     private $uid;
@@ -267,6 +271,8 @@ class PdoOne
         $this->user = $user;
         $this->pwd = $pwd;
         $this->db = $db;
+        $this->tableDependencyArray=null;
+        $this->tableDependencyArrayCol=null;
         $this->logFile = $logFile;
         $this->charset = $charset;
         $this->nodeId = $nodeId;
@@ -595,12 +601,12 @@ class PdoOne
         $defCurrentFK = $this->getDefTableFK($table);
         foreach ($defCurrentFK as $k => $dc) {
             if (!isset($defFK[$k])) {
-                $error[] = "fk: $dc deleted";
+                $error[] = "fk: ".json_encode($dc)." deleted";
             }
         }
         foreach ($defFK as $k => $dc) {
             if (!isset($defCurrentFK[$k])) {
-                $error[] = "fk: $dc added";
+                $error[] = "fk: ".json_encode($dc)." added";
             }
         }
         foreach ($defCurrentFK as $k => $dc) {
@@ -655,6 +661,9 @@ class PdoOne
      */
     public function getDefTableFK($table, $returnSimple = true, $assocArray = false) {
         return $this->service->getDefTableFK($table, $returnSimple, null, $assocArray);
+    }
+    public static function newColFK($key,$refcol,$reftable,$extra=null) {
+        return ['key'=>$key,'refcol'=>$refcol,'reftable'=>$reftable,'extra'=>$extra];
     }
 
     /**
@@ -990,36 +999,37 @@ eot;
         if ($throwError && $this->throwOnError && $this->genError) {
             throw new RuntimeException($txt);
         }
-        $this->builderReset(); // it resets the chain if any.
+        $this->builderReset(true); // it resets the chain if any.
     }
 
     /**
-     * If true then the stack/query builder will not reset the stack (even on error) when it is finished<br>
+     * If true then the stack/query builder will not reset the stack (but on error) when it is finished<br>
      * <b>Example:</b><br>
      * <pre>
      * $this->pdoOne->select('*')->from('missintable')->setNoReset(true)->toList();
      * // we do something with the stack
      * $this->pdoOne->builderReset(true); // reset the stack manually
      * </pre>
-     * 
+     *
      * @param bool $noReset
      * @return $this
      */
-    public function setNoReset($noReset=true) {
-        $this->noReset=$noReset;
+    public function setNoReset($noReset = true) {
+        $this->noReset = $noReset;
         return $this;
     }
+
     /**
      * It reset the parameters used to Build Query.
      * @param bool $forced if true then calling this method resets the stacks of variables<br>
      *                     if false then it only resets the stack if $this->noreset=false; (default is false)
      */
-    public function builderReset($forced=false) {
+    public function builderReset($forced = false) {
         if ($this->noReset && !$forced) {
             return;
         }
         $this->select = '';
-
+        $this->noReset = false;
         $this->useCache = false;
         $this->from = '';
         $this->where = [];
@@ -1378,8 +1388,8 @@ eot;
             $namedArgument = ($namedArgument === null) ? $this->whereParamAssoc : $namedArgument;
             $r = $stmt->execute($namedArgument);
         } catch (Exception $ex) {
-            $this->throwError($this->databaseType . ':Failed to run query ',
-                              $this->lastQuery . "\nCAUSE: " . $ex->getMessage(),
+            $this->throwError($this->databaseType . ':Failed to run query <b>',
+                              $this->lastQuery . "\n</b>CAUSE: " . $ex->getMessage(),
                               json_encode($this->lastParam) . '\nTRACE:' . $ex->getTraceAsString(), $throwError);
             return false;
         }
@@ -1554,18 +1564,30 @@ eot;
                     if (@$before[$table][$name][1]) { // before is defined as [colremote,tableremote]
                         //$colName = $name . '.' . $before[$table][$name];
                         $colName = '/' . $before[$table][$name][1];
-                        $default = '(in_array(\'' . $colName . '\',$recursive))
-                        ? [] 
-                        : null';
+                        if(!$defaultNull) {
+                            $default = '(in_array(\'' . $colName . '\',$recursive))
+                            ? [] 
+                            : null';
+                        } else {
+                            $default='null';
+                        }
                         $result .= "'" . $colName . "'=>" . $default . ', /* onetomany */' . $ln;
                     }
                     if (@$after[$table][$name]) {
                         //$colName = $name . '.' . $after[$table][$name];
-                        $colName = '/' . $after[$table][$name];
-                        $default = '(in_array(\'' . $colName . '\',$recursive))
-                    ? ' . $after[$table][$name] . 'Repo::factory() 
-                    : null';
-                        $result .= "'" . $colName . "'=>" . $default . ', /* manytoone */' . $ln;
+                        /*echo "<hr>";
+                        var_dump($name);
+                        var_dump($table);
+                        var_dump($after);
+                        echo "<hr>";
+                        die(1);*/
+                        //$colName = '/' . $after[$table][$name];
+                        if(!$defaultNull) {
+                            $default = '(in_array(\'/' . $name . '\',$recursive)) 
+                            ? ' . $after[$table][$name] . 'Repo::factory() 
+                            : null';
+                        }
+                        $result .= "'/" . $name . "'=>" . $default . ', /* manytoone */' . $ln;
                     }
                 }
             }
@@ -1819,15 +1841,35 @@ use eftec\_BasePdoOneRepo;
 class {class}Repo extends _BasePdoOneRepo
 {
     const TABLE = '{table}';
-    const PK = '{pk}';
+    const PK = {pk};
     const ME=__CLASS__;   
     
-    public static function getDef() {
-        return {def};
+    public static function getDef($onlyKeys=false) {
+        $r= {def};
+        return ($onlyKeys)? array_keys($r): $r;
     }
     public static function getDefKey() {
         return {defkey};
     }
+    public static function toList($filter=null,$filterValue=null) {
+        return self::_toList($filter,$filterValue);
+    }
+    public static function first($pk = null) {
+        return self::_first($pk);
+    }
+    public static function insert($entity) {
+        return self::_insert($entity);
+    }
+    public static function update($entity) {
+        return self::_update($entity);
+    }
+    public static function delete($entity) {
+        return self::_delete($entity);
+    }
+    public static function deleteById($pk) {
+        return self::_deleteById($pk);
+    }  
+    
     public static function getDefFK($structure=false) {
         if ($structure) {
             return {deffk};
@@ -1854,19 +1896,33 @@ eot;
         $pk = '??';
 
         $pk = $this->service->getPK($tableName, $pk);
-        
-        
-        $relation=$this->getDefTableFK($tableName, false, true);
-        
-        $deps=$this->tableDependency(true); //  ["city"]=> {["city_id"]=> "address"}
-        $after=@$deps[1][$tableName];
-        $before=@$deps[2][$tableName];
-        if(is_array($after) && is_array($before)) {
-            foreach($before as $key=>$value) { // $value is [relcol,table]
-                $relation['/'.$value[1]]=['key'=>'ONETOMANY','col'=>$key,'reftable'=>$value[1],'refcol'=>$value[0]];
+
+
+        $relation = $this->getDefTableFK($tableName, false, true);
+
+        // many to many 
+        foreach ($relation as $rel) {
+            $tableMxM = $rel['reftable'];
+            $tableFK = $this->getDefTableFK($tableMxM, false, true);
+            var_dump($tableFK);
+
+        }
+
+
+        $deps = $this->tableDependency(true); //  ["city"]=> {["city_id"]=> "address"}
+        $after = @$deps[1][$tableName];
+        $before = @$deps[2][$tableName];
+        if (is_array($after) && is_array($before)) {
+            foreach ($before as $key => $value) { // $value is [relcol,table]
+                $relation['/' . $value[1]] = [
+                    'key' => 'ONETOMANY',
+                    'col' => $key,
+                    'reftable' => $value[1],
+                    'refcol' => $value[0]
+                ];
             }
         }
-        
+
 
         $r = str_replace(array(
                              '{pk}',
@@ -1877,15 +1933,15 @@ eot;
                              '{array}',
                              '{array_null}'
                          ), array(
-                             $pk,
-                             self::varExport($this->getDefTable($tableName)),
+                             self::varExport($pk),
+                             self::varExport($this->getDefTable($tableName),"\t\t"),
                              self::varExport($this->getDefTableKeys($tableName)),
                              self::varExport($this->getDefTableFK($tableName), "\t\t\t"), //{deffk}
                              self::varExport($relation, "\t\t"), //{deffktype}
                              str_replace("\n", "\n\t\t",
                                          rtrim($this->generateCodeArray($tableName, null, false, false, true), "\n")),
                              str_replace("\n", "\n\t\t",
-                                         rtrim($this->generateCodeArray($tableName, null, true, false), "\n"))
+                                         rtrim($this->generateCodeArray($tableName, null, true, false,true), "\n"))
                          ), $r);
 
         return $r;
@@ -2201,6 +2257,8 @@ BOOTS;
             return;
         }
         $this->db = $dbName;
+        $this->tableDependencyArray=null;
+        $this->tableDependencyArrayCol=null;
         $this->conn1->exec('use ' . $dbName);
     }
 
@@ -2449,6 +2507,13 @@ BOOTS;
      * @throws Exception
      */
     public function tableDependency($returnColumn = false) {
+        if($returnColumn) {
+            if($this->tableDependencyArrayCol!==null) {
+                return $this->tableDependencyArrayCol;
+            }
+        } elseif($this->tableDependencyArray!==null) {
+            return $this->tableDependencyArray;
+        }
         $tables = $this->objectList('table', true);
         $after = [];
         $before = [];
@@ -2461,7 +2526,7 @@ BOOTS;
             foreach ($arr as $k => $v) {
                 if ($returnColumn) {
                     $deps[$k] = $v['reftable'];
-                    $before[$v['reftable']][$v['refcol']] = [$k,$table]; // remote column and remote table
+                    $before[$v['reftable']][$v['refcol']] = [$k, $table]; // remote column and remote table
                 } else {
                     $deps[] = $v['reftable'];
                     $before[$v['reftable']][] = $table;
@@ -2469,7 +2534,12 @@ BOOTS;
             }
             $after[$table] = $deps; // ['city']=>['country','location']
         }
-        return [$tables, $after, $before];
+        if($returnColumn) {
+            $this->tableDependencyArrayCol=[$tables, $after, $before];
+            return $this->tableDependencyArrayCol;
+        }
+        $this->tableDependencyArray=[$tables, $after, $before];
+        return $this->tableDependencyArray;
     }
 
     /**
@@ -3252,6 +3322,8 @@ BOOTS;
             // it uses two list, the first value of the first list is the column, the second value is the type
             // , the second list only contains values.
             $ctd = count($tableDefs);
+            var_dump($ctd);
+            var_dump($values);
             for ($i = 0; $i < $ctd; $i += 2) {
                 if ($colT === null) {
                     $col[] = $this->addDelimiter($tableDefs[$i]) . '=?';
@@ -3345,7 +3417,7 @@ BOOTS;
      * <pre>
      * $this->recursive(['field1','field2']);
      * </pre>
-     * 
+     *
      * @param array|mixed $rec
      * @return $this
      */
@@ -3360,7 +3432,7 @@ BOOTS;
 
     /**
      * It gets the recursive array.
-     * 
+     *
      * @return array
      */
     public function getRecursive() {
@@ -3370,20 +3442,21 @@ BOOTS;
     /**
      * It returns true if recursive has some needle.<br>
      * If $this->recursive is '*' then it always returns true.
-     * 
+     *
      * @param string $needle
      * @return bool
      */
     public function hasRecursive($needle) {
-        if (count($this->recursive)===1 && $this->recursive[0]==='*') {
+        if (count($this->recursive) === 1 && $this->recursive[0] === '*') {
             return true;
         }
-        return in_array($needle,$this->recursive,true);
+        return in_array($needle, $this->recursive, true);
     }
+
     /**
      * If false then it wont generate an error.<br>
      * If true (default), then on error, it behave normally<br>
-     * This command is specific for generation of query.
+     * This command is specific for generation of query and its resseted when the query is executed.
      *
      * @param bool $error
      * @return PdoOne
@@ -3518,7 +3591,7 @@ BOOTS;
     }
 
     /**
-     * Returns true if the current whery has where.
+     * Returns true if the current query has a "having" or "where"
      *
      * @param bool $having <b>true</b> it return the number of where<br>
      *                     <b>false</b> it returns the number of having
@@ -3768,15 +3841,15 @@ BOOTS;
             $row = $statement->fetch(PDO::FETCH_ASSOC);
             @$statement->closeCursor();
             $statement = null;
-            if($row!==false ) {
+            if ($row !== false) {
                 if ($colName === null) {
                     $row = reset($row); // first column of the first row
                 } else {
                     $row = $row[$colName];
                 }
-            }  else {
-                $row=null;
-            }             
+            } else {
+                $row = null;
+            }
         }
         if ($this->uid) {
             // we store the information of the cache.
@@ -4320,11 +4393,11 @@ BOOTS;
 }
 
 // this code only runs on CLI
-if (!defined('PHPUNIT_COMPOSER_INSTALL') && !defined('__PHPUNIT_PHAR__') &&
-    PdoOne::isCli() && basename(strtolower(@$_SERVER['SCRIPT_NAME'])) !== 'pdoone') {
-        // we also excluded it if it is called by phpunit.
-        include 'PdoOneEncryption.php';
-        $pdo = new PdoOne('test', '127.0.0.1', 'root', 'root', 'db'); // mockup database connection
-        /** @noinspection PhpUnhandledExceptionInspection */
-        $pdo->cliEngine();
-    }
+if (!defined('PHPUNIT_COMPOSER_INSTALL') && !defined('__PHPUNIT_PHAR__') && PdoOne::isCli() &&
+    basename(strtolower(@$_SERVER['SCRIPT_NAME'])) !== 'pdoone') {
+    // we also excluded it if it is called by phpunit.
+    include 'PdoOneEncryption.php';
+    $pdo = new PdoOne('test', '127.0.0.1', 'root', 'root', 'db'); // mockup database connection
+    /** @noinspection PhpUnhandledExceptionInspection */
+    $pdo->cliEngine();
+}

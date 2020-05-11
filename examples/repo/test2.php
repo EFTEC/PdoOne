@@ -21,7 +21,7 @@ echo '<pre>';
 var_dump($city);
 echo '</pre>';
 
-$city= \repo\TablachildRepo::toList();
+$city= \repo\TablachildRepo::_toList();
 
 echo '<pre>';
 var_dump($city);
