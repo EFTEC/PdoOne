@@ -4,21 +4,28 @@ use mapache_commons\Collection;
 
 include '../../vendor/autoload.php';
 include '../Collection.php';
-include 'dBug.php';
+include "dBug.php";
 
 // connecting to database sakila at 127.0.0.1 with user root and password abc.123
-$dao=new PdoOne('mysql', '127.0.0.1', 'root', 'abc.123', 'pdotest', '');
+$dao=new PdoOne('sqlsrv', 'PCJC\SQLEXPRESS', 'sa', 'abc.123', 'testdb', '');
 try {
     echo '<h1>connection. The instance 127.0.0.1, base:sakila  user:root and password:abc.123 must exists</h1>';
     $dao->connect();
 } catch (Exception $ex) {
 
 }
+/*
+echo "<pre>";
+$def=$dao->getDefTableKeys('tablaparentxcategory',false);
+$clase = $dao->generateCodeClass('tablaparentxcategory', 'repo');
+echo htmlentities($clase);
+//echo htmlentities(var_dump($def));
+echo "</pre>";
+//die(1);
+*/
 
-
-
-$arr=['tablaParent','tablagrandchild','tablachild','tablaparentxcategory','tablacategory','tablagrandchildcat'];
-$arr=['tablaParent'];
+$arr=['tablaparent','tablagrandchild','tablachild','tablaparentxcategory','tablacategory','tablagrandchildcat'];
+$arr=['tablaparent'];
 foreach ($arr as $a) {
     try {
         $clase = $dao->generateCodeClass($a, 'repo');

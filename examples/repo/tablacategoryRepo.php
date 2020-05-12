@@ -24,30 +24,22 @@ class TablacategoryRepo extends _BasePdoOneRepo
 		];
         return ($onlyKeys)? array_keys($r): $r;
     }
+    
+    /**
+     * It returns an associative array (colname=>key type) with all the keys/indexes (if any)
+     * 
+     * @return string[]
+     */    
     public static function getDefKey() {
         return [
-	    'IdTablaCategoryPK' => 'PRIMARY KEY'
-	];
+		    'IdTablaCategoryPK' => 'PRIMARY KEY'
+		];
     }
-    public static function toList() {
-        return self::_toList();
+    public static function getDefIdentity() {
+        return [
+		    'IdTablaCategoryPK'
+		];
     }
-    public static function first($pk = null) {
-        return self::_first($pk);
-    }
-    public static function insert($entity) {
-        return self::_insert($entity);
-    }
-    public static function update($entity) {
-        return self::_update($entity);
-    }
-    public static function delete($entity) {
-        return self::_delete($entity);
-    }
-    public static function deleteById($pk) {
-        return self::_deleteById($pk);
-    }  
-    
     public static function getDefFK($structure=false) {
         if ($structure) {
             return [
@@ -64,10 +56,33 @@ class TablacategoryRepo extends _BasePdoOneRepo
 		    ]
 		];
     }
+    public static function toList($filter=null,$filterValue=null) {
+        return self::_toList($filter,$filterValue);
+    }
+    public static function first($pk = null) {
+        return self::_first($pk);
+    }
+    public static function insert($entity) {
+        return self::_insert($entity);
+    }
+    public static function update($entity) {
+        return self::_update($entity);
+    }
+    public static function delete($filter=null,$filterValue=null) {
+        return self::_delete($filter,$filterValue);
+    }
+    public static function deleteById($pk) {
+        return self::_deleteById($pk);
+    }  
+    
+
     public static function factory() {
         $recursive=static::getRecursive();
         return [
 		'IdTablaCategoryPK'=>0,
+		'/tablaparentxcategory'=>(in_array('/tablaparentxcategory',$recursive))
+		                            ? [] 
+		                            : null, /* onetomany */
 		'/tablaparentxcategory'=>(in_array('/tablaparentxcategory',$recursive))
 		                            ? [] 
 		                            : null, /* onetomany */
@@ -77,6 +92,7 @@ class TablacategoryRepo extends _BasePdoOneRepo
     public static function factoryNull() {
         return [
 		'IdTablaCategoryPK'=>null,
+		'/tablaparentxcategory'=>null, /* onetomany */
 		'/tablaparentxcategory'=>null, /* onetomany */
 		'Name'=>null
 		];

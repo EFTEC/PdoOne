@@ -11,6 +11,7 @@
 namespace eftec;
 
 
+
 use Exception;
 use PDOStatement;
 
@@ -137,6 +138,13 @@ abstract class _BasePdoOneRepo
      */
     protected static function _insert($entity) {
         $entity = self::mergeArrays(static::getDef(true), $entity);
+        $identities=static::getDefIdentity();
+        foreach($entity as $k=>$v) {
+            // identities are not inserted
+            if(in_array($k,$identities,true)) {
+                unset($entity[$k]);
+            }
+        }
         return self::getPdoOne()->insertObject(static::TABLE, $entity);
     }
 
@@ -198,6 +206,7 @@ abstract class _BasePdoOneRepo
         $newQuery['joins'] = static::TABLE . "\n";
         // we build the query
         static::generationRecursive($newQuery, '', '', '', false);
+        
         //die(1);
         /** @var PdoOne $pdoOne instance of PdoOne */
         $pdoOne = self::getPdoOne();
@@ -205,7 +214,6 @@ abstract class _BasePdoOneRepo
         $rows = false;
         foreach (static::$gQuery as $query) {
             if ($query['type'] === 'QUERY') {
-
                 $from = $query['joins'];
                 $cols = implode(',', $query['columns']);
                 switch ($type) {
@@ -226,6 +234,7 @@ abstract class _BasePdoOneRepo
             }
             foreach ($rows as &$row) {
                 if ($query['type'] === 'ONETOMANY') {
+             
                     $from = $query['joins'];
                     $cols = implode(',', $query['columns']);
                     $partialRows =
@@ -260,15 +269,16 @@ abstract class _BasePdoOneRepo
         //$newQuery=[];
         // add columns of the current table
         foreach ($cols as $col) {
-            $newQuery['columns'][] = $pTable . $col . ' as `' . $pColumn . $col . '`';
+            $newQuery['columns'][] = $pTable . $col . ' as '.self::getPdoOne()->addQuote( $pColumn . $col);
         }
         $ns = self::getNamespace();
 
         foreach ($keyRels as $nameCol => $keyRel) {
             $type = $keyRel['key'];
             $nameColClean = trim($nameCol, '/');
-            //echo "cheking recursive ".$recursiveInit . $nameCol."<br>";
+            echo $recursiveInit . $nameCol."<br>";
             if (self::getPdoOne()->hasRecursive($recursiveInit . $nameCol)) {
+                echo $recursiveInit . $nameCol." OK<br>";
                 switch ($type) {
                     case 'MANYTOONE':
                         static::$gQueryCounter++;
@@ -278,11 +288,11 @@ abstract class _BasePdoOneRepo
                         $refCol = $keyRel['refcol'];
                         $newQuery['joins'] .= " left join {$keyRel['reftable']} as $tableRelAlias " .
                             "on $pTable$nameColClean=$tableRelAlias.$refCol \n"; // $recursiveInit$nameCol\n"; // adds a query to the current query
-                        //echo "send [" . $pColumn . ',' . $tableRelAlias . ']<br>';
                         $class::generationRecursive($newQuery, $tableRelAlias . '.', $colRelAlias . '.',
                                                     $recursiveInit . $nameCol, false);
                         break;
                     case 'ONETOMANY':
+                        var_dump($keyRel['reftable']);
                         //$tableRelAlias = ''; //'t' . static::$gQueryCounter;
                         $other = [];
                         $refColClean = trim($keyRel['refcol'], '/');
@@ -362,13 +372,12 @@ abstract class _BasePdoOneRepo
     /**
      * It deletes a registry
      *
-     * @param array $entity =static::factory()
-     *
+     * @param array $filter =static::factory()
+     * @param $filterValue
      * @return mixed
-     * @throws Exception
      */
-    protected static function _delete($entity) {
-        return self::deleteById($entity[static::PK]);
+    protected static function _delete($filter,$filterValue) {
+        return self::getPdoOne()->delete(static::TABLE,$filter,$filterValue);
     }
 
     /**

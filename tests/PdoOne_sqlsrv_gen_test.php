@@ -11,12 +11,12 @@ use repo\TablagrandchildRepo;
 use repo\TablaParentRepo;
 use repo\TablaparentxcategoryRepo;
 
-include __DIR__ . "/../examples/repo/tablacategoryRepo.php";
-include __DIR__ . "/../examples/repo/tablachildRepo.php";
-include __DIR__ . "/../examples/repo/tablagrandchildRepo.php";
-include __DIR__ . "/../examples/repo/tablagrandchildcatRepo.php";
-include __DIR__ . "/../examples/repo/tablaparentxcategoryRepo.php";
-include __DIR__ . "/../examples/repo/tablaParentRepo.php";
+include __DIR__ . "/../examples/reposqlsrv/tablacategoryRepo.php";
+include __DIR__ . "/../examples/reposqlsrv/tablachildRepo.php";
+include __DIR__ . "/../examples/reposqlsrv/tablagrandchildRepo.php";
+include __DIR__ . "/../examples/reposqlsrv/tablagrandchildcatRepo.php";
+include __DIR__ . "/../examples/reposqlsrv/tablaparentxcategoryRepo.php";
+include __DIR__ . "/../examples/reposqlsrv/tablaParentRepo.php";
 include __DIR__ . '/dBug.php';
 
 /**
@@ -24,14 +24,13 @@ include __DIR__ . '/dBug.php';
  *
  * Class PdoOne_mysql_gen_test
  */
-class PdoOne_mysql_gen_test extends TestCase
+class PdoOne_sqlsrv_gen_test extends TestCase
 {
     /** @var PdoOne */
     protected $pdoOne;
 
     public function setUp() {
-        //$this->pdoOne = new PdoOne("mysql", "127.0.0.1", "travis", "", "pdotest");
-        $this->pdoOne = new PdoOne("mysql", "127.0.0.1", "travis", "", "travisdb");
+        $this->pdoOne = new PdoOne('sqlsrv', 'PCJC\SQLEXPRESS', 'sa', 'abc.123', 'testdb', '');
         $this->pdoOne->connect();
         $this->pdoOne->logLevel = 3;
         TablagrandchildRepo::setPdoOne($this->pdoOne);
@@ -45,12 +44,12 @@ class PdoOne_mysql_gen_test extends TestCase
         $this->assertEquals([
                                 [
                                     0 => 'tablacategory',
-                                    1 => 'tablachild',
-                                    2 => 'tablagrandchild',
-                                    3 => 'tablagrandchildcat',
-                                    4 => 'tablaParent',
-                                    5 => 'tablaparentxcategory',
-                                    6 => 'typetable'
+                                    1 => 'tablagrandchildcat',
+                                    2 => 'tablaparent',
+                                    3 => 'tablaparentxcategory',
+                                    4 => 'sysdiagrams',
+                                    5 => 'tablagrandchild',
+                                    6 => 'tablachild'
                                 ],
                                 [
                                     'tablacategory' => array(),
@@ -63,7 +62,7 @@ class PdoOne_mysql_gen_test extends TestCase
                                         'IdgrandchildFK' => 'tablagrandchild',
                                         '/IdgrandchildFK' => 'tablagrandchild'
                                     ),
-                                    'tablaParent' => array(
+                                    'tablaparent' => array(
                                         'idchild2FK' => 'tablachild',
                                         '/idchild2FK' => 'tablachild',
                                         'idchildFK' => 'tablachild',
@@ -72,10 +71,10 @@ class PdoOne_mysql_gen_test extends TestCase
                                     'tablaparentxcategory' => array(
                                         'idcategoryPKFK' => 'tablacategory',
                                         '/idcategoryPKFK' => 'tablacategory',
-                                        'idtablaparentPKFK' => 'tablaParent',
-                                        '/idtablaparentPKFK' => 'tablaParent'
+                                        'idtablaparentPKFK' => 'tablaparent',
+                                        '/idtablaparentPKFK' => 'tablaparent'
                                     ),
-                                    'typetable' => array()
+                                    'sysdiagrams' => array()
                                 ],
                                 [
                                     'tablacategory' => array(
@@ -87,7 +86,7 @@ class PdoOne_mysql_gen_test extends TestCase
                                     'tablachild' => array(
                                         'idtablachildPK' => array(
                                             0 => '/idchildFK',
-                                            1 => 'tablaParent'
+                                            1 => 'tablaparent'
                                         )
                                     ),
                                     'tablagrandchild' => array(
@@ -97,105 +96,158 @@ class PdoOne_mysql_gen_test extends TestCase
                                         )
                                     ),
                                     'tablagrandchildcat' => array(),
-                                    'tablaParent' => array(
+                                    'tablaparent' => array(
                                         'idtablaparentPK' => array(
                                             0 => '/idtablaparentPKFK',
                                             1 => 'tablaparentxcategory'
                                         )
                                     ),
                                     'tablaparentxcategory' => array(),
-                                    'typetable' => array()
+                                    'sysdiagrams' => array()
                                 ]
                             ], $dep);
 
-        
+        $a1 = $this->pdoOne->getDefTableFK('tablagrandchild', false);
+        $this->assertEquals([], $a1);
+        $a1 = $this->pdoOne->getDefTableFK('tablachild', false);
+        $this->assertEquals([
+                                'idgrandchildFK' => array(
+                                    'key' => 'FOREIGN KEY',
+                                    'refcol' => 'idgrandchildPK',
+                                    'reftable' => 'tablagrandchild',
+                                    'extra' => ''
+                                ),
+                                '/idgrandchildFK' => array(
+                                    'key' => 'MANYTOONE',
+                                    'refcol' => 'idgrandchildPK',
+                                    'reftable' => 'tablagrandchild',
+                                    'extra' => null
+                                )
+                            ], $a1);
+        $a1 = $this->pdoOne->getDefTableFK('tablagrandchildcat', false);
+        $this->assertEquals([
+                                'IdgrandchildFK' => array(
+                                    'key' => 'FOREIGN KEY',
+                                    'refcol' => 'idgrandchildPK',
+                                    'reftable' => 'tablagrandchild',
+                                    'extra' => ''
+                                ),
+                                '/IdgrandchildFK' => array(
+                                    'key' => 'MANYTOONE',
+                                    'refcol' => 'idgrandchildPK',
+                                    'reftable' => 'tablagrandchild',
+                                    'extra' => null
+                                )
+                            ], $a1);
+    }*/
+
+
+    public function test_createtruncate() {
+        if (!TablagrandchildcatRepo::createTable()) {
+            $this->assertTrue(TablagrandchildcatRepo::delete() !== false);
+        }
+        $this->pdoOne->runRawQuery("DBCC CHECKIDENT ('" . TablagrandchildcatRepo::TABLE . "', RESEED, 0)", [], true);
+
+        if (!TablaparentxcategoryRepo::createTable()) {
+            $this->assertTrue(TablaparentxcategoryRepo::delete() !== false);
+        }
+        // it doesn't have identity
+        //$this->pdoOne->runRawQuery("DBCC CHECKIDENT ('".TablaparentxcategoryRepo::TABLE."', RESEED, 1)",[],true);
+
+        if (!TablacategoryRepo::createTable()) {
+            $this->assertTrue(TablacategoryRepo::delete() !== false);
+        }
+        $this->pdoOne->runRawQuery("DBCC CHECKIDENT ('" . TablacategoryRepo::TABLE . "', RESEED, 0)", [], true);
+        if (!TablaParentRepo::createTable()) {
+            $this->assertTrue(TablaParentRepo::delete() !== false);
+        }
+        $this->pdoOne->runRawQuery("DBCC CHECKIDENT ('" . TablaParentRepo::TABLE . "', RESEED, 0)", [], true);
+        if (!TablaChildRepo::createTable()) {
+            $this->assertTrue(TablaChildRepo::delete() !== false);
+        }
+        $this->pdoOne->runRawQuery("DBCC CHECKIDENT ('" . TablaChildRepo::TABLE . "', RESEED, 0)", [], true);
+        if (!TablagrandchildRepo::createTable()) {
+            $this->assertTrue(TablagrandchildRepo::delete() !== false);
+        }
+        $this->pdoOne->runRawQuery("DBCC CHECKIDENT ('" . TablagrandchildRepo::TABLE . "', RESEED, 0)", [], true);
+
+
     }
-    */
 
     public function testGrandChild() {
-        if (!TablagrandchildRepo::createTable()) {
-            TablagrandchildRepo::truncate();
-        }
+
         $gc = TablagrandchildRepo::factoryNull();
         $gc['idgrandchildPK'] = 1;
         $gc['NameGrandChild'] = 'GrandChild #1';
-        $this->assertEquals(1, TablagrandchildRepo::insert($gc));
+        $this->assertGreaterThanOrEqual(1, TablagrandchildRepo::insert($gc));
         $gc['idgrandchildPK'] = 2;
         $gc['NameGrandChild'] = 'GrandChild #2';
-        $this->assertEquals(2, TablagrandchildRepo::insert($gc));
+        $this->assertGreaterThanOrEqual(2, TablagrandchildRepo::insert($gc));
     }
 
-    public function test2() {
-        if (!TablagrandchildcatRepo::createTable()) {
-            TablagrandchildcatRepo::truncate();
-        }
+    public function testtablagrandchildcat() {
+
         $gc = TablagrandchildcatRepo::factoryNull();
-        $gc['IdTablaGrandChildCatPK'] = 1;
+        //$gc['IdTablaGrandChildCatPK'] = 1;
         $gc['Name'] = 'GrandChild Cat #1';
         $gc['IdgrandchildFK'] = 1;
-        $this->assertEquals(1, TablagrandchildcatRepo::insert($gc));
-        $gc['IdTablaGrandChildCatPK'] = 2;
+        $this->assertGreaterThanOrEqual(1, TablagrandchildcatRepo::insert($gc));
+        //$gc['IdTablaGrandChildCatPK'] = 2;
         $gc['Name'] = 'GrandChild Cat #2';
         $gc['IdgrandchildFK'] = 1;
-        $this->assertEquals(2, TablagrandchildcatRepo::insert($gc));
+        $this->assertGreaterThanOrEqual(2, TablagrandchildcatRepo::insert($gc));
     }
 
     public function test3() {
-        if (!TablaChildRepo::createTable()) {
-            TablaChildRepo::truncate();
-        }
+
         $gc = TablaChildRepo::factoryNull();
         $gc['idtablachildPK'] = 1;
         $gc['valuechild'] = 'Child #1';
         $gc['idgrandchildFK'] = 1;
-        $this->assertEquals(1, TablaChildRepo::insert($gc));
+        $this->assertGreaterThanOrEqual(1, TablaChildRepo::insert($gc));
         $gc['idtablachildPK'] = 2;
         $gc['valuechild'] = 'Child #2';
         $gc['idgrandchildFK'] = 1;
-        $this->assertEquals(2, TablaChildRepo::insert($gc));
+        $this->assertGreaterThanOrEqual(2, TablaChildRepo::insert($gc));
     }
 
     public function test4() {
-        if (!TablaParentRepo::createTable()) {
-            TablaParentRepo::truncate();
-        }
+
         $gc = TablaParentRepo::factoryNull();
         $gc['idtablaparentPK'] = 1;
         $gc['field1'] = 'Parent #1';
+        $gc['field2'] = 'unique 1';
         $gc['idchildFK'] = 1;
         $gc['idchild2FK'] = 2;
-        $this->assertEquals(1, TablaParentRepo::insert($gc));
+        $this->assertGreaterThanOrEqual(1, TablaParentRepo::insert($gc));
         $gc['idtablaparentPK'] = 2;
         $gc['field1'] = 'Parent #2';
+        $gc['field2'] = 'unique 2';
         $gc['idchildFK'] = 1;
         $gc['idchild2FK'] = 2;
-        $this->assertEquals(2, TablaParentRepo::insert($gc));
+        $this->assertGreaterThanOrEqual(2, TablaParentRepo::insert($gc));
     }
 
     public function test4b() {
-        if (!TablacategoryRepo::createTable()) {
-            TablacategoryRepo::truncate();
-        }
+
         $gc = TablacategoryRepo::factoryNull();
         $gc['IdTablaCategoryPK'] = 1;
         $gc['Name'] = 'Category #1';
-        $this->assertEquals(1, TablacategoryRepo::insert($gc));
+        $this->assertGreaterThanOrEqual(1, TablacategoryRepo::insert($gc));
         $gc['IdTablaCategoryPK'] = 2;
         $gc['Name'] = 'Category #2';
-        $this->assertEquals(2, TablacategoryRepo::insert($gc));
+        $this->assertGreaterThanOrEqual(2, TablacategoryRepo::insert($gc));
     }
 
     public function test4c() {
-        if (!TablaparentxcategoryRepo::createTable()) {
-            TablaparentxcategoryRepo::truncate();
-        }
+
         $gc = TablaparentxcategoryRepo::factoryNull();
         $gc['idtablaparentPKFK'] = 1;
         $gc['idcategoryPKFK'] = 1;
-        $this->assertEquals(0, TablaparentxcategoryRepo::insert($gc));
+        $this->assertEquals('', TablaparentxcategoryRepo::insert($gc));
         $gc['idtablaparentPKFK'] = 1;
         $gc['idcategoryPKFK'] = 2;
-        $this->assertEquals(0, TablaparentxcategoryRepo::insert($gc));
+        $this->assertEquals('', TablaparentxcategoryRepo::insert($gc));
     }
 
     public function testSelect() {
@@ -206,14 +258,14 @@ class PdoOne_mysql_gen_test extends TestCase
                                     'field1' => 'Parent #1',
                                     'idchildFK' => '1',
                                     'idchild2FK' => '2',
-                                    'field2' => null
+                                    'field2' => 'unique 1'
                                 ],
                                 [
                                     'idtablaparentPK' => '2',
                                     'field1' => 'Parent #2',
                                     'idchildFK' => '1',
                                     'idchild2FK' => '2',
-                                    'field2' => null
+                                    'field2' => 'unique 2'
                                 ]
                             ], $rows);
 
@@ -225,7 +277,7 @@ class PdoOne_mysql_gen_test extends TestCase
                                     'field1' => 'Parent #1',
                                     'idchildFK' => '1',
                                     'idchild2FK' => '2',
-                                    'field2' => null,
+                                    'field2' => 'unique 1',
                                     '/idchildFK' => [
                                         'idtablachildPK' => '1',
                                         'valuechild' => 'Child #1',
@@ -242,7 +294,7 @@ class PdoOne_mysql_gen_test extends TestCase
                                     'field1' => 'Parent #2',
                                     'idchildFK' => '1',
                                     'idchild2FK' => '2',
-                                    'field2' => null,
+                                    'field2' => 'unique 2',
                                     '/idchildFK' => [
                                         'idtablachildPK' => '1',
                                         'valuechild' => 'Child #1',
@@ -263,7 +315,7 @@ class PdoOne_mysql_gen_test extends TestCase
                                 'field1' => 'Parent #1',
                                 'idchildFK' => '1',
                                 'idchild2FK' => '2',
-                                'field2' => null,
+                                'field2' => 'unique 1',
                                 '/idchildFK' => [
                                     'idtablachildPK' => '1',
                                     'valuechild' => 'Child #1',
@@ -289,7 +341,7 @@ class PdoOne_mysql_gen_test extends TestCase
                                 'field1' => 'Parent #1',
                                 'idchildFK' => '1',
                                 'idchild2FK' => '2',
-                                'field2' => null,
+                                'field2' => 'unique 1',
                                 '/idchildFK' => [
                                     'idtablachildPK' => '1',
                                     'valuechild' => 'Child #1',
@@ -335,7 +387,7 @@ class PdoOne_mysql_gen_test extends TestCase
                                 'field1' => 'Parent #1',
                                 'idchildFK' => '1',
                                 'idchild2FK' => '2',
-                                'field2' => null,
+                                'field2' => 'unique 1',
                                 '/idchildFK' => [
                                     'idtablachildPK' => '1',
                                     'valuechild' => 'Child #1',
@@ -388,7 +440,7 @@ class PdoOne_mysql_gen_test extends TestCase
                                 'field1' => 'Parent #1',
                                 'idchildFK' => '1',
                                 'idchild2FK' => '2',
-                                'field2' => null,
+                                'field2' => 'unique 1',
                                 '/tablaparentxcategory' => [
                                     [
                                         'idtablaparentPKFK' => '1',

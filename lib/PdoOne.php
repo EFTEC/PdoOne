@@ -30,11 +30,11 @@ use stdClass;
  * @package       eftec
  * @author        Jorge Castro Castillo
  * @copyright (c) Jorge Castro C. MIT License  https://github.com/EFTEC/PdoOne
- * @version       1.38 2020-05-10
+ * @version       1.39 2020-05-12
  */
 class PdoOne
 {
-    const VERSION = '1.37';
+    const VERSION = '1.39';
 
     const NULL = PHP_INT_MAX;
 
@@ -110,9 +110,10 @@ class PdoOne
     public $databaseType;
 
     public $database_delimiter0 = '`';
-
-    //</editor-fold>
     public $database_delimiter1 = '`';
+    public $database_identityName = 'identity';
+    //</editor-fold>
+    
 
     /** @var string server ip. Ex. 127.0.0.1 127.0.0.1:3306 */
     public $server;
@@ -631,6 +632,23 @@ class PdoOne
     }
 
     /**
+     * It returns a simple array with all the columns that has identities/sequence.
+     * 
+     * @param string $table
+     * @return array
+     * @throws Exception
+     */
+    public function getDefIdentities($table) {
+        $r=$this->service->getDefTable($table);
+        $identities=[];
+        foreach($r as $k=>$v) {
+            if(stripos($v,$this->database_identityName)!==false) {
+                $identities[]=$k;
+            }
+        }
+        return $identities;         
+    }
+    /**
      * @param string $table The name of the table to analize.
      * @param bool $returnSimple true= returns as a simple associative
      *                                 array<br> example:['id'=>'PRIMARY
@@ -1148,9 +1166,31 @@ eot;
 
             return $quoted;
         }
-
-// it has a delimiter, so we returned the same text.
+        // it has a delimiter, so we returned the same text.
         return $txt;
+    }
+
+    /**
+     * It returns a field, column or table, the quotes defined by the current database type. It doesn't considers points
+     * or space<br>
+     * <pre>
+     * $this->addQuote("aaa"); // [aaa] (sqlserver) `aaa` (mysql)
+     * $this->addQuote("[aaa]"); // [aaa] (sqlserver, unchanged)
+     * </pre>
+     * 
+     * @param string $txt
+     * @return string
+     * @see \eftec\PdoOne::addDelimiter to considers points
+     */
+    public function addQuote($txt) {
+        if(strlen($txt)<2) {
+            return $txt;
+        }
+        if($txt[0]===$this->database_delimiter0 && substr($txt, -1)===$this->database_delimiter1) {
+            // it is already quoted.
+            return $txt;
+        }
+        return $this->database_delimiter0 .$txt.$this->database_delimiter1;
     }
 
     //<editor-fold desc="transaction functions">
@@ -1549,6 +1589,12 @@ eot;
             $after = null;
             $before = null;
         }
+        echo "<pre>";
+        var_dump($table);
+        @var_dump($after[$table]);
+        echo "--------\n";
+        @var_dump($before[$table]);
+        echo "</pre>";
         $result = '[' . $ln;
         $used = [];
         foreach ($r as $row) {
@@ -1561,17 +1607,23 @@ eot;
                 }
                 $result .= "'" . $name . "'=>" . $default . ',' . $ln;
                 if ($recursive) {
-                    if (@$before[$table][$name][1]) { // before is defined as [colremote,tableremote]
-                        //$colName = $name . '.' . $before[$table][$name];
-                        $colName = '/' . $before[$table][$name][1];
-                        if(!$defaultNull) {
-                            $default = '(in_array(\'' . $colName . '\',$recursive))
+
+                    if(isset($before[$table][$name])) {
+                        foreach ($before[$table][$name] as $k=>$v3) {
+                            if ($v3[1] && $v3[0][0]!='/') { // before is defined as [colremote,tableremote]
+                                //new dBug($v3);
+                                //$colName = $name . '.' . $before[$table][$name];
+                                $colName = '/' . $v3[1];
+                                if (!$defaultNull) {
+                                    $default = '(in_array(\'' . $colName . '\',$recursive))
                             ? [] 
                             : null';
-                        } else {
-                            $default='null';
+                                } else {
+                                    $default = 'null';
+                                }
+                                $result .= "'" . $colName . "'=>" . $default . ', /* onetomany */' . $ln;
+                            }
                         }
-                        $result .= "'" . $colName . "'=>" . $default . ', /* onetomany */' . $ln;
                     }
                     if (@$after[$table][$name]) {
                         //$colName = $name . '.' . $after[$table][$name];
@@ -1848,8 +1900,24 @@ class {class}Repo extends _BasePdoOneRepo
         $r= {def};
         return ($onlyKeys)? array_keys($r): $r;
     }
+    
+    /**
+     * It returns an associative array (colname=>key type) with all the keys/indexes (if any)
+     * 
+     * @return string[]
+     */    
     public static function getDefKey() {
         return {defkey};
+    }
+    public static function getDefIdentity() {
+        return {defkeyidentity};
+    }
+    public static function getDefFK($structure=false) {
+        if ($structure) {
+            return {deffk};
+        }
+        /* key,refcol,reftable,extra */
+        return {deffktype};
     }
     public static function toList($filter=null,$filterValue=null) {
         return self::_toList($filter,$filterValue);
@@ -1863,20 +1931,14 @@ class {class}Repo extends _BasePdoOneRepo
     public static function update($entity) {
         return self::_update($entity);
     }
-    public static function delete($entity) {
-        return self::_delete($entity);
+    public static function delete($filter=null,$filterValue=null) {
+        return self::_delete($filter,$filterValue);
     }
     public static function deleteById($pk) {
         return self::_deleteById($pk);
     }  
     
-    public static function getDefFK($structure=false) {
-        if ($structure) {
-            return {deffk};
-        }
-        /* key,refcol,reftable,extra */
-        return {deffktype};
-    }
+
     public static function factory() {
         $recursive=static::getRecursive();
         return {array};
@@ -1894,6 +1956,7 @@ eot;
             ($namespace) ? "namespace $namespace;" : ''
         ), $r);
         $pk = '??';
+        $tableNameL=strtolower($tableName);
 
         $pk = $this->service->getPK($tableName, $pk);
 
@@ -1901,33 +1964,33 @@ eot;
         $relation = $this->getDefTableFK($tableName, false, true);
 
         // many to many 
-        foreach ($relation as $rel) {
+        /*foreach ($relation as $rel) {
             $tableMxM = $rel['reftable'];
             $tableFK = $this->getDefTableFK($tableMxM, false, true);
-            var_dump($tableFK);
-
         }
-
-
-        $deps = $this->tableDependency(true); //  ["city"]=> {["city_id"]=> "address"}
+        */
+        $deps = $this->tableDependency(true,false); //  ["city"]=> {["city_id"]=> "address"}
         $after = @$deps[1][$tableName];
         $before = @$deps[2][$tableName];
+
+       
         if (is_array($after) && is_array($before)) {
-            foreach ($before as $key => $value) { // $value is [relcol,table]
-                $relation['/' . $value[1]] = [
-                    'key' => 'ONETOMANY',
-                    'col' => $key,
-                    'reftable' => $value[1],
-                    'refcol' => $value[0]
-                ];
+            foreach ($before as $key => $rows) { // $value is [relcol,table]
+                foreach($rows as $value) {
+                    $relation['/' . $value[1]] = [
+                        'key' => 'ONETOMANY',
+                        'col' => $key,
+                        'reftable' => $value[1],
+                        'refcol' => $value[0]
+                    ];
+                }
             }
         }
-
-
         $r = str_replace(array(
                              '{pk}',
                              '{def}',
                              '{defkey}',
+                             '{defkeyidentity}',
                              '{deffk}',
                              '{deffktype}',
                              '{array}',
@@ -1935,7 +1998,8 @@ eot;
                          ), array(
                              self::varExport($pk),
                              self::varExport($this->getDefTable($tableName),"\t\t"),
-                             self::varExport($this->getDefTableKeys($tableName)),
+                             self::varExport($this->getDefTableKeys($tableName),"\t\t"), // {defkey}
+                             self::varExport($this->getDefIdentities($tableName),"\t\t"), // {defkeyidentity}
                              self::varExport($this->getDefTableFK($tableName), "\t\t\t"), //{deffk}
                              self::varExport($relation, "\t\t"), //{deffktype}
                              str_replace("\n", "\n\t\t",
@@ -2503,10 +2567,11 @@ BOOTS;
      * </pre>
      *
      * @param bool $returnColumn If true then in "after" and "before", it returns the name of the columns
+     * @param bool $forceLowerCase if true then the names of the tables are stored as lowercase
      * @return array
      * @throws Exception
      */
-    public function tableDependency($returnColumn = false) {
+    public function tableDependency($returnColumn = false,$forceLowerCase=false) {
         if($returnColumn) {
             if($this->tableDependencyArrayCol!==null) {
                 return $this->tableDependencyArrayCol;
@@ -2524,9 +2589,15 @@ BOOTS;
             $arr = $this->getDefTableFK($table, false);
             $deps = [];
             foreach ($arr as $k => $v) {
+                $v['reftable']=($forceLowerCase)?strtolower($v['reftable']):$v['reftable'];
+                $k=($forceLowerCase)?strtolower($k):$k;
                 if ($returnColumn) {
                     $deps[$k] = $v['reftable'];
-                    $before[$v['reftable']][$v['refcol']] = [$k, $table]; // remote column and remote table
+                    if(!isset($before[$v['reftable']][$v['refcol']])) {
+                        $before[$v['reftable']][$v['refcol']]=[];
+                    }
+                    $before[$v['reftable']][$v['refcol']][] = [$k, $table]; // remote column and remote table
+                    
                 } else {
                     $deps[] = $v['reftable'];
                     $before[$v['reftable']][] = $table;

@@ -19,8 +19,8 @@ class TablagrandchildRepo extends _BasePdoOneRepo
     
     public static function getDef($onlyKeys=false) {
         $r= [
-		    'idgrandchildPK' => 'int not null auto_increment',
-		    'NameGrandChild' => 'varbinary(50)'
+		    'idgrandchildPK' => 'int NOT NULL IDENTITY(1,1)',
+		    'NameGrandChild' => 'varchar(50) DEFAULT (NULL)'
 		];
         return ($onlyKeys)? array_keys($r): $r;
     }
@@ -48,17 +48,17 @@ class TablagrandchildRepo extends _BasePdoOneRepo
         }
         /* key,refcol,reftable,extra */
         return [
-		    '/tablachild' => [
-		        'key' => 'ONETOMANY',
-		        'col' => 'idgrandchildPK',
-		        'reftable' => 'tablachild',
-		        'refcol' => '/idgrandchildFK'
-		    ],
 		    '/tablagrandchildcat' => [
 		        'key' => 'ONETOMANY',
 		        'col' => 'idgrandchildPK',
 		        'reftable' => 'tablagrandchildcat',
 		        'refcol' => '/IdgrandchildFK'
+		    ],
+		    '/tablachild' => [
+		        'key' => 'ONETOMANY',
+		        'col' => 'idgrandchildPK',
+		        'reftable' => 'tablachild',
+		        'refcol' => '/idgrandchildFK'
 		    ]
 		];
     }
@@ -86,16 +86,10 @@ class TablagrandchildRepo extends _BasePdoOneRepo
         $recursive=static::getRecursive();
         return [
 		'idgrandchildPK'=>0,
-		'/tablachild'=>(in_array('/tablachild',$recursive))
-		                            ? [] 
-		                            : null, /* onetomany */
-		'/tablachild'=>(in_array('/tablachild',$recursive))
-		                            ? [] 
-		                            : null, /* onetomany */
 		'/tablagrandchildcat'=>(in_array('/tablagrandchildcat',$recursive))
 		                            ? [] 
 		                            : null, /* onetomany */
-		'/tablagrandchildcat'=>(in_array('/tablagrandchildcat',$recursive))
+		'/tablachild'=>(in_array('/tablachild',$recursive))
 		                            ? [] 
 		                            : null, /* onetomany */
 		'NameGrandChild'=>''
@@ -104,10 +98,8 @@ class TablagrandchildRepo extends _BasePdoOneRepo
     public static function factoryNull() {
         return [
 		'idgrandchildPK'=>null,
-		'/tablachild'=>null, /* onetomany */
-		'/tablachild'=>null, /* onetomany */
 		'/tablagrandchildcat'=>null, /* onetomany */
-		'/tablagrandchildcat'=>null, /* onetomany */
+		'/tablachild'=>null, /* onetomany */
 		'NameGrandChild'=>null
 		];
     }     

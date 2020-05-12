@@ -1426,6 +1426,12 @@ In a nutshell:
 * Every minor version means that it adds a new functionality i.e. 1.5 -> 1.6 (new methods)  
 * Every decimal version means that it patches/fixes/refactoring a previous functionality i.e. 1.5.0 -> 1.5.1 (fix)  
 
+* 1.39 2020-05-12
+  * Updated _BasePdoOneRepo to version 4.0      
+  * Solved a problem with getDefTableFK (mysql and sqlsrv)   
+  * new field (database_identityName)   
+  * Solved a problem with getPK (sqlsrv)  
+
 * 1.38 2020-05-10
   * updated _BasePdoOneRepo to version 4.0     
 

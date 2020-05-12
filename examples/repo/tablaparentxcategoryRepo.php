@@ -25,14 +25,60 @@ class TablaparentxcategoryRepo extends _BasePdoOneRepo
 		];
         return ($onlyKeys)? array_keys($r): $r;
     }
+    
+    /**
+     * It returns an associative array (colname=>key type) with all the keys/indexes (if any)
+     * 
+     * @return string[]
+     */    
     public static function getDefKey() {
         return [
-	    'idtablaparentPKFK' => 'PRIMARY KEY',
-	    'idcategoryPKFK' => 'PRIMARY KEY'
-	];
+		    'idtablaparentPKFK' => 'PRIMARY KEY',
+		    'idcategoryPKFK' => 'PRIMARY KEY'
+		];
     }
-    public static function toList() {
-        return self::_toList();
+    public static function getDefIdentity() {
+        return [
+
+		];
+    }
+    public static function getDefFK($structure=false) {
+        if ($structure) {
+            return [
+			    'idcategoryPKFK' => 'FOREIGN KEY REFERENCES`tablacategory`(`IdTablaCategoryPK`)',
+			    'idtablaparentPKFK' => 'FOREIGN KEY REFERENCES`tablaParent`(`idtablaparentPK`)'
+			];
+        }
+        /* key,refcol,reftable,extra */
+        return [
+		    'idcategoryPKFK' => [
+		        'key' => 'FOREIGN KEY',
+		        'refcol' => 'IdTablaCategoryPK',
+		        'reftable' => 'tablacategory',
+		        'extra' => ''
+		    ],
+		    '/idcategoryPKFK' => [
+		        'key' => 'MANYTOONE',
+		        'refcol' => 'IdTablaCategoryPK',
+		        'reftable' => 'tablacategory',
+		        'extra' => NULL
+		    ],
+		    'idtablaparentPKFK' => [
+		        'key' => 'FOREIGN KEY',
+		        'refcol' => 'idtablaparentPK',
+		        'reftable' => 'tablaParent',
+		        'extra' => ''
+		    ],
+		    '/idtablaparentPKFK' => [
+		        'key' => 'MANYTOONE',
+		        'refcol' => 'idtablaparentPK',
+		        'reftable' => 'tablaParent',
+		        'extra' => NULL
+		    ]
+		];
+    }
+    public static function toList($filter=null,$filterValue=null) {
+        return self::_toList($filter,$filterValue);
     }
     public static function first($pk = null) {
         return self::_first($pk);
@@ -43,48 +89,14 @@ class TablaparentxcategoryRepo extends _BasePdoOneRepo
     public static function update($entity) {
         return self::_update($entity);
     }
-    public static function delete($entity) {
-        return self::_delete($entity);
+    public static function delete($filter=null,$filterValue=null) {
+        return self::_delete($filter,$filterValue);
     }
     public static function deleteById($pk) {
         return self::_deleteById($pk);
     }  
     
-    public static function getDefFK($structure=false) {
-        if ($structure) {
-            return [
-			    'idtablaparentPKFK' => 'FOREIGN KEY REFERENCES`tablaParent`(`idtablaparentPK`)',
-			    'idcategoryPKFK' => 'FOREIGN KEY REFERENCES`tablacategory`(`IdTablaCategoryPK`)'
-			];
-        }
-        /* key,refcol,reftable,extra */
-        return [
-		    'idtablaparentPKFK' => [
-		        'key' => 'FOREIGN KEY',
-		        'refcol' => 'idtablaparentPK',
-		        'reftable' => 'tablaParent',
-		        'extra' => 'FOREIGN KEY REFERENCES`tablaParent`(`idtablaparentPK`)'
-		    ],
-		    '/idtablaparentPKFK' => [
-		        'key' => 'MANYTOONE',
-		        'refcol' => 'idtablaparentPK',
-		        'reftable' => 'tablaParent',
-		        'extra' => NULL
-		    ],
-		    'idcategoryPKFK' => [
-		        'key' => 'FOREIGN KEY',
-		        'refcol' => 'IdTablaCategoryPK',
-		        'reftable' => 'tablacategory',
-		        'extra' => 'FOREIGN KEY REFERENCES`tablacategory`(`IdTablaCategoryPK`)'
-		    ],
-		    '/idcategoryPKFK' => [
-		        'key' => 'MANYTOONE',
-		        'refcol' => 'IdTablaCategoryPK',
-		        'reftable' => 'tablacategory',
-		        'extra' => NULL
-		    ]
-		];
-    }
+
     public static function factory() {
         $recursive=static::getRecursive();
         return [

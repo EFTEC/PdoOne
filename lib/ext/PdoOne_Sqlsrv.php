@@ -5,7 +5,9 @@
 
 namespace eftec\ext;
 
+
 use eftec\PdoOne;
+use Exception;
 use PDO;
 
 /**
@@ -36,6 +38,7 @@ class PdoOne_Sqlsrv implements PdoOne_IExt
     {
         $this->parent->database_delimiter0 = '[';
         $this->parent->database_delimiter1 = ']';
+        $this->parent->database_identityName='IDENTITY';
         PdoOne::$isoDate = 'Ymd';
         PdoOne::$isoDateTime = 'Ymd H:i:s';
         PdoOne::$isoDateTimeMs = 'Ymd H:i:s.u';
@@ -109,6 +112,14 @@ class PdoOne_Sqlsrv implements PdoOne_IExt
         return $result;
     }
 
+    /**
+     * @param string $table
+     * @param bool $returnSimple
+     * @param null $filter
+     * @return array
+     * @throws Exception
+     * todo: check
+     */
     public function getDefTableKeys($table, $returnSimple, $filter = null)
     {
         $columns = [];
@@ -133,50 +144,65 @@ class PdoOne_Sqlsrv implements PdoOne_IExt
             if ($returnSimple) {
                 $columns[$item['ColumnName']] = $type;
             } else {
-                $columns[$item['ColumnName']]['key'] = $type;
-                $columns[$item['ColumnName']]['refcol'] = '';
-                $columns[$item['ColumnName']]['reftable'] = '';
-                $columns[$item['ColumnName']]['extra'] = '';
+                $columns[$item['ColumnName']]=PdoOne::newColFK($type,'','');
             }
         }
         return $this->parent->filterKey($filter, $columns, $returnSimple);
     }
 
+    /**
+     * @param string $table
+     * @param bool $returnSimple
+     * @param null $filter
+     * @param bool $assocArray
+     * @return array
+     * @throws Exception
+     * todo: missing checking
+     */
     public function getDefTableFK($table, $returnSimple, $filter = null, $assocArray =false)
     {
         $columns = [];
-        /** @var array $result =array(["foreign_key_name"=>'',"referencing_table_name"=>'',"ColumnName"=>''
+        /** @var array $fkArr =array(["foreign_key_name"=>'',"referencing_table_name"=>'',"COLUMN_NAME"=>''
          * ,"referenced_table_name"=>'',"referenced_column_name"=>'',"referenced_schema_name"=>''
          * ,"update_referential_action_desc"=>'',"delete_referential_action_desc"=>''])
          */
-        $result = $this->parent->select('OBJECT_NAME(f.constraint_object_id) foreign_key_name 
+        $fkArr = $this->parent->select('OBJECT_NAME(f.constraint_object_id) foreign_key_name 
                     ,OBJECT_NAME(f.parent_object_id) referencing_table_name 
-                    ,COL_NAME(f.parent_object_id, f.parent_column_id) ColumnName 
+                    ,COL_NAME(f.parent_object_id, f.parent_column_id) COLUMN_NAME 
                     ,OBJECT_NAME (f.referenced_object_id) referenced_table_name 
                     ,COL_NAME(f.referenced_object_id, f.referenced_column_id) referenced_column_name 
                     ,OBJECT_SCHEMA_NAME(f.referenced_object_id) referenced_schema_name
                     , fk.update_referential_action_desc, fk.delete_referential_action_desc')
                                ->from('sys.foreign_key_columns AS f')
                                ->innerjoin('sys.foreign_keys as fk on fk.OBJECT_ID = f.constraint_object_id')
-                               ->where("OBJECT_NAME(f.parent_object_id)='{$table}'")->toList();
-
-        foreach ($result as $item) {
+                               ->where("OBJECT_NAME(f.parent_object_id)='{$table}'")->order('COL_NAME(f.parent_object_id, f.parent_column_id)')->toList();
+        /*echo "table:";
+        var_dump($table);
+        echo "<pre>";
+        var_dump($fkArr);
+        echo "</pre>";*/
+        foreach ($fkArr as $item) {
             $extra = ($item['update_referential_action_desc'] !== 'NO_ACTION') ? ' ON UPDATE ' .
                 str_replace('_', ' ', $item['update_referential_action_desc']) : '';
             $extra .= ($item['delete_referential_action_desc'] !== 'NO_ACTION') ? ' ON DELETE ' .
                 str_replace('_', ' ', $item['delete_referential_action_desc']) : '';
             //FOREIGN KEY REFERENCES TABLEREF(COLREF)
             if ($returnSimple) {
-                $columns[$item['ColumnName']] =
+                $columns[$item['COLUMN_NAME']] =
                     'FOREIGN KEY REFERENCES ' . $item['referenced_table_name'] . '(' . $item['referenced_column_name'] .
                     ')' . $extra;
             } else {
-                $columns[$item['ColumnName']]['key'] = 'FOREIGN KEY';
-                $columns[$item['ColumnName']]['refcol'] = $item['referenced_column_name'];
-                $columns[$item['ColumnName']]['reftable'] = $item['referenced_table_name'];
-                $columns[$item['ColumnName']]['extra'] = $extra;
+                $columns[$item['COLUMN_NAME']]=PdoOne::newColFK('FOREIGN KEY'
+                    ,$item['referenced_column_name']
+                    ,$item['referenced_table_name']
+                    ,$extra);
+                $columns['/'.$item['COLUMN_NAME']]=PdoOne::newColFK(
+                    'MANYTOONE'
+                    ,$item['referenced_column_name']
+                    ,$item['referenced_table_name']);
             }
         }
+
         if($assocArray) {
             return $columns;
         }
@@ -425,7 +451,7 @@ class PdoOne_Sqlsrv implements PdoOne_IExt
 
     public function getPK($query, $pk)
     {
-
+        $pkResult=[];
         if ($this->parent->isQuery($query)) {
             if (!$pk) {
                 return 'SQLSRV: unable to fin pk via query. Use the name of the table';
@@ -436,13 +462,15 @@ class PdoOne_Sqlsrv implements PdoOne_IExt
             $r = $this->getDefTableKeys($query, true, 'PRIMARY KEY');
 
             if (count($r) >= 1) {
-                $pk = array_keys($r)[0];
+                foreach($r as $key=>$item) {
+                    $pkResult[]=$key;
+                }
             } else {
-                $pk = '??nopk??';
+                $pkResult[]='??nopk??';
             }
         }
-
-        return $pk;
+        $pkAsArray=(is_array($pk))? $pk : array($pk);
+        return count($pkResult) === 0 ? $pkAsArray: $pkResult;
     }
 
 }

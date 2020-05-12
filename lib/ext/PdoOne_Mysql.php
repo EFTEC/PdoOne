@@ -4,6 +4,7 @@
 
 namespace eftec\ext;
 
+
 use eftec\PdoOne;
 use PDO;
 
@@ -35,6 +36,7 @@ class PdoOne_Mysql implements PdoOne_IExt
     {
         $this->parent->database_delimiter0 = '`';
         $this->parent->database_delimiter1 = '`';
+        $this->parent->database_identityName='auto_increment';
         $charset                           = ($charset == null) ? 'utf8' : $charset;
         PdoOne::$isoDate                   = 'Y-m-d';
         PdoOne::$isoDateTime               = 'Y-m-d H:i:s';
@@ -91,7 +93,15 @@ class PdoOne_Mysql implements PdoOne_IExt
             ->innerjoin('information_schema.REFERENTIAL_CONSTRAINTS c 
                         ON k.referenced_table_schema=c.CONSTRAINT_SCHEMA AND k.CONSTRAINT_NAME=c.CONSTRAINT_NAME')
             ->where('k.TABLE_SCHEMA=? AND k.TABLE_NAME = ?', ['s', $this->parent->db, 's', $table])
+            ->order('k.COLUMN_NAME')
             ->toList();
+        
+        /*echo "table:";
+        var_dump($table);
+        echo "<pre>";
+        var_dump($fkArr);
+        echo "</pre>";*/
+        //var_dump($this->parent->lastQuery);
         foreach ($fkArr as $item) {
             $txt = "FOREIGN KEY REFERENCES`{$item['REFERENCED_TABLE_NAME']}`(`{$item['REFERENCED_COLUMN_NAME']}`)";
             if ($item['UPDATE_RULE'] && $item['UPDATE_RULE'] !== 'NO ACTION') {
@@ -107,20 +117,15 @@ class PdoOne_Mysql implements PdoOne_IExt
                     'FOREIGN KEY'
                     ,$item['REFERENCED_COLUMN_NAME']
                     ,$item['REFERENCED_TABLE_NAME']
-                    ,$txt);
-                /*echo "<b>table:".$item['REFERENCED_TABLE_NAME'].'=';
-                $f2=$this->getDefTableFK($item['REFERENCED_TABLE_NAME'],false,null,true);
-                
-                var_dump($f2);
-                echo "<br>";
-                */
-                //die(1);
+                    ,''); //$txt);
                 $columns['/'.$item['COLUMN_NAME']]=PdoOne::newColFK(
                     'MANYTOONE'
                     ,$item['REFERENCED_COLUMN_NAME']
                     ,$item['REFERENCED_TABLE_NAME']);
             }
         }
+
+
         if($assocArray) {
             return $columns;
         }
@@ -183,7 +188,7 @@ class PdoOne_Mysql implements PdoOne_IExt
                 $query
                     = "SELECT * FROM information_schema.tables where table_schema='{$this->parent->db}' and table_type='BASE TABLE'";
                 if ($onlyName) {
-                    $query = str_replace('*', 'table_name', $query);
+                    $query = str_replace('*', 'table_name as name', $query);
                 }
                 break;
             case 'function':
@@ -360,7 +365,6 @@ class PdoOne_Mysql implements PdoOne_IExt
 
     public function getPK($query, $pk)
     {
-        
         $pkResult=[];
         if($this->parent->isQuery($query)) {
             $q = $this->parent->toMeta($query);

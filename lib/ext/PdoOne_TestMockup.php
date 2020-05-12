@@ -35,6 +35,7 @@ class PdoOne_TestMockup implements PdoOne_IExt
     {
         $this->parent->database_delimiter0 = '';
         $this->parent->database_delimiter1 = '';
+        $this->parent->database_identityName = 'identity';
         PdoOne::$isoDate                   = 'Ymd';
         PdoOne::$isoDateTime               = 'Ymd H:i:s';
         PdoOne::$isoDateTimeMs             = 'Ymd H:i:s.u';
