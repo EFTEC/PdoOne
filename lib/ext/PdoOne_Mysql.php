@@ -95,7 +95,7 @@ class PdoOne_Mysql implements PdoOne_IExt
             ->where('k.TABLE_SCHEMA=? AND k.TABLE_NAME = ?', ['s', $this->parent->db, 's', $table])
             ->order('k.COLUMN_NAME')
             ->toList();
-        
+
         /*echo "table:";
         var_dump($table);
         echo "<pre>";
@@ -104,24 +104,28 @@ class PdoOne_Mysql implements PdoOne_IExt
         //var_dump($this->parent->lastQuery);
         foreach ($fkArr as $item) {
             $txt = "FOREIGN KEY REFERENCES`{$item['REFERENCED_TABLE_NAME']}`(`{$item['REFERENCED_COLUMN_NAME']}`)";
+            $extra='';
             if ($item['UPDATE_RULE'] && $item['UPDATE_RULE'] !== 'NO ACTION') {
-                $txt .= ' ON UPDATE '.$item['UPDATE_RULE'];
+                $extra .= ' ON UPDATE '.$item['UPDATE_RULE'];
             }
             if ($item['DELETE_RULE'] && $item['DELETE_RULE'] !== 'NO ACTION') {
-                $txt .= ' ON DELETE '.$item['DELETE_RULE'];
+                $extra .= ' ON DELETE '.$item['DELETE_RULE'];
             }
             if ($returnSimple) {
-                $columns[$item['COLUMN_NAME']] = $txt;
+                $columns[$item['COLUMN_NAME']] = $txt.$extra;
             } else {
                 $columns[$item['COLUMN_NAME']]=PdoOne::newColFK(
                     'FOREIGN KEY'
                     ,$item['REFERENCED_COLUMN_NAME']
                     ,$item['REFERENCED_TABLE_NAME']
-                    ,''); //$txt);
+                    ,$extra
+                    ,$item['CONSTRAINT_NAME']);
                 $columns['/'.$item['COLUMN_NAME']]=PdoOne::newColFK(
                     'MANYTOONE'
                     ,$item['REFERENCED_COLUMN_NAME']
-                    ,$item['REFERENCED_TABLE_NAME']);
+                    ,$item['REFERENCED_TABLE_NAME']
+                    ,$extra
+                    ,$item['CONSTRAINT_NAME']);
             }
         }
 
@@ -365,29 +369,33 @@ class PdoOne_Mysql implements PdoOne_IExt
 
     public function getPK($query, $pk)
     {
-        $pkResult=[];
-        if($this->parent->isQuery($query)) {
-            $q = $this->parent->toMeta($query);
-            foreach ($q as $item) {
-                if (in_array('primary_key', $item['flags'])) {
-                    $pkResult[] = $item['name'];
-                    //break;
+        try {
+            $pkResult = [];
+            if ($this->parent->isQuery($query)) {
+                $q = $this->parent->toMeta($query);
+                foreach ($q as $item) {
+                    if (in_array('primary_key', $item['flags'])) {
+                        $pkResult[] = $item['name'];
+                        //break;
+                    }
                 }
-            }
-        } else {
-            // get the pk by table name
-            $r=$this->getDefTableKeys($query,true,'PRIMARY KEY');
-            if(count($r)>=1) {
-                foreach($r as $key=>$item) {
-                    $pkResult[]=$key;    
-                }
-                
             } else {
-                $pkResult[]='??nopk??';
+                // get the pk by table name
+                $r = $this->getDefTableKeys($query, true, 'PRIMARY KEY');
+                if (count($r) >= 1) {
+                    foreach ($r as $key => $item) {
+                        $pkResult[] = $key;
+                    }
+
+                } else {
+                    $pkResult[] = '??nopk??';
+                }
             }
+            $pkAsArray = (is_array($pk)) ? $pk : array($pk);
+            return count($pkResult) === 0 ? $pkAsArray : $pkResult;
+        } catch(\Exception $ex) {
+            return false;
         }
-        $pkAsArray=(is_array($pk))? $pk : array($pk);
-        return count($pkResult) === 0 ? $pkAsArray: $pkResult;
     }
 
     public function getDefTableKeys($table, $returnSimple,$filter=null)
@@ -400,22 +408,24 @@ class PdoOne_Mysql implements PdoOne_IExt
         $indexArr = $this->parent->runRawQuery('show index from '.$table);
         foreach ($indexArr as $item) {
             if (strtoupper($item['Key_name']) === 'PRIMARY') {
-                $tk = 'PRIMARY KEY';
+                $type = 'PRIMARY KEY';
             } elseif ($item['Non_unique'] != 0) {
-                $tk = 'KEY';
+                $type = 'KEY';
             } else {
-                $tk = 'UNIQUE KEY';
+                $type = 'UNIQUE KEY';
             }
-            if(!isset($columns[$item['Column_name']])) {
-                if ($returnSimple) {
+            if($filter===null || $filter===$type) {
+                if (!isset($columns[$item['Column_name']])) {
+                    if ($returnSimple) {
 
-                    $columns[$item['Column_name']] = $tk;
-                } else {
-                    $columns[$item['Column_name']] = PdoOne::newColFK($tk,'','');
+                        $columns[$item['Column_name']] = $type;
+                    } else {
+                        $columns[$item['Column_name']] = PdoOne::newColFK($type, '', '');
+                    }
                 }
             }
         }
-        return $this->parent->filterKey($filter,$columns,$returnSimple);
+        return $columns; //$this->parent->filterKey($filter,$columns,$returnSimple);
     }
 
 }

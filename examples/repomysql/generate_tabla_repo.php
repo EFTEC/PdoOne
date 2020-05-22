@@ -18,7 +18,7 @@ try {
 
 
 $arr=['tablaParent','tablagrandchild','tablachild','tablaparentxcategory','tablacategory','tablagrandchildcat'];
-$arr=['tablaParent'];
+// $arr=['tablaParent'];
 foreach ($arr as $a) {
     try {
         $clase = $dao->generateCodeClass($a, 'repo');

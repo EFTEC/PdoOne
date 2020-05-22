@@ -132,7 +132,6 @@ class PdoOne_Sqlsrv implements PdoOne_IExt
                          ->innerjoin('sys.columns col ON ic.object_id = col.object_id and ic.column_id = col.column_id')
                          ->where("OBJECT_NAME( ind.object_id)='{$table}'")
                          ->order('ind.name, ind.index_id, ic.index_column_id')->toList();
-
         foreach ($result as $item) {
             if ($item['is_primary_key']) {
                 $type = 'PRIMARY KEY';
@@ -141,13 +140,16 @@ class PdoOne_Sqlsrv implements PdoOne_IExt
             } else {
                 $type = 'KEY';
             }
-            if ($returnSimple) {
-                $columns[$item['ColumnName']] = $type;
-            } else {
-                $columns[$item['ColumnName']]=PdoOne::newColFK($type,'','');
+            if($filter===null || $filter===$type) {
+                if ($returnSimple) {
+                    $columns[$item['ColumnName']] = $type;
+                } else {
+                    $columns[$item['ColumnName']] = PdoOne::newColFK($type, '', '');
+                }
             }
         }
-        return $this->parent->filterKey($filter, $columns, $returnSimple);
+
+        return $columns; //$this->parent->filterKey($filter, $columns, $returnSimple);
     }
 
     /**
@@ -172,10 +174,12 @@ class PdoOne_Sqlsrv implements PdoOne_IExt
                     ,OBJECT_NAME (f.referenced_object_id) referenced_table_name 
                     ,COL_NAME(f.referenced_object_id, f.referenced_column_id) referenced_column_name 
                     ,OBJECT_SCHEMA_NAME(f.referenced_object_id) referenced_schema_name
-                    , fk.update_referential_action_desc, fk.delete_referential_action_desc')
+                    , fk.update_referential_action_desc, fk.delete_referential_action_desc
+                    ,fk.name fk_name')
                                ->from('sys.foreign_key_columns AS f')
                                ->innerjoin('sys.foreign_keys as fk on fk.OBJECT_ID = f.constraint_object_id')
-                               ->where("OBJECT_NAME(f.parent_object_id)='{$table}'")->order('COL_NAME(f.parent_object_id, f.parent_column_id)')->toList();
+                               ->where("OBJECT_NAME(f.parent_object_id)='{$table}'")
+                               ->order('COL_NAME(f.parent_object_id, f.parent_column_id)')->toList();
         /*echo "table:";
         var_dump($table);
         echo "<pre>";
@@ -189,17 +193,20 @@ class PdoOne_Sqlsrv implements PdoOne_IExt
             //FOREIGN KEY REFERENCES TABLEREF(COLREF)
             if ($returnSimple) {
                 $columns[$item['COLUMN_NAME']] =
-                    'FOREIGN KEY REFERENCES ' . $item['referenced_table_name'] . '(' . $item['referenced_column_name'] .
-                    ')' . $extra;
+                    'FOREIGN KEY REFERENCES ' .$this->parent->addQuote($item['referenced_table_name']) 
+                    . '(' . $this->parent->addQuote($item['referenced_column_name']) . ')' . $extra;
             } else {
                 $columns[$item['COLUMN_NAME']]=PdoOne::newColFK('FOREIGN KEY'
                     ,$item['referenced_column_name']
                     ,$item['referenced_table_name']
-                    ,$extra);
+                    ,$extra
+                    ,$item['fk_name']);
                 $columns['/'.$item['COLUMN_NAME']]=PdoOne::newColFK(
                     'MANYTOONE'
                     ,$item['referenced_column_name']
-                    ,$item['referenced_table_name']);
+                    ,$item['referenced_table_name']
+                    ,$extra
+                    ,$item['fk_name']);
             }
         }
 
@@ -320,12 +327,14 @@ class PdoOne_Sqlsrv implements PdoOne_IExt
         return "SELECT col.name collocal
 					,objrem.name tablerem
 					,colrem.name colrem
+					,fks.name fk_name
 					FROM sys.foreign_key_columns fk
 					inner join sys.objects obj on obj.object_id=fk.parent_object_id
 					inner join sys.COLUMNS col on obj.object_id=col.object_id and fk.parent_column_id=col.column_id
 					inner join sys.types st on col.system_type_id=st.system_type_id	
 					inner join sys.objects objrem on objrem.object_id=fk.referenced_object_id
 					inner join sys.COLUMNS colrem on fk.referenced_object_id=colrem.object_id and fk.referenced_column_id=colrem.column_id
+					inner join sys.foreign_keys fks on fk.constraint_object_id=fks.object_id
 					where obj.name='$tableName' ";
     }
 
@@ -451,26 +460,30 @@ class PdoOne_Sqlsrv implements PdoOne_IExt
 
     public function getPK($query, $pk)
     {
-        $pkResult=[];
-        if ($this->parent->isQuery($query)) {
-            if (!$pk) {
-                return 'SQLSRV: unable to fin pk via query. Use the name of the table';
-            }
-        } else {
-
-            // get the pk by table name
-            $r = $this->getDefTableKeys($query, true, 'PRIMARY KEY');
-
-            if (count($r) >= 1) {
-                foreach($r as $key=>$item) {
-                    $pkResult[]=$key;
+        try {
+            $pkResult = [];
+            if ($this->parent->isQuery($query)) {
+                if (!$pk) {
+                    return 'SQLSRV: unable to fin pk via query. Use the name of the table';
                 }
             } else {
-                $pkResult[]='??nopk??';
+
+                // get the pk by table name
+                $r = $this->getDefTableKeys($query, true, 'PRIMARY KEY');
+
+                if (count($r) >= 1) {
+                    foreach ($r as $key => $item) {
+                        $pkResult[] = $key;
+                    }
+                } else {
+                    $pkResult[] = '??nopk??';
+                }
             }
+            $pkAsArray = (is_array($pk)) ? $pk : array($pk);
+            return count($pkResult) === 0 ? $pkAsArray : $pkResult;
+        } catch(Exception $ex) {
+            return false;
         }
-        $pkAsArray=(is_array($pk))? $pk : array($pk);
-        return count($pkResult) === 0 ? $pkAsArray: $pkResult;
     }
 
 }

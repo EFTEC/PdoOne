@@ -1,5 +1,6 @@
 <?php
 
+use eftec\_BasePdoOneRepo;
 use eftec\PdoOne;
 use eftec\tests\CacheServicesmysql;
 use PHPUnit\Framework\TestCase;
@@ -52,8 +53,24 @@ class PdoOne_mysql_Test extends TestCase
         $a1=1;
         $this->pdoOne->cliEngine();
         $this->assertEquals(1,$a1);
+    }
+    public function test_base() {
+        $array1=["a"=>1,"b"=>2,"c"=>3];
+        $array2=["a","b"];
+        $array2As=["a"=>222,"b"=>333];
+        $array3=["a","b",'d'];
+
         
+        $this->assertEquals(["a"=>1,"b"=>2], _BasePdoOneRepo::intersectArrays($array1, $array2));
+        $this->assertEquals(["c"=>3], _BasePdoOneRepo::diffArrays($array1, $array2));
+
         
+
+        $this->assertEquals(["a"=>1,"b"=>2], _BasePdoOneRepo::intersectArrays($array1, $array2As,true));
+        $this->assertEquals(["c"=>3], _BasePdoOneRepo::diffArrays($array1, $array2As,true));
+
+        $this->assertEquals(["a"=>1,"b"=>2,"d"=>null], _BasePdoOneRepo::intersectArrays($array1, $array3,false));
+        $this->assertEquals(["c"=>3], _BasePdoOneRepo::diffArrays($array1, $array3,false));
         
     }
 

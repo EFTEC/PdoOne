@@ -173,8 +173,7 @@ interface PdoOne_IExt
      * @param string $query query or name of the table
      * @param string|array $pk Previous primary key (if the key is not found)
      *
-     * @return array|mixed|string
-     * @throws Exception
+     * @return array|mixed|string|false
      */
     public function getPK($query, $pk);
 }

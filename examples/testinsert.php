@@ -6,6 +6,7 @@ include "dBug.php";
 
 // connecting to database sakila at 127.0.0.1 with user root and password abc.123
 $dao=new PdoOne("mysql","127.0.0.1","root","abc.123","sakila","logpdoone.txt");
+$dao->logLevel=3;
 try {
     echo "<h1>Connection. The instance {$dao->server}, base:{$dao->db}  user:{$dao->user} and password:{$dao->pwd} must exists</h1>";
     $dao->connect();
@@ -16,11 +17,43 @@ try {
     die(1);
 }
 
+$sqlT1="CREATE TABLE `typetable` (
+    `type` INT NOT NULL,
+    `name` VARCHAR(45) NULL,
+    PRIMARY KEY (`type`));";
+try {
+    $dao->runRawQuery($sqlT1);
+} catch (Exception $e) {
+}
+
+
+
+$sqlT2="CREATE TABLE `producttype` (
+    `idproducttype` INT NOT NULL,
+    `name` VARCHAR(45) NULL,
+    `type` int not NULL,
+    PRIMARY KEY (`idproducttype`))";
+try {
+    $dao->runRawQuery($sqlT1);
+} catch (Exception $e) {
+}
+$sqlT2="CREATE TABLE `producttype_auto` (
+    `idproducttype` INT NOT NULL AUTO_INCREMENT,
+    `name` VARCHAR(45) NULL,
+    `type` int not NULL,
+    PRIMARY KEY (`idproducttype`))";
+try {
+    $dao->runRawQuery($sqlT2);
+} catch (Exception $e) {
+}
+
+
 try {
     echo "<h1>Table truncate :</h1>";
     $dao->runRawQuery("truncate table typetable");
     echo $dao->lastQuery."<br>";
     $dao->runRawQuery("truncate table producttype");
+    $dao->runRawQuery("truncate table producttype_auto");
     echo $dao->lastQuery."<br>";
 } catch (Exception $e) {
     echo "<h2>Table truncate error:</h2>";
@@ -38,14 +71,26 @@ try {
         ,array('i',2,'s','Yummy'));
     echo $dao->lastQuery."<br>";
     echo $dao->affected_rows()."<br>";
-    die(1);
 
     // $dao->insert("producttype",['idproducttype','i','name','s','type','i'],[1,'Coca-Cola',1]);
     $dao->from("producttype")
         ->set(['idproducttype','i',0 ,'name','s','Pepsi' ,'type','i',1])
         ->insert();
+    echo "insert id:".$dao->insert_id()."<br>";
     echo $dao->lastQuery."<br>";
 
+    $dao->from("producttype_auto")
+        ->set(['idproducttype','i',0 ,'name','s','Pepsi' ,'type','i',1])
+        ->insert();
+    echo "insert id (auto):".$dao->insert_id()."<br>";
+    echo $dao->lastQuery."<br>";
+
+    $object=['name'=>'Coca','type'=>1];
+    
+    $dao->insertObject('producttype_auto',$object);
+    echo "insert id insertObject(auto):".$object['idproducttype']."<br>";
+    echo $dao->lastQuery."<br>";
+    
     $dao->from("producttype")
         ->set("idproducttype=?",['i',101])
         ->set('name=?',['s','Pepsi'])

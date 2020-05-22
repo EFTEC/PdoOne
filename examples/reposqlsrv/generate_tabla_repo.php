@@ -14,6 +14,9 @@ try {
 } catch (Exception $ex) {
 
 }
+
+//var_dump($dao->getDefTableKeys('tablacategory',true,'PRIMARY KEY'));
+
 /*
 echo "<pre>";
 $def=$dao->getDefTableKeys('tablaparentxcategory',false);
@@ -24,11 +27,12 @@ echo "</pre>";
 //die(1);
 */
 
-$arr=['tablaparent','tablagrandchild','tablachild','tablaparentxcategory','tablacategory','tablagrandchildcat'];
+$arr=['tablaparent','tablacategoryrepo','tablagrandchild','tablachild','tablaparentxcategory','tablacategory','tablagrandchildcat'];
 $arr=['tablaparent'];
 foreach ($arr as $a) {
     try {
-        $clase = $dao->generateCodeClass($a, 'repo');
+        $clase = $dao->generateCodeClass($a, 'repo',['/idchild2FK'=>'PARENT'
+        ,'/tablaparentxcategory'=>'MANYTOMANY']);
         echo "saving {$a}Repo.php<br>";
         file_put_contents($a.'Repo.php',$clase);
 
