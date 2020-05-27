@@ -17,7 +17,7 @@ use PDOStatement;
 /**
  * Class _BaseRepo
  *
- * @version       4.0 2020-05-10
+ * @version       4.0.1 2020-05-27
  * @package       eftec
  * @author        Jorge Castro Castillo
  * @copyright (c) Jorge Castro C. MIT License  https://github.com/EFTEC/PdoOne
@@ -44,7 +44,7 @@ abstract class _BasePdoOneRepo
     {
         if (!self::getPdoOne()->tableExist(static::TABLE)) {
             return self::getPdoOne()->createTable(static::TABLE, $definition = static::getDef(), static::getDefKey(),
-                    $extra);
+                $extra);
         }
         return false; // table already exist
     }
@@ -117,7 +117,7 @@ abstract class _BasePdoOneRepo
     {
         //try {
         return self::getPdoOne()->validateDefTable(static::TABLE, static::getDef(), static::getDefKey(),
-                static::getDefFk());
+            static::getDefFk());
         /*} catch(Exception $exception) {
             return ['exception'=>'not found '.$exception->getMessage()];
         }*/
@@ -242,9 +242,9 @@ abstract class _BasePdoOneRepo
         $newQuery = [];
         $newQuery['type'] = 'QUERY';
         static::$gQuery[0] =& $newQuery;
-        $newQuery['joins'] = static::TABLE . "\n";
+        $newQuery['joins'] = static::TABLE . " as t0 \n";
         // we build the query
-        static::generationRecursive($newQuery, '', '', '', false);
+        static::generationRecursive($newQuery, 't0.', '', '', false);
 
         //die(1);
         /** @var PdoOne $pdoOne instance of PdoOne */
@@ -723,8 +723,9 @@ abstract class _BasePdoOneRepo
     public static function getNamespace()
     {
         if (strpos(static::class, '\\')) { // we assume that every repo class lives in the same namespace.
-            $ns = explode('\\', static::class, 2);
-            $ns = $ns[0] . '\\';
+            $ns = explode('\\', static::class);
+            array_pop($ns);
+            $ns =implode('\\',$ns).'\\';
         } else {
             $ns = '';
         }

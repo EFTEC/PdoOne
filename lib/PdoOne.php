@@ -30,11 +30,11 @@ use stdClass;
  * @package       eftec
  * @author        Jorge Castro Castillo
  * @copyright (c) Jorge Castro C. MIT License  https://github.com/EFTEC/PdoOne
- * @version       1.40 2020-05-21
+ * @version       1.40.1 2020-05-27
  */
 class PdoOne
 {
-    const VERSION = '1.40';
+    const VERSION = '1.40.1';
 
     const NULL = PHP_INT_MAX;
 
