@@ -737,6 +737,37 @@ abstract class _BasePdoOneRepo
         return self::getPdoOne()->getRecursive();
     }
 
+    /**
+     * It sets the recursivity to read/insert/update the information.<br>
+     * The fields recursives are marked with the prefix '/'.  For example 'customer' is a single field (column), while
+     * '/customer' is a relation. Usually, a relation has both fields and relation.
+     * - If the relation is manytoone, then the query is joined with the table indicated in the relation. Example:<br>
+     * <pre>
+     * ProductRepo::setRecursive(['/Category'])::toList(); // select .. from Producto inner join Category on ..
+     * </pre>
+     * - If the relation is onetomany, then it creates an extra query (or queries) with the corresponding values.
+     * Example:<br>
+     * <pre>
+     * CategoryRepo::setRecursive(['/Product'])::toList(); // select .. from Category and select from Product where..
+     * </pre>
+     * - If the reation is onetoone, then it is considered as a manytoone, but it returns a single value. Example:<br>
+     * <pre>
+     * ProductRepo::setRecursive(['/ProductExtension'])::toList(); // select .. from Product inner join ProductExtension
+     * </pre>
+     * - If the relation is manytomany, then the system load the relational table (always, not matter the recursivity), 
+     * and it reads/insert/update the next values only if the value is marked as recursive. Example:<br>
+     * <pre>
+     * ProductRepo::setRecursive(['/product_x_category'])::toList(); // it returns porduct, productxcategory and category
+     * ProductRepo::setRecursive([])->toList(); // it returns porduct and productxcategory (if /productcategory is marked as
+     * manytomany)
+     * </pre>
+     *
+     * 
+     * @param array $recursive
+     *
+     * @return self
+     * @see static::getDefFK for where to define the relation.        
+     */
     public static function setRecursive($recursive)
     {
         self::getPdoOne()->recursive($recursive);
