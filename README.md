@@ -1426,6 +1426,9 @@ In a nutshell:
 * Every minor version means that it adds a new functionality i.e. 1.5 -> 1.6 (new methods)  
 * Every decimal version means that it patches/fixes/refactoring a previous functionality i.e. 1.5.0 -> 1.5.1 (fix)  
 
+* 1.41 2020-5-28
+  * Updated BasePdoOneRepo to 4.0.1. It allows to specify a prefix in classes.
+  * generateCodeClass() allows to specificy a prefix different from 'Repo'.
 * 1.40.1 2020-5-27
   * Updated BasePdoOneRepo to 4.0.1 It allows long namespaces. It also adds an alias to the first table.   
 * 1.40 2020-05-21

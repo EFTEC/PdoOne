@@ -17,7 +17,7 @@ use PDOStatement;
 /**
  * Class _BaseRepo
  *
- * @version       4.0.1 2020-05-27
+ * @version       4.1 2020-05-28
  * @package       eftec
  * @author        Jorge Castro Castillo
  * @copyright (c) Jorge Castro C. MIT License  https://github.com/EFTEC/PdoOne
@@ -312,6 +312,7 @@ abstract class _BasePdoOneRepo
             $newQuery['columns'][] = $pTable . $col . ' as ' . self::getPdoOne()->addQuote($pColumn . $col);
         }
         $ns = self::getNamespace();
+        $postfix=self::getPostfix();
 
         foreach ($keyRels as $nameCol => $keyRel) {
             $type = $keyRel['key'];
@@ -324,7 +325,7 @@ abstract class _BasePdoOneRepo
                         static::$gQueryCounter++;
                         $tableRelAlias = 't' . static::$gQueryCounter; //$prefixtable.$nameColClean;
                         $colRelAlias = $pColumn . $nameCol;
-                        $class = $ns . $keyRel['reftable'] . 'Repo';
+                        $class = $ns . $keyRel['reftable'] .$postfix;
                         $refCol = $keyRel['refcol'];
                         $newQuery['joins'] .= " left join {$keyRel['reftable']} as $tableRelAlias "
                             . "on $pTable$nameColClean=$tableRelAlias.$refCol \n"; // $recursiveInit$nameCol\n"; // adds a query to the current query
@@ -353,7 +354,7 @@ abstract class _BasePdoOneRepo
                         $other['name'] = $nameCol;
                         $other['data'] = $keyRel;
                         //self::$gQuery[]=$other;
-                        $class = $ns . $keyRel['reftable'] . 'Repo';
+                        $class = $ns . $keyRel['reftable'] . $postfix;
 
                         $class::generationRecursive($other, '', '', $pColumn . $recursiveInit . $nameCol, false);
 
@@ -414,17 +415,18 @@ abstract class _BasePdoOneRepo
         }
         $defs = static::getDefFK();
         $ns = self::getNamespace();
+        $postfix=self::getPostfix();
 
         foreach ($defs as $key => $def) { // ['/tablaparentxcategory']=['key'=>...]
             if ($def['key'] === 'MANYTOMANY' && isset($entity[$key]) && is_array($entity[$key])) {
-                $class2 = $ns . ucfirst($def['table2']) . 'Repo';
+                $class2 = $ns . ucfirst($def['table2']) .$postfix;
                 foreach ($entity[$key] as $item) {
                     $pk2 = $item[$def['col2']];
                     if ($pdo->hasRecursive($key, $recursiveBack) && $class2::exist($item) === false) {
                         // we only update it if it has a recursive
                         $pk2 = $class2::insert($item, false);
                     }
-                    $classRel = $ns . $def['reftable'] . 'Repo';
+                    $classRel = $ns . $def['reftable'] .$postfix;
                     $refCol = ltrim($def['refcol'], '/');
                     $refCol2 = ltrim($def['refcol2'], '/');
                     $relationalObj = [$refCol => $entityCopy[$def['col']], $refCol2 => $pk2];
@@ -464,6 +466,7 @@ abstract class _BasePdoOneRepo
         $pdo->recursive($recursiveBack); // update() delete recursive
         $defs = static::getDefFK();
         $ns = self::getNamespace();
+        $postfix=self::getPostfix();
         foreach ($defs as $key => $def) { // ['/tablaparentxcategory']=['key'=>...]
 
             if ($def['key'] === 'MANYTOMANY') { //hasRecursive($recursiveInit . $key)
@@ -472,8 +475,8 @@ abstract class _BasePdoOneRepo
                 } else {
                     $newRows = $entity[$key];
                 }
-                $classRef = $ns . ucfirst($def['reftable']) . 'Repo';
-                $class2 = $ns . ucfirst($def['table2']) . 'Repo';
+                $classRef = $ns . ucfirst($def['reftable']) .$postfix;
+                $class2 = $ns . ucfirst($def['table2']) . $postfix;
                 $col1 = ltrim($def['col'], '/');
                 $refcol = ltrim($def['refcol'], '/');
                 $refcol2 = ltrim($def['refcol2'], '/');
@@ -552,6 +555,7 @@ abstract class _BasePdoOneRepo
 
         $defs = static::getDefFK();
         $ns = self::getNamespace();
+        $postfix=self::getPostfix();
 
         $recursiveBackup = self::getRecursive();
 
@@ -560,8 +564,8 @@ abstract class _BasePdoOneRepo
             if ($def['key'] === 'MANYTOMANY' && isset($entity[$key])
                 && is_array($entity[$key])
             ) { //hasRecursive($recursiveInit . $key)
-                $classRef = $ns . ucfirst($def['reftable']) . 'Repo';
-                $class2 = $ns . ucfirst($def['table2']) . 'Repo';
+                $classRef = $ns . ucfirst($def['reftable']) . $postfix;
+                $class2 = $ns . ucfirst($def['table2']) .$postfix;
 
                 $col1 = ltrim($def['col'], '/');
                 $refcol = ltrim($def['refcol'], '/');
@@ -720,6 +724,27 @@ abstract class _BasePdoOneRepo
         return $r;
     }
 
+    /**
+     * It gets the postfix of the class base considering the the class is based in the table<br>
+     * Example: Class "SomeTableRepo" and table "sometable", the prefix is "Repo"
+     * 
+     * @return false|string False on error or not found.
+     */
+    public static function getPostfix() {
+        $class=static::class;
+        $table=static::TABLE;
+        $p0=stripos($class,$table)+strlen($table);
+        if($p0===false) {
+            return false;
+        }
+        return substr($class,$p0);
+    }
+
+    /**
+     * It gets the current namespace.
+     * 
+     * @return string
+     */
     public static function getNamespace()
     {
         if (strpos(static::class, '\\')) { // we assume that every repo class lives in the same namespace.
