@@ -30,7 +30,7 @@ use stdClass;
  * @package       eftec
  * @author        Jorge Castro Castillo
  * @copyright (c) Jorge Castro C. MIT License  https://github.com/EFTEC/PdoOne
- * @version       1.41 2020-05-28
+ * @version       1.41.1 2020-05-28
  */
 class PdoOne
 {
