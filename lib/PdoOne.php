@@ -1949,13 +1949,18 @@ eot;
     }
 
     /**
-     * It generates a class
+     * It generates a class<br>
+     * <b>Example:</b><br>
+     * <pre>
+     * $class = $this->generateCodeClass('tablename', 'namespace\namespace2'
+     *          ,['/idchild2FK'=>'PARENT','/tablaparentxcategory'=>'MANYTOMANY']
+     *          ,'Repo');
+     * </pre>
      *
-     * @param string     $tableName
-     * @param string     $namespace
-     *
-     * @param array|null $customRelation
-     *
+     * @param string     $tableName      The name of the table. It is also the name of the class.
+     * @param string     $namespace      The Namespace of the generated class
+     * @param array|null $customRelation An associative array to specific custom relations, such as PARENT<br>
+     *                                   The key is the name of the columns and the value is the type of relation<br>
      * @param string     $postfix The postfix of the class. Usually it is Repo or Dao.
      *
      * @return string|string[]
@@ -2061,8 +2066,8 @@ class {class}{postfix} extends _BasePdoOneRepo
 eot;
         $r = str_replace(array('{version}', '{class}', '{postfix}', '{table}', '{namespace}'), array(
             self::VERSION . ' Date generated ' . date('r'),
-            $postfix,
             self::camelize($tableName),
+            $postfix,            
             $tableName,
             ($namespace) ? "namespace $namespace;" : ''
         ), $r);
