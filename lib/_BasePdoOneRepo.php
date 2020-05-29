@@ -17,7 +17,7 @@ use PDOStatement;
 /**
  * Class _BaseRepo
  *
- * @version       4.1 2020-05-28
+ * @version       4.1.1 2020-05-29
  * @package       eftec
  * @author        Jorge Castro Castillo
  * @copyright (c) Jorge Castro C. MIT License  https://github.com/EFTEC/PdoOne
@@ -707,16 +707,25 @@ abstract class _BasePdoOneRepo
     }
 
     /**
-     * It gets a registry using the primary key.
+     * It gets the first value of a query<br>
+     * <b>Example:</b><br>
+     * <pre>
+     * self::_first('2'); // select * from table where pk='2' (only returns the first value)
+     * self::_first();  // select * from table (returns the first row if any)
+     * self::where(['pk'=>'2'])::_first();  // select * from table where pk='2'
+     * self::_first(['pk'=>'2']);  // select * from table where pk='2'
+     * </pre>
      *
-     * @param mixed $pk If mixed
+     * @param mixed $pk If mixed. If null then it doesn't use the primary key to obtain data.
      *
      * @return array|bool static::factory()
      * @throws Exception
      */
     protected static function _first($pk = null)
     {
-        $pk = is_array($pk) ? $pk : [static::PK[0] => $pk];
+        if($pk!==null) {
+            $pk = is_array($pk) ? $pk : [static::PK[0] => $pk];    
+        }
         $r = self::generationStart('first', $pk);
         if (is_array($r)) {
             return $r[0];
