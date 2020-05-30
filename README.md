@@ -19,13 +19,10 @@ Turn this
 $stmt->bind_param("s", $_POST['name']);
 $stmt->execute();
 $result = $stmt->get_result();
-if($result->num_rows === 0) exit('No rows');
+$products=[];
 while($row = $result->fetch_assoc()) {
-  $ids[] = $row['id'];
-  $names[] = $row['name'];
-  $ages[] = $row['age'];
+  $product[]=$row; 
 }
-var_export($ages);
 $stmt->close();
 ```
 
@@ -35,7 +32,7 @@ into this
 $products=$dao
     ->select("*")
     ->from("myTable")
-    ->where("name = ?",[$_POST['name']])
+    ->where("name = ?",['s',$_POST['name']]) // 's' = string
     ->toList();
 ```
 
