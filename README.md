@@ -592,8 +592,8 @@ $results = $pdoOne->select("*")->from('table'); //...
 $results = $pdoOne->select("*")->from('table t1 inner join t2 on t1.c1=t2.c2'); //...
 ```
 
-
 ### where($where,[$arrayParameters=array()])
+
 Generates a where command.
 
 * $where is an array or a string. If it's a string, then it's evaluated by using the parameters. if any
@@ -603,10 +603,79 @@ $results = $pdoOne->select("*")
 ->from('table')
 ->where('p1=1'); //...
 ```
+
+The where could be expressed in different ways.
+
+#### 1) Where without parameters.
+
+It is possible to write the where without parameters as follow:
+
+```php
+$results = $pdoOne->select("*")->from('table')->where("p1=1 and p2>2.5 or p3 like '%aa%'");
+```
+
+#### 2) Where with parameters defined by a indexed array.
+
+```php
+$aa='aa';
+$results = $pdoOne->select("*")->from('table')->where("p1=? and p2>? or p3 like ?",['i',1
+                                                                                    ,'s',2.5
+                                                                                    ,'s',"%$aa%"]);
+```
+
+It also works 
+
+```php
+// (if there is only a single argument without a type)
+$results = $pdoOne->select("*")->from('table')->where("p1=?",[1]);  // = where("p1=?",['i',1]);
+// (if we don't define to where to put the value)
+$results = $pdoOne->select("*")->from('table')->where("p1",[1]); // = where("p1=?",['i',1]);
+```
+
+
+
+#### 3) Where using an associative array
+
+It is a shorthand definition of a query using an associative array, where the key is the name of the column and the value is the value to compare
+
+It only works with **equality** (=) and the logic operator **'and'**  (the type is defined automatically)
+
+```php
+// select * from table where p1='1' and p2='2.5' and p3='aa'
+$results = $pdoOne->select("*")->from('table')->where(['p1'=>1
+                                                       ,'p2'=>2.5
+                                                       ,'p3'=>'aa']);  
+```
+
+Also it is possible to specify the type of parameter.
+
+```php
+// select * from table where p1=1 and p2='2.5' and p3='aa'
+$results = $pdoOne->select("*")->from('table')->where(['p1'=>['i',1]
+                                                       ,'p2'=>['s',2.5]
+                                                       ,'p3'=>['s','aa']]);  
+```
+
+#### 4) Using an associative array and named arguments
+
+You could also use an associative array as argument and named parameters in the query
+
+```php
+$results = $pdoOne->select("*")->from("table")
+    ->where('condition=:p1 and condition2=:p2',['p1'=>'Coca-Cola','p2'=>1])
+    ->toList();
+```
+
+> Generates the query: select * from table **where condition=?(Coca-Cola) and condition2=?(1)**        
+
+
+
+#### 5) Examples of where()
+
 > Generates the query: select * **from table** where p1=1
 
 > Note: ArrayParameters is an array as follow: **type,value.**     
->   Where type is i=integer, d=double, s=string or b=blob. In case of doubt, use "s"   
+>   Where type is i=integer, d=double, s=string or b=blob. In case of doubt, use "s" (see table bellow)   
 > Example of arrayParameters:   
 > ['i',1 ,'s','hello' ,'d',20.3 ,'s','world']
 
@@ -642,13 +711,16 @@ $results = $pdoOne->select("*")->from("table")
 ```
 > Generates the query: select * from table **where p1=?(Coca-Cola) and p2=?(1)**        
 
-You could also use an associative array as argument and named parameters in the query
-```php
-$results = $pdoOne->select("*")->from("table")
-    ->where('condition=:p1 and condition2=:p2',['p1'=>'Coca-Cola','p2'=>1])
-    ->toList();
-```
-> Generates the query: select * from table **where condition=?(Coca-Cola) and condition2=?(1)**        
+
+
+#### Types of Parameters
+
+| ParameterName | Description                                                 | Example                                     |
+| ------------- | ----------------------------------------------------------- | ------------------------------------------- |
+| "i"           | Integer parameter (equals to PDO::PARAM_INT)                | ("i",200)                                   |
+| "s"           | String, Float and Date parameter (equals to PDO::PARAM_STR) | ("s","hello","s",20.5,"s","2020/01/01")     |
+| "b"           | Boolean parameter (equals to PDO::PARAM_BOL)                | ("b",false)                                 |
+| PDO::PARAM_*  | Parameter defined using the values of PDO                   | (PDO::PARAM_INT,200,PDO::PARAM_STR,"hello") |
 
 
 
@@ -1360,11 +1432,59 @@ class TableNameRepo extends _BasePdoOneRepo
 }
 ```
 
+### Creating the repository class
+
+There are several ways to create a class, you could use the UI, the CLI or directly via code.
+
+It is an example to create our repository class
+
+```php
+$class = $pdoOne->generateCodeClass('Customer'); // The table Customer must exists in the database
+file_put_contents('CustomerRepo.php',$clase); // and we write the code into a file.
+```
+
+It will build our Repository class.
+
+```php
+<?php
+use eftec\PdoOne;
+use eftec\_BasePdoOneRepo;
+
+class CustomerRepo extends _BasePdoOneRepo
+{
+    //....
+}
+```
+
+
+
+We could also specify the namespace
+
+```php
+$class = $pdoOne->generateCodeClass('Customer','namespace\anothernamespace'); 
+```
+
+It will generate the next class
+
+```php
+<?php
+namespace namespace\anothernamespace    
+use eftec\PdoOne;
+use eftec\_BasePdoOneRepo;
+
+class CustomerRepo extends _BasePdoOneRepo
+{
+    //....
+}
+```
+
+
+
 ### Using the Repository class.
 
-For started, you must set an instance of the PdoOne
+For started, the library must know to know where to connect, so you must set an instance of the PdoOne and there are 3 ways to instance it.
 
-You could do it by creating a function called pdOne
+You could do it by creating a function called **pdoOne()**
 
 ```php
 function pdoOne() {
@@ -1373,14 +1493,14 @@ $pdo->connect();
 }
 ```
 
-Or creating a global variable called $pdoOne
+Or creating a global variable called **$pdoOne**
 
 ```php
 $pdoOne=new PdoOne('mysql','127.0.0.1','root','abc.123','sakila');
 $pdoOne->connect();
 ```
 
-Or injecting the instance into the class
+Or injecting the instance into the class using the static method **Class::setPdoOne()**
 
 ```php
 $pdo=new PdoOne('mysql','127.0.0.1','root','abc.123','sakila');
@@ -1388,12 +1508,50 @@ $pdo->connect();
 TableNameRepo::setPdoOne($pdo);
 ```
 
-### Queries
+### DDL  Database Design Language
+
+```php
+TablaParentRepo::createTable();
+TablaParentRepo::createForeignKeys();
+TablaParentRepo::dropTable();
+TablaParentRepo::truncate();
+// We don't have a method to alter a table.
+$ok=TablaParentRepo::validTable(); // it returns true if the table matches with the definition stored into the clas
+```
+
+### DQL Database Query Language
 
 ```php
 $data=TableNameRepo::toList(); // select * from tablerepo
 $data=TableNameRepo::first($pk); // select * from tablerepo where pk=$pk (it always returns 1 or zero values)
 $data=TableNameRepo::where('a1=?',['i',$value])::toList(); // select * from tablerepo where a1=$value 
+$data=TableNameRepo::where('a1=?',['i',$value])::first(); // it returns the first value (or false if not found)
+$data=TableNameRepo::exist($pk); // returns true if the object exists.
+$data=TableNameRepo::count($conditions); 
+$data=TableNameRepo::where('a1=?',['i',$value])::count();
+```
+
+### DML Database Model Language
+
+```php
+// where obj is an associative array, where the keys are the name of the columns (case sensitive)
+$identity=TablaParentRepo::insert($obj); 
+TablaParentRepo::update($obj);
+TablaParentRepo::delete($obj);
+TablaParentRepo::deleteById($obj);
+```
+
+### Nested Operators
+
+```php
+TablaParentRepo
+    ::where() // where
+    ::order() // order by
+    ::group() // group by
+    ::limit() // limit
+    ::innerjoin() // inner join
+    ::left() // left join
+    ::right() // right join.
 ```
 
 

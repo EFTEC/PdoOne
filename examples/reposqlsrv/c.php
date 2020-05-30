@@ -49,6 +49,26 @@ $r=TablaParentRepo::setRecursive(
 
 new \dBug\dBug($r);
 
+TablaParentRepo
+    ::where()
+    ::order()
+    ::group()
+    ::limit()
+    ::innerjoin()
+    ::left()
+    ::right()
+TablaParentRepo::createFk();
+TablaParentRepo::dropTable();
+TablaParentRepo::validTable();
+
+
+TablaParentRepo::insert($obj);
+TablaParentRepo::update($obj);
+TablaParentRepo::delete($obj);
+TablaParentRepo::deleteById($obj);
+TablaParentRepo::
+*/
+
 die(1);
 
 $r=TablaParentRepo::setRecursive(
