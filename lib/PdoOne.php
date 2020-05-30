@@ -1487,7 +1487,7 @@ eot;
             case 'd':
             case 'f':
             case 's':
-                // decimal, float and strings are expressed in the same way
+                // decimal, float, date and strings are expressed in the same way
                 return PDO::PARAM_STR;
             default:
                 trigger_error("param type not defined [$string]");

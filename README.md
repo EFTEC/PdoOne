@@ -40,7 +40,7 @@ $products=$pdoOne
 or using the generation of class.
 
 ```php
-ProductRepo // this class was generated with $pdoOne()->generateCodeClass(['Product']) and the table Product
+ProductRepo // this class was generated with echo $pdoOne()->generateCodeClass(['Product']);
     ::where("name = ?",['s',$_POST['name']])
     ::toList();
 ```
