@@ -15,8 +15,9 @@ This library tries to work as fast as possible. Most of the operations are simpl
 
 Turn this 
 
-```$stmt = $pdo->prepare("SELECT * FROM myTable WHERE name = ?");
-$stmt->bind_param("s", $_POST['name']);
+```php
+$stmt = $pdo->prepare("SELECT * FROM myTable WHERE name = ?");
+$stmt->bindParam(1,$_POST['name'],PDO::PARAM_STR);
 $stmt->execute();
 $result = $stmt->get_result();
 $products=[];
@@ -28,12 +29,20 @@ $stmt->close();
 
 into this
 
-```
-$products=$dao
+```php
+$products=$pdoOne
     ->select("*")
     ->from("myTable")
-    ->where("name = ?",['s',$_POST['name']]) // 's' = string
+    ->where("name = ?",['s',$_POST['name']]) // 's' = string/float/date, 'i'=integer, 'b'=boolean
     ->toList();
+```
+
+or using the generation of class.
+
+```php
+ProductRepo // this class was generated with $pdoOne()->generateCodeClass(['Product']) and the table Product
+    ::where("name = ?",['s',$_POST['name']])
+    ::toList();
 ```
 
 

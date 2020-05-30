@@ -1476,13 +1476,18 @@ eot;
     private function stringToPdoParam($string)
     {
         if (is_int($string)) {
+            // if the parameter is expressed as numeric, then it's returned as is.
             return $string;
         }
         switch ($string) {
+            case 'b':
+                return PDO::PARAM_BOOL;
             case 'i':
                 return PDO::PARAM_INT;
             case 'd':
+            case 'f':
             case 's':
+                // decimal, float and strings are expressed in the same way
                 return PDO::PARAM_STR;
             default:
                 trigger_error("param type not defined [$string]");
