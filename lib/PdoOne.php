@@ -30,11 +30,11 @@ use stdClass;
  * @package       eftec
  * @author        Jorge Castro Castillo
  * @copyright (c) Jorge Castro C. MIT License  https://github.com/EFTEC/PdoOne
- * @version       1.41.2 2020-05-29
+ * @version       1.42 2020-05-29
  */
 class PdoOne
 {
-    const VERSION = '1.40.1';
+    const VERSION = '1.42';
 
     const NULL = PHP_INT_MAX;
 
@@ -1123,6 +1123,22 @@ eot;
     }
 
     /**
+     * It returns an uniqued uid ('sha512') based in all the parameters of the query (select,from,where
+     * ,parameters,group,recursive,having,limit,distinct,order,etc.) and optionally in an extra value
+     *
+     * @param mixed|null $extra [optional] If we want to add an extra value to the UID generated
+     * @param string     $prefix A prefix added to the UNID generated.
+     *
+     * @return string
+     */
+    public function buildUniqueID($extra=null,$prefix='') {
+        $all=[$this->select,$this->from,$this->where,$this->whereParamType,$this->whereParamAssoc
+              ,$this->whereParamValue,$this->group,$this->recursive,$this->having,$this->limit
+              ,$this->distinct,$this->order,$extra];
+        return $prefix.hash('sha512',json_encode($all));
+    }
+
+    /**
      * Injects a Message Container.
      *
      * @return MessageList|null
@@ -1279,8 +1295,9 @@ eot;
     /**
      * It runs an unprepared query.
      * <br><b>Example</b>:<br>
-     *      $values=$con->runRawQuery('select * from table where
-     *      id=?',["i",20]',true)
+     * <pre>
+     * $values=$con->runRawQuery('select * from table where id=?',["i",20]',true);
+     * </pr>
      *
      * @param string     $rawSql
      * @param array|null $param
@@ -2067,7 +2084,7 @@ eot;
         $r = str_replace(array('{version}', '{class}', '{postfix}', '{table}', '{namespace}'), array(
             self::VERSION . ' Date generated ' . date('r'),
             self::camelize($tableName),
-            $postfix,            
+            $postfix,
             $tableName,
             ($namespace) ? "namespace $namespace;" : ''
         ), $r);

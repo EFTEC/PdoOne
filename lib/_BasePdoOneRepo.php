@@ -17,7 +17,7 @@ use PDOStatement;
 /**
  * Class _BaseRepo
  *
- * @version       4.1.1 2020-05-29
+ * @version       4.2 2020-05-29
  * @package       eftec
  * @author        Jorge Castro Castillo
  * @copyright (c) Jorge Castro C. MIT License  https://github.com/EFTEC/PdoOne
@@ -29,6 +29,19 @@ abstract class _BasePdoOneRepo
     /** @var array $gQuery =[['columns'=>[],'joins'=>[],'where'=>[]] */
     public static $gQuery = [];
     public static $gQueryCounter = 0;
+    /**
+     * @var null|bool|int $ttl If <b>null</b> then the cache never expires.<br>
+     *                         If <b>false</b> then we don't use cache.<br>
+     *                         If <b>int</b> then it is the duration of the
+     *     cache
+     *                         (in seconds)
+     */
+    private static $useCache = false;
+
+    /** @var null|string the unique id generate by sha256 and based in the query, arguments, type and methods */
+    private static $uid;
+    /** @var string [optional] It is the family or group of the cache */
+    private static $cacheFamily = '';
 
 
     /**
@@ -43,8 +56,8 @@ abstract class _BasePdoOneRepo
     public static function createTable($extra = null)
     {
         if (!self::getPdoOne()->tableExist(static::TABLE)) {
-            return self::getPdoOne()->createTable(static::TABLE, $definition = static::getDef(), static::getDefKey(),
-                $extra);
+            return self::getPdoOne()
+                ->createTable(static::TABLE, $definition = static::getDef(), static::getDefKey(), $extra);
         }
         return false; // table already exist
     }
@@ -61,7 +74,50 @@ abstract class _BasePdoOneRepo
             self::getPdoOne()->runRawQuery($sql, [], true);
         }
     }
+    /**
+     * It runs a query and returns an array, value or false if error.<br>
+     * The this command does not stack with other operators (such as where(),sort(),etc.)
+     * <br><b>Example</b>:<br>
+     * <pre>
+     * $values=$con->query('select * from table where id=?',["i",20]',true);
+     * </pr>
+     *
+     * @param string $sql The query to run
+     * @param array|null $param [Optional] The arguments of the query in the form [type,value,type2,value2..]
+     *
+     * @return array|bool|false|null
+     * @throws Exception
+     */
+    public static function query($sql,$param=null) {
+        $pdoOne = self::getPdoOne();
 
+        if(self::$useCache && $pdoOne->getCacheService()!==null) {
+            self::$uid=$pdoOne->buildUniqueID([$sql,$param],'query');
+            $getCache=$pdoOne->getCacheService()->getCache(self::$uid,static::TABLE);
+            if($getCache!==false) {
+                self::reset();
+                return $getCache;
+            }
+            $recursiveClass=static::getRecursiveClass();
+            $usingCache=true;
+        } else {
+            $recursiveClass=null;
+            $usingCache=false;
+        }
+        $rowc=self::getPdoOne()->runRawQuery($sql,$param,true);
+        if($rowc!==false && $usingCache) {
+            $pdoOne->getCacheService()->setCache(self::$uid,$recursiveClass,$rowc,self::$useCache);
+            self::reset();
+        }
+        return $rowc;
+    }
+    protected  static function reset() {
+        self::$useCache=false;
+        self::$uid=null;
+        self::$cacheFamily='';
+        self::$gQueryCounter=0;
+        self::$gQuery=[];
+    }
 
     /**
      * It is used for DI.<br>
@@ -116,8 +172,8 @@ abstract class _BasePdoOneRepo
     public static function validTable()
     {
         //try {
-        return self::getPdoOne()->validateDefTable(static::TABLE, static::getDef(), static::getDefKey(),
-            static::getDefFk());
+        return self::getPdoOne()
+            ->validateDefTable(static::TABLE, static::getDef(), static::getDefKey(), static::getDefFk());
         /*} catch(Exception $exception) {
             return ['exception'=>'not found '.$exception->getMessage()];
         }*/
@@ -239,16 +295,34 @@ abstract class _BasePdoOneRepo
     {
         static::$gQuery = [];
         static::$gQueryCounter = 0;
+
+        /** @var PdoOne $pdoOne instance of PdoOne */
+        $pdoOne = self::getPdoOne();
+        if(self::$useCache && $pdoOne->getCacheService()!==null) {
+            self::$uid=$pdoOne->buildUniqueID([$filter,$filterValue],static::TABLE.'::'.$type);
+            $getCache=$pdoOne->getCacheService()->getCache(self::$uid,static::TABLE);
+            if($getCache!==false) {
+                self::reset();
+                return $getCache;
+            }
+            $recursiveClass=static::getRecursiveClass();
+            $usingCache=true;
+        } else {
+            $recursiveClass=null;
+            $usingCache=false;
+        }
+
+
         $newQuery = [];
         $newQuery['type'] = 'QUERY';
         static::$gQuery[0] =& $newQuery;
-        $newQuery['joins'] = static::TABLE . " as t0 \n";
-        // we build the query
-        static::generationRecursive($newQuery, 't0.', '', '', false);
+        $newQuery['joins'] = static::TABLE . ' as '.static::TABLE." \n";
 
-        //die(1);
-        /** @var PdoOne $pdoOne instance of PdoOne */
-        $pdoOne = self::getPdoOne();
+
+
+        // we build the query
+        static::generationRecursive($newQuery, static::TABLE.'.', '', '', false);
+
 
         $rows = false;
         foreach (static::$gQuery as $query) {
@@ -287,14 +361,67 @@ abstract class _BasePdoOneRepo
             }
         }
         if (!is_array($rows)) {
-            return $rows;
+            $rowc=$rows;
+        } else {
+            $c = count($rows);
+            $rowc = [];
+            for ($i = 0; $i < $c; $i++) {
+                $rowc[$i] = self::convertRow($rows[$i]);
+            }
         }
-        $c = count($rows);
-        $rowc = [];
-        for ($i = 0; $i < $c; $i++) {
-            $rowc[$i] = self::convertRow($rows[$i]);
+        if($rowc!==false && $usingCache) {
+            $pdoOne->getCacheService()->setCache(self::$uid,$recursiveClass,$rowc,self::$useCache);
+            self::reset();
         }
         return $rowc;
+    }
+
+    /**
+     * With the recursive arrays, it gets all the classes related to the query (including this class) without the
+     * namespace<br>
+     * <b>Example:</b><br>
+     * <pre>
+     * CityRepo::setRecursive(['/countryFK'])::getRecursiveClass(); // ['CityRepo','TableFk']
+     * </pre>
+     *
+     * @param null|array $final  It is used internally for recursivity, it keeps the values.
+     * @param string     $prefix It is used internally for recursivity.
+     *
+     * @return array|null
+     */
+    public static function getRecursiveClass(&$final = null, $prefix = '')
+    {
+        $recs = self::getPdoOne()->getRecursive();
+        $keyRels = static::getDefFK(false);
+        $ns = self::getNamespace();
+        $postfix = self::getPostfix();
+        if ($final === null) {
+            // we start the chain
+            $final = [];
+            $final[] = PdoOne::camelize(static::TABLE).$postfix;
+        }
+        foreach ($recs as $rec) {
+            $keyr = $prefix . $rec;
+
+            if (isset($keyRels[$keyr])) {
+                $className = PdoOne::camelize($keyRels[$keyr]['reftable']) . $postfix;
+                $class = $ns . $className;
+                if (!in_array($className, $final, true)) {
+                    $final[] = $className;
+                }
+
+                $class::getRecursiveClass($final, $keyr);
+                if ($keyRels[$keyr]['key'] === 'MANYTOMANY') {
+                    $className = PdoOne::camelize($keyRels[$keyr]['table2']) . $postfix;
+                    $class = $ns . $className;
+                    if (!in_array($className, $final, true)) {
+                        $final[] = $className;
+                    }
+                    $class::getRecursiveClass($final, $keyr);
+                }
+            }
+        }
+        return $final;
     }
 
     protected static function generationRecursive(
@@ -312,7 +439,7 @@ abstract class _BasePdoOneRepo
             $newQuery['columns'][] = $pTable . $col . ' as ' . self::getPdoOne()->addQuote($pColumn . $col);
         }
         $ns = self::getNamespace();
-        $postfix=self::getPostfix();
+        $postfix = self::getPostfix();
 
         foreach ($keyRels as $nameCol => $keyRel) {
             $type = $keyRel['key'];
@@ -324,8 +451,9 @@ abstract class _BasePdoOneRepo
                     case 'ONETOONE':
                         static::$gQueryCounter++;
                         $tableRelAlias = 't' . static::$gQueryCounter; //$prefixtable.$nameColClean;
+                        //$tableRelAlias =trim($recursiveInit.'_'.$nameColClean,'/'); //str_replace(['/'],['.'],$recursiveInit.'.'.$nameColClean);
                         $colRelAlias = $pColumn . $nameCol;
-                        $class = $ns . $keyRel['reftable'] .$postfix;
+                        $class = $ns . PdoOne::camelize($keyRel['reftable']) . $postfix;
                         $refCol = $keyRel['refcol'];
                         $newQuery['joins'] .= " left join {$keyRel['reftable']} as $tableRelAlias "
                             . "on $pTable$nameColClean=$tableRelAlias.$refCol \n"; // $recursiveInit$nameCol\n"; // adds a query to the current query
@@ -354,7 +482,7 @@ abstract class _BasePdoOneRepo
                         $other['name'] = $nameCol;
                         $other['data'] = $keyRel;
                         //self::$gQuery[]=$other;
-                        $class = $ns . $keyRel['reftable'] . $postfix;
+                        $class = $ns . PdoOne::camelize($keyRel['reftable']) . $postfix;
 
                         $class::generationRecursive($other, '', '', $pColumn . $recursiveInit . $nameCol, false);
 
@@ -399,34 +527,37 @@ abstract class _BasePdoOneRepo
      */
     protected static function _insert(&$entity, $transaction = true)
     {
-        $pdo = self::getPdoOne();
-        $recursiveBack = $pdo->getRecursive();  // recursive is deleted by insertObject
+        $pdoOne = self::getPdoOne();
+        self::invalidateCache();
+        $recursiveBack = $pdoOne->getRecursive();  // recursive is deleted by insertObject
+
+
         $entityCopy = self::intersectArrays($entity,
             static::getDef(true)); // only the fields that are defined are inserted
         $entityCopy = self::diffArrays($entityCopy, static::getDefIdentity()); // identities are not inserted
         if ($transaction) {
-            $pdo->startTransaction();
+            $pdoOne->startTransaction();
         }
-        $insert = $pdo->insertObject(static::TABLE, $entityCopy);
-        $pks = $pdo->getDefTableKeys(static::TABLE, true, 'PRIMARY KEY');
+        $insert = $pdoOne->insertObject(static::TABLE, $entityCopy);
+        $pks = $pdoOne->getDefTableKeys(static::TABLE, true, 'PRIMARY KEY');
         if (count($pks) > 0) {
             // we update the identity of $entity ($entityCopy is already updated).
             $entity[array_keys($pks)[0]] = $insert;
         }
         $defs = static::getDefFK();
         $ns = self::getNamespace();
-        $postfix=self::getPostfix();
+        $postfix = self::getPostfix();
 
         foreach ($defs as $key => $def) { // ['/tablaparentxcategory']=['key'=>...]
             if ($def['key'] === 'MANYTOMANY' && isset($entity[$key]) && is_array($entity[$key])) {
-                $class2 = $ns . ucfirst($def['table2']) .$postfix;
+                $class2 = $ns . PdoOne::camelize($def['table2']) . $postfix;
                 foreach ($entity[$key] as $item) {
                     $pk2 = $item[$def['col2']];
-                    if ($pdo->hasRecursive($key, $recursiveBack) && $class2::exist($item) === false) {
+                    if ($pdoOne->hasRecursive($key, $recursiveBack) && $class2::exist($item) === false) {
                         // we only update it if it has a recursive
                         $pk2 = $class2::insert($item, false);
                     }
-                    $classRel = $ns . $def['reftable'] .$postfix;
+                    $classRel = $ns . PdoOne::camelize($def['reftable']) . $postfix;
                     $refCol = ltrim($def['refcol'], '/');
                     $refCol2 = ltrim($def['refcol2'], '/');
                     $relationalObj = [$refCol => $entityCopy[$def['col']], $refCol2 => $pk2];
@@ -453,7 +584,7 @@ abstract class _BasePdoOneRepo
     protected static function _update($entity, $transaction = true)
     {
         $pdo = self::getPdoOne();
-
+        self::invalidateCache();
         $entityCopy = self::intersectArrays($entity,
             static::getDef(true)); // only the fields that are defined are inserted
         $entityCopy = self::diffArrays($entityCopy, static::getDefIdentity()); // identities are not inserted
@@ -466,7 +597,7 @@ abstract class _BasePdoOneRepo
         $pdo->recursive($recursiveBack); // update() delete recursive
         $defs = static::getDefFK();
         $ns = self::getNamespace();
-        $postfix=self::getPostfix();
+        $postfix = self::getPostfix();
         foreach ($defs as $key => $def) { // ['/tablaparentxcategory']=['key'=>...]
 
             if ($def['key'] === 'MANYTOMANY') { //hasRecursive($recursiveInit . $key)
@@ -475,8 +606,8 @@ abstract class _BasePdoOneRepo
                 } else {
                     $newRows = $entity[$key];
                 }
-                $classRef = $ns . ucfirst($def['reftable']) .$postfix;
-                $class2 = $ns . ucfirst($def['table2']) . $postfix;
+                $classRef = $ns . PdoOne::camelize($def['reftable']) . $postfix;
+                $class2 = $ns . PdoOne::camelize($def['table2']) . $postfix;
                 $col1 = ltrim($def['col'], '/');
                 $refcol = ltrim($def['refcol'], '/');
                 $refcol2 = ltrim($def['refcol2'], '/');
@@ -548,6 +679,7 @@ abstract class _BasePdoOneRepo
     protected static function _delete($entity, $transaction = true)
     {
         $entityCopy = self::intersectArraysNotNull($entity, static::getDef(), true);
+        self::invalidateCache();
         $pdo = self::getPdoOne();
         if ($transaction) {
             $pdo->startTransaction();
@@ -555,7 +687,7 @@ abstract class _BasePdoOneRepo
 
         $defs = static::getDefFK();
         $ns = self::getNamespace();
-        $postfix=self::getPostfix();
+        $postfix = self::getPostfix();
 
         $recursiveBackup = self::getRecursive();
 
@@ -564,8 +696,8 @@ abstract class _BasePdoOneRepo
             if ($def['key'] === 'MANYTOMANY' && isset($entity[$key])
                 && is_array($entity[$key])
             ) { //hasRecursive($recursiveInit . $key)
-                $classRef = $ns . ucfirst($def['reftable']) . $postfix;
-                $class2 = $ns . ucfirst($def['table2']) .$postfix;
+                $classRef = $ns . PdoOne::camelize($def['reftable']) . $postfix;
+                $class2 = $ns . PdoOne::camelize($def['table2']) . $postfix;
 
                 $col1 = ltrim($def['col'], '/');
                 $refcol = ltrim($def['refcol'], '/');
@@ -723,8 +855,8 @@ abstract class _BasePdoOneRepo
      */
     protected static function _first($pk = null)
     {
-        if($pk!==null) {
-            $pk = is_array($pk) ? $pk : [static::PK[0] => $pk];    
+        if ($pk !== null) {
+            $pk = is_array($pk) ? $pk : [static::PK[0] => $pk];
         }
         $r = self::generationStart('first', $pk);
         if (is_array($r)) {
@@ -736,22 +868,23 @@ abstract class _BasePdoOneRepo
     /**
      * It gets the postfix of the class base considering the the class is based in the table<br>
      * Example: Class "SomeTableRepo" and table "sometable", the prefix is "Repo"
-     * 
+     *
      * @return false|string False on error or not found.
      */
-    public static function getPostfix() {
-        $class=static::class;
-        $table=static::TABLE;
-        $p0=stripos($class,$table)+strlen($table);
-        if($p0===false) {
+    public static function getPostfix()
+    {
+        $class = static::class;
+        $table = static::TABLE;
+        $p0 = stripos($class, $table) + strlen($table);
+        if ($p0 === false) {
             return false;
         }
-        return substr($class,$p0);
+        return substr($class, $p0);
     }
 
     /**
      * It gets the current namespace.
-     * 
+     *
      * @return string
      */
     public static function getNamespace()
@@ -759,7 +892,7 @@ abstract class _BasePdoOneRepo
         if (strpos(static::class, '\\')) { // we assume that every repo class lives in the same namespace.
             $ns = explode('\\', static::class);
             array_pop($ns);
-            $ns =implode('\\',$ns).'\\';
+            $ns = implode('\\', $ns) . '\\';
         } else {
             $ns = '';
         }
@@ -788,7 +921,7 @@ abstract class _BasePdoOneRepo
      * <pre>
      * ProductRepo::setRecursive(['/ProductExtension'])::toList(); // select .. from Product inner join ProductExtension
      * </pre>
-     * - If the relation is manytomany, then the system load the relational table (always, not matter the recursivity), 
+     * - If the relation is manytomany, then the system load the relational table (always, not matter the recursivity),
      * and it reads/insert/update the next values only if the value is marked as recursive. Example:<br>
      * <pre>
      * ProductRepo::setRecursive(['/product_x_category'])::toList(); // it returns porduct, productxcategory and category
@@ -796,11 +929,11 @@ abstract class _BasePdoOneRepo
      * manytomany)
      * </pre>
      *
-     * 
-     * @param array $recursive
+     *
+     * @param array $recursive An indexed array with the recursivity.
      *
      * @return self
-     * @see static::getDefFK for where to define the relation.        
+     * @see static::getDefFK for where to define the relation.
      */
     public static function setRecursive($recursive)
     {
@@ -823,6 +956,7 @@ abstract class _BasePdoOneRepo
     public static function useCache($ttl = null, $family = '')
     {
         self::getPdoOne()->useCache($ttl, $family);
+        self::$useCache=$ttl;
         return static::ME;
     }
 
@@ -835,13 +969,21 @@ abstract class _BasePdoOneRepo
      * $list=CityRepo::useCache(50000,'city')->toList(); // not using the cache
      * </pre>
      *
-     * @param string $family The family/grupo of cache(s) to invalidate.
+     * @param string $family The family/grupo of cache(s) to invalidate. If empty or null, then it invalidates the
+     *                       current table and all recursivity (if any)
      *
      * @return self
      */
     public static function invalidateCache($family = '')
     {
-        self::getPdoOne()->invalidateCache('', $family);
+        if(self::getPdoOne()->getCacheService()!==null) {
+            if (!$family) {
+                self::getPdoOne()->getCacheService()->invalidateCache('', self::getRecursiveClass());
+            } else {
+                self::getPdoOne()->invalidateCache('', $family);
+            }
+        }
+
         return static::ME;
     }
 
@@ -937,7 +1079,27 @@ abstract class _BasePdoOneRepo
      */
     public static function count($where = null)
     {
-        return (int)self::getPdoOne()->count()->from(static::TABLE)->where($where)->firstScalar();
+        $pdoOne = self::getPdoOne();
+        if(self::$useCache && $pdoOne->getCacheService()!==null) {
+            self::$uid=$pdoOne->buildUniqueID([$where],static::TABLE.'::count');
+            $getCache=$pdoOne->getCacheService()->getCache(self::$uid,static::TABLE);
+            if($getCache!==false) {
+                self::reset();
+                return $getCache;
+            }
+            $recursiveClass=static::getRecursiveClass();
+            $usingCache=true;
+        } else {
+            $recursiveClass=null;
+            $usingCache=false;
+        }
+        $rowc= self::getPdoOne()->count()->from(static::TABLE)->where($where)->firstScalar();
+
+        if($rowc!==false && $usingCache) {
+            $pdoOne->getCacheService()->setCache(self::$uid,$recursiveClass,(int)$rowc,self::$useCache);
+            self::reset();
+        }
+        return $rowc;
     }
 
     /**

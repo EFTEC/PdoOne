@@ -24,7 +24,18 @@ try {
 } catch (Exception $ex) {
 
 }
+/*$r=TablaParentRepo::setRecursive(
+    [
+        '/idchildFK',
+        '/idchildFK/idgrandchildFK',
+        '/idchildFK/idgrandchildFK/tablagrandchildcat'
+        ,'/tablaparentxcategory' // manytomany
+    ])::getRecursiveClass();
+var_dump($r);
 
+die(1);
+
+*/
 
 
 $r=TablaParentRepo::setRecursive(
