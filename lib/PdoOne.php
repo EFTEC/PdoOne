@@ -30,7 +30,7 @@ use stdClass;
  * @package       eftec
  * @author        Jorge Castro Castillo
  * @copyright (c) Jorge Castro C. MIT License  https://github.com/EFTEC/PdoOne
- * @version       1.43 2020-05-31
+ * @version       1.44 2020-05-31
  */
 class PdoOne
 {
@@ -396,8 +396,8 @@ class PdoOne
      * <b>class</b> is a DateTime() object<br>
      *
      * @param string $sqlField     The date to convert
-     * @param string $inputFormat  =['iso','human','sql','class'][$i]
-     * @param string $outputFormat =['iso','human','sql','class'][$i]
+     * @param string $inputFormat  =['iso','human','sql','class','timestamp'][$i]
+     * @param string $outputFormat =['iso','human','sql','class','timestamp'][$i]
      *
      * @return bool|DateTime
      */
@@ -446,6 +446,10 @@ class PdoOne
             case 'class':
                 $tmpDate = $sqlField;
                 break;
+            case 'timestamp':
+                $tmpDate=new DateTime();
+                $tmpDate->setTimestamp($sqlField);
+                break;
             default:
                 trigger_error('PdoOne: dateConvert type not defined');
         }
@@ -485,6 +489,9 @@ class PdoOne
                 break;
             case 'class':
                 return $tmpDate;
+                break;
+            case 'timestamp':
+                return $tmpDate->getTimestamp();
                 break;
         }
 

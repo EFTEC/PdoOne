@@ -1590,6 +1590,8 @@ In a nutshell:
 * Every minor version means that it adds a new functionality i.e. 1.5 -> 1.6 (new methods)  
 * Every decimal version means that it patches/fixes/refactoring a previous functionality i.e. 1.5.0 -> 1.5.1 (fix)  
 
+* 1.44 2020-5-31
+  * Updated BasePdoOneRepo to 4.4. Now it catches errors or returns false.    
 * 1.43 2020-5-31
   * Updated BasePdoOneRepo to 4.3. Now it works with conversions. It doesn't convert fields from **where**
    but it converts results, insert and update.   
