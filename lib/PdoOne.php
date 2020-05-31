@@ -30,7 +30,7 @@ use stdClass;
  * @package       eftec
  * @author        Jorge Castro Castillo
  * @copyright (c) Jorge Castro C. MIT License  https://github.com/EFTEC/PdoOne
- * @version       1.42 2020-05-29
+ * @version       1.43 2020-05-31
  */
 class PdoOne
 {
@@ -102,6 +102,13 @@ class PdoOne
     public $masks0 = [2, 0, 4, 5];
 
     public $masks1 = [16, 13, 12, 11];
+
+    /**
+     * @var array
+     * @see \eftec\PdoOne::generateCodeClassConversions
+     * @see \eftec\PdoOne::generateCodeClass
+     */
+    private $codeClassConversion = [];
 
     /** @var PdoOneEncryption */
     public $encryption;
@@ -645,16 +652,62 @@ class PdoOne
     }
 
     /**
-     * It get the definition of a table
+     * It get the definition of a table<br>
+     * <b>Example:</b><br>
+     * <pre>
+     * $this->getDefTable('tablename',$conversion);
+     * // ['col1'=>['phptype'=>'int','conversion'=>null,'type'=>'int','size'=>null
+     * // ,'null'=>false,'identity'=>true,'sql'='int not null auto_increment'
+     * </pre>
      *
-     * @param string $table
+     * @param string $table             The name of the table
+     * @param null   $specialConversion An associative array with the key as the column.
      *
-     * @return array
+     * @return array=[0]['phptype'=>null,'conversion'=>null,'type'=>null,'size'=>null,'null'=>null
+     *              ,'identity'=>null,'sql'=null]
      * @throws Exception
      */
-    public function getDefTable($table)
+    public function getDefTable($table, $specialConversion = null)
     {
-        return $this->service->getDefTable($table);
+        $r = $this->service->getDefTable($table);
+        foreach ($r as $k => $v) {
+            $t = explode(' ', trim($v), 2);
+            // int unsigned default ...
+            // string(30) not null default
+            // float(20,3) not null default
+            $type = $t[0];
+            $conversion = isset($specialConversion[$k]) ? $specialConversion[$k] : null;
+            $extra = (count($t) > 1) ? $t[1] : null;
+            if (stripos($extra, 'not null') !== false) {
+                $null = false;
+            } else {
+                $null = true;
+            }
+            if (stripos($extra, $this->database_identityName) !== false) {
+                $identity = true;
+            } else {
+                $identity = false;
+            }
+            $pPar = strpos($type, '(');
+            if ($pPar !== false) {
+                $dim = substr($type, $pPar + 1, strlen($type) - $pPar - 2);
+                $type = substr($type, 0, $pPar);
+            } else {
+                $dim = null;
+            }
+            $r[$k] = [
+                'phptype'    => $this->dbTypeToPHP($type)[0],
+                'conversion' => $conversion,
+                'type'       => $type,
+                'size'       => $dim,
+                'null'       => $null,
+                'identity'   => $identity,
+                'sql'        => $v
+            ];
+        }
+
+
+        return $r;
     }
 
     /**
@@ -1126,16 +1179,29 @@ eot;
      * It returns an uniqued uid ('sha512') based in all the parameters of the query (select,from,where
      * ,parameters,group,recursive,having,limit,distinct,order,etc.) and optionally in an extra value
      *
-     * @param mixed|null $extra [optional] If we want to add an extra value to the UID generated
+     * @param mixed|null $extra  [optional] If we want to add an extra value to the UID generated
      * @param string     $prefix A prefix added to the UNID generated.
      *
      * @return string
      */
-    public function buildUniqueID($extra=null,$prefix='') {
-        $all=[$this->select,$this->from,$this->where,$this->whereParamType,$this->whereParamAssoc
-              ,$this->whereParamValue,$this->group,$this->recursive,$this->having,$this->limit
-              ,$this->distinct,$this->order,$extra];
-        return $prefix.hash('sha512',json_encode($all));
+    public function buildUniqueID($extra = null, $prefix = '')
+    {
+        $all = [
+            $this->select,
+            $this->from,
+            $this->where,
+            $this->whereParamType,
+            $this->whereParamAssoc,
+            $this->whereParamValue,
+            $this->group,
+            $this->recursive,
+            $this->having,
+            $this->limit,
+            $this->distinct,
+            $this->order,
+            $extra
+        ];
+        return $prefix . hash('sha512', json_encode($all));
     }
 
     /**
@@ -1944,6 +2010,93 @@ eot;
         return $code;
     }
 
+    /**
+     * It converts a sql type into a 'php type' and a pdo::param type<br>
+     * <b>Example:</b><br>
+     * <pre>
+     * $this->dbTypeToPHP('varchar'); // ['string',PDO::PARAM_STR]
+     * $this->dbTypeToPHP('int'); // ['int',PDO::PARAM_INT]
+     * </pre>
+     * <b>PHP Types</b>: binary, date, datetime, decimal,int, string,time, timestamp<br>
+     * <b>Param Types</b>: PDO::PARAM_LOB, PDO::PARAM_STR, PDO::PARAM_INT<br>
+     *
+     * @param string $type (lowercase)
+     *
+     * @return array
+     */
+    public function dbTypeToPHP($type)
+    {
+        switch ($type) {
+            case 'binary':
+            case 'blob':
+            case 'longblob':
+            case 'longtext':
+            case 'mediumblob':
+            case 'mediumtext':
+            case 'text':
+            case 'tinyblob':
+            case 'tinytext':
+            case 'varbinary':
+            case 'image':
+                return ['binary', PDO::PARAM_LOB];
+            case 'date':
+                return ['date', PDO::PARAM_STR];
+            case 'datetime':
+            case 'datetime2':
+            case 'datetimeoffset':
+            case 'smalldatetime':
+                return ['datetime', PDO::PARAM_STR];
+            case 'decimal':
+            case 'double':
+            case 'float':
+            case 'money':
+            case 'numeric':
+            case 'real':
+            case 'smallmoney':
+                return ['decimal', PDO::PARAM_STR];
+            case 'bigint':
+            case 'bit':
+            case 'int':
+            case 'mediumint':
+            case 'smallint':
+            case 'tinyint':
+            case 'year':
+                return ['int', PDO::PARAM_INT];
+            case 'table':
+            case 'char':
+            case 'enum':
+            case 'geometry':
+            case 'geometrycollection':
+            case 'linestring':
+            case 'multilinestring':
+            case 'multipoint':
+            case 'multipolygon':
+            case 'point':
+            case 'polygon':
+            case 'set':
+            case 'varchar':
+            case 'cursor':
+            case 'hierarchyid':
+            case 'json':
+            case 'nchar':
+            case 'ntext':
+            case 'nvarchar':
+            case 'rowversion':
+            case 'spatial geography types':
+            case 'spatial geometry types':
+            case 'sql_variant':
+            case 'uniqueidentifier':
+            case 'xml':
+                return ['string', PDO::PARAM_STR];
+            case 'time':
+                return ['time', PDO::PARAM_STR];
+            case 'timestamp':
+                return ['timestamp', PDO::PARAM_STR];
+        }
+        return ['string', PDO::PARAM_STR];
+    }
+
+
     public static function varExport($input, $indent = "\t")
     {
         switch (gettype($input)) {
@@ -1970,6 +2123,28 @@ eot;
         return $r;
     }
 
+
+    /**
+     * It sets conversions depending of the type of data. This method is used together with generateCodeClassAll().
+     * <b>This value persists across calls</b><br>
+     * For example, if we always want to convert <b>tinyint</b> into <b>boolean</b>, then we could use this function
+     * , instead of specify per each column.<br>
+     * <b>Example:</b><br>
+     * <pre>
+     * $this->generateCodeClassConversions(['datetime'=>'datetime2','tinyint'=>'bool']);
+     * echo $this->generateCodeClassAll('table');
+     * $this->generateCodeClassConversions(); // reset.
+     * </pre>
+     *
+     * @param array $conversion An associative array where the key is the type and the value is the conversion.
+     *
+     * @see \eftec\PdoOne::generateCodeClass
+     */
+    public function generateCodeClassConversions($conversion = [])
+    {
+        $this->codeClassConversion = $conversion;
+    }
+
     /**
      * It generates a class<br>
      * <b>Example:</b><br>
@@ -1979,50 +2154,128 @@ eot;
      *          ,'Repo');
      * </pre>
      *
-     * @param string     $tableName      The name of the table. It is also the name of the class.
-     * @param string     $namespace      The Namespace of the generated class
-     * @param array|null $customRelation An associative array to specific custom relations, such as PARENT<br>
-     *                                   The key is the name of the columns and the value is the type of relation<br>
-     * @param string     $postfix The postfix of the class. Usually it is Repo or Dao.
+     * @param string     $tableName         The name of the table. It is also the name of the class.
+     * @param string     $namespace         The Namespace of the generated class
+     * @param array|null $customRelation    An associative array to specific custom relations, such as PARENT<br>
+     *                                      The key is the name of the columns and the value is the type of relation<br>
+     * @param string     $postfix           The postfix of the class. Usually it is Repo or Dao.
+     *
+     * @param array      $specialConversion An associative array to specify a custom conversion<br>
+     *                                      The key is the name of the columns and the value is the type of relation<br>
+     * @param string[]   $defNoInsert       An array with the name of the columns to not to insert. The identity is
+     *                                      added automatically to this list
+     * @param string[]   $defNoUpdate       An array with the name of the columns to not to update. The identity is
+     *                                      added automatically to this list
      *
      * @return string|string[]
+     * @throws Exception
      */
-    public function generateCodeClass($tableName, $namespace = '', $customRelation = null,$postfix='Repo')
-    {
+    public function generateCodeClass(
+        $tableName,
+        $namespace = '',
+        $customRelation = null,
+        $postfix = 'Repo',
+        $specialConversion = [],
+        $defNoInsert = null,
+        $defNoUpdate = null
+    ) {
         $r = <<<'eot'
 <?php
-/** @noinspection PhpUnused */
+/** @noinspection ReturnTypeCanBeDeclaredInspection
+ * @noinspection DuplicatedCode
+ * @noinspection PhpUnused
+ * @noinspection PhpUndefinedMethodInspection
+ * @noinspection PhpUnusedLocalVariableInspection
+ * @noinspection PhpUnusedAliasInspection
+ */
 {namespace}
 use eftec\PdoOne;
 use eftec\_BasePdoOneRepo;
+use Exception;
 
 /**
  * Generated by PdoOne Version {version}
- * @copyright (c) Jorge Castro C. MIT License  https://github.com/EFTEC/PdoOne 
+ * @copyright (c) Jorge Castro C. MIT License  https://github.com/EFTEC/PdoOne
  * Class {class}{postfix}
  */
 class {class}{postfix} extends _BasePdoOneRepo
 {
     const TABLE = '{table}';
     const PK = {pk};
-    const ME=__CLASS__;   
-    
-    public static function getDef($onlyKeys=false) {
-        $r= {def};
-        return ($onlyKeys)? array_keys($r): $r;
+    const ME=__CLASS__;
+
+    /**
+     * It returns the definitions of the columns<br>
+     * <b>Example:</b><br>
+     * <pre>
+     * self::getDef(); // ['colName'=>[php type,php conversion type,type,size,nullable,extra,sql],'colName2'=>..]
+     * self::getDef('sql'); // ['colName'=>'sql','colname2'=>'sql2']
+     * self::getDef('identity',true); // it returns the columns that are identities ['col1','col2']
+     * </pre>
+     * <b>PHP Types</b>: binary, date, datetime, decimal,int, string,time, timestamp<br>
+     * <b>PHP Conversions</b>: datetime3 (human string), datetime2 (iso), timestamp (int), bool, int, float<br>
+     * <b>Param Types</b>: PDO::PARAM_LOB, PDO::PARAM_STR, PDO::PARAM_INT<br>
+     *
+     * @param string|null $column =['phptype','conversion','type','size','null','identity','sql'][$i]
+     *                             if not null then it only returns the column specified.
+     * @param string|null $filter If filter is not null, then it uses the column to filter the result.
+     *
+     * @return array|array[]
+     */
+    public static function getDef($column=null,$filter=null) {
+       $r = {def};
+       if($column!==null) {
+            if($filter===null) {
+                foreach($r as $k=>$v) {
+                    $r[$k]=$v[$column];
+                }
+            } else {
+                $new=[];
+                foreach($r as $k=>$v) {
+                    if($v[$column]===$filter) {
+                        $new[]=$k;
+                    }
+                }
+                return $new;
+            }
+        }
+        return $r;
     }
-    
+
+    /**
+     * It gets all the name of the columns.
+     *
+     * @return string[]
+     */
+    public static function getDefName() {
+        return {defname};
+    }
+
     /**
      * It returns an associative array (colname=>key type) with all the keys/indexes (if any)
-     * 
+     *
      * @return string[]
-     */    
+     */
     public static function getDefKey() {
         return {defkey};
     }
-    public static function getDefIdentity() {
-        return {defkeyidentity};
+
+    /**
+     * It returns a string array with the name of the columns that are skipped when insert
+     * @return string[]
+     */
+    public static function getDefNoInsert() {
+        return {defnoinsert};
     }
+
+    /**
+     * It returns a string array with the name of the columns that are skipped when update
+     * @return string[]
+     */
+    public static function getDefNoUpdate() {
+        return {defnoupdate};
+    }
+
     public static function getDefFK($structure=false) {
         if ($structure) {
             return {deffk};
@@ -2033,48 +2286,81 @@ class {class}{postfix} extends _BasePdoOneRepo
     public static function toList($filter=null,$filterValue=null) {
         return self::_toList($filter,$filterValue);
     }
+
+    /**
+     * It returns the first row of a query.
+     * @param array|mixed|null $pk [optional] Specify the value of the primary key.
+     *
+     * @return array|bool
+     * @throws Exception
+     */
     public static function first($pk = null) {
         return self::_first($pk);
     }
-    
+
     /**
      *  It returns true if the entity exists, otherwise false.<br>
      *  <b>Example:</b><br>
      *  <pre>
      *  $this->exist(['id'=>'a1','name'=>'name']); // using an array
      *  $this->exist('a1'); // using the primary key. The table needs a pks and it only works with the first pk.
-     *  </pre>     
-     *    
-     * @param array|mixed $entity=self::factory()
+     *  </pre>
+     *
+     * @param array|mixed $entity =self::factory()
+     *
      * @return bool true if the pks exists
      */
     public static function exist($entity) {
         return self::_exist($entity);
     }
+
     /**
-     * @param array $entity=self::factory()
-     * @param bool $transactional If true (default) then the operation is transaction
+     * @param array $entity        =self::factory()
+     * @param bool  $transactional If true (default) then the operation is transaction
+     *
      * @return array|false=self::factory()
+     * @throws Exception
      */
     public static function insert(&$entity,$transactional=true) {
         return self::_insert($entity,$transactional);
     }
-    
+
     /**
-     * @param array $entity=self::factory()
-     * @param bool $transactional If true (default) then the operation is transaction
+     * @param array $entity        =self::factory()
+     * @param bool  $transactional If true (default) then the operation is transaction
+     *
      * @return array|false=self::factory()
+     * @throws Exception
      */
     public static function update($entity,$transactional=true) {
         return self::_update($entity,$transactional);
     }
+
+    /**
+     * It deletes an entity by the primary key
+     *
+     * @param array $entity =self::factory()
+     * @param bool  $transactional
+     *
+     * @return mixed
+     * @throws Exception
+     */
     public static function delete($entity,$transactional=true) {
         return self::_delete($entity,$transactional);
     }
+
+    /**
+     * It deletes an entity by the primary key.
+     *
+     * @param array $pk =self::factory()
+     * @param bool  $transactional
+     *
+     * @return mixed
+     * @throws Exception
+     */
     public static function deleteById($pk,$transactional=true) {
         return self::_deleteById($pk,$transactional);
-    }  
-    
+    }
 
     public static function factory() {
         $recursive=static::getRecursive();
@@ -2082,8 +2368,8 @@ class {class}{postfix} extends _BasePdoOneRepo
     }
     public static function factoryNull() {
         return {array_null};
-    }     
-     
+    }
+
 }
 eot;
         $r = str_replace(array('{version}', '{class}', '{postfix}', '{table}', '{namespace}'), array(
@@ -2095,15 +2381,16 @@ eot;
         ), $r);
         $pk = '??';
         $pk = $this->service->getPK($tableName, $pk);
+        $pkFirst = (is_array($pk) && count($pk) > 0) ? $pk[0] : null;
 
 
         try {
             $relation = $this->getDefTableFK($tableName, false, true);
         } catch (Exception $e) {
-            return 'Error: Unable read fk of table '.$e->getMessage();
+            return 'Error: Unable read fk of table ' . $e->getMessage();
         }
 
-        // many to many 
+        // many to many
         /*foreach ($relation as $rel) {
             $tableMxM = $rel['reftable'];
             $tableFK = $this->getDefTableFK($tableMxM, false, true);
@@ -2112,7 +2399,7 @@ eot;
         try {
             $deps = $this->tableDependency(true, false);
         } catch (Exception $e) {
-            return 'Error: Unable read table dependencies '.$e->getMessage();
+            return 'Error: Unable read table dependencies ' . $e->getMessage();
         } //  ["city"]=> {["city_id"]=> "address"}
         $after = @$deps[1][$tableName];
         $before = @$deps[2][$tableName];
@@ -2142,7 +2429,9 @@ eot;
             if ($rel['key'] === 'MANYTOONE') {
                 $pkref = null;
                 $pkref = $this->service->getPK($rel['reftable'], $pkref);
-                if ($pkref[0] === $rel['refcol'] && count($pkref) === 1) {
+
+                if ($pkref[0] === $rel['refcol'] && count($pkref) === 1 && (strcasecmp($k, '/' . $pkFirst) === 0)) {
+                    // if they are linked by the pks and the pks are only 1.
                     $relation[$k]['key'] = 'ONETOONE';
                 }
             }
@@ -2164,13 +2453,13 @@ eot;
                             try {
                                 $defsFK = $this->service->getDefTableFK($relation[$k]['reftable'], false);
                             } catch (Exception $e) {
-                                return 'Error: Unable read table dependencies '.$e->getMessage();
+                                return 'Error: Unable read table dependencies ' . $e->getMessage();
                             }
                             try {
                                 $keys2 = $this->service->getDefTableKeys($defsFK[$refcol2]['reftable'], true,
                                     'PRIMARY KEY');
                             } catch (Exception $e) {
-                                return 'Error: Unable read table dependencies'.$e->getMessage();
+                                return 'Error: Unable read table dependencies' . $e->getMessage();
                             }
                             $relation[$k]['refcol2'] = '/' . $refcol2;
                             if (is_array($keys2)) {
@@ -2188,21 +2477,51 @@ eot;
         }
         //die(1);
 
+        $gdf = $this->getDefTable($tableName, $specialConversion);
+        if (@count($this->codeClassConversion) > 0) {
+            // we forced the conversion but only if it is not specified explicit
+            foreach ($gdf as $k => $colDef) {
+                $type = $colDef['type'];
+                if (isset($this->codeClassConversion[$type]) && $gdf[$k]['conversion'] === null) {
+                    $gdf[$k]['conversion'] = $this->codeClassConversion[$type];
+                }
+            }
+        }
+
+        // discard columns
+        $identities = $this->getDefIdentities($tableName);
+        if ($defNoInsert !== null) {
+            $noInsert = array_merge($identities, $defNoInsert);
+        } else {
+            $noInsert = $identities;
+        }
+        if ($defNoInsert !== null) {
+            $noUpdate = array_merge($identities, $defNoUpdate);
+        } else {
+            $noUpdate = $identities;
+        }
+
+
         try {
             $r = str_replace(array(
                 '{pk}',
                 '{def}',
+                '{defname}',
                 '{defkey}',
-                '{defkeyidentity}',
+                '{defnoinsert}',
+                '{defnoupdate}',
                 '{deffk}',
                 '{deffktype}',
                 '{array}',
                 '{array_null}'
             ), array(
                 self::varExport($pk),
-                self::varExport($this->getDefTable($tableName), "\t\t"),
+                //str_replace(["\n\t\t        ", "\n\t\t    ],"], ['', '],'], self::varExport($gdf, "\t\t")), // {def}
+                self::varExport($gdf, "\t\t"),
+                self::varExport(array_keys($gdf), "\t\t"), // {defname}
                 self::varExport($this->getDefTableKeys($tableName), "\t\t"), // {defkey}
-                self::varExport($this->getDefIdentities($tableName), "\t\t"), // {defkeyidentity}
+                self::varExport($noInsert, "\t\t"), // {defnoinsert}
+                self::varExport($noUpdate, "\t\t"), // {defnoupdate}
                 self::varExport($this->getDefTableFK($tableName), "\t\t\t"), //{deffk}
                 self::varExport($relation, "\t\t"), //{deffktype}
                 str_replace("\n", "\n\t\t",
@@ -2210,7 +2529,7 @@ eot;
                 str_replace("\n", "\n\t\t", rtrim($this->generateCodeArray($tableName, null, true, false, true), "\n"))
             ), $r);
         } catch (Exception $e) {
-            return "Unable read definition of tables ".$e->getMessage();
+            return "Unable read definition of tables " . $e->getMessage();
         }
 
         return $r;
@@ -2241,7 +2560,7 @@ LOGS;
             $web .= $this->bootstrapcss();
             $web .= <<<'LOGS'
   </head>
-  
+
   <body>
   <br>
     <div class="section">
@@ -2295,14 +2614,14 @@ LOGS;
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <title>PdoOne {{version}}</title>
-    
+
     <link rel="shortcut icon" href="http://raw.githubusercontent.com/EFTEC/AutoLoadOne/master/doc/favicon.ico">
-    <meta name="viewport" content="width=device-width, initial-scale=1">    
+    <meta name="viewport" content="width=device-width, initial-scale=1">
 TEM1;
             $web .= $this->bootstrapcss();
             $web .= <<<'TEM1'
 </head>
-      
+
   <body>
   <br>
     <div class="section">
@@ -2312,7 +2631,7 @@ TEM1;
             <div class="panel panel-primary">
               <div class="panel-heading">
                 <h3 class="panel-title">PdoOne {{version}}.<div  class='pull-right' ><a style="color:white;" href="https://github.com/EFTEC/AutoLoadOne">Help Page</a></div></h3>
-              </div>             
+              </div>
               <div class="panel-body">
                 <form class="form-horizontal" role="form" method="post">
                   <div class="form-group">
@@ -2347,7 +2666,7 @@ TEM1;
                       <em><b>Examples:</b> 127.0.0.1 or (local)\sqlexpress</em>
                     </div>
                   </div>
-                  <!-- end server -->                  
+                  <!-- end server -->
                   <!-- user -->
                   <div class="form-group">
                     <div class="col-sm-2">
@@ -2359,7 +2678,7 @@ TEM1;
                       <em><b>Examples:</b> root, sa</em>
                     </div>
                   </div>
-                  <!-- end user -->        
+                  <!-- end user -->
                   <!-- pwd -->
                   <div class="form-group">
                     <div class="col-sm-2">
@@ -2371,7 +2690,7 @@ TEM1;
                       <em><b>Examples:</b> abc.123, 12345 (note: the password is visible)</em>
                     </div>
                   </div>
-                  <!-- end pwd -->         
+                  <!-- end pwd -->
                   <!-- db -->
                   <div class="form-group">
                     <div class="col-sm-2">
@@ -2383,7 +2702,7 @@ TEM1;
                       <em><b>Examples:</b> sakila, contoso, adventureworks</em>
                     </div>
                   </div>
-                  <!-- end db -->       
+                  <!-- end db -->
                   <!-- input -->
                   <div class="form-group">
                     <div class="col-sm-2">
@@ -2395,7 +2714,7 @@ TEM1;
                       <em><b>Examples:</b> select * from table , tablename</em>
                     </div>
                   </div>
-                  <!-- end input -->       
+                  <!-- end input -->
                   <!-- output -->
                   <div class="form-group">
                     <div class="col-sm-2">
@@ -2406,11 +2725,11 @@ TEM1;
                             <option value="">--select an output--</option>
                             {{output}}
                         </select>
-                      
+
                       <em><b>Examples:</b> classcode,selectcode,arraycode,csv,json</em>
                     </div>
                   </div>
-                  <!-- end output -->        
+                  <!-- end output -->
                   <!-- pk -->
                   <div class="form-group">
                     <div class="col-sm-2">
@@ -2422,7 +2741,7 @@ TEM1;
                       <em><b>Examples:</b> namespace1\namespace2</em>
                     </div>
                   </div>
-                  <!-- end pk -->                                                                         
+                  <!-- end pk -->
                   <!-- result -->
                   <div class="form-group" >
                     <div class="col-sm-2">
@@ -2431,10 +2750,10 @@ TEM1;
                     <div class="col-sm-10">
                       <textarea class="form-control" style="height:150px; overflow-y: scroll;">{{log}}</textarea>
                     </div>
-                  </div>    
+                  </div>
                   <!-- result -->
-                  
-                                
+
+
                   <div class="form-group">
                     <div class="col-sm-offset-2 col-sm-10">
                       <button type="submit" name="button" value="1" class="btn btn-primary">Generate</button>
@@ -2442,12 +2761,12 @@ TEM1;
                       <button type="submit" name="button" value="logout" class="btn btn-default">Logout</button>
                     </div>
                   </div>
-                  
+
                 </form>
               </div>
               <div class="panel-footer">
                 <h3 class="panel-title">&copy; <a href="https://github.com/EFTEC/AutoLoadOne">Jorge Castro C.</a> {{ms}}</h3>
-              </div> 
+              </div>
             </div>
           </div>
         </div>
@@ -2455,7 +2774,7 @@ TEM1;
     </div>
   </body>
 
-</html>    
+</html> 
 TEM1;
 
             $database = @$_POST['database'];

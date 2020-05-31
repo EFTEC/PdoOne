@@ -1,4 +1,5 @@
-<?php /** @noinspection TypeUnsafeComparisonInspection */
+<?php
+/** @noinspection TypeUnsafeComparisonInspection */
 
 /** @noinspection DuplicatedCode */
 
@@ -25,7 +26,7 @@ class PdoOne_Mysql implements PdoOne_IExt
     /**
      * PdoOne_Mysql constructor.
      *
-     * @param  PdoOne  $parent
+     * @param PdoOne $parent
      */
     public function __construct(PdoOne $parent)
     {
@@ -36,12 +37,12 @@ class PdoOne_Mysql implements PdoOne_IExt
     {
         $this->parent->database_delimiter0 = '`';
         $this->parent->database_delimiter1 = '`';
-        $this->parent->database_identityName='auto_increment';
-        $charset                           = ($charset == null) ? 'utf8' : $charset;
-        PdoOne::$isoDate                   = 'Y-m-d';
-        PdoOne::$isoDateTime               = 'Y-m-d H:i:s';
-        PdoOne::$isoDateTimeMs             = 'Y-m-d H:i:s.u';
-        $this->parent->isOpen=false;
+        $this->parent->database_identityName = 'auto_increment';
+        $charset = ($charset == null) ? 'utf8' : $charset;
+        PdoOne::$isoDate = 'Y-m-d';
+        PdoOne::$isoDateTime = 'Y-m-d H:i:s';
+        PdoOne::$isoDateTimeMs = 'Y-m-d H:i:s.u';
+        $this->parent->isOpen = false;
 
         return $charset;
     }
@@ -51,50 +52,47 @@ class PdoOne_Mysql implements PdoOne_IExt
         $this->parent->conn1
             = new PDO("{$this->parent->databaseType}:host={$this->parent->server};dbname={$this->parent->db}{$cs}",
             $this->parent->user, $this->parent->pwd);
-        $this->parent->user='';
-        $this->parent->pwd='';
+        $this->parent->user = '';
+        $this->parent->pwd = '';
     }
 
     public function getDefTable($table)
     {
-        $defArray = $this->parent->runRawQuery('show columns from '.$table, [], true);
-        $result   = [];
+        $defArray = $this->parent->runRawQuery('show columns from ' . $table, [], true);
+        $result = [];
         foreach ($defArray as $col) {
             /*if ($col['Key'] === 'PRI') {
                 $pk = $col['Field'];
             }*/
-            $type=$col['Type'];
-            $type=str_replace('int(11)','int',$type);
+            $type = $col['Type'];
+            $type = str_replace('int(11)', 'int', $type);
             $value = $type;
             $value .= ($col['Null'] === 'NO') ? ' not null' : '';
             if ($col['Default'] === 'CURRENT_TIMESTAMP') {
                 $value .= ' default CURRENT_TIMESTAMP';
             } else {
-                $value .= ($col['Default']) ? ' default '.PdoOne::addParenthesis($col['Default'],"'","'").'' : '';
+                $value .= ($col['Default']) ? ' default ' . PdoOne::addParenthesis($col['Default'], "'", "'") . '' : '';
             }
             $col['Extra'] = str_replace('DEFAULT_GENERATED ', '', $col['Extra']);
-            $value        .= ($col['Extra']) ? ' '.$col['Extra'] : '';
+            $value .= ($col['Extra']) ? ' ' . $col['Extra'] : '';
 
             $result[$col['Field']] = $value;
         }
         return $result;
     }
-    
-    public function getDefTableFK($table, $returnSimple,$filter=null, $assocArray =false)
+
+
+    public function getDefTableFK($table, $returnSimple, $filter = null, $assocArray = false)
     {
         $columns = [];
         /** @var array $result =array(["CONSTRAINT_NAME"=>'',"COLUMN_NAME"=>'',"REFERENCED_TABLE_NAME"=>''
          * ,"REFERENCED_COLUMN_NAME"=>'',"UPDATE_RULE"=>'',"DELETE_RULE"=>''])
          */
-        $fkArr = $this->parent
-            ->select('k.CONSTRAINT_NAME,k.COLUMN_NAME,k.REFERENCED_TABLE_NAME,k.REFERENCED_COLUMN_NAME
-                    ,c.UPDATE_RULE,c.DELETE_RULE')
-            ->from('INFORMATION_SCHEMA.KEY_COLUMN_USAGE k')
-            ->innerjoin('information_schema.REFERENTIAL_CONSTRAINTS c 
+        $fkArr = $this->parent->select('k.CONSTRAINT_NAME,k.COLUMN_NAME,k.REFERENCED_TABLE_NAME,k.REFERENCED_COLUMN_NAME
+                    ,c.UPDATE_RULE,c.DELETE_RULE')->from('INFORMATION_SCHEMA.KEY_COLUMN_USAGE k')->innerjoin('information_schema.REFERENTIAL_CONSTRAINTS c 
                         ON k.referenced_table_schema=c.CONSTRAINT_SCHEMA AND k.CONSTRAINT_NAME=c.CONSTRAINT_NAME')
             ->where('k.TABLE_SCHEMA=? AND k.TABLE_NAME = ?', ['s', $this->parent->db, 's', $table])
-            ->order('k.COLUMN_NAME')
-            ->toList();
+            ->order('k.COLUMN_NAME')->toList();
 
         /*echo "table:";
         var_dump($table);
@@ -104,37 +102,30 @@ class PdoOne_Mysql implements PdoOne_IExt
         //var_dump($this->parent->lastQuery);
         foreach ($fkArr as $item) {
             $txt = "FOREIGN KEY REFERENCES`{$item['REFERENCED_TABLE_NAME']}`(`{$item['REFERENCED_COLUMN_NAME']}`)";
-            $extra='';
+            $extra = '';
             if ($item['UPDATE_RULE'] && $item['UPDATE_RULE'] !== 'NO ACTION') {
-                $extra .= ' ON UPDATE '.$item['UPDATE_RULE'];
+                $extra .= ' ON UPDATE ' . $item['UPDATE_RULE'];
             }
             if ($item['DELETE_RULE'] && $item['DELETE_RULE'] !== 'NO ACTION') {
-                $extra .= ' ON DELETE '.$item['DELETE_RULE'];
+                $extra .= ' ON DELETE ' . $item['DELETE_RULE'];
             }
             if ($returnSimple) {
-                $columns[$item['COLUMN_NAME']] = $txt.$extra;
+                $columns[$item['COLUMN_NAME']] = $txt . $extra;
             } else {
-                $columns[$item['COLUMN_NAME']]=PdoOne::newColFK(
-                    'FOREIGN KEY'
-                    ,$item['REFERENCED_COLUMN_NAME']
-                    ,$item['REFERENCED_TABLE_NAME']
-                    ,$extra
-                    ,$item['CONSTRAINT_NAME']);
-                $columns['/'.$item['COLUMN_NAME']]=PdoOne::newColFK(
-                    'MANYTOONE'
-                    ,$item['REFERENCED_COLUMN_NAME']
-                    ,$item['REFERENCED_TABLE_NAME']
-                    ,$extra
-                    ,$item['CONSTRAINT_NAME']);
+                $columns[$item['COLUMN_NAME']] = PdoOne::newColFK('FOREIGN KEY', $item['REFERENCED_COLUMN_NAME'],
+                    $item['REFERENCED_TABLE_NAME'], $extra, $item['CONSTRAINT_NAME']);
+                $columns['/' . $item['COLUMN_NAME']] = PdoOne::newColFK('MANYTOONE', $item['REFERENCED_COLUMN_NAME'],
+                    $item['REFERENCED_TABLE_NAME'], $extra, $item['CONSTRAINT_NAME']);
             }
         }
 
 
-        if($assocArray) {
+        if ($assocArray) {
             return $columns;
         }
-        return $this->parent->filterKey($filter,$columns,$returnSimple);
+        return $this->parent->filterKey($filter, $columns, $returnSimple);
     }
+
     public function typeDict($row, $default = true)
     {
         $type = @$row['native_type'];
@@ -161,7 +152,7 @@ class PdoOne_Mysql implements PdoOne_IExt
             case 'NEWDECIMAL':
                 return ($default) ? '0.0' : 'float';
             default:
-                return '???' .$type;
+                return '???' . $type;
         }
     }
 
@@ -177,7 +168,8 @@ class PdoOne_Mysql implements PdoOne_IExt
                     = "SELECT * FROM INFORMATION_SCHEMA.ROUTINES where ROUTINE_SCHEMA='{$this->parent->db}' and ROUTINE_NAME=?";
                 break;
             default:
-                $this->parent->throwError("objectExist: type [$type] not defined for {$this->parent->databaseType}", '');
+                $this->parent->throwError("objectExist: type [$type] not defined for {$this->parent->databaseType}",
+                    '');
                 die(1);
                 break;
         }
@@ -203,7 +195,8 @@ class PdoOne_Mysql implements PdoOne_IExt
                 }
                 break;
             default:
-                $this->parent->throwError("objectExist: type [$type] not defined for {$this->parent->databaseType}", '');
+                $this->parent->throwError("objectExist: type [$type] not defined for {$this->parent->databaseType}",
+                    '');
                 die(1);
                 break;
         }
@@ -238,19 +231,19 @@ class PdoOne_Mysql implements PdoOne_IExt
 
     public function createSequence($tableSequence = null, $method = 'snowflake')
     {
-        $ok = $this->parent->createTable($tableSequence
-            , [
-                'id'   => 'bigint(20) unsigned NOT NULL AUTO_INCREMENT',
-                'stub' => "char(1) NOT NULL DEFAULT ''",
-            ], ['id' => 'PRIMARY KEY',
-                'stub'=> 'UNIQUE KEY']
-            , '', 'ENGINE=MyISAM AUTO_INCREMENT=1 DEFAULT CHARSET=utf8');
-        if ( ! $ok) {
+        $ok = $this->parent->createTable($tableSequence, [
+            'id'   => 'bigint(20) unsigned NOT NULL AUTO_INCREMENT',
+            'stub' => "char(1) NOT NULL DEFAULT ''",
+        ], [
+                'id'   => 'PRIMARY KEY',
+                'stub' => 'UNIQUE KEY'
+            ], '', 'ENGINE=MyISAM AUTO_INCREMENT=1 DEFAULT CHARSET=utf8');
+        if (!$ok) {
             $this->parent->throwError("Unable to create table $tableSequence", '');
             return '';
         }
         $ok = $this->parent->insert($tableSequence, ['stub' => 'a']);
-        if ( ! $ok) {
+        if (!$ok) {
             $this->parent->throwError("Unable to insert in table $tableSequence", '');
 
             return '';
@@ -285,40 +278,45 @@ class PdoOne_Mysql implements PdoOne_IExt
 
         return $sql;
     }
-    
-    public function getSequence($sequenceName) {
+
+    public function getSequence($sequenceName)
+    {
         $sequenceName = ($sequenceName == '') ? $this->parent->tableSequence : $sequenceName;
         return "select next_{$sequenceName}({$this->parent->nodeId}) id";
     }
 
-    public function createTable($tableName, $definition, $primaryKey = null, $extra = '', 
-        $extraOutside = '')
-    {
+    public function createTable(
+        $tableName,
+        $definition,
+        $primaryKey = null,
+        $extra = '',
+        $extraOutside = ''
+    ) {
         $extraOutside = ($extraOutside === '') ? "ENGINE=InnoDB DEFAULT CHARSET={$this->parent->charset};"
             : $extraOutside;
-        $sql          = "CREATE TABLE `{$tableName}` (";
+        $sql = "CREATE TABLE `{$tableName}` (";
         foreach ($definition as $key => $type) {
             $sql .= "`$key` $type,";
         }
         if ($primaryKey) {
             if (is_array($primaryKey)) {
-                $hasPK=false;
+                $hasPK = false;
                 foreach ($primaryKey as $key => $value) {
-                    $p0 = stripos($value.' ', 'KEY ');
+                    $p0 = stripos($value . ' ', 'KEY ');
                     if ($p0 === false) {
                         trigger_error('createTable: Key with a wrong syntax. Example: "PRIMARY KEY.." ,
                                  "KEY...", "UNIQUE KEY..." "FOREIGN KEY.." ');
                         break;
                     }
-                    $type  = strtoupper(trim(substr($value, 0, $p0)));
+                    $type = strtoupper(trim(substr($value, 0, $p0)));
                     $value = substr($value, $p0 + 4);
                     switch ($type) {
                         case 'PRIMARY':
-                            if(!$hasPK) {
+                            if (!$hasPK) {
                                 $sql .= "PRIMARY KEY (`$key`*pk*) $value,";
-                                $hasPK=true;
+                                $hasPK = true;
                             } else {
-                                $sql=str_replace('*pk*',",`$key`",$sql);
+                                $sql = str_replace('*pk*', ",`$key`", $sql);
                             }
                             break;
                         case '':
@@ -332,7 +330,7 @@ class PdoOne_Mysql implements PdoOne_IExt
                             break;
                     }
                 }
-                $sql=str_replace('*pk*','',$sql);
+                $sql = str_replace('*pk*', '', $sql);
                 $sql = rtrim($sql, ',');
             } else {
                 $sql .= " PRIMARY KEY(`$primaryKey`) ";
@@ -340,21 +338,22 @@ class PdoOne_Mysql implements PdoOne_IExt
         } else {
             $sql = substr($sql, 0, -1);
         }
-        $sql .= "$extra ) ".$extraOutside;
+        $sql .= "$extra ) " . $extraOutside;
         return $sql;
     }
 
-    public function createFK($tableName,$foreignKey) {
-        $sql='';
+    public function createFK($tableName, $foreignKey)
+    {
+        $sql = '';
         foreach ($foreignKey as $key => $value) {
-            $p0 = stripos($value.' ', 'KEY ');
+            $p0 = stripos($value . ' ', 'KEY ');
             if ($p0 === false) {
                 trigger_error('createTable: Key with a wrong syntax: "FOREIGN KEY.." ');
                 break;
             }
-            $type  = strtoupper(trim(substr($value, 0, $p0)));
+            $type = strtoupper(trim(substr($value, 0, $p0)));
             $value = substr($value, $p0 + 4);
-            if($type === 'FOREIGN') {
+            if ($type === 'FOREIGN') {
                 $sql .= "ALTER TABLE `{$tableName}` ADD CONSTRAINT `fk_{$tableName}_{$key}` FOREIGN KEY(`$key`) $value;";
             }
         }
@@ -363,7 +362,7 @@ class PdoOne_Mysql implements PdoOne_IExt
 
     public function limit($sql)
     {
-        $this->parent->limit = ($sql) ? ' limit '.$sql : '';
+        $this->parent->limit = ($sql) ? ' limit ' . $sql : '';
     }
 
 
@@ -386,26 +385,25 @@ class PdoOne_Mysql implements PdoOne_IExt
                     foreach ($r as $key => $item) {
                         $pkResult[] = $key;
                     }
-
                 } else {
                     $pkResult[] = '??nopk??';
                 }
             }
             $pkAsArray = (is_array($pk)) ? $pk : array($pk);
             return count($pkResult) === 0 ? $pkAsArray : $pkResult;
-        } catch(\Exception $ex) {
+        } catch (\Exception $ex) {
             return false;
         }
     }
 
-    public function getDefTableKeys($table, $returnSimple,$filter=null)
+    public function getDefTableKeys($table, $returnSimple, $filter = null)
     {
         $columns = [];
         /** @var array $indexArr =array(["Table"=>'',"Non_unique"=>0,"Key_name"=>'',"Seq_in_index"=>0
          * ,"Column_name"=>'',"Collation"=>'',"Cardinality"=>0,"Sub_part"=>0,"Packed"=>'',"Null"=>''
          * ,"Index_type"=>'',"Comment"=>'',"Index_comment"=>'',"Visible"=>'',"Expression"=>''])
          */
-        $indexArr = $this->parent->runRawQuery('show index from '.$table);
+        $indexArr = $this->parent->runRawQuery('show index from ' . $table);
         foreach ($indexArr as $item) {
             if (strtoupper($item['Key_name']) === 'PRIMARY') {
                 $type = 'PRIMARY KEY';
@@ -414,10 +412,9 @@ class PdoOne_Mysql implements PdoOne_IExt
             } else {
                 $type = 'UNIQUE KEY';
             }
-            if($filter===null || $filter===$type) {
+            if ($filter === null || $filter === $type) {
                 if (!isset($columns[$item['Column_name']])) {
                     if ($returnSimple) {
-
                         $columns[$item['Column_name']] = $type;
                     } else {
                         $columns[$item['Column_name']] = PdoOne::newColFK($type, '', '');

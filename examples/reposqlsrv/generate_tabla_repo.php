@@ -27,8 +27,8 @@ echo "</pre>";
 //die(1);
 */
 
-$arr=['tablaparent','tablacategoryrepo','tablagrandchild','tablachild','tablaparentxcategory','tablacategory','tablagrandchildcat'];
-$arr=['tablaparent'];
+$arr=['tablaparent','tablaparent_ext','tablagrandchild','tablachild','tablaparentxcategory','tablacategory','tablagrandchildcat'];
+$arr=['tablaparent','tablaparent_ext'];
 foreach ($arr as $a) {
     try {
         $clase = $dao->generateCodeClass($a, 'repo',['/idchild2FK'=>'PARENT'

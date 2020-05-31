@@ -606,7 +606,7 @@ $results = $pdoOne->select("*")
 
 The where could be expressed in different ways.
 
-#### 1) Where without parameters.
+#### 1) Where() without parameters.
 
 It is possible to write the where without parameters as follow:
 
@@ -614,7 +614,7 @@ It is possible to write the where without parameters as follow:
 $results = $pdoOne->select("*")->from('table')->where("p1=1 and p2>2.5 or p3 like '%aa%'");
 ```
 
-#### 2) Where with parameters defined by a indexed array.
+#### 2) Where() with parameters defined by a indexed array.
 
 ```php
 $aa='aa';
@@ -634,7 +634,7 @@ $results = $pdoOne->select("*")->from('table')->where("p1",[1]); // = where("p1=
 
 
 
-#### 3) Where using an associative array
+#### 3) Where() using an associative array
 
 It is a shorthand definition of a query using an associative array, where the key is the name of the column and the value is the value to compare
 
@@ -656,7 +656,7 @@ $results = $pdoOne->select("*")->from('table')->where(['p1'=>['i',1]
                                                        ,'p3'=>['s','aa']]);  
 ```
 
-#### 4) Using an associative array and named arguments
+#### 4) Where() using an associative array and named arguments
 
 You could also use an associative array as argument and named parameters in the query
 
@@ -1590,6 +1590,11 @@ In a nutshell:
 * Every minor version means that it adds a new functionality i.e. 1.5 -> 1.6 (new methods)  
 * Every decimal version means that it patches/fixes/refactoring a previous functionality i.e. 1.5.0 -> 1.5.1 (fix)  
 
+* 1.43 2020-5-31
+  * Updated BasePdoOneRepo to 4.3. Now it works with conversions. It doesn't convert fields from **where**
+   but it converts results, insert and update.   
+  * BasePdoOneRepo 4.3 also restricts the columns to insert and update.   
+  * BasePdoOneRepo 4.3 also uses a long definition of columns.  
 * 1.42 2020-5-29
   * Updated BasePdoOneRepo to 4.2. Now it works with cache
   * New method buildUniqueID()

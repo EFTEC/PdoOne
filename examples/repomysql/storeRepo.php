@@ -17,7 +17,7 @@ class StoreRepo extends _BasePdoOneRepo
     
     public static function getDef() {
         return [
-	    'store_id' => 'tinyint unsigned not null auto_increment',
+	    'store_id' => ['tinyint unsigned','','not null','default'=>'auto_increment'],
 	    'manager_staff_id' => 'int unsigned not null',
 	    'address_id' => 'smallint unsigned not null',
 	    'last_update' => 'timestamp not null default CURRENT_TIMESTAMP on update CURRENT_TIMESTAMP'
