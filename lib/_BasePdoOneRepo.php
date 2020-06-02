@@ -429,7 +429,7 @@ abstract class _BasePdoOneRepo
                             $rows = $pdoOne->select($cols)->from($from)->where($filter, $filterValue)->toList();
                             break;
                         case 'first':
-                            $pdoOne->builderReset();
+                            //$pdoOne->builderReset();
                             $rows = [
                                 $pdoOne->select($cols)->from($from)->where($filter)->first()
                             ];
@@ -1395,6 +1395,7 @@ abstract class _BasePdoOneRepo
         self::$gQuery = [];
         self::$falseOnError = false;
         self::$lastException = '';
+        self::getPdoOne()->builderReset();
     }
 
 }
