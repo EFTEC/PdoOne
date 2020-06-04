@@ -19,6 +19,7 @@ use eftec\ext\PdoOne_TestMockup;
 use Exception;
 use PDO;
 use PDOStatement;
+use repo\TablaparentRepo;
 use RuntimeException;
 use stdClass;
 
@@ -30,11 +31,11 @@ use stdClass;
  * @package       eftec
  * @author        Jorge Castro Castillo
  * @copyright (c) Jorge Castro C. MIT License  https://github.com/EFTEC/PdoOne
- * @version       1.44.1 2020-06-02
+ * @version       1.44.2 2020-06-03
  */
 class PdoOne
 {
-    const VERSION = '1.44.1';
+    const VERSION = '1.44.2';
 
     const NULL = PHP_INT_MAX;
 
@@ -2188,12 +2189,16 @@ eot;
     ) {
         $r = <<<'eot'
 <?php
-/** @noinspection ReturnTypeCanBeDeclaredInspection
+/** @noinspection PhpIncompatibleReturnTypeInspection
+ * @noinspection ReturnTypeCanBeDeclaredInspection
  * @noinspection DuplicatedCode
  * @noinspection PhpUnused
  * @noinspection PhpUndefinedMethodInspection
  * @noinspection PhpUnusedLocalVariableInspection
  * @noinspection PhpUnusedAliasInspection
+ * @noinspection NullPointerExceptionInspection
+ * @noinspection SenselessProxyMethodInspection
+ * @noinspection PhpParameterByRefIsNotUsedAsReferenceInspection
  */
 {namespace}
 use eftec\PdoOne;
@@ -2283,6 +2288,26 @@ class {class}{postfix} extends _BasePdoOneRepo
         return {defnoupdate};
     }
 
+    /**
+     * It adds a where to the income query. It could be stacked with more where()<br>
+     * <b>Example:</b><br>
+     * <pre>
+     * self::where(['col'=>'value'])::toList();
+     * self::where(['col']=>['s','value'])::toList(); // s= string/double/date, i=integer, b=bool
+     * self::where(['col=?']=>['s','value'])::toList(); // s= string/double/date, i=integer, b=bool
+     * </pre>
+     * 
+     * @param array|string   $sql =self::factory()
+     * @param null|array|int $param
+     *
+     * @return self
+     */
+    public static function where($sql, $param = PdoOne::NULL)
+    {
+        self::getPdoOne()->where($sql, $param);
+        return self::ME;
+    }
+
     public static function getDefFK($structure=false) {
         if ($structure) {
             return {deffk};
@@ -2292,6 +2317,17 @@ class {class}{postfix} extends _BasePdoOneRepo
     }
     public static function toList($filter=null,$filterValue=null) {
         return self::_toList($filter,$filterValue);
+    }
+    
+    /**
+     * @param array $recursive=self::factory();
+     *
+     * @return {class}{postfix}
+     * {@inheritDoc}
+     */
+    public static function setRecursive($recursive)
+    {
+        return parent::setRecursive($recursive); 
     }
 
     /**
@@ -2316,14 +2352,16 @@ class {class}{postfix} extends _BasePdoOneRepo
      * @param array|mixed $entity =self::factory()
      *
      * @return bool true if the pks exists
+     * @throws Exception
      */
     public static function exist($entity) {
         return self::_exist($entity);
     }
 
     /**
+     * It inserts a new entity(row) into the database<br>
      * @param array $entity        =self::factory()
-     * @param bool  $transactional If true (default) then the operation is transaction
+     * @param bool  $transactional If true (default) then the operation is transactional
      *
      * @return array|false=self::factory()
      * @throws Exception
@@ -2331,10 +2369,23 @@ class {class}{postfix} extends _BasePdoOneRepo
     public static function insert(&$entity,$transactional=true) {
         return self::_insert($entity,$transactional);
     }
+    
+    /**
+     * It merge a new entity(row) into the database. If the entity exists then it is updated, otherwise the entity is 
+     * inserted<br>
+     * @param array $entity        =self::factory()
+     * @param bool  $transactional If true (default) then the operation is transactional   
+     *
+     * @return array|false=self::factory()
+     * @throws Exception
+     */
+    public static function merge(&$entity,$transactional=true) {
+        return self::_merge($entity,$transactional);
+    }
 
     /**
      * @param array $entity        =self::factory()
-     * @param bool  $transactional If true (default) then the operation is transaction
+     * @param bool  $transactional If true (default) then the operation is transactional
      *
      * @return array|false=self::factory()
      * @throws Exception
@@ -2347,7 +2398,7 @@ class {class}{postfix} extends _BasePdoOneRepo
      * It deletes an entity by the primary key
      *
      * @param array $entity =self::factory()
-     * @param bool  $transactional
+     * @param bool  $transactional If true (default) then the operation is transactional   
      *
      * @return mixed
      * @throws Exception
@@ -2360,7 +2411,7 @@ class {class}{postfix} extends _BasePdoOneRepo
      * It deletes an entity by the primary key.
      *
      * @param array $pk =self::factory()
-     * @param bool  $transactional
+     * @param bool  $transactional If true (default) then the operation is transactional   
      *
      * @return mixed
      * @throws Exception

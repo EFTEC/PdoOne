@@ -289,18 +289,13 @@ abstract class _BasePdoOneRepo
     }
 
 
-    /*protected static function _merge($entity) {
-        $entity = self::intersectArrays($entity,static::getDefName());
-        $identities = static::getDefIdentity();
-        foreach ($entity as $k => $v) {
-            // identities are not inserted
-            if (in_array($k, $identities, true)) {
-                unset($entity[$k]);
-            }
+    protected static function _merge($entity, $transaction = true) {
+        if(static::_exist($entity)) {
+            return static::_update($entity,$transaction);
         }
-        //$pdo->select('1')->from(static::TABLE)->where()
+        return static::_insert($entity,$transaction);
     }
-    */
+    
 
     protected static function _exist($entity)
     {
@@ -1325,19 +1320,7 @@ abstract class _BasePdoOneRepo
         self::getPdoOne()->group($sql);
         return static::ME;
     }
-
-    /**
-     * @param array|string   $sql =static::factory()
-     * @param null|array|int $param
-     *
-     * @return static
-     */
-    public static function where($sql, $param = PdoOne::NULL)
-    {
-        self::getPdoOne()->where($sql, $param);
-        return static::ME;
-    }
-
+    
     /**
      * It returns the number of rows
      *
