@@ -32,9 +32,16 @@ $arr=['tablaparent','tablaparent_ext'];
 foreach ($arr as $a) {
     try {
         $clase = $dao->generateCodeClass($a, 'repo',['/idchild2FK'=>'PARENT'
-        ,'/tablaparentxcategory'=>'MANYTOMANY']);
+        ,'/tablaparentxcategory'=>'MANYTOMANY'],'Dao');
+        $claseRepo = $dao->generateCodeClassRepo($a, 'repo','Repo','Dao');
+        echo "saving {$a}Dao.php<br>";
         echo "saving {$a}Repo.php<br>";
-        file_put_contents($a.'Repo.php',$clase);
+        file_put_contents($a.'Dao.php',$clase);
+        if(!file_exists($a.'Repo.php')) {
+            // we don't want to replace this class.
+            file_put_contents($a.'Repo.php',$claseRepo);    
+        }
+        
 
     } catch (Exception $e) {
         echo "unable to create table $a : ".$e->getMessage()."<br>";

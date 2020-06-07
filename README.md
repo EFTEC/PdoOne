@@ -1590,6 +1590,9 @@ In a nutshell:
 * Every minor version means that it adds a new functionality i.e. 1.5 -> 1.6 (new methods)  
 * Every decimal version means that it patches/fixes/refactoring a previous functionality i.e. 1.5.0 -> 1.5.1 (fix)  
 
+* 1.45 2020-6-7
+ * Added method generateCodeClassRepo()   
+ * Modified method generateCodeClass()    
 * 1.44.2 2020-6-3
   * Solved a problem with BasePdoOneRepo   
 * 1.44.1 2020-6-2
