@@ -237,7 +237,27 @@ class PdoOne_sqlsrv_Test extends TestCase
             ['id'=>'int not null','name'=>'varchar(50)']
             ,['id'=>'PRIMARY KEY']);
         $this->assertEquals(true,$r);
-        $this->assertEquals(array('id' => 'int NOT NULL','name' => 'varchar(50)'),$this->pdoOne->getDefTable('table5'));
+        $this->assertEquals(array(
+            'id'   => [
+                'phptype'    => 'int',
+                'conversion' => null,
+                'type'       => 'int',
+                'size'       => null,
+                'null'       => false,
+                'identity'   => false,
+                'sql'        => 'int NOT NULL'
+            ],
+            'name' => [
+                'phptype'    => 'string',
+                'conversion' => null,
+                'type'       => 'varchar',
+                'size'       => '50',
+                'null'       => true,
+                'identity'   => false,
+                'sql'        => 'varchar(50)'
+
+            ]
+        ), $this->pdoOne->getDefTable('table5'));
         $this->assertEquals(array('id' => 'PRIMARY KEY'),$this->pdoOne->getDefTableKeys('table5'));
         $this->assertEquals(array(),$this->pdoOne->getDefTableFK('table5'));
     }

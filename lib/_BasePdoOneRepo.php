@@ -1,4 +1,6 @@
 <?php
+/** @noinspection DuplicatedCode */
+
 /** @noinspection PhpUnhandledExceptionInspection
  * @noinspection DisconnectedForeachInstructionInspection
  * @noinspection PhpUnused
@@ -17,7 +19,7 @@ use PDOStatement;
 /**
  * Class _BaseRepo
  *
- * @version       4.4 2020-05-31
+ * @version       4.5 2020-06-13
  * @package       eftec
  * @author        Jorge Castro Castillo
  * @copyright (c) Jorge Castro C. MIT License  https://github.com/EFTEC/PdoOne
@@ -495,17 +497,17 @@ abstract class _BasePdoOneRepo
         $recs = self::getPdoOne()->getRecursive();
         $keyRels = static::getDefFK(false);
         $ns = self::getNamespace();
-        $postfix = self::getPostfix();
+        
         if ($final === null) {
             // we start the chain
             $final = [];
-            $final[] = PdoOne::camelize(static::TABLE) . $postfix;
+            $final[] = static::RELATIONS[static::TABLE]; // PdoOne::camelize(static::TABLE) . $postfix;
         }
         foreach ($recs as $rec) {
             $keyr = $prefix . $rec;
 
             if (isset($keyRels[$keyr])) {
-                $className = PdoOne::camelize($keyRels[$keyr]['reftable']) . $postfix;
+                $className = static::RELATIONS[$keyRels[$keyr]['reftable']]; //PdoOne::camelize($keyRels[$keyr]['reftable']) . $postfix;
                 $class = $ns . $className;
                 if (!in_array($className, $final, true)) {
                     $final[] = $className;
@@ -513,7 +515,7 @@ abstract class _BasePdoOneRepo
 
                 $class::getRecursiveClass($final, $keyr);
                 if ($keyRels[$keyr]['key'] === 'MANYTOMANY') {
-                    $className = PdoOne::camelize($keyRels[$keyr]['table2']) . $postfix;
+                    $className = static::RELATIONS[$keyRels[$keyr]['table2']]; // PdoOne::camelize($keyRels[$keyr]['table2']) . $postfix;
                     $class = $ns . $className;
                     if (!in_array($className, $final, true)) {
                         $final[] = $className;
@@ -540,7 +542,7 @@ abstract class _BasePdoOneRepo
             $newQuery['columns'][] = $pTable . $col . ' as ' . self::getPdoOne()->addQuote($pColumn . $col);
         }
         $ns = self::getNamespace();
-        $postfix = self::getPostfix();
+        
 
         foreach ($keyRels as $nameCol => $keyRel) {
             $type = $keyRel['key'];
@@ -554,7 +556,7 @@ abstract class _BasePdoOneRepo
                         $tableRelAlias = 't' . static::$gQueryCounter; //$prefixtable.$nameColClean;
                         //$tableRelAlias =trim($recursiveInit.'_'.$nameColClean,'/'); //str_replace(['/'],['.'],$recursiveInit.'.'.$nameColClean);
                         $colRelAlias = $pColumn . $nameCol;
-                        $class = $ns . PdoOne::camelize($keyRel['reftable']) . $postfix;
+                        $class = $ns.static::RELATIONS[$keyRel['reftable']]; // $ns . PdoOne::camelize($keyRel['reftable']) . $postfix;
                         $refCol = $keyRel['refcol'];
                         $newQuery['joins'] .= " left join {$keyRel['reftable']} as $tableRelAlias "
                             . "on $pTable$nameColClean=$tableRelAlias.$refCol \n"; // $recursiveInit$nameCol\n"; // adds a query to the current query
@@ -583,7 +585,7 @@ abstract class _BasePdoOneRepo
                         $other['name'] = $nameCol;
                         $other['data'] = $keyRel;
                         //self::$gQuery[]=$other;
-                        $class = $ns . PdoOne::camelize($keyRel['reftable']) . $postfix;
+                        $class = $ns.static::RELATIONS[$keyRel['reftable']]; // $ns . PdoOne::camelize($keyRel['reftable']) . $postfix;
 
                         $class::generationRecursive($other, '', '', $pColumn . $recursiveInit . $nameCol, false);
 
@@ -649,25 +651,37 @@ abstract class _BasePdoOneRepo
             }
             $defs = static::getDefFK();
             $ns = self::getNamespace();
-            $postfix = self::getPostfix();
-
+            
             foreach ($defs as $key => $def) { // ['/tablaparentxcategory']=['key'=>...]
-                if ($def['key'] === 'MANYTOMANY' && isset($entity[$key]) && is_array($entity[$key])) {
-                    $class2 = $ns . PdoOne::camelize($def['table2']) . $postfix;
-                    foreach ($entity[$key] as $item) {
-                        $pk2 = $item[$def['col2']];
-                        if ($pdoOne->hasRecursive($key, $recursiveBack) && $class2::exist($item) === false) {
-                            // we only update it if it has a recursive
-                            $pk2 = $class2::insert($item, false);
+                if (isset($entity[$key]) && is_array($entity[$key])) {
+                    if ($def['key'] === 'ONETOMANY' && $pdoOne->hasRecursive($key, $recursiveBack)) {
+                        $classRef = $ns.static::RELATIONS[$def['reftable']]; // $ns . PdoOne::camelize($def['reftable']) . $postfix;
+                        foreach ($entity[$key] as $item) {
+                            // we only insert it if it has a recursive
+                            // TODO : CHECK RECURSIVE FOR INSERT AND UPDATE ***********
+                            $refCol = ltrim($def['refcol'], '/');
+                            $item[$refCol]=$entityCopy[$def['col']]; // if the pk (of the original object) is identity.
+                            $pk2 = $classRef::insert($item, false);
                         }
-                        $classRel = $ns . PdoOne::camelize($def['reftable']) . $postfix;
-                        $refCol = ltrim($def['refcol'], '/');
-                        $refCol2 = ltrim($def['refcol2'], '/');
-                        $relationalObj = [$refCol => $entityCopy[$def['col']], $refCol2 => $pk2];
-                        $classRel::insert($relationalObj, false);
+                    }
+                    if ($def['key'] === 'MANYTOMANY') {
+                        $class2 = $ns.static::RELATIONS[$def['table2']]; // $ns . PdoOne::camelize($def['table2']) . $postfix;
+                        foreach ($entity[$key] as $item) {
+                            $pk2 = $item[$def['col2']];
+                            if ($pdoOne->hasRecursive($key, $recursiveBack) && $class2::exist($item) === false) {
+                                // we only update it if it has a recursive
+                                $pk2 = $class2::insert($item, false);
+                            }
+                            $classRel = $ns.static::RELATIONS[$def['reftable']]; // $ns . PdoOne::camelize($def['reftable']) . $postfix;
+                            $refCol = ltrim($def['refcol'], '/');
+                            $refCol2 = ltrim($def['refcol2'], '/');
+                            $relationalObj = [$refCol => $entityCopy[$def['col']], $refCol2 => $pk2];
+                            $classRel::insert($relationalObj, false);
+                        }
                     }
                 }
             }
+
             if ($transaction) {
                 self::getPdoOne()->commit();
             }
@@ -699,7 +713,7 @@ abstract class _BasePdoOneRepo
     protected static function _update($entity, $transaction = true)
     {
         try {
-            $pdo = self::getPdoOne();
+            $pdoOne = self::getPdoOne();
             $defTable = static::getDef('conversion');
             self::convertPHPValue($entity, $defTable);
 
@@ -709,25 +723,67 @@ abstract class _BasePdoOneRepo
             $entityCopy = self::diffArrays($entityCopy, static::getDefNoUpdate()); // columns discarded
 
             if ($transaction) {
-                $pdo->startTransaction();
+                $pdoOne->startTransaction();
             }
-            $recursiveBack = $pdo->getRecursive();
-            $r = $pdo->from(static::TABLE)->set($entityCopy)->where(static::intersectArrays($entity, static::PK))
+            $recursiveBack = $pdoOne->getRecursive();
+            $r = $pdoOne->from(static::TABLE)->set($entityCopy)->where(static::intersectArrays($entity, static::PK))
                 ->update();
-            $pdo->recursive($recursiveBack); // update() delete recursive
+            $pdoOne->recursive($recursiveBack); // update() delete recursive
             $defs = static::getDefFK();
             $ns = self::getNamespace();
-            $postfix = self::getPostfix();
+            
             foreach ($defs as $key => $def) { // ['/tablaparentxcategory']=['key'=>...]
+                if ($def['key'] === 'ONETOMANY'  && $pdoOne->hasRecursive($key, $recursiveBack)) {
+                    if (!isset($entity[$key]) || !is_array($entity[$key])) {
+                        $newRows = [];
+                    } else {
+                        $newRows = $entity[$key];
+                    }
+                    $classRef = $ns.static::RELATIONS[$def['reftable']]; // $ns . PdoOne::camelize($def['reftable']) . $postfix;
+                    
+                    $col1 = ltrim($def['col'], '/');
+                    $refcol = ltrim($def['refcol'], '/'); // it is how they are joined
+                    $refpk=$classRef::PK[0];
+      
+                    $newRowsKeys = [];
+                    foreach ($newRows as $v) {
+                        $newRowsKeys[] = $v[$refpk];
+                    }
+                    //self::setRecursive([$def['refcol2']]);
+                    self::setRecursive([]);
+                    $oldRows = ($classRef::where($refcol, $entity[$col1]))::toList();
+     
+                    $oldRowsKeys = [];
+                    foreach ($oldRows as $v) {
+                        $oldRowsKeys[] = $v[$refpk];
+                    }
 
+                    $insertKeys = array_diff($newRowsKeys, $oldRowsKeys);
+                    $deleteKeys = array_diff($oldRowsKeys, $newRowsKeys);
+                                      
+                    // inserting a new value
+                    
+                    
+                    foreach ($newRows as $item) {
+                        
+                        if (in_array($item[$refpk], $insertKeys)) {
+                            $classRef::insert($item, false);
+                        } elseif (!in_array($item[$refpk], $deleteKeys)) {
+                            $classRef::update($item, false);
+                        }
+                    }
+                    foreach($deleteKeys as $key2) {
+                        $classRef::deleteById($key2, false);
+                    }
+                }
                 if ($def['key'] === 'MANYTOMANY') { //hasRecursive($recursiveInit . $key)
                     if (!isset($entity[$key]) || !is_array($entity[$key])) {
                         $newRows = [];
                     } else {
                         $newRows = $entity[$key];
                     }
-                    $classRef = $ns . PdoOne::camelize($def['reftable']) . $postfix;
-                    $class2 = $ns . PdoOne::camelize($def['table2']) . $postfix;
+                    $classRef = $ns.static::RELATIONS[$def['reftable']]; // $ns . PdoOne::camelize($def['reftable']) . $postfix;
+                    $class2 = $ns.static::RELATIONS[$def['table2']]; // $ns . PdoOne::camelize($def['table2']) . $postfix;
                     $col1 = ltrim($def['col'], '/');
                     $refcol = ltrim($def['refcol'], '/');
                     $refcol2 = ltrim($def['refcol2'], '/');
@@ -749,7 +805,7 @@ abstract class _BasePdoOneRepo
                     foreach ($newRows as $item) {
                         if (in_array($item[$col2], $insertKeys)) {
                             $pk2 = $item[$def['col2']];
-                            if ($class2::exist($item) === false && self::getPdoOne()->hasRecursive($key)) {
+                            if ($class2::exist($item) === false && self::getPdoOne()->hasRecursive($key,$recursiveBack)) {
                                 $pk2 = $class2::insert($item, false);
                             } else {
                                 $class2::update($item, false);
@@ -762,7 +818,7 @@ abstract class _BasePdoOneRepo
                     foreach ($newRows as $item) {
                         if (in_array($item[$col2], $deleteKeys)) {
                             $pk2 = $item[$def['col2']];
-                            if (self::getPdoOne()->hasRecursive($key)) {
+                            if (self::getPdoOne()->hasRecursive($key,$recursiveBack)) {
                                 $class2::deleteById($item, $pk2);
                             }
                             $relationalObjDelete = [$refcol => $entity[$def['col']], $refcol2 => $pk2];
@@ -810,7 +866,7 @@ abstract class _BasePdoOneRepo
 
             $defs = static::getDefFK();
             $ns = self::getNamespace();
-            $postfix = self::getPostfix();
+            
 
             $recursiveBackup = self::getRecursive();
 
@@ -819,8 +875,8 @@ abstract class _BasePdoOneRepo
                 if ($def['key'] === 'MANYTOMANY' && isset($entity[$key])
                     && is_array($entity[$key])
                 ) { //hasRecursive($recursiveInit . $key)
-                    $classRef = $ns . PdoOne::camelize($def['reftable']) . $postfix;
-                    $class2 = $ns . PdoOne::camelize($def['table2']) . $postfix;
+                    $classRef = $ns.static::RELATIONS[$def['reftable']]; // $ns . PdoOne::camelize($def['reftable']) . $postfix;
+                    $class2 = $ns.static::RELATIONS[$def['table2']]; //$ns . PdoOne::camelize($def['table2']) . $postfix;
 
                     $col1 = ltrim($def['col'], '/');
                     $refcol = ltrim($def['refcol'], '/');
@@ -847,6 +903,7 @@ abstract class _BasePdoOneRepo
                     self::setRecursive($recursiveBackup);
                 }
             }
+
             $r = self::getPdoOne()->delete(static::TABLE, $entityCopy);
             if ($transaction) {
                 //self::getPdoOne()->rollback();
@@ -1130,7 +1187,7 @@ abstract class _BasePdoOneRepo
         }
         $defs = static::getDef('conversion');
         $ns = self::getNamespace();
-        $postfix = self::getPostfix();
+        
         $rels = static::getDefFK();
 
         foreach ($rows as &$row) {
@@ -1140,15 +1197,15 @@ abstract class _BasePdoOneRepo
                     switch ($v['key']) {
                         // PARENT not because parent is a fk but is used for a one way relation.
                         case 'MANYTOONE':
-                            $class = $ns . PdoOne::camelize($v['reftable']) . $postfix;
+                            $class = $ns.static::RELATIONS[$v['reftable']]; // $ns . PdoOne::camelize($v['reftable']) . $postfix;
                             $class::convertSQLValueInit($row[$k], false);
                             break;
                         case 'ONETOMANY':
-                            $class = $ns . PdoOne::camelize($v['reftable']) . $postfix;
+                            $class = $ns.static::RELATIONS[$v['reftable']]; // $ns . PdoOne::camelize($v['reftable']) . $postfix;
                             $class::convertSQLValueInit($row[$k]);
                             break;
                         case 'MANYTOMANY':
-                            $class = $ns . PdoOne::camelize($v['table2']) . $postfix;
+                            $class = $ns.static::RELATIONS[$v['table2']]; // $ns . PdoOne::camelize($v['table2']) . $postfix;
                             $class::convertSQLValueInit($row[$k]);
                             break;
                     }

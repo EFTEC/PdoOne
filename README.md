@@ -1590,6 +1590,11 @@ In a nutshell:
 * Every minor version means that it adds a new functionality i.e. 1.5 -> 1.6 (new methods)  
 * Every decimal version means that it patches/fixes/refactoring a previous functionality i.e. 1.5.0 -> 1.5.1 (fix)  
 
+* 1.46 2020-6-13
+ * _BasePdoOneRepo updated to 4.6
+ * Now generation of code has a Base class, so it is possible to rename classes independiently of the table.
+* 1.45.1 2020-6-11
+ * Method generateCodeClass now creates ONETOMANY relation if the case of the table does not match.
 * 1.45 2020-6-7
  * Added method generateCodeClassRepo()   
  * Modified method generateCodeClass()    

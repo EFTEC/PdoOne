@@ -27,24 +27,42 @@ echo "</pre>";
 //die(1);
 */
 
-$arr=['tablaparent','tablaparent_ext','tablagrandchild','tablachild','tablaparentxcategory','tablacategory','tablagrandchildcat'];
-$arr=['tablaparent','tablaparent_ext'];
-foreach ($arr as $a) {
+
+
+$relations=['tablaparent' =>'TablaParentRepo'
+            ,'tablaparent_ext' =>'TablaParentExtRepo'
+            ,'tablachild'=>'TablachildRepo'
+            ,'tablaparentxcategory'=>'TablaparentxcategoryRepo'
+            ,'tablacategory'=>'TablacategoryRepo'
+            ,'tablagrandchildcat'=>'TablagrandchildcatRepo'
+            ,'tablagrandchild'=>'TablagrandchildRepo'];
+
+
+$classCode=$dao->generateBaseClass('TestDb','repo'
+    ,$relations);
+file_put_contents('TestDb.php',$classCode);
+
+foreach ($relations as $tableClassName=>$className) {
+  
+
+    
     try {
-        $clase = $dao->generateCodeClass($a, 'repo',['/idchild2FK'=>'PARENT'
-        ,'/tablaparentxcategory'=>'MANYTOMANY'],'Dao');
-        $claseRepo = $dao->generateCodeClassRepo($a, 'repo','Repo','Dao');
-        echo "saving {$a}Dao.php<br>";
-        echo "saving {$a}Repo.php<br>";
-        file_put_contents($a.'Dao.php',$clase);
-        if(!file_exists($a.'Repo.php')) {
+        $clase = $dao->generateCodeClass($tableClassName, 'repo',['/idchild2FK'             =>'PARENT'
+                                                                  , '/tablaparentxcategory' =>'MANYTOMANY']
+            ,$relations,[],[],[],'TestDB');
+        $claseRepo = $dao->generateCodeClassRepo($tableClassName, 'repo',$relations);
+        echo "saving {$className}Ext.php<br>";
+        
+        file_put_contents($className.'Ext.php',$clase);
+        if(!file_exists($className.'.php')) {
+            echo "saving {$className}.php<br>";
             // we don't want to replace this class.
-            file_put_contents($a.'Repo.php',$claseRepo);    
+            file_put_contents($className.'.php',$claseRepo);    
         }
         
 
     } catch (Exception $e) {
-        echo "unable to create table $a : ".$e->getMessage()."<br>";
+        echo "unable to create table $tableClassName : ".$e->getMessage()."<br>";
     }
 }
 

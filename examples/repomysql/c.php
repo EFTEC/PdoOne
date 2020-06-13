@@ -6,12 +6,30 @@ use repo\TablaParentRepo;
 include '../../vendor/autoload.php';
 include '../Collection.php';
 
+include "TestDb.php";
+include "tablagrandchildRepoExt.php";
+include "tablachildRepoExt.php";
+include "tablaParentRepoExt.php";
+include "tablacategoryRepoExt.php";
+include "tablaparentxcategoryRepoExt.php";
+include "tablagrandchildcatRepoExt.php";
+
 include "tablagrandchildRepo.php";
+
 include "tablachildRepo.php";
+
 include "tablaParentRepo.php";
+
+
 include "tablacategoryRepo.php";
+
+
 include "tablaparentxcategoryRepo.php";
+
+
 include "tablagrandchildcatRepo.php";
+
+
 include "dBug.php";
 
 
@@ -26,8 +44,6 @@ try {
 }
 
 
-var_dump(TablaParentRepo::validTable());
-die(1);
 
 $r=TablaParentRepo::toList();
 
