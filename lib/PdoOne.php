@@ -31,11 +31,11 @@ use stdClass;
  * @package       eftec
  * @author        Jorge Castro Castillo
  * @copyright (c) Jorge Castro C. MIT License  https://github.com/EFTEC/PdoOne
- * @version       1.46 2020-06-13
+ * @version       1.47 2020-06-14
  */
 class PdoOne
 {
-    const VERSION = '1.45.1';
+    const VERSION = '1.47';
 
     const NULL = PHP_INT_MAX;
 
@@ -172,7 +172,9 @@ class PdoOne
     /** @var null|array it stores the values obtained by $this->tableDependency() */
     private $tableDependencyArrayCol;
     private $tableDependencyArray;
-    /** @var null|string the unique id generate by sha256 and based in the query, arguments, type and methods */
+    /** @var null|string the unique id generate by sha256or $hashtype and based in the query, arguments, type
+     * and methods
+     */
     private $uid;
     /** @var string [optional] It is the family or group of the cache */
     private $cacheFamily = '';
@@ -1383,6 +1385,7 @@ eot;
      */
     public function runRawQuery($rawSql, $param = null, $returnArray = true)
     {
+
         if (!$this->isOpen) {
             $this->throwError("It's not connected to the database", '');
 
@@ -1414,16 +1417,25 @@ eot;
         // the "where" has parameters.
         $stmt = $this->prepare($rawSql);
         $counter = 0;
-        $this->lastBindParam = [];
-        $c = count($param);
-        for ($i = 0; $i < $c; $i += 2) {
-            $counter++;
-            $typeP = $this->stringToPdoParam($param[$i]);
-            $this->lastBindParam[$counter] = $param[$i + 1];
-            $stmt->bindParam($counter, $param[$i + 1], $typeP);
+        if($this->isAssoc($param)) {
+            $this->lastBindParam=$param;
+            foreach($param as $k=>$v) {
+                $counter++;
+                $stmt->bindParam($k, $v);
+            }
+        } else {
+            $this->lastBindParam = [];
+            $c = count($param);
+            for ($i = 0; $i < $c; $i += 2) {
+                $counter++;
+                $typeP = $this->stringToPdoParam($param[$i]);
+                $this->lastBindParam[$counter] = $param[$i + 1];
+                $stmt->bindParam($counter, $param[$i + 1], $typeP);
+            }
         }
+
         if ($this->useCache !== false && $returnArray) {
-            $this->uid = hash('sha256', $this->lastQuery . serialize($this->lastBindParam));
+            $this->uid = hash($this->encryption->hashType, $this->lastQuery . serialize($this->lastBindParam));
             $result = $this->cacheService->getCache($this->uid, $this->cacheFamily);
             if ($result !== false) {
                 // it's found in the cache.
@@ -1546,6 +1558,13 @@ eot;
 
     //<editor-fold desc="Date functions" defaultstate="collapsed" >
 
+    /**
+     * It converts a simple type 'b','i','d','f','s' as a pdo type PDO:PARAM_*<br>
+     *
+     * @param string|int $string
+     *
+     * @return int|null
+     */
     private function stringToPdoParam($string)
     {
         if (is_int($string)) {
@@ -1922,7 +1941,7 @@ eot;
         $useCache = $this->useCache; // because builderReset cleans this value
         if ($useCache !== false && $returnArray) {
             $this->uid
-                = hash('sha256', $this->lastQuery . $extraMode . serialize($this->lastBindParam) . $extraIdCache);
+                = hash($this->encryption->hashType, $this->lastQuery . $extraMode . serialize($this->lastBindParam) . $extraIdCache);
             $result = $this->cacheService->getCache($this->uid, $this->cacheFamily);
             if ($result !== false) {
                 // it's found in the cache.
@@ -2270,7 +2289,7 @@ eot;
                 ,($namespace) ? "namespace $namespace;" : ''
                 ,($namespace) ? "$namespace\\\\" : ''
                 ,$this::varExport($classes)
-                ],$r);
+            ],$r);
     }
 
     /**
@@ -2301,7 +2320,7 @@ eot;
      *                                            added automatically to this list
      *
      *
-     * @param string|null   $baseClass            The name of the base class. If no name then it uses the last namespace            
+     * @param string|null   $baseClass            The name of the base class. If no name then it uses the last namespace
      *
      * @return string|string[]
      * @throws Exception
@@ -2563,8 +2582,8 @@ class {classname}Ext extends {baseclass}
 }
 eot;
         $lastns=explode('\\',$namespace);
-        
-        
+
+
         $baseClass=($baseClass===null)?end($lastns):$baseClass;
 
         $fa = func_get_args();
@@ -2794,13 +2813,15 @@ eot;
     }
 
     /**
-     * It returns an uniqued uid ('sha512') based in all the parameters of the query (select,from,where
-     * ,parameters,group,recursive,having,limit,distinct,order,etc.) and optionally in an extra value
+     * It returns an uniqued uid ('sha256' or the value defined in PdoOneEncryption::$hashType) based in all the
+     * parameters of the query (select,from,where,parameters,group,recursive,having,limit,distinct,order,etc.) and
+     * optionally in an extra value
      *
      * @param mixed|null $extra  [optional] If we want to add an extra value to the UID generated
      * @param string     $prefix A prefix added to the UNID generated.
      *
      * @return string
+     * @see \eftec\PdoOneEncryption::$hashType              
      */
     public function buildUniqueID($extra = null, $prefix = '')
     {
@@ -2819,7 +2840,7 @@ eot;
             $this->order,
             $extra
         ];
-        return $prefix . hash('sha512', json_encode($all));
+        return $prefix . hash($this->encryption->hashType, json_encode($all));
     }
 
     /**
@@ -2896,7 +2917,7 @@ class {classname} extends {classname}Ext
 }
 eot;
 
-      
+
         $fa = func_get_args();
         foreach ($fa as $f => $k) {
             if (is_array($k)) {
@@ -4445,7 +4466,8 @@ BOOTS;
                     $this->whereCounter = 0;
                     break;
                 case !is_array($param):
-                    if (strpos($sql, '?') === false) {
+                    if (strpos($sql, '?') === false && strpos($sql, '=:') === false) {
+                        // The query lacks of an argument.
                         $sql .= '=?';
                     } // transform 'condition' to 'condition=?'
                     $this->whereParamType[] = $this->getType($param);
@@ -4648,7 +4670,7 @@ BOOTS;
         $useCache = $this->useCache; // because builderReset cleans this value
         if ($useCache !== false) {
             $sql = $this->sqlGen();
-            $this->uid = hash('sha256',
+            $this->uid = hash($this->encryption->hashType,
                 $sql . PDO::FETCH_ASSOC . serialize($this->whereParamType) . serialize($this->whereParamValue)
                 . 'first');
             $rows = $this->cacheService->getCache($this->uid, $this->cacheFamily);
@@ -4708,7 +4730,7 @@ BOOTS;
         $useCache = $this->useCache; // because builderReset cleans this value
         if ($useCache !== false) {
             $sql = $this->sqlGen();
-            $this->uid = hash('sha256',
+            $this->uid = hash($this->encryption->hashType,
                 $sql . PDO::FETCH_ASSOC . serialize($this->whereParamType) . serialize($this->whereParamValue)
                 . 'firstscalar');
             $rows = $this->cacheService->getCache($this->uid, $this->cacheFamily);
@@ -4769,7 +4791,7 @@ BOOTS;
         $useCache = $this->useCache; // because builderReset cleans this value
         if ($useCache !== false) {
             $sql = $this->sqlGen();
-            $this->uid = hash('sha256',
+            $this->uid = hash($this->encryption->hashType,
                 $sql . PDO::FETCH_ASSOC . serialize($this->whereParamType) . serialize($this->whereParamValue)
                 . 'last');
             $rows = $this->cacheService->getCache($this->uid, $this->cacheFamily);
@@ -4883,10 +4905,15 @@ BOOTS;
             }
             $sql = 'update ' . $this->addDelimiter($this->from) . ' ' . $this->constructSet() . ' '
                 . $this->constructWhere();
-            $param = [];
-            foreach ($this->whereParamType as $i => $iValue) {
-                $param[] = $iValue;
-                $param[] = $this->whereParamValue['i_' . $i];
+            if($this->whereParamAssoc) {
+                $param=$this->whereParamAssoc;
+            } else {
+                $param = [];
+                foreach ($this->whereParamType as $i => $iValue) {
+                    // parameters expressed as 'type','value',...
+                    $param[] = $iValue;
+                    $param[] = $this->whereParamValue['i_' . $i];
+                }
             }
             $this->builderReset();
             $stmt = $this->runRawQuery($sql, $param, true);
@@ -5209,7 +5236,7 @@ BOOTS;
      * Invalidate a single cache or a list of cache based in a single uid or in
      * a family/group of cache.
      *
-     * @param string|string[] $uid        The unique id. It is generate by sha256
+     * @param string|string[] $uid        The unique id. It is generate by sha256 (or by $hashtype)
      *                                    based in the query, parameters, type
      *                                    of query and method.
      * @param string|string[] $family     [optional] It is the family or group
@@ -5220,6 +5247,7 @@ BOOTS;
      *                                    related with a table.
      *
      * @return $this
+     * @see \eftec\PdoOneEncryption::$hashType             
      */
     public function invalidateCache($uid = '', $family = '')
     {
@@ -5270,6 +5298,10 @@ BOOTS;
     {
         return $this->encryption->encrypt($data);
     }
+    public function hash($data) {
+        return $this->encryption->hash($data);
+    }
+
 
     /**
      * Wrapper of PdoOneEncryption->decrypt

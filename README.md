@@ -1590,9 +1590,16 @@ In a nutshell:
 * Every minor version means that it adds a new functionality i.e. 1.5 -> 1.6 (new methods)  
 * Every decimal version means that it patches/fixes/refactoring a previous functionality i.e. 1.5.0 -> 1.5.1 (fix)  
 
+* 1.47 2020-6-14
+ * The flow ->where()->update() now works when "where()" uses named arguments.     
+ * Fixed a bug with the next query ->where('a1=:Argument',[])    
+ * Added the method PdoOneEncryption::hash() and added the method PdoOne::hash() to wrap the first method.  
+ * Added the field PdoOneEncryption:$hashType  And PdoOne uses as the default hash algorythm.        
+ * The method RunRawQuery() now accept named arguments.   
+    
 * 1.46 2020-6-13
  * _BasePdoOneRepo updated to 4.6
- * Now generation of code has a Base class, so it is possible to rename classes independiently of the table.
+ * Now generation of code has a Base class, so it is possible to name each independiently of the table.
 * 1.45.1 2020-6-11
  * Method generateCodeClass now creates ONETOMANY relation if the case of the table does not match.
 * 1.45 2020-6-7
