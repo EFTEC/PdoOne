@@ -19,7 +19,7 @@ use PDOStatement;
 /**
  * Class _BaseRepo
  *
- * @version       4.5 2020-06-13
+ * @version       4.6 2020-06-15
  * @package       eftec
  * @author        Jorge Castro Castillo
  * @copyright (c) Jorge Castro C. MIT License  https://github.com/EFTEC/PdoOne
@@ -527,6 +527,15 @@ abstract class _BasePdoOneRepo
         return $final;
     }
 
+    /**
+     * The result is stored on self::$gQuery
+     * 
+     * @param        $newQuery
+     * @param string $pTable
+     * @param string $pColumn
+     * @param string $recursiveInit
+     * @param bool   $new
+     */
     protected static function generationRecursive(
         &$newQuery,
         $pTable = '',
@@ -1402,7 +1411,17 @@ abstract class _BasePdoOneRepo
             $recursiveClass = null;
             $usingCache = false;
         }
-        $rowc = self::getPdoOne()->count()->from(static::TABLE)->where($where)->firstScalar();
+
+        $newQuery = [];
+        $newQuery['type'] = 'QUERY';
+        static::$gQuery[0] =& $newQuery;
+        $newQuery['joins'] = static::TABLE . ' as ' . static::TABLE . " \n";
+        // we build the query
+        static::generationRecursive($newQuery, static::TABLE . '.', '', '', false);
+        $from = (isset(self::$gQuery[0]['joins'])) ? self::$gQuery[0]['joins'] : [];
+ 
+        
+        $rowc = self::getPdoOne()->count()->from($from)->where($where)->firstScalar();
 
         if ($rowc !== false && $usingCache) {
             $pdoOne->getCacheService()->setCache(self::$uid, $recursiveClass, (int)$rowc, self::$useCache);

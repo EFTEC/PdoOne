@@ -16,6 +16,9 @@ class PdoOne_mysql_Test extends TestCase
         $this->pdoOne->logLevel = 3;
 
     }
+    public function test_Time() {
+         $this->assertNotEquals(null,$this->pdoOne->dateNow());
+    }
     public function test_missingerr() {
 
         try {

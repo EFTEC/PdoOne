@@ -31,11 +31,11 @@ use stdClass;
  * @package       eftec
  * @author        Jorge Castro Castillo
  * @copyright (c) Jorge Castro C. MIT License  https://github.com/EFTEC/PdoOne
- * @version       1.47 2020-06-14
+ * @version       1.48 2020-06-15
  */
 class PdoOne
 {
-    const VERSION = '1.47';
+    const VERSION = '1.48';
 
     const NULL = PHP_INT_MAX;
 
@@ -517,7 +517,7 @@ class PdoOne
     }
 
     /**
-     * Returns the current date(and time) in Text (human) format.
+     * Returns the current date(and time) in Text (human) format. Usually, it is d/m/Y H:i:s
      *
      * @param bool $hasTime
      * @param bool $hasMicroseconds
@@ -532,19 +532,47 @@ class PdoOne
     ) {
         $tmpDate = new DateTime();
         if ($hasTime) {
-            return $tmpDate->format(($hasMicroseconds !== false) ? self::$dateTimeMicroFormat : self::$dateTimeFormat);
+            return $tmpDate->format(($hasMicroseconds !== false)
+                ? self::$dateTimeMicroHumanFormat
+                : self::$dateTimeHumanFormat);
         }
+        return $tmpDate->format(self::$dateHumanFormat);
+    }
 
+    /**
+     * Returns the current date(and time) in the regular format. (Y-m-d\TH:i:s\Z in long format)
+     *
+     * @param bool $hasTime
+     * @param bool $hasMicroseconds
+     *
+     * @return string
+     * @throws Exception
+     * @see PdoOne::$dateTimeFormat
+     */
+    public static function dateNow(
+        $hasTime = true,
+        $hasMicroseconds = false
+    ) {
+        $tmpDate = new DateTime();
+        if ($hasTime) {
+            return $tmpDate->format(($hasMicroseconds !== false)
+                ? self::$dateTimeMicroFormat
+                : self::$dateTimeFormat);
+        }
         return $tmpDate->format(self::$dateFormat);
     }
 
+    /**
+     * Returns the current date(and time) in SQL/ISO format. It depends on the type of database.
+     *
+     * @param bool $hasTime
+     * @param bool $hasMicroseconds
+     *
+     * @return string
+     */
     public static function dateSqlNow($hasTime = true, $hasMicroseconds = false)
     {
-        try {
-            $tmpDate = new DateTime();
-        } catch (Exception $e) {
-            $tmpDate = null;
-        }
+        $tmpDate = new DateTime();
         if ($hasTime) {
             return $tmpDate->format(($hasMicroseconds !== false) ? self::$isoDateTimeMs : self::$isoDateTime);
         }
