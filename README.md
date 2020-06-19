@@ -1590,6 +1590,8 @@ In a nutshell:
 * Every minor version means that it adds a new functionality i.e. 1.5 -> 1.6 (new methods)  
 * Every decimal version means that it patches/fixes/refactoring a previous functionality i.e. 1.5.0 -> 1.5.1 (fix)  
 
+* 1.49 2020-6-19
+ * New method generateAllClasses()   
 * 1.48 2020-6-15
  * dateTextNow() now returns a human readable format  
  * New method dateNow() that returns a date in a normal format.    

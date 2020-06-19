@@ -37,32 +37,15 @@ $relations=['tablaparent' =>'TablaParentRepo'
             ,'tablagrandchildcat'=>'TablagrandchildcatRepo'
             ,'tablagrandchild'=>'TablagrandchildRepo'];
 
+$logs = $dao->generateAllClasses($relations, 'TestDb', 'repo', __DIR__, false, [
+    'tablaparent' => [
+        '/idchild2FK'           => 'PARENT',
+        '/tablaparentxcategory' => 'MANYTOMANY'
+    ]
+]);
 
-$classCode=$dao->generateBaseClass('TestDb','repo'
-    ,$relations);
-file_put_contents('TestDb.php',$classCode);
-
-foreach ($relations as $tableClassName=>$className) {
-  
-
-    
-    try {
-        $clase = $dao->generateCodeClass($tableClassName, 'repo',['/idchild2FK'             =>'PARENT'
-                                                                  , '/tablaparentxcategory' =>'MANYTOMANY']
-            ,$relations,[],[],[],'TestDB');
-        $claseRepo = $dao->generateCodeClassRepo($tableClassName, 'repo',$relations);
-        echo "saving {$className}Ext.php<br>";
-        
-        file_put_contents($className.'Ext.php',$clase);
-        if(!file_exists($className.'.php')) {
-            echo "saving {$className}.php<br>";
-            // we don't want to replace this class.
-            file_put_contents($className.'.php',$claseRepo);    
-        }
-        
-
-    } catch (Exception $e) {
-        echo "unable to create table $tableClassName : ".$e->getMessage()."<br>";
-    }
-}
+echo "errors:<br>";
+echo "<pre>";
+var_dump($logs);
+echo "</pre>";
 

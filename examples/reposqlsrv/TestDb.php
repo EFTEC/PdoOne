@@ -1,7 +1,18 @@
 <?php
-
+/** @noinspection PhpIncompatibleReturnTypeInspection
+ * @noinspection ReturnTypeCanBeDeclaredInspection
+ * @noinspection DuplicatedCode
+ * @noinspection PhpUnused
+ * @noinspection PhpUndefinedMethodInspection
+ * @noinspection PhpUnusedLocalVariableInspection
+ * @noinspection PhpUnusedAliasInspection
+ * @noinspection NullPointerExceptionInspection
+ * @noinspection SenselessProxyMethodInspection
+ * @noinspection PhpParameterByRefIsNotUsedAsReferenceInspection
+ */
 namespace repo;
 use eftec\PdoOne;
+use eftec\_BasePdoOneRepo;
 use Exception;
 
 /**
