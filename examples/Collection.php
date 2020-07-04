@@ -129,8 +129,11 @@ class Collection
             $html .= '<tr >';
             if (is_array($value)) {
                 foreach ($value as $key2 => $value2) {
-                    if(is_array($value2)) {
-                        $html .= '<td >' . htmlspecialchars(json_encode($value2)) . '</td>';    
+                    if(is_array($value2) ) {
+                        $html .= '<td >' .self::generateTable($value2) . '</td>';
+                        //$html .= '<td >' . htmlspecialchars(json_encode($value2)) . '</td>';    
+                    } elseif(is_object($value2)) {
+                        $html .= '<td >' . htmlspecialchars(json_encode($value2)) . '</td>';
                     } else {
                         $html .= '<td >' . htmlspecialchars($value2) . '</td>';
                     }

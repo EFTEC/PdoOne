@@ -31,11 +31,11 @@ use stdClass;
  * @package       eftec
  * @author        Jorge Castro Castillo
  * @copyright (c) Jorge Castro C. MIT License  https://github.com/EFTEC/PdoOne
- * @version       1.49 2020-06-19
+ * @version       1.50 2020-07-04
  */
 class PdoOne
 {
-    const VERSION = '1.49';
+    const VERSION = '1.50';
 
     const NULL = PHP_INT_MAX;
 
@@ -1811,11 +1811,14 @@ eot;
      * @param bool        $defaultNull
      * @param bool        $inline
      * @param bool        $recursive
+     * @param null|array  $classRelations [optional] The relation table=>classname
+     * @param array       $relation [optional] An optional custom relation of columns
      *
      * @return string
      * @throws Exception
      */
-    public function generateCodeArray($table, $sql = null, $defaultNull = false, $inline = true, $recursive = false)
+    public function generateCodeArray($table, $sql = null, $defaultNull = false, $inline = true, $recursive = false
+        ,$classRelations=null,$relation=[])
     {
         if ($sql === null) {
             $sql = 'select * from ' . $this->addDelimiter($table);
@@ -1832,6 +1835,7 @@ eot;
         }
         $result = '[' . $ln;
         $used = [];
+        $norepeat=[];
         foreach ($r as $row) {
             $name = $row['name'];
             if (!in_array($name, $used, true)) {
@@ -1845,17 +1849,40 @@ eot;
                     if (isset($before[$table][$name])) {
                         foreach ($before[$table][$name] as $k => $v3) {
                             if ($v3[1] && $v3[0][0] != '/') { // before is defined as [colremote,tableremote]
-                                //new dBug($v3);
-                                //$colName = $name . '.' . $before[$table][$name];
                                 $colName = '/' . $v3[1];
                                 if (!$defaultNull) {
-                                    $default = '(in_array(\'' . $colName . '\',$recursive))
+                                    $default = '(in_array($recursivePrefix.\'' . $colName . '\',$recursive))
                             ? [] 
                             : null';
                                 } else {
                                     $default = 'null';
                                 }
-                                $result .= "'" . $colName . "'=>" . $default . ', /* onetomany */' . $ln;
+                                if(!in_array($colName,$norepeat)) {
+                                    if(isset($relation[$colName])) {
+                                        $key=$relation[$colName]['key'];
+                                        
+                                        if($key==='PARENT') {
+                                            $default='null';
+                                        }
+                                        if($key==='ONETOONE' && !$defaultNull) {
+                                            if ($classRelations === null || !isset($classRelations[$relation[$colName]['reftable']])) {
+                                                $className = self::camelize($relation[$colName]['reftable']).'Repo';
+                                            } else {
+                                                $className = $relation[$colName]['reftable'];
+                                            }                                            
+                                            $default = '(in_array($recursivePrefix.\'' . $colName . '\',$recursive))
+                            ? '.$className.'::factory($recursivePrefix.\'' . $colName . '\') 
+                            : null';
+                                        }
+                                        $result .= "'" . $colName . "'=>" . $default . ', /* '.$key.'! */' . $ln;
+                                        $norepeat[]=$colName;
+                                        
+                                    } else {
+                                        $result .= "'" . $colName . "'=>" . $default . ', /* onetomany */' . $ln;
+                                        $norepeat[]=$colName;
+                                        
+                                    }
+                                }
                             }
                         }
                     }
@@ -1869,11 +1896,47 @@ eot;
                         die(1);*/
                         //$colName = '/' . $after[$table][$name];
                         if (!$defaultNull) {
-                            $default = '(in_array(\'/' . $name . '\',$recursive)) 
-                            ? ' . $after[$table][$name] . 'Repo::factory() 
+
+                            if ($classRelations === null || !isset($classRelations[$after[$table][$name]])) {
+                                $className = self::camelize($after[$table][$name]).'Repo';
+                            } else {
+                                $className = $classRelations[$after[$table][$name]];
+                            }
+                            
+                            
+                            $default = '(in_array($recursivePrefix.\'/' . $name . '\',$recursive)) 
+                            ? ' . $className. '::factory($recursivePrefix.\'/' . $name . '\') 
                             : null';
                         }
-                        $result .= "'/" . $name . "'=>" . $default . ', /* manytoone */' . $ln;
+                        if(!in_array($name,$norepeat)) {
+                            $namep='/'.$name;
+                            if(isset($relation[$namep])) {
+                                /*array(5) {
+                                    ["key"]=>
+                                    string(11) "FOREIGN KEY"
+                                    ["refcol"]=>
+                                    string(14) "idtablachildPK"
+                                    ["reftable"]=>
+                                    string(10) "TableChild"
+                                    ["extra"]=>
+                                    string(0) ""
+                                    ["name"]=>
+                                    string(26) "FK_TableParent_TableChild1"
+                                  }*/
+                                $key=$relation[$namep]['key'];
+                                if($key==='PARENT') {
+                                    $default='null';
+                                }
+                                
+                                $result .= "'" . $namep . "'=>" . $default . ', /* '.$key.'!! */' . $ln;
+                                $norepeat[]=$name;
+                                
+                            } else {
+                                $result .= "'/" . $namep . "'=>" . $default . ', /* manytoone */' . $ln;
+                                $norepeat[]=$name;
+                            }
+                           
+                        }
                     }
                 }
             }
@@ -2365,7 +2428,7 @@ class {classname}Ext extends {baseclass}
      * self::getDef('identity',true); // it returns the columns that are identities ['col1','col2']
      * </pre>
      * <b>PHP Types</b>: binary, date, datetime, decimal,int, string,time, timestamp<br>
-     * <b>PHP Conversions</b>: datetime3 (human string), datetime2 (iso), timestamp (int), bool, int, float<br>
+     * <b>PHP Conversions</b>: datetime3 (human string), datetime2 (iso), datetime (datetime class), timestamp (int), bool, int, float<br>
      * <b>Param Types</b>: PDO::PARAM_LOB, PDO::PARAM_STR, PDO::PARAM_INT<br>
      *
      * @param string|null $column =['phptype','conversion','type','size','null','identity','sql'][$i]
@@ -2559,11 +2622,24 @@ class {classname}Ext extends {baseclass}
     public static function deleteById($pk,$transactional=true) {
         return self::_deleteById($pk,$transactional);
     }
-
-    public static function factory() {
+    
+    /**
+     * Initialize an empty array with default values (0 for numbers, empty for string, and array|null if recursive)
+     * 
+     * @param string $recursivePrefix It is the prefix of the recursivity.
+     *
+     * @return array
+     */
+    public static function factory($recursivePrefix='') {
         $recursive=static::getRecursive();
         return {array};
     }
+    
+    /**
+     * Initialize an empty array with null values
+     * 
+     * @return null[]
+     */
     public static function factoryNull() {
         return {array_null};
     }
@@ -2583,7 +2659,7 @@ eot;
                 $fa[$f] = "'$k'";
             }
         }
-        if ($classRelations === null) {
+        if ($classRelations === null || !isset($classRelations[$tableName])) {
             $className = self::camelize($tableName);
         } else {
             $className = $classRelations[$tableName];
@@ -2756,8 +2832,10 @@ eot;
                 self::varExport($this->getDefTableFK($tableName), "\t\t\t"), //{deffk}
                 self::varExport($relation, "\t\t"), //{deffktype}
                 str_replace("\n", "\n\t\t",
-                    rtrim($this->generateCodeArray($tableName, null, false, false, true), "\n")),
-                str_replace("\n", "\n\t\t", rtrim($this->generateCodeArray($tableName, null, true, false, true), "\n"))
+                    rtrim($this->generateCodeArray($tableName, null, false, false, true
+                        ,$classRelations ,$relation), "\n")),
+                str_replace("\n", "\n\t\t", rtrim($this->generateCodeArray($tableName, null, true, false, true
+                    ,$classRelations ,$relation), "\n"))
             ), $r);
         } catch (Exception $e) {
             return "Unable read definition of tables " . $e->getMessage();
@@ -2946,7 +3024,7 @@ eot;
 /** @noinspection PhpUnused
  * @noinspection ReturnTypeCanBeDeclaredInspection
  */
-{namespace};
+{namespace}
 {exception}
 
 /**
@@ -3078,6 +3156,7 @@ eot;
      * echo $this->generateCodeClassAll('table');
      * $this->generateCodeClassConversions(); // reset.
      * </pre>
+     * <b>PHP Conversions</b>: datetime3 (human string), datetime2 (iso),datetime(datetime class), timestamp (int), bool, int, float<br>     
      *
      * @param array $conversion An associative array where the key is the type and the value is the conversion.
      *

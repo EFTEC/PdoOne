@@ -1590,27 +1590,33 @@ In a nutshell:
 * Every minor version means that it adds a new functionality i.e. 1.5 -> 1.6 (new methods)  
 * Every decimal version means that it patches/fixes/refactoring a previous functionality i.e. 1.5.0 -> 1.5.1 (fix)  
 
+
+
+* 1.50 2020-7-04
+  * Updated method generateCodeArray()
+  * Updated method generateCodeClass()
+  * Updated method generateCodeClassRepo()
+
 * 1.49 2020-6-19
- * New method generateAllClasses()   
+     * New method generateAllClasses()   
 * 1.48 2020-6-15
- * dateTextNow() now returns a human readable format  
- * New method dateNow() that returns a date in a normal format.    
- * BasePdoOne::count() now works with setRecursive()    
+     * dateTextNow() now returns a human readable format  
+     * New method dateNow() that returns a date in a normal format.    
+     * BasePdoOne::count() now works with setRecursive()    
 * 1.47 2020-6-14
- * The flow ->where()->update() now works when "where()" uses named arguments.     
- * Fixed a bug with the next query ->where('a1=:Argument',[])    
- * Added the method PdoOneEncryption::hash() and added the method PdoOne::hash() to wrap the first method.  
- * Added the field PdoOneEncryption:$hashType  And PdoOne uses as the default hash algorythm.        
- * The method RunRawQuery() now accept named arguments.   
-    
+     * The flow ->where()->update() now works when "where()" uses named arguments.     
+     * Fixed a bug with the next query ->where('a1=:Argument',[])    
+     * Added the method PdoOneEncryption::hash() and added the method PdoOne::hash() to wrap the first method.  
+     * Added the field PdoOneEncryption:$hashType  And PdoOne uses as the default hash algorythm.        
+     * The method RunRawQuery() now accept named arguments.   
 * 1.46 2020-6-13
- * _BasePdoOneRepo updated to 4.6
- * Now generation of code has a Base class, so it is possible to name each independiently of the table.
+     * _BasePdoOneRepo updated to 4.6
+     * Now generation of code has a Base class, so it is possible to name each independiently of the table.
 * 1.45.1 2020-6-11
- * Method generateCodeClass now creates ONETOMANY relation if the case of the table does not match.
+     * Method generateCodeClass now creates ONETOMANY relation if the case of the table does not match.
 * 1.45 2020-6-7
- * Added method generateCodeClassRepo()   
- * Modified method generateCodeClass()    
+     * Added method generateCodeClassRepo()   
+     * Modified method generateCodeClass()    
 * 1.44.2 2020-6-3
   * Solved a problem with BasePdoOneRepo   
 * 1.44.1 2020-6-2
@@ -1641,13 +1647,10 @@ In a nutshell:
   * Solved a problem with getDefTableFK (mysql and sqlsrv)   
   * new field (database_identityName)   
   * Solved a problem with getPK (sqlsrv)  
-
 * 1.38 2020-05-10
   * updated _BasePdoOneRepo to version 4.0     
-
 * 1.37 2020-05-03
   * added method setNoReset()
-
 * 1.36 2020-05-03
     * added method hasRecursive()  
 * 1.35.1 2020-04-30
