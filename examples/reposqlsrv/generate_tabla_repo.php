@@ -11,9 +11,13 @@ $dao=new PdoOne('sqlsrv', 'PCJC\SQLEXPRESS', 'sa', 'abc.123', 'testdb', '');
 //$dao = new PdoOne('mysql', '127.0.0.1', 'root', 'abc.123', 'testdb', '');
 $dao->logLevel = 3;
 try {
+    
     echo '<h1>connection. The instance 127.0.0.1, base:testdb  user:root and password:abc.123 must exists</h1>';
+    echo "<a href='https://github.com/EFTEC/example-relationaldatabase'>Database used</a><br><hr>";
+    
     $dao->connect();
 } catch (Exception $ex) {
+    die($ex->getMessage());
 }
 
 
