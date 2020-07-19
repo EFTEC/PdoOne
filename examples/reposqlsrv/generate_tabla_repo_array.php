@@ -21,13 +21,13 @@ try {
 
 
 $relations = [
-    'TableParent'          => ['TableParentRepo', 'TableParentModel'],
-    'TableChild'           => ['TableChildRepo', 'TableChildModel'],
-    'TableGrandChild'      => ['TableGrandChildRepo', 'TableGrandChildModel'],
-    'TableGrandChildTag'   => ['TableGrandChildTagRepo', 'TableGrandChildTagModel'],
-    'TableParentxCategory' => ['TableParentxCategoryRepo', 'TableParentxCategoryModel'],
-    'TableCategory'        => ['TableCategoryRepo', 'TableCategoryModel'],
-    'TableParentExt'       => ['TableParentExtRepo', 'TableParentExtModel'],
+    'TableParent'          => 'TableParentRepo',
+    'TableChild'           => 'TableChildRepo',
+    'TableGrandChild'      => 'TableGrandChildRepo',
+    'TableGrandChildTag'   => 'TableGrandChildTagRepo',
+    'TableParentxCategory' => 'TableParentxCategoryRepo',
+    'TableCategory'        => 'TableCategoryRepo',
+    'TableParentExt'       => 'TableParentExtRepo'
 ];
 $tables = $dao->tableSorted();
 foreach ($tables as $table) {

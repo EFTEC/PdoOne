@@ -75,12 +75,15 @@ class Collection
 
     /**
      * Generate a table from an array
-     * @param array|null $array
+     * @param array|null|object $array
      * @param string|bool $css if true then it uses the build in style. If false then it doesn't use style. If string then it uses as class
      * @return string
      * @see https://stackoverflow.com/questions/4746079/how-to-create-a-html-table-from-a-php-array
      */
     public static function generateTable($array,$css=true){
+        if(is_object($array)) {
+            $array=(array)$array;
+        }
         if (!isset($array[0])) {
             $tmp=$array;
             $array=array();
@@ -127,7 +130,7 @@ class Collection
         // data rows
         foreach( $array as $key=>$value){
             $html .= '<tr >';
-            if (is_array($value)) {
+            if (is_array($value) || is_object($value)) {
                 foreach ($value as $key2 => $value2) {
                     if(is_array($value2) ) {
                         $html .= '<td >' .self::generateTable($value2) . '</td>';

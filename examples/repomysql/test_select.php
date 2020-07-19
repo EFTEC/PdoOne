@@ -1,26 +1,41 @@
-<?php /** @noinspection PhpLanguageLevelInspection */
+<?php 
 
+use dBug\dBug;
 use eftec\PdoOne;
 use mapache_commons\Collection;
+
+use mysql\repomodel\TableParentModel;
 use repomysql\TableParentRepo;
+
 
 include "common.php";
 
 
 
+$parent= (TableParentRepo::setRecursive(
+    [
+        '_idchildFK',
+        '_idchild2FK',
+        '_idchildFK/_idgrandchildFK',
+        '_idchildFK/_idgrandchildFK/_TableGrandChildTag',
+        '_TableParentxCategory' // manytomany
+        ,'_TableParentExt'
+    ]))::first(1);
+new dBug($parent);
 
 
 
 
 
-$r=TableParentRepo::toList();
 
-echo Collection::generateTable($r);
+//$r=TableParentRepo::toList();
+
+//echo Collection::generateTable($r);
 
 
 
 
-$r=TableParentRepo::setRecursive(
+$r=(TableParentRepo::setRecursive(
     [
 
         '/idchildFK'
@@ -33,7 +48,9 @@ $r=TableParentRepo::setRecursive(
         ,'/tablaparentxcategory/idcategoryPKFK'
         //,'/tablaparentxcategory' // one to many
         //,'/tablaparentxcategory/idcategoryPKFK'
-    ])::toList();
+    ])) ::toList();
+
+//new dBug($r);
 
 echo Collection::generateTable($r);
 
@@ -55,8 +72,8 @@ $parent= (TableParentRepo::setRecursive(
     ]))::first(1);
 //var_dump($parent['/idchildFK']['idtablachildPK']);
 echo "<br>";
-echo Collection::generateTable($parent);
 
+new dBug($parent);
 /*
 \repo\TablagrandchildRepo::createTable();
 \repo\TablachildRepo::createTable();

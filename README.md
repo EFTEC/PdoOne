@@ -1591,6 +1591,12 @@ In a nutshell:
 * Every decimal version means that it patches/fixes/refactoring a previous functionality i.e. 1.5.0 -> 1.5.1 (fix)  
 
 
+* 1.51 2020-7-18
+  * class BasePdoOneRepo updated to 4.7. Now it supports arrays and objects
+  * Updated method generateCodeArray()
+  * Updated method generateCodeClass()
+  * Updated method generateCodeClassRepo()
+  * new method generateModelClass() It generates model from tables
 
 * 1.50 2020-7-04
   * Updated method generateCodeArray()

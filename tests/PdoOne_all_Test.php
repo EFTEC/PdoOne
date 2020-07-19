@@ -79,7 +79,10 @@ class PdoOne_mysql_Test extends TestCase
 
     
     public function test_3() {
-        
+        $dt=new DateTime('18-07-2020');
+        $cv=PdoOne::dateConvert('2020-07-18 00:00:00.000','sql','class');
+        var_dump($cv);
+        $this->assertEquals($dt,$cv);
         $this->assertEquals('2020-01-30',PdoOne::dateConvert('30/01/2020','human','sql'));
         $this->assertEquals('2020-01-30',PdoOne::dateConvert('30/01/2020','human','iso'));
         $this->assertEquals(new DateTime('01/30/2020 00:00:00'),PdoOne::dateConvert('30/01/2020','human','class'));

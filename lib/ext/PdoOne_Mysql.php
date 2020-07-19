@@ -42,6 +42,9 @@ class PdoOne_Mysql implements PdoOne_IExt
         PdoOne::$isoDate = 'Y-m-d';
         PdoOne::$isoDateTime = 'Y-m-d H:i:s';
         PdoOne::$isoDateTimeMs = 'Y-m-d H:i:s.u';
+        PdoOne::$isoDateInput = 'Y-m-d';
+        PdoOne::$isoDateInputTime = 'Y-m-d H:i:s';
+        PdoOne::$isoDateInputTimeMs = 'Y-m-d H:i:s.u';        
         $this->parent->isOpen = false;
 
         return $charset;
@@ -114,7 +117,7 @@ class PdoOne_Mysql implements PdoOne_IExt
             } else {
                 $columns[$item['COLUMN_NAME']] = PdoOne::newColFK('FOREIGN KEY', $item['REFERENCED_COLUMN_NAME'],
                     $item['REFERENCED_TABLE_NAME'], $extra, $item['CONSTRAINT_NAME']);
-                $columns['/' . $item['COLUMN_NAME']] = PdoOne::newColFK('MANYTOONE', $item['REFERENCED_COLUMN_NAME'],
+                $columns[PdoOne::$prefixBase . $item['COLUMN_NAME']] = PdoOne::newColFK('MANYTOONE', $item['REFERENCED_COLUMN_NAME'],
                     $item['REFERENCED_TABLE_NAME'], $extra, $item['CONSTRAINT_NAME']);
             }
         }

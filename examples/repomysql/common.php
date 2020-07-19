@@ -26,6 +26,14 @@ include 'generated/TableParentExtRepo.php';
 include 'generated/TableParentxCategoryRepoExt.php';
 include 'generated/TableParentxCategoryRepo.php';
 
+include 'generatedmodel/TableGrandChildModel.php';
+include 'generatedmodel/TableParentModel.php';
+include 'generatedmodel/TableCategoryModel.php';
+include 'generatedmodel/TableChildModel.php';
+include 'generatedmodel/TableGrandChildTagModel.php';
+include 'generatedmodel/TableParentExtModel.php';
+include 'generatedmodel/TableParentxCategoryModel.php';
+
 
 // connecting to database sakila at 127.0.0.1 with user root and password abc.123
 $pdoOne=new PdoOne('mysql', '127.0.0.1', 'root', 'abc.123', 'testdb', '');

@@ -1,4 +1,4 @@
-<?php
+<?php /** @noinspection DuplicatedCode */
 
 use eftec\PdoOne;
 
@@ -18,28 +18,31 @@ try {
     die($ex->getMessage());
 }
 
-
 $relations = [
-    'TableParent'          => 'TableParentRepo',
-    'TableChild'           => 'TableChildRepo',
-    'TableGrandChild'      => 'TableGrandChildRepo',
-    'TableGrandChildTag'   => 'TableGrandChildTagRepo',
-    'TableParentxCategory' => 'TableParentxCategoryRepo',
-    'TableCategory'        => 'TableCategoryRepo',
-    'TableParentExt'       => 'TableParentExtRepo',
+    'TableParent'          => ['TableParentRepo','TableParentModel'],
+    'TableChild'           => ['TableChildRepo','TableChildModel'],
+    'TableGrandChild'      => ['TableGrandChildRepo','TableGrandChildModel'],
+    'TableGrandChildTag'   => ['TableGrandChildTagRepo','TableGrandChildTagModel'],
+    'TableParentxCategory' => ['TableParentxCategoryRepo','TableParentxCategoryModel'],
+    'TableCategory'        => ['TableCategoryRepo','TableCategoryModel'],
+    'TableParentExt'       => ['TableParentExtRepo','TableParentExtModel'],
 ];
+
 $tables=$dao->tableSorted();
 foreach($tables as $table) {
     echo "include 'generated/{$table}RepoExt.php';<br>";
     echo "include 'generated/{$table}Repo.php';<br>";
+    echo "include 'generatedmodel/{$table}Model.php';<br>";
     
 }
 
 $dao->generateCodeClassConversions(['datetime'=>'datetime']);
-$logs = $dao->generateAllClasses($relations, 'TestDb', 'repomysql', __DIR__.'/generated',true, [
+$logs = $dao->generateAllClasses($relations, 'TestDb'
+    , ['repomysql','mysql\repomodel']
+    , [__DIR__.'/generated',__DIR__.'/generatedmodel'],true, [
     'TableParent' => [
-        '/idchild2FK'           => 'PARENT',
-        '/TableParentxCategory' => 'MANYTOMANY'
+        '_idchild2FK'           => 'PARENT',
+        '_TableParentxCategory' => 'MANYTOMANY'
     ]
 ]);
 

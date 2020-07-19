@@ -39,9 +39,12 @@ class PdoOne_Sqlsrv implements PdoOne_IExt
         $this->parent->database_delimiter0 = '[';
         $this->parent->database_delimiter1 = ']';
         $this->parent->database_identityName='IDENTITY';
-        PdoOne::$isoDate = 'Ymd';
-        PdoOne::$isoDateTime = 'Ymd H:i:s';
-        PdoOne::$isoDateTimeMs = 'Ymd H:i:s.u';
+        PdoOne::$isoDate = 'Y-m-d';
+        PdoOne::$isoDateTime = 'Y-m-d H:i:s';
+        PdoOne::$isoDateTimeMs = 'Y-m-d H:i:s.u';
+        PdoOne::$isoDateInput = 'Ymd';
+        PdoOne::$isoDateInputTime = 'Ymd His';
+        PdoOne::$isoDateInputTimeMs = 'Ymd His.u';
         $this->parent->isOpen = false;
         return '';
     }
@@ -201,7 +204,7 @@ class PdoOne_Sqlsrv implements PdoOne_IExt
                     ,$item['referenced_table_name']
                     ,$extra
                     ,$item['fk_name']);
-                $columns['/'.$item['COLUMN_NAME']]=PdoOne::newColFK(
+                $columns[PdoOne::$prefixBase.$item['COLUMN_NAME']]=PdoOne::newColFK(
                     'MANYTOONE'
                     ,$item['referenced_column_name']
                     ,$item['referenced_table_name']

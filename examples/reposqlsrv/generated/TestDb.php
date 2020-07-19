@@ -25,6 +25,13 @@ class TestDb extends _BasePdoOneRepo
     const type = 'sqlsrv';
     const NS = 'reposqlsrv\\';
     
+    /** 
+     * @var bool if true then it uses objects (instead of array) in the 
+     * methods tolist(),first(),insert(),update() and delete() 
+     */
+    public static $useModel=false;      
+    
+    
     /** @var string[] it is used to set the relations betweeen table (key) and class (value) */
     const RELATIONS = [
 	    'TableParent' => 'TableParentRepo',

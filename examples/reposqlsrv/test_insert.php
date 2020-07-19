@@ -21,5 +21,11 @@ $obj['fieldUnique']=mt_rand(0,5000000);
 
 $id=TableParentRepo::insert($obj);
 
+$obj=new \sqlsrv\repomodel\TableParentModel();
+$obj->fieldInt=55;
+$obj->fieldUnique=mt_rand(0,5000000);
+$obj->fieldDateTime=new DateTime();
+$id=TableParentRepo::insert($obj);
+
 new dbug\dBug(TableParentRepo::first($id));
-new dbug\dBug((TableParentRepo::first($id))['fieldDateTime']->format('d/m/y'));
+//new dbug\dBug((TableParentRepo::first($id))['fieldDateTime']->format('d/m/y'));
