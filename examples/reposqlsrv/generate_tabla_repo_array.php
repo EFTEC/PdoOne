@@ -33,6 +33,7 @@ $tables = $dao->tableSorted();
 foreach ($tables as $table) {
     echo "include 'generated/{$table}RepoExt.php';<br>";
     echo "include 'generated/{$table}Repo.php';<br>";
+    echo "include 'generatedmodel/Abstract{$table}.php';<br>";
 }
 
 $dao->generateCodeClassConversions(['datetime' => 'datetime']);

@@ -16,7 +16,7 @@ use PDOStatement;
 use RuntimeException;
 
 /**
- * Class _BaseRepo
+ * Class _BasePdoOneRepo
  *
  * @version       4.7 2020-07-18
  * @package       eftec

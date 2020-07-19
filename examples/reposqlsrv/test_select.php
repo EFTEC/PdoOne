@@ -1,5 +1,6 @@
-<?php /** @noinspection PhpLanguageLevelInspection */
+<?php
 
+use dBug\dBug;
 use eftec\PdoOne;
 use mapache_commons\Collection;
 use reposqlsrv\TableParentRepo;
@@ -8,12 +9,24 @@ use reposqlsrv\TestDb;
 
 include "common.php";
 
+$parent= (TableParentRepo::setRecursive(
+    [
+        '_idchildFK',
+        '_idchild2FK',
+        '_idchildFK/_idgrandchildFK',
+        '_idchildFK/_idgrandchildFK/_TableGrandChildTag',
+        '_TableParentxCategory' // manytomany
+        ,'_TableParentExt'
+    ]))::first(1);
+
+new dBug($parent);
+
 
 $dummies= TestDb::base()->setThrowOnError(false)->select('*')->from('tableparent')->toList();
 var_dump(TestDb::base()->errorText);
-var_dump($dummies);
+echo Collection::generateTable($dummies);
 
-die(1);
+
 /*
 
 
@@ -46,17 +59,9 @@ echo Collection::generateTable($r);
 
 //$parent= TablaParentRepo::first(1);
 //die(1);
-$parent= (TableParentRepo::setRecursive(
-    [
-        '_idchildFK',
-        '_idchild2FK',
-        '_idchildFK/_idgrandchildFK',
-        '_idchildFK/_idgrandchildFK/_TableGrandChildTag',
-        '_TableParentxCategory' // manytomany
-        ,'_TableParentExt'
-    ]))::first(1);
-new \dBug\dBug($parent);
-die(1);
+
+
+
 
 $parent= (TableParentRepo::setRecursive(
     [
@@ -75,7 +80,7 @@ $parent= (TableParentRepo::setRecursive(
     ]))::first(1);
 //var_dump($parent['_idchildFK']['idtablachildPK']);
 echo "<br>";
-new \dBug\dBug($parent);
+new dBug($parent);
 //echo Collection::generateTable($parent);
 
 /*
@@ -83,3 +88,4 @@ new \dBug\dBug($parent);
 \repo\TablachildRepo::createTable();
 \repo\TablaParentRepo::createTable();
 */
+echo "ok";

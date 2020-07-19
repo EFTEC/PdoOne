@@ -1590,7 +1590,12 @@ In a nutshell:
 * Every minor version means that it adds a new functionality i.e. 1.5 -> 1.6 (new methods)  
 * Every decimal version means that it patches/fixes/refactoring a previous functionality i.e. 1.5.0 -> 1.5.1 (fix)  
 
-
+* 1.52 2020-7-19    
+  * Updated method generateCodeArray()
+  * Updated method generateCodeClass()
+  * Updated method generateCodeClassRepo()
+  * Updated method generateModelClass()
+  * new method generateAbstractModelClass()   
 * 1.51 2020-7-18
   * class BasePdoOneRepo updated to 4.7. Now it supports arrays and objects
   * Updated method generateCodeArray()
@@ -1631,7 +1636,7 @@ In a nutshell:
   * Updated BasePdoOneRepo to 4.4. Now it catches errors or returns false.    
 * 1.43 2020-5-31
   * Updated BasePdoOneRepo to 4.3. Now it works with conversions. It doesn't convert fields from **where**
-   but it converts results, insert and update.   
+   , but it converts results, insert and update.   
   * BasePdoOneRepo 4.3 also restricts the columns to insert and update.   
   * BasePdoOneRepo 4.3 also uses a long definition of columns.  
 * 1.42 2020-5-29
