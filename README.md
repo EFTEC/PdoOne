@@ -1590,6 +1590,8 @@ In a nutshell:
 * Every minor version means that it adds a new functionality i.e. 1.5 -> 1.6 (new methods)  
 * Every decimal version means that it patches/fixes/refactoring a previous functionality i.e. 1.5.0 -> 1.5.1 (fix)  
 
+* 1.53 2020-7-27   
+  * Method connect() sets PDO::ATTR_EMULATE_PREPARES to false      
 * 1.52 2020-7-19    
   * Updated method generateCodeArray()
   * Updated method generateCodeClass()

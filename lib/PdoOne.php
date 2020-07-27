@@ -30,11 +30,11 @@ use stdClass;
  * @package       eftec
  * @author        Jorge Castro Castillo
  * @copyright (c) Jorge Castro C. MIT License  https://github.com/EFTEC/PdoOne
- * @version       1.52 2020-07-19
+ * @version       1.53 2020-07-27
  */
 class PdoOne
 {
-    const VERSION = '1.52';
+    const VERSION = '1.53';
     const NULL = PHP_INT_MAX;
     public static $prefixBase = '_';
     /** @var string|null Static date (when the date is empty) */
@@ -1173,6 +1173,8 @@ eot;
                 return;
             }
             $this->conn1->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+            $this->conn1->setAttribute(PDO::ATTR_EMULATE_PREPARES, false);
+            //$this->conn1->setAttribute(PDO::ATTR_STRINGIFY_FETCHES, false); It is not required.
 
             $this->isOpen = true;
         } catch (Exception $ex) {
@@ -1870,7 +1872,7 @@ eot;
                             ) { // before is defined as [colremote,tableremote]
                                 $colName = self::$prefixBase . $v3[1];
                                 if (!$defaultNull) {
-                                    $default = '(in_array($recursivePrefix.\'' . $colName . '\',$recursive))
+                                    $default = '(in_array($recursivePrefix.\'' . $colName . '\',$recursive,true))
                             ? [] 
                             : null';
                                 } else {
@@ -1891,7 +1893,7 @@ eot;
                                             } else {
                                                 $className = $relation[$colName]['reftable'];
                                             }
-                                            $default = '(in_array($recursivePrefix.\'' . $colName . '\',$recursive))
+                                            $default = '(in_array($recursivePrefix.\'' . $colName . '\',$recursive,true))
                             ? ' . $className . '::factory($recursivePrefix.\'' . $colName . '\') 
                             : null';
                                         }
@@ -1920,9 +1922,7 @@ eot;
                             } else {
                                 $className = $classRelations[$after[$table][$name]];
                             }
-
-
-                            $default = '(in_array($recursivePrefix.\'' . self::$prefixBase . $name . '\',$recursive)) 
+                            $default = '(in_array($recursivePrefix.\'' . self::$prefixBase . $name . '\',$recursive,true)) 
                             ? ' . $className . '::factory($recursivePrefix.\'' . self::$prefixBase . $name . '\') 
                             : null';
                         }
@@ -2540,6 +2540,12 @@ abstract class Abstract{classname} extends {baseclass}
         /* key,refcol,reftable,extra */
         return {deffktype};
     }
+    
+    public static function getRelations($type='all') {
+        return {deffktype2};
+    
+    }
+    
     public static function toList($filter=null,$filterValue=null) {
        if(self::$useModel) {
             return {classmodellist}
@@ -2852,7 +2858,13 @@ eot;
         } else {
             $noUpdate = $identities;
         }
-
+        $relation2=[];
+        foreach($relation as $col=>$arr) {
+            if($arr['key']==='MANYTOONE') {
+                $relation2[]=$col;
+            }
+        }
+        
 
         try {
             $r = str_replace(array(
@@ -2864,6 +2876,7 @@ eot;
                 '{defnoupdate}',
                 '{deffk}',
                 '{deffktype}',
+                '{deffktype2}',
                 '{array}',
                 '{array_null}'
             ), array(
@@ -2876,6 +2889,7 @@ eot;
                 self::varExport($noUpdate, "\t\t"), // {defnoupdate}
                 self::varExport($this->getDefTableFK($tableName), "\t\t\t"), //{deffk}
                 self::varExport($relation, "\t\t"), //{deffktype}
+                self::varExport($relation2, "\t\t"), //{deffktype}
                 str_replace("\n", "\n\t\t",
                     rtrim($this->generateCodeArray($tableName, null, false, false, true, $classRelations, $relation),
                         "\n")),
