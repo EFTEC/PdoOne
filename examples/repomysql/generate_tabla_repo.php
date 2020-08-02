@@ -1,4 +1,5 @@
-<?php /** @noinspection DuplicatedCode */
+<?php
+/** @noinspection DuplicatedCode */
 
 use eftec\PdoOne;
 
@@ -19,32 +20,42 @@ try {
 }
 
 $relations = [
-    'TableParent'          => ['TableParentRepo','TableParentModel'],
-    'TableChild'           => ['TableChildRepo','TableChildModel'],
-    'TableGrandChild'      => ['TableGrandChildRepo','TableGrandChildModel'],
-    'TableGrandChildTag'   => ['TableGrandChildTagRepo','TableGrandChildTagModel'],
-    'TableParentxCategory' => ['TableParentxCategoryRepo','TableParentxCategoryModel'],
-    'TableCategory'        => ['TableCategoryRepo','TableCategoryModel'],
-    'TableParentExt'       => ['TableParentExtRepo','TableParentExtModel'],
+    'TableParent'          => ['TableParentRepo', 'TableParentModel'],
+    'TableChild'           => ['TableChildRepo', 'TableChildModel'],
+    'TableGrandChild'      => ['TableGrandChildRepo', 'TableGrandChildModel'],
+    'TableGrandChildTag'   => ['TableGrandChildTagRepo', 'TableGrandChildTagModel'],
+    'TableParentxCategory' => ['TableParentxCategoryRepo', 'TableParentxCategoryModel'],
+    'TableCategory'        => ['TableCategoryRepo', 'TableCategoryModel'],
+    'TableParentExt'       => ['TableParentExtRepo', 'TableParentExtModel'],
+];
+$columnRelation = [
+    'TableParent' => [
+        '_idchild2FK'           => 'PARENT',
+        '_TableParentxCategory' => 'MANYTOMANY',
+        'fieldKey'              => ['encrypt', null],
+        'extracol'              => 'datetime3'
+
+    ]
+];
+$extraColumn = [
+    'TableParent' => ['extracol' => 'CURRENT_TIMESTAMP', 'extracol2' => '20']
 ];
 
-$tables=$dao->tableSorted();
-foreach($tables as $table) {
+$tables = $dao->tableSorted();
+foreach ($tables as $table) {
     echo "include 'generated/{$table}RepoExt.php';<br>";
     echo "include 'generated/{$table}Repo.php';<br>";
     echo "include 'generatedmodel/{$table}Model.php';<br>";
-    
 }
 
-$dao->generateCodeClassConversions(['datetime'=>'datetime']);
-$logs = $dao->generateAllClasses($relations, 'TestDb'
-    , ['repomysql','mysql\repomodel']
-    , [__DIR__.'/generated',__DIR__.'/generatedmodel'],true, [
-    'TableParent' => [
-        '_idchild2FK'           => 'PARENT',
-        '_TableParentxCategory' => 'MANYTOMANY'
-    ]
+$dao->generateCodeClassConversions([
+    'datetime' => 'datetime',
+    'tinyint'  => 'bool',
+    'int'      => 'int',
+    'decimal'  => 'decimal'
 ]);
+$logs = $dao->generateAllClasses($relations, 'TestDb', ['repomysql', 'mysql\repomodel'],
+    [__DIR__ . '/generated', __DIR__ . '/generatedmodel'], true, $columnRelation, $extraColumn);
 
 echo "errors:<br>";
 echo "<pre>";

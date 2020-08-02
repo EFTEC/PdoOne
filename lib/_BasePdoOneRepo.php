@@ -18,7 +18,7 @@ use RuntimeException;
 /**
  * Class _BasePdoOneRepo
  *
- * @version       4.7 2020-07-18
+ * @version       4.8 2020-08-02
  * @package       eftec
  * @author        Jorge Castro Castillo
  * @copyright (c) Jorge Castro C. MIT License  https://github.com/EFTEC/PdoOne
@@ -30,6 +30,7 @@ abstract class _BasePdoOneRepo
     /** @var array $gQuery =[['columns'=>[],'joins'=>[],'where'=>[]] */
     public static $gQuery = [];
     public static $gQueryCounter = 0;
+    public static $pageSize=20;
     public static $lastException = '';
     /** @var bool if true then it returns a false on error. If false, it throw an exception in case of error */
     protected static $falseOnError = false;
@@ -436,6 +437,19 @@ abstract class _BasePdoOneRepo
     }
 
     /**
+     * Its a macro of limit but it works for paging. It uses static::$pageSize to determine the rows to return
+     *
+     * @param int $numPage Number of page. It starts with 1.
+     *
+     * @return mixed
+     */
+    public static function page($numPage) {
+        $p0=static::$pageSize * ($numPage-1);
+        $p1=$p0+static::$pageSize ;
+        return static::limit("$p0,$p1");
+    }
+
+    /**
      * @param $order
      *
      * @return self
@@ -556,108 +570,110 @@ abstract class _BasePdoOneRepo
         $ns = self::getNamespace();
         foreach ($keyRels as $nameCol => $keyRel) {
             $type = $keyRel['key'];
-            // $nameColClean = trim($nameCol, PdoOne::$prefixBase);
-            $recursiveComplete = ltrim($recursiveInit . '/' . $nameCol, '/');
-            //echo "check recursive: $recursiveComplete<br>";
-            if (self::getPdoOne()->hasRecursive($recursiveComplete)) {
-                //echo "OK $type<br>";
-                // type='PARENT' is n
-                switch ($type) {
-                    case 'MANYTOONE':
-                        static::$gQueryCounter++;
-                        $tableRelAlias = 't' . static::$gQueryCounter; //$prefixtable.$nameColClean;
-                        $col = ltrim($nameCol, PdoOne::$prefixBase); //$keyRel['col'];
-                        //$tableRelAlias =trim($recursiveInit.'_'.$nameColClean,'/'); //str_replace(['/'],['.'],$recursiveInit.'.'.$nameColClean);
-                        $colRelAlias = $pColumn . $nameCol;
-                        $class = $ns
-                            . static::RELATIONS[$keyRel['reftable']]; // $ns . PdoOne::camelize($keyRel['reftable']) . $postfix;
-                        $refCol = ltrim($keyRel['refcol'], PdoOne::$prefixBase);
-                        $newQuery['joins'] .= " left join {$keyRel['reftable']} as $tableRelAlias "
-                            . "on {$pTable}{$col}=$tableRelAlias.$refCol \n"; // $recursiveInit$nameCol\n"; // adds a query to the current query
-                        $class::generationRecursive($newQuery, $tableRelAlias . '.', $colRelAlias . '.',
-                            $recursiveComplete, false); // $recursiveInit . $nameCol
-                        break;
-                    case 'ONETOONE':
-                        static::$gQueryCounter++;
-                        $tableRelAlias = 't' . static::$gQueryCounter; //$prefixtable.$nameColClean;
-                        $col = $keyRel['col'];
-                        $colRelAlias = $pColumn . $nameCol;
-                        $class = $ns
-                            . static::RELATIONS[$keyRel['reftable']]; // $ns . PdoOne::camelize($keyRel['reftable']) . $postfix;
-                        $refCol = ltrim($keyRel['refcol'], PdoOne::$prefixBase);
-                        $newQuery['joins'] .= " left join {$keyRel['reftable']} as $tableRelAlias "
-                            . "on {$pTable}{$col}=$tableRelAlias.$refCol \n"; // $recursiveInit$nameCol\n"; // adds a query to the current query
-                        $class::generationRecursive($newQuery, $tableRelAlias . '.', $colRelAlias . '.',
-                            $recursiveComplete, false); // $recursiveInit . $nameCol
-                        break;
-                    case 'ONETOMANY':
-                        //$tableRelAlias = ''; //'t' . static::$gQueryCounter;
-                        $other = [];
-                        $refColClean = trim($keyRel['refcol'], PdoOne::$prefixBase);
-                        $other['type'] = 'ONETOMANY';
-                        $other['table'] = $keyRel['reftable'];
-                        $other['where'] = $refColClean;
-                        $other['joins'] = " {$keyRel['reftable']} \n";
-                        //$tableRelAlias = '*2';
-                        $other['col'] = $pColumn . $keyRel['col']; //***
-                        $other['col2'] = $pColumn . $nameCol;
-                        $other['name'] = $nameCol;
-                        $other['data'] = $keyRel;
-                        //self::$gQuery[]=$other;
-                        $class = $ns
-                            . static::RELATIONS[$keyRel['reftable']]; // $ns . PdoOne::camelize($keyRel['reftable']) . $postfix;
-                        $class::generationRecursive($other, '', '', $pColumn . $recursiveComplete,
-                            false); //$recursiveInit . $nameCol
-                        self::$gQuery[] = $other;
-                        break;
-                    case 'MANYTOMANY':
-                        $rec = self::getPdoOne()->getRecursive();
-                        // automatically we add recursive.
-                        $rec[] = $recursiveComplete . $keyRel['refcol2']; // $recursiveInit . $nameCol 
-                        self::getPdoOne()->recursive($rec);
-                        //$tableRelAlias = ''; //'t' . static::$gQueryCounter;
-                        $other = [];
-                        $refColClean = trim($keyRel['refcol2'], PdoOne::$prefixBase);
-                        $other['type'] = 'ONETOMANY';
-                        $other['table'] = $keyRel['reftable'];
-                        $other['where'] = $refColClean;
-                        $other['joins'] = " {$keyRel['reftable']} \n";
-                        //$tableRelAlias = '*2';
-                        $other['col'] = $pColumn . $keyRel['col']; //***
-                        $other['col2'] = $pColumn . $nameCol;
-                        $other['name'] = $nameCol;
-                        $other['data'] = $keyRel;
-                        $class = $ns
-                            . static::RELATIONS[$keyRel['reftable']]; // $ns . PdoOne::camelize($keyRel['reftable']) . $postfix;
-                        $class::generationRecursive($other, '', '', $pColumn . $recursiveComplete,
-                            false); //$recursiveInit . $nameCol
-                        // we reduce a level
-                        //$columns = $other['columns'];
-                        $columnFinal = [];
-                        $findme = ltrim($keyRel['refcol2'], PdoOne::$prefixBase);
-                        //echo "findme $findme<br>";
-                        //if($pTable==='') {
-                        $columnFinal[] = $findme . ' as ' . self::getPdoOne()->addQuote($pColumn . $findme);
-                        /*} else {
-                            echo "<hr>ptable:$pTable manytoone";
-                            echo $findme."<br>";
-                            // convert /somefk.column -> column
-                            // convert /anything.column -> (deleted)
-                            foreach ($columns as $vc) {
-                                //$findme = $keyRel['refcol2'] . '.';
-                                if (strpos($vc, $findme) !== false) {
-                                    $columnFinal[] = str_replace($findme, '', $vc);
+            if($type!=='FOREIGN KEY') {
+                // $nameColClean = trim($nameCol, PdoOne::$prefixBase);
+                $recursiveComplete = ltrim($recursiveInit . '/' . $nameCol, '/');
+                //echo "check recursive: $recursiveComplete<br>";
+                if (self::getPdoOne()->hasRecursive($recursiveComplete)) {
+                    //echo "OK $type<br>";
+                    // type='PARENT' is n
+                    switch ($type) {
+                        case 'MANYTOONE':
+                            static::$gQueryCounter++;
+                            $tableRelAlias = 't' . static::$gQueryCounter; //$prefixtable.$nameColClean;
+                            $col = ltrim($nameCol, PdoOne::$prefixBase); //$keyRel['col'];
+                            //$tableRelAlias =trim($recursiveInit.'_'.$nameColClean,'/'); //str_replace(['/'],['.'],$recursiveInit.'.'.$nameColClean);
+                            $colRelAlias = $pColumn . $nameCol;
+                            $class = $ns
+                                . static::RELATIONS[$keyRel['reftable']]; // $ns . PdoOne::camelize($keyRel['reftable']) . $postfix;
+                            $refCol = ltrim($keyRel['refcol'], PdoOne::$prefixBase);
+                            $newQuery['joins'] .= " left join {$keyRel['reftable']} as $tableRelAlias "
+                                . "on {$pTable}{$col}=$tableRelAlias.$refCol \n"; // $recursiveInit$nameCol\n"; // adds a query to the current query
+                            $class::generationRecursive($newQuery, $tableRelAlias . '.', $colRelAlias . '.',
+                                $recursiveComplete, false); // $recursiveInit . $nameCol
+                            break;
+                        case 'ONETOONE':
+                            static::$gQueryCounter++;
+                            $tableRelAlias = 't' . static::$gQueryCounter; //$prefixtable.$nameColClean;
+                            $col = $keyRel['col'];
+                            $colRelAlias = $pColumn . $nameCol;
+                            $class = $ns
+                                . static::RELATIONS[$keyRel['reftable']]; // $ns . PdoOne::camelize($keyRel['reftable']) . $postfix;
+                            $refCol = ltrim($keyRel['refcol'], PdoOne::$prefixBase);
+                            $newQuery['joins'] .= " left join {$keyRel['reftable']} as $tableRelAlias "
+                                . "on {$pTable}{$col}=$tableRelAlias.$refCol \n"; // $recursiveInit$nameCol\n"; // adds a query to the current query
+                            $class::generationRecursive($newQuery, $tableRelAlias . '.', $colRelAlias . '.',
+                                $recursiveComplete, false); // $recursiveInit . $nameCol
+                            break;
+                        case 'ONETOMANY':
+                            //$tableRelAlias = ''; //'t' . static::$gQueryCounter;
+                            $other = [];
+                            $refColClean = trim($keyRel['refcol'], PdoOne::$prefixBase);
+                            $other['type'] = 'ONETOMANY';
+                            $other['table'] = $keyRel['reftable'];
+                            $other['where'] = $refColClean;
+                            $other['joins'] = " {$keyRel['reftable']} \n";
+                            //$tableRelAlias = '*2';
+                            $other['col'] = $pColumn . $keyRel['col']; //***
+                            $other['col2'] = $pColumn . $nameCol;
+                            $other['name'] = $nameCol;
+                            $other['data'] = $keyRel;
+                            //self::$gQuery[]=$other;
+                            $class = $ns
+                                . static::RELATIONS[$keyRel['reftable']]; // $ns . PdoOne::camelize($keyRel['reftable']) . $postfix;
+                            $class::generationRecursive($other, '', '', $pColumn . $recursiveComplete,
+                                false); //$recursiveInit . $nameCol
+                            self::$gQuery[] = $other;
+                            break;
+                        case 'MANYTOMANY':
+                            $rec = self::getPdoOne()->getRecursive();
+                            // automatically we add recursive.
+                            $rec[] = $recursiveComplete . $keyRel['refcol2']; // $recursiveInit . $nameCol 
+                            self::getPdoOne()->recursive($rec);
+                            //$tableRelAlias = ''; //'t' . static::$gQueryCounter;
+                            $other = [];
+                            $refColClean = trim($keyRel['refcol2'], PdoOne::$prefixBase);
+                            $other['type'] = 'ONETOMANY';
+                            $other['table'] = $keyRel['reftable'];
+                            $other['where'] = $refColClean;
+                            $other['joins'] = " {$keyRel['reftable']} \n";
+                            //$tableRelAlias = '*2';
+                            $other['col'] = $pColumn . $keyRel['col']; //***
+                            $other['col2'] = $pColumn . $nameCol;
+                            $other['name'] = $nameCol;
+                            $other['data'] = $keyRel;
+                            $class = $ns
+                                . static::RELATIONS[$keyRel['reftable']]; // $ns . PdoOne::camelize($keyRel['reftable']) . $postfix;
+                            $class::generationRecursive($other, '', '', $pColumn . $recursiveComplete,
+                                false); //$recursiveInit . $nameCol
+                            // we reduce a level
+                            //$columns = $other['columns'];
+                            $columnFinal = [];
+                            $findme = ltrim($keyRel['refcol2'], PdoOne::$prefixBase);
+                            //echo "findme $findme<br>";
+                            //if($pTable==='') {
+                            $columnFinal[] = $findme . ' as ' . self::getPdoOne()->addQuote($pColumn . $findme);
+                            /*} else {
+                                echo "<hr>ptable:$pTable manytoone";
+                                echo $findme."<br>";
+                                // convert /somefk.column -> column
+                                // convert /anything.column -> (deleted)
+                                foreach ($columns as $vc) {
+                                    //$findme = $keyRel['refcol2'] . '.';
+                                    if (strpos($vc, $findme) !== false) {
+                                        $columnFinal[] = str_replace($findme, '', $vc);
+                                    }
                                 }
-                            }
-                        }*/
-                        $other['columns'] = $columnFinal;
-                        self::$gQuery[] = $other;
-                        break;
-                    case 'PARENT':
-                        // parent does not load recursively information.
-                        break;
-                    default:
-                        trigger_error(static::TABLE . "Repo : type [$type] not defined.");
+                            }*/
+                            $other['columns'] = $columnFinal;
+                            self::$gQuery[] = $other;
+                            break;
+                        case 'PARENT':
+                            // parent does not load recursively information.
+                            break;
+                        default:
+                            trigger_error(static::TABLE . "Repo : type [$type] not defined.");
+                    }
                 }
             }
         }
@@ -719,8 +735,8 @@ abstract class _BasePdoOneRepo
     {
         try {
             $pdoOne = self::getPdoOne();
-            $defTable = static::getDef('conversion');
-            self::convertPHPValue($entity, $defTable);
+            //$defTable = static::getDef('conversion');
+            (static::ME)::convertInputVal($entity);
             self::invalidateCache();
             // only the fields that are defined are inserted
             $entityCopy = self::intersectArrays($entity, static::getDefName());
@@ -844,50 +860,7 @@ abstract class _BasePdoOneRepo
         }
     }
 
-    /**
-     * It converts a row (to sends to the database), using an definition of conversions.<br>
-     * <pre>
-     * PHP ---> convertPHPValue() ---> DATABASE
-     * </pre>
-     * <b>Conversions:</b> datetime3 (human string), datetime2 (iso),datetime(class) timestamp (int), bool, int, float
-     *
-     * @param array|object $row  [ref] An associative array with the values to convert. This array is changed.
-     * @param array        $defs An associative array with the definition to convert.<br>
-     *                           Example: $defs=static::getDef('conversion');
-     */
-    public static function convertPHPValue(&$row, $defs)
-    {
-        if (is_object($row)) {
-            $row = (array)$row;
-        }
-        foreach ($defs as $k => $v) {
-            if ($v !== null && isset($row[$k])) {
-                switch ($v) {
-                    case 'datetime3':
-                        $row[$k] = PdoOne::dateConvert($row[$k], 'human', 'sql');
-                        break;
-                    case 'datetime2':
-                        $row[$k] = PdoOne::dateConvert($row[$k], 'iso', 'sql');
-                        break;
-                    case 'datetime':
-                        $row[$k] = PdoOne::dateConvert($row[$k], 'class', 'sql');
-                        break;
-                    case 'timestamp':
-                        $row[$k] = PdoOne::dateConvert($row[$k], 'timestamp', 'sql');
-                        break;
-                    case 'bool':
-                        $row[$k] = ($row[$k] === false) ? 0 : 1;
-                        break;
-                    case 'int':
-                        $row[$k] = (int)$row[$k];
-                        break;
-                    case 'float':
-                        $row[$k] = (float)$row[$k];
-                        break;
-                }
-            }
-        }
-    }
+    
 
     /**
      * It invalidates a family/group of cache<br>
@@ -1001,7 +974,7 @@ abstract class _BasePdoOneRepo
      * @return self
      * @see static::getDefFK for where to define the relation.
      */
-    public static function setRecursive($recursive)
+    protected static function _setRecursive($recursive)
     {
         self::getPdoOne()->recursive($recursive);
         return static::ME;
@@ -1021,8 +994,9 @@ abstract class _BasePdoOneRepo
     {
         try {
             $pdoOne = self::getPdoOne();
-            $defTable = static::getDef('conversion');
-            self::convertPHPValue($entity, $defTable);
+            //$defTable = static::getDef('conversion');
+            //self::_convertInputValue($entity, $defTable);
+            (static::ME)::convertInputVal($entity);
             self::invalidateCache();
             $recursiveBack = $pdoOne->getRecursive();  // recursive is deleted by insertObject
             // only the fields that are defined are inserted
@@ -1095,7 +1069,7 @@ abstract class _BasePdoOneRepo
         return self::generationStart('toList', $filter, $filterValue);
     }
 
-    protected static function generationStart($type, $filter = null, $filterValue = null)
+    protected static function generationStart($type, $filter = PdoOne::NULL, $filterValue = PdoOne::NULL)
     {
         try {
             static::$gQuery = [];
@@ -1126,6 +1100,9 @@ abstract class _BasePdoOneRepo
                 if ($query['type'] === 'QUERY') {
                     $from = $query['joins'];
                     $cols = implode(',', $query['columns']);
+                    if(static::EXTRACOLS!=='') {
+                        $cols .=(($cols!=='')?',':'').static::EXTRACOLS;
+                    }
                     switch ($type) {
                         case 'toList':
                             $rows = $pdoOne->select($cols)->from($from)->where($filter, $filterValue)->toList();
@@ -1240,11 +1217,12 @@ abstract class _BasePdoOneRepo
         if (!$list) {
             $rows = [$rows];
         }
-        $defs = static::getDef('conversion');
+        //$defs = static::getDef('conversion');
         $ns = self::getNamespace();
         $rels = static::getDefFK();
         foreach ($rows as &$row) {
-            self::convertSQLValue($row, $defs);
+            //self::_convertOutputValue($row, $defs);
+            (static::ME)::convertOutputVal($row);
             foreach ($rels as $k => $v) {
                 if (isset($row[$k])) {
                     switch ($v['key']) {
@@ -1270,50 +1248,6 @@ abstract class _BasePdoOneRepo
         }
     }
 
-    /**
-     * It converts a row (obtained from the database), using an definition of conversions.<br>
-     * <pre>
-     * DATABASE ---> convertSQLValue() ---> PHP
-     * </pre>
-     * <b>Conversions:</b> datetime3 (human string), datetime2 (iso),datetime(class) timestamp (int), bool, int, float
-     *
-     * @param array $row  [ref] An associative array with the values to convert. This array is changed.
-     * @param array $defs An associative array with the definition to convert.<br>
-     *                    Example: $defs=static::getDef('conversion');
-     */
-    public static function convertSQLValue(&$row, $defs)
-    {
-        //$defs=static::getDef('conversion');
-        foreach ($defs as $k => $v) { // 
-            if ($v !== null && isset($row[$k])) {
-                switch ($v) {
-                    case 'datetime3':
-                        $row[$k] = PdoOne::dateConvert($row[$k], 'sql', 'human');
-                        break;
-                    case 'datetime2':
-                        $row[$k] = PdoOne::dateConvert($row[$k], 'sql', 'iso');
-                        break;
-                    case 'datetime':
-                        $row[$k] = PdoOne::dateConvert($row[$k], 'sql', 'class');
-                        break;
-                    case 'timestamp':
-                        $row[$k] = PdoOne::dateConvert($row[$k], 'sql', 'timestamp');
-                        break;
-                    case 'bool':
-                        $row[$k] = ($row[$k]) ? true : false;
-                        break;
-                    case 'int':
-                        $row[$k] = (int)$row[$k];
-                        break;
-                    case 'float':
-                        $row[$k] = (float)$row[$k];
-                        break;
-                    default:
-                        trigger_error(self::TABLE . " Conversion not defined [$v]");
-                }
-            }
-        }
-    }
 
     /**
      * It deletes a registry

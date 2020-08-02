@@ -55,6 +55,7 @@ class PdoOne_Sqlsrv implements PdoOne_IExt
                                        "database={$this->parent->db}{$cs}", $this->parent->user, $this->parent->pwd);
         $this->parent->user='';
         $this->parent->pwd='';
+        $this->parent->conn1->setAttribute( PDO::SQLSRV_ATTR_FETCHES_NUMERIC_TYPE,true);
 
     }
 

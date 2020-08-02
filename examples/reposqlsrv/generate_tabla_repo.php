@@ -29,20 +29,34 @@ $relations = [
     'TableCategory'        => ['TableCategoryRepo', 'TableCategoryModel'],
     'TableParentExt'       => ['TableParentExtRepo', 'TableParentExtModel'],
 ];
+$columnRelation = [
+    'TableParent' => [
+        '_idchild2FK'           => 'PARENT',
+        '_TableParentxCategory' => 'MANYTOMANY',
+        'fieldKey'              => ['encrypt', null],
+        'extracol'              => 'datetime3'
+
+    ]
+];
+$extraColumn = [
+    'TableParent' => ['extracol' => 'CURRENT_TIMESTAMP', 'extracol2' => '20']
+];
+
 $tables = $dao->tableSorted();
 foreach ($tables as $table) {
     echo "include 'generated/{$table}RepoExt.php';<br>";
     echo "include 'generated/{$table}Repo.php';<br>";
 }
 
-$dao->generateCodeClassConversions(['datetime' => 'datetime']);
+$dao->generateCodeClassConversions([
+    'datetime' => 'datetime',
+    'tinyint'  => 'bool',
+    'int'      => 'int',
+    'decimal'  => 'decimal'
+]);
+
 $logs = $dao->generateAllClasses($relations, 'TestDb', ['reposqlsrv', 'sqlsrv\repomodel'],
-    [__DIR__ . '/generated', __DIR__ . '/generatedmodel'], true, [
-        'TableParent' => [
-            '_idchild2FK'           => 'PARENT',
-            '_TableParentxCategory' => 'MANYTOMANY'
-        ]
-    ]);
+    [__DIR__ . '/generated', __DIR__ . '/generatedmodel'], true, $columnRelation,$extraColumn);
 
 echo "errors:<br>";
 echo "<pre>";

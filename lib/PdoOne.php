@@ -30,11 +30,11 @@ use stdClass;
  * @package       eftec
  * @author        Jorge Castro Castillo
  * @copyright (c) Jorge Castro C. MIT License  https://github.com/EFTEC/PdoOne
- * @version       1.53 2020-07-27
+ * @version       1.54 2020-08-02
  */
 class PdoOne
 {
-    const VERSION = '1.53';
+    const VERSION = '1.54';
     const NULL = PHP_INT_MAX;
     public static $prefixBase = '_';
     /** @var string|null Static date (when the date is empty) */
@@ -1173,7 +1173,8 @@ eot;
                 return;
             }
             $this->conn1->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-            $this->conn1->setAttribute(PDO::ATTR_EMULATE_PREPARES, false);
+            $this->conn1->setAttribute(PDO::ATTR_STRINGIFY_FETCHES, false);
+            
             //$this->conn1->setAttribute(PDO::ATTR_STRINGIFY_FETCHES, false); It is not required.
 
             $this->isOpen = true;
@@ -1182,6 +1183,9 @@ eot;
             $this->throwError("Failed to connect to {$this->databaseType}", $ex->getMessage(),
                 '\nTRACE:' . $ex->getTraceAsString());
         }
+        
+        
+
     }
 
     /**
@@ -1235,17 +1239,6 @@ eot;
         $this->builderReset(true); // it resets the chain if any.
     }
 
-    /**
-     * If true, then on error, the code thrown an error.<br>>
-     * If false, then on error, the the code returns false and logs the errors ($this->errorText).
-     * @param bool $value 
-     *
-     * @return $this
-     */
-    public function setThrowOnError($value=false) {
-        $this->throwOnError=$value;
-        return $this;
-    }
     /**
      * Injects a Message Container.
      *
@@ -1403,8 +1396,6 @@ eot;
         return min($chr);
     }
 
-    //<editor-fold desc="transaction functions">
-
     /**
      * It runs an unprepared query.
      * <br><b>Example</b>:<br>
@@ -1506,6 +1497,8 @@ eot;
         return $stmt;
     }
 
+    //<editor-fold desc="transaction functions">
+
     /**
      * Internal Use: It runs a raw query
      *
@@ -1590,11 +1583,6 @@ eot;
         return $stmt;
     }
 
-
-    //</editor-fold>
-
-    //<editor-fold desc="Date functions" defaultstate="collapsed" >
-
     /**
      * It returns true if the array is an associative array.  False
      * otherwise.<br>
@@ -1618,6 +1606,11 @@ eot;
 
         return (array_values($array) !== $array);
     }
+
+
+    //</editor-fold>
+
+    //<editor-fold desc="Date functions" defaultstate="collapsed" >
 
     /**
      * It converts a simple type 'b','i','d','f','s' as a pdo type PDO:PARAM_*<br>
@@ -2142,9 +2135,6 @@ eot;
 
         return $sql;
     }
-    //</editor-fold>
-
-    //<editor-fold desc="Query Builder functions" defaultstate="collapsed" >
 
     /**
      * It ends a try block and throws the error (if any)
@@ -2160,6 +2150,9 @@ eot;
         }
         return true;
     }
+    //</editor-fold>
+
+    //<editor-fold desc="Query Builder functions" defaultstate="collapsed" >
 
     /**
      * It returns an array with all the tables of the schema, also the foreign key and references  of each table<br>
@@ -2369,7 +2362,11 @@ eot;
      * <b>Example:</b><br>
      * <pre>
      * $class = $this->generateCodeClass('tablename', 'namespace\namespace2'
-     *          ,['/idchild2FK'=>'PARENT','/tablaparentxcategory'=>'MANYTOMANY']
+     *          ,['_idchild2FK'=>'PARENT' // relation
+     *          ,'_tablaparentxcategory'=>'MANYTOMANY' // relation
+     *          ,'col'=>'datetime3' // conversion
+     *          ,'col2'=>'conversion(%s)' // custom conversion (identified by %s)
+     *          ,'col3'=>] // custom conversion (identified by %s)
      *          ,'Repo');
      * $class = $this->generateCodeClass(['ClassName'=>'tablename'], 'namespace\namespace2'
      *          ,['/idchild2FK'=>'PARENT','/tablaparentxcategory'=>'MANYTOMANY']
@@ -2380,19 +2377,25 @@ eot;
      *                                            If the value is an array, then the key is the name of the table and
      *                                            the value is the name of the class
      * @param string        $namespace            The Namespace of the generated class
-     * @param array|null    $customRelation       An associative array to specific custom relations, such as PARENT<br>
-     *                                            The key is the name of the columns and the value is the type of relation<br>
+     * @param array|null    $columnRelations      An associative array to specific custom relations, such as PARENT<br>
+     *                                            The key is the name of the columns and the value is the type of
+     *                                            relation<br>
      * @param null|string[] $classRelations       The postfix of the class. Usually it is Repo or Dao.
      *
      * @param array         $specialConversion    An associative array to specify a custom conversion<br>
-     *                                            The key is the name of the columns and the value is the type of relation<br>
-     * @param string[]      $defNoInsert          An array with the name of the columns to not to insert. The identity is
-     *                                            added automatically to this list
-     * @param string[]      $defNoUpdate          An array with the name of the columns to not to update. The identity is
-     *                                            added automatically to this list
+     *                                            The key is the name of the columns and the value is the type of
+     *                                            relation<br>
+     * @param string[] $defNoInsert               An array with the name of the columns to not to insert. The identity
+     *                                            is added automatically to this list
+     * @param string[] $defNoUpdate               An array with the name of the columns to not to update. The identity
+     *                                            is added automatically to this list
      * @param string|null   $baseClass            The name of the base class. If no name then it uses the last namespace
-     * @param string        $modelfullClass       (default:'') The full class of the model (with the namespace). If empty,
-     *                                            then it doesn't use a model
+     * @param string $modelfullClass              (default:'') The full class of the model (with the namespace). If
+     *                                            empty, then it doesn't use a model
+     * @param array         $extraCols            An associative array with extra columns where they key is the name of
+     *                                            the column and the value is the value to return (it is evaluated in
+     *                                            the query). It is used by toList() and first(), it's also added to
+     *                                            the model.
      *
      * @return string|string[]
      * @throws Exception
@@ -2400,13 +2403,14 @@ eot;
     public function generateCodeClass(
         $tableName,
         $namespace = '',
-        $customRelation = null,
+        $columnRelations = null,
         $classRelations = null,
         $specialConversion = [],
         $defNoInsert = null,
         $defNoUpdate = null,
         $baseClass = null,
-        $modelfullClass = ''
+        $modelfullClass = '',
+        $extraCols=[]
     ) {
         $r = <<<'eot'
 <?php
@@ -2440,6 +2444,7 @@ abstract class Abstract{classname} extends {baseclass}
     const TABLE = '{table}';
     const PK = {pk};
     const ME=__CLASS__;
+    CONST EXTRACOLS='{extracol}';
 
     /**
      * It returns the definitions of the columns<br>
@@ -2478,6 +2483,27 @@ abstract class Abstract{classname} extends {baseclass}
         }
         return $r;
     }
+    
+    /**
+     * It converts a row returned from the database.<br>
+     * If the column is missing then it sets the null value.
+     * 
+     * @param array $row [ref]
+     */    
+    public static function convertOutputVal(&$row) {
+{convertoutput}
+    }
+
+    /**
+     * It converts a row to be inserted or updated into the database.<br>
+     * If the column is missing then it is ignored and not converted.
+     * 
+     * @param array $row [ref]
+     */    
+    public static function convertInputVal(&$row) {
+{convertinput}
+    }
+
 
     /**
      * It gets all the name of the columns.
@@ -2525,12 +2551,12 @@ abstract class Abstract{classname} extends {baseclass}
      * @param array|string   $sql =self::factory()
      * @param null|array|int $param
      *
-     * @return self
+     * @return {classname}
      */
     public static function where($sql, $param = PdoOne::NULL)
     {
         self::getPdoOne()->where($sql, $param);
-        return self::ME;
+        return {classname}::class;
     }
 
     public static function getDefFK($structure=false) {
@@ -2540,9 +2566,25 @@ abstract class Abstract{classname} extends {baseclass}
         /* key,refcol,reftable,extra */
         return {deffktype};
     }
-    
+
+    /**
+     * It returns all the relational fields by type. '*' returns all types.<br>
+     * It doesn't return normal columns.
+     * 
+     * @param string $type=['*','MANYTOONE','ONETOMANY','ONETOONE','MANYTOMANY'][$i]
+     *
+     * @return string[]
+     */        
     public static function getRelations($type='all') {
-        return {deffktype2};
+        $r= {deffktype2};
+        if($type==='*') {
+            $result=[];
+            foreach($r as $arr) {
+                $result += $arr;
+            }
+            return $result;
+        }
+        return isset($r[$type]) ? $r[$type] : [];  
     
     }
     
@@ -2554,14 +2596,26 @@ abstract class Abstract{classname} extends {baseclass}
     }
     
     /**
-     * @param array $recursive=self::factory();
+     * It sets the recursivity.<br>
+     * If array then it uses the values to set the recursivity.<br>
+     * If string then the values allowed are '*', 'MANYTOONE','ONETOMANY','MANYTOMANY','ONETOONE' (first level only)<br>
+     * @param string|array $recursive=self::factory();
      *
      * @return {classname}
      * {@inheritDoc}
      */
     public static function setRecursive($recursive)
     {
-        return parent::setRecursive($recursive); 
+        if(is_string($recursive)) {
+            $recursive=AbstractChamberRepo::getRelations($recursive);
+        }
+        return parent::_setRecursive($recursive); 
+    }
+
+    public static function limit($sql)
+    {
+        self::getPdoOne()->limit($sql);
+        return {classname}::class;
     }
 
     /**
@@ -2708,6 +2762,12 @@ eot;
             $className = $classRelations[$tableName];
         }
 
+        $extraColArray='';
+        foreach($extraCols as $k=>$v) {
+            $extraColArray.=$v.' as '.$this->addQuote($k).',';
+        }
+        $extraColArray=rtrim($extraColArray,',');
+
         $r = str_replace(array(
             '{version}',
             '{classname}',
@@ -2718,7 +2778,8 @@ eot;
             '{namespace}',
             '{modelnamespace}',
             '{classmodellist}',
-            '{classmodelfirst}'
+            '{classmodelfirst}',
+            '{extracol}'
         ), array(
             self::VERSION . ' Date generated ' . date('r'), //{version}
             $className, // {classname}
@@ -2726,10 +2787,12 @@ eot;
             $baseClass, // {baseclass}
             implode(",", $fa),
             $tableName, // {table}
-            ($namespace) ? "namespace $namespace;" : '',
-            $modelUse ? "use $modelfullClass;" : '',
-            $modelUse ? "$modelClass::fromArrayMultiple( self::_toList(\$filter, \$filterValue));" : 'false; // no model set',
-            $modelUse ? "$modelClass::fromArray(self::_first(\$pk));" : 'false; // no model set'
+            ($namespace) ? "namespace $namespace;" : '', //{namespace}
+            $modelUse ? "use $modelfullClass;" : '', // {modelnamespace}
+            $modelUse ? "$modelClass::fromArrayMultiple( self::_toList(\$filter, \$filterValue));"
+                : 'false; // no model set',  // {classmodellist}
+            $modelUse ? "$modelClass::fromArray(self::_first(\$pk));" : 'false; // no model set' // {classmodelfirst}
+            ,$extraColArray // {extracol}
         ), $r);
         $pk = '??';
         $pk = $this->service->getPK($tableName, $pk);
@@ -2794,13 +2857,13 @@ eot;
                 }
             }
         }
-        if ($customRelation) {
+        if ($columnRelations) {
             foreach ($relation as $k => $rel) {
-                if (isset($customRelation[$k])) {
+                if (isset($columnRelations[$k])) {
                     // parent.
-                    if ($customRelation[$k] === 'PARENT') {
+                    if ($columnRelations[$k] === 'PARENT') {
                         $relation[$k]['key'] = 'PARENT';
-                    } elseif ($customRelation[$k] === 'MANYTOMANY') {
+                    } elseif ($columnRelations[$k] === 'MANYTOMANY') {
                         // the table must has 2 primary keys.
                         $pks = null;
                         $pks = $this->service->getPK($relation[$k]['reftable'], $pks);
@@ -2834,17 +2897,126 @@ eot;
             }
         }
         //die(1);
+        $convertOutput = '';
+        $convertInput = '';
+        $getDefTable = $this->getDefTable($tableName, $specialConversion);
+        
+        // we forced the conversion but only if it is not specified explicit
+            
+        $allColumns= array_merge($getDefTable , $extraCols); // $extraColArray does not has type
 
-        $gdf = $this->getDefTable($tableName, $specialConversion);
-        if (@count($this->codeClassConversion) > 0) {
-            // we forced the conversion but only if it is not specified explicit
-            foreach ($gdf as $k => $colDef) {
-                $type = $colDef['type'];
-                if (isset($this->codeClassConversion[$type]) && $gdf[$k]['conversion'] === null) {
-                    $gdf[$k]['conversion'] = $this->codeClassConversion[$type];
+        
+        foreach ($allColumns as $kcol => $colDef) {
+            $type =isset($colDef['type']) ? $colDef['type'] : null;
+            $conversion=null;
+            if (isset($columnRelations[$kcol])) {
+                $conversion=$columnRelations[$kcol];
+                if ($type!==null) {
+                    $getDefTable[$kcol]['conversion'] =$conversion;
+                } else {
+                    $type='new column';
                 }
+            } elseif ($type!==null && isset($this->codeClassConversion[$type]) && $getDefTable[$kcol]['conversion'] === null) {
+                $conversion=$this->codeClassConversion[$type];
+                $getDefTable[$kcol]['conversion'] = $conversion;
+            }
+          
+            if ($conversion!==null) {
+                if (is_array($conversion)) {
+                    list($input, $output) = $conversion;
+                } else {
+                    $input = $conversion;
+                    $output = $input;
+                }
+
+                switch ($input) {
+                    case 'encrypt':
+                        $tmp2 = "isset(%s) and %s=self::getPdoOne()->encrypt(%s);";
+                        break;
+                    case 'decrypt':
+                        $tmp2 = "isset(%s) and %s=self::getPdoOne()->decrypt(%s);";
+                        break;
+                    case 'datetime3':
+                        $tmp2 = "isset(%s) and %s=PdoOne::dateConvert(%s, 'human', 'sql');";
+                        break;
+                    case 'datetime2':
+                        $tmp2 = "isset(%s) and %s=PdoOne::dateConvert(%s, 'iso', 'sql');";
+                        break;
+                    case 'datetime':
+                        $tmp2 = "isset(%s) and %s=PdoOne::dateConvert(%s, 'class', 'sql');";
+                        break;
+                    case 'timestamp':
+                        $tmp2 = "isset(%s) and %s=PdoOne::dateConvert(%s, 'timestamp', 'sql')";
+                        break;
+                    case 'bool':
+                        $tmp2 = "isset(%s) and %s=(%s) ? 1 : 0;";
+                        break;
+                    case 'int':
+                        $tmp2 = "isset(%s) and %s=(int)%s;";
+                        break;
+                    case 'float':
+                    case 'decimal':
+                        $tmp2 = "isset(%s) and %s=(float)%s;";
+                        break;
+                    default:
+                        if (strpos($input, '%s') !== false) {
+                            $tmp2 = "%s=isset(%s) ? " . $input . " : null;";
+                        } else {
+                            $tmp2 = '// type ' . $input . ' not defined';
+                        }
+                }
+                switch ($output) {
+                    case 'encrypt':
+                        $tmp = "%s=isset(%s) ? self::getPdoOne()->encrypt(%s) : null;";
+                        break;
+                    case 'decrypt':
+                        $tmp = "%s=isset(%s) ? self::getPdoOne()->decrypt(%s) : null;";
+                        break;
+                    case 'datetime3':
+                        $tmp = "%s=isset(%s) ? PdoOne::dateConvert(%s, 'sql', 'human') : null;";
+                        break;
+                    case 'datetime2':
+                        $tmp = "%s=isset(%s) ? PdoOne::dateConvert(%s, 'sql', 'iso') : null;";
+                        break;
+                    case 'datetime':
+                        $tmp = "%s=isset(%s) ? PdoOne::dateConvert(%s, 'sql', 'class') : null;";
+                        break;
+                    case 'timestamp':
+                        $tmp = "%s=isset(%s) ? PdoOne::dateConvert(%s, 'sql', 'timestamp') : null;";
+                        break;
+                    case 'bool':
+                        $tmp = "%s=isset(%s) ? (%s) ? true : false : null;";
+                        break;
+                    case 'int':
+                        $tmp = "%s=isset(%s) ? (int)%s : null;";
+                        break;
+                    case 'float':
+                    case 'decimal':
+                        $tmp = "%s=isset(%s) ? (float)%s : null;";
+                        break;
+                    case null:
+                        $tmp = "!isset(%s) and %s=null; // no conversion";
+                        break;
+                    default:
+                        if (strpos($output, '%s') !== false) {
+                            $tmp = "%s=isset(%s) ? " . $output . " : null;";
+                        } else {
+                            $tmp = '// type ' . $output . ' not defined';
+                        }
+                }
+
+                if ($tmp !== '') {
+                    $convertOutput .= "\t\t" . str_replace('%s', "\$row['$kcol']", $tmp) . "\n";
+                    $convertInput .= "\t\t" . str_replace('%s', "\$row['$kcol']", $tmp2) . "\n";
+                }
+            } else {
+                $tmp = "!isset(%s) and %s=null; // $type";
+                $convertOutput .= "\t\t" . str_replace('%s', "\$row['$kcol']", $tmp) . "\n";
             }
         }
+  
+        $convertOutput = rtrim($convertOutput, "\n");
+        $convertInput = rtrim($convertInput, "\n");
 
         // discard columns
         $identities = $this->getDefIdentities($tableName);
@@ -2858,18 +3030,23 @@ eot;
         } else {
             $noUpdate = $identities;
         }
-        $relation2=[];
-        foreach($relation as $col=>$arr) {
-            if($arr['key']==='MANYTOONE') {
-                $relation2[]=$col;
+        $relation2 = [];
+        foreach ($relation as $col => $arr) {
+            if ($arr['key'] !== 'FOREIGN KEY') {
+                @$relation2[$arr['key']][] = $col;
             }
+            //if($arr['key']==='MANYTOONE') {
+            //    $relation2[]=$col;
+            // }
         }
-        
+
 
         try {
             $r = str_replace(array(
                 '{pk}',
                 '{def}',
+                '{convertoutput}',
+                '{convertinput}',
                 '{defname}',
                 '{defkey}',
                 '{defnoinsert}',
@@ -2882,8 +3059,10 @@ eot;
             ), array(
                 self::varExport($pk),
                 //str_replace(["\n\t\t        ", "\n\t\t    ],"], ['', '],'], self::varExport($gdf, "\t\t")), // {def}
-                self::varExport($gdf, "\t\t"),
-                self::varExport(array_keys($gdf), "\t\t"), // {defname}
+                self::varExport($getDefTable, "\t\t"), // {def}
+                $convertOutput, // {convertoutput}
+                $convertInput, // {convertinput}
+                self::varExport(array_keys($getDefTable), "\t\t"), // {defname}
                 self::varExport($this->getDefTableKeys($tableName), "\t\t"), // {defkey}
                 self::varExport($noInsert, "\t\t"), // {defnoinsert}
                 self::varExport($noUpdate, "\t\t"), // {defnoupdate}
@@ -2925,6 +3104,20 @@ eot;
     }
 
     /**
+     * If true, then on error, the code thrown an error.<br>>
+     * If false, then on error, the the code returns false and logs the errors ($this->errorText).
+     *
+     * @param bool $value
+     *
+     * @return $this
+     */
+    public function setThrowOnError($value = false)
+    {
+        $this->throwOnError = $value;
+        return $this;
+    }
+
+    /**
      * It builds (generates source code) of the base, repo and repoext classes of the current schema.<br>
      * <b>Example:</b><br>
      * <pre>
@@ -2937,7 +3130,13 @@ eot;
      *          ,['eftec\repo','eftec\model']
      *          ,['c:/temp','c:/tempmodel']
      *          ,false,
-     *          ['products'=>['/col'=>'PARENT','/col2'=>'MANYTOMANY']);
+     *          [
+     *              'products'=>['_col'=>'PARENT' // relations
+     *              ,'_col2'=>'MANYTOMANY' // relations
+     *              ,'col1'=>'encrypt' // encrypt (input and output)
+     *              ,'col2'=>['encrypt','decrypt'] // encrypt input and decrypt output
+     *              ,'col3'=>['encrypt',null] // encrypt input and none output
+     *          ]);
      * // without model
      * $this->generateAllClasses([
      *          'products'=>'ProductRepo'
@@ -2947,30 +3146,43 @@ eot;
      *          ,'eftec\repo'
      *          ,'c:/temp'
      *          ,false,
-     *          ['products'=>['/col'=>'PARENT','/col2'=>'MANYTOMANY']);
+     *          ['products'=>['_col'=>'PARENT','_col2'=>'MANYTOMANY'],
+     *          ['products'=>['extracol'=>'now()']);
      * </pre>
      *
-     * @param array $relations             Where the key is the name of the table, and the value is an array with
-     *                                     the name of the repository class and the name of the model class <br>
-     *                                     If the value is not an array, then it doesn't build a model class<br>
-     *                                     Example: ['products'=>'ProductRepo','types'=>'TypeRepo']
-     * @param string       $baseClass      The name of the base class.
-     * @param array|string $namespaces     (default:'') The name of the namespace. Example 'eftec\repo'<br>
-     *                                     If we want to use a model class, then we need to set the namespace of the
-     *                                     repository class and the namespace of the model class<br>
-     *                                     ['c:/temp','c:/tempmodel'].
-     * @param array|string $folders        (default:'') The name of the folder where the classes will be store.<br>
-     *                                     If we want to use a model class, then we need to set the folder of the
-     *                                     repository class and the folder of the model class<br>
-     *                                     ['eftec\repo','eftec\model'].
-     *                                     Example: 'c:/folder'
-     * @param bool         $force          (default:false), if true then it will overwrite the repo files (if any).
-     * @param array        $customRelation (default:[]) An associative array with custom relations per table.<br>
-     *                                     If we want to indicates a relation PARENT/MANYTOMANY, then we must use
-     *                                     this array.<br>
-     *                                     Example:['products'=>['/col'=>'PARENT','/col2'=>'MANYTOMANY']
+     * @param array        $relations       Where the key is the name of the table, and the value is an array with
+     *                                      the name of the repository class and the name of the model class <br>
+     *                                      If the value is not an array, then it doesn't build a model class<br>
+     *                                      Example: ['products'=>'ProductRepo','types'=>'TypeRepo']
+     * @param string       $baseClass       The name of the base class.
+     * @param array|string $namespaces      (default:'') The name of the namespace. Example 'eftec\repo'<br>
+     *                                      If we want to use a model class, then we need to set the namespace of the
+     *                                      repository class and the namespace of the model class<br>
+     *                                      ['c:/temp','c:/tempmodel'].
+     * @param array|string $folders         (default:'') The name of the folder where the classes will be store.<br>
+     *                                      If we want to use a model class, then we need to set the folder of the
+     *                                      repository class and the folder of the model class<br>
+     *                                      ['eftec\repo','eftec\model'].
+     *                                      Example: 'c:/folder'
+     * @param bool         $force           (default:false), if true then it will overwrite the repo files (if any).
+     * @param array        $columnRelations (default:[]) An associative array with custom relations or
+     *                                      conversion per table.<br>
+     *                                      If we want to indicates a relation PARENT/MANYTOMANY, then we must use
+     *                                      this array.<br>
+     *                                      Example:['products'=>['_col'=>'PARENT','_col2'=>'MANYTOMANY']<br>
+     *                                      If the column is not relational, then it is the column used to determine the
+     *                                      conversion.<br>
+     *                                      Example:['products'=>['col'=>'int']] // convert int input/output<br>
+     *                                      Example:['products'=>['col'=>['encrypt','decrypt']] // encrypt input and
+     *                                      decrypt output<br>
+     *                                      <b>Conversion allowed</b> (see generateCodeClassConversions)
+     * @param array        $extraColumns    An associative array with extra columns per table. It has the same form
+     *                                      than $columnRelations. The columns are returned when we use toList() and
+     *                                      first() and they are added to the model (if any) but they are not used in
+     *                                      insert,update or delete<br>
      *
      * @return array It returns an array with all the errors (if any).
+     * @see \eftec\PdoOne::generateCodeClassConversions
      */
     public function generateAllClasses(
         $relations,
@@ -2978,7 +3190,8 @@ eot;
         $namespaces = '',
         $folders = '',
         $force = false,
-        $customRelation = []
+        $columnRelations = [],
+        $extraColumns = []
     ) {
         if (is_array($folders)) {
             list($folder, $folderModel) = $folders;
@@ -3010,7 +3223,7 @@ eot;
                 $relationsModel[$k] = $v . 'Model';
             }
         }
-
+        // BASE CLASS *******************************
         $folder = rtrim($folder, '/') . '/';
         $folderModel = rtrim($folderModel, '/') . '/';
         $logs = [];
@@ -3024,7 +3237,7 @@ eot;
         if ($result === false) {
             $logs[] = "Unable to save Base Class file '{$folder}{$baseClass}.php'";
         }
-        
+        // CODE CLASSES, MODELS *******************************
         foreach ($relationsRepo as $tableName => $className) {
             if ($useModel) {
                 $modelname = $namespaceModel . '\\' . $relationsModel[$tableName];
@@ -3032,9 +3245,10 @@ eot;
                 $modelname = '';
             }
             try {
-                $custom = (isset($customRelation[$tableName])) ? $customRelation[$tableName] : [];
+                $custom = (isset($columnRelations[$tableName])) ? $columnRelations[$tableName] : [];
+                $extraCols = (isset($extraColumns[$tableName])) ? $extraColumns[$tableName] : [];
                 $classCode1 = $this->generateCodeClass($tableName, $namespace, $custom, $relationsRepo, [], null, null,
-                    $baseClass, $modelname);
+                    $baseClass, $modelname,$extraCols);
                 $result = @file_put_contents($folder . "Abstract{$className}.php", $classCode1);
             } catch (Exception $e) {
                 $result = false;
@@ -3046,18 +3260,20 @@ eot;
             if ($useModel) {
                 try {
                     //$custom = (isset($customRelation[$tableName])) ? $customRelation[$tableName] : [];
-                    $classModel1 = $this->generateAbstractModelClass($tableName, $namespaceModel, $custom, $relationsModel, [],
-                        null, null, $baseClass);
+                    $classModel1 = $this->generateAbstractModelClass($tableName, $namespaceModel, $custom,
+                        $relationsModel, [], null, null, $baseClass,$extraCols);
 
-                    $result = @file_put_contents($folderModel . 'Abstract'.$relationsModel[$tableName] . '.php', $classModel1);
+                    $result = @file_put_contents($folderModel . 'Abstract' . $relationsModel[$tableName] . '.php',
+                        $classModel1);
                 } catch (Exception $e) {
                     $result = false;
                 }
                 if ($result === false) {
-                    $logs[] = "Unable to save Abstract Model Class file '{$folder}Abstract" . $relationsModel[$tableName] . ".php'";
+                    $logs[] = "Unable to save Abstract Model Class file '{$folder}Abstract"
+                        . $relationsModel[$tableName] . ".php'";
                 }
                 try {
-                    $filename=$folderModel . $relationsModel[$tableName] . '.php';
+                    $filename = $folderModel . $relationsModel[$tableName] . '.php';
                     $classModel1 = $this->generateModelClass($tableName, $namespaceModel, $custom, $relationsModel, [],
                         null, null, $baseClass);
                     if ($force || @!file_exists($filename)) {
@@ -3068,14 +3284,15 @@ eot;
                 }
                 if ($result === false) {
                     $logs[] = "Unable to save Model Class file '$filename'";
-                }                
+                }
             }
             try {
+                $filename = $folder . $className . '.php';
                 $classCode2 = $this->generateCodeClassRepo($tableName, $namespace, $relationsRepo, $modelname);
 
-                if ($force || @!file_exists($folder . $className . '.php')) {
+                if ($force || @!file_exists($filename)) {
                     // if the file exists then, we don't want to replace this class
-                    $result = @file_put_contents($folder . $className . '.php', $classCode2);
+                    $result = @file_put_contents($filename, $classCode2);
                 }
             } catch (Exception $e) {
                 $result = false;
@@ -3162,6 +3379,355 @@ eot;
             $this::varExport($classes),
             $modelUse ? 'true' : 'false' // {modeluse}
         ], $r);
+    }
+
+    /**
+     * @param string $tableName
+     * @param string $namespace
+     * @param null   $customRelation
+     * @param null   $classRelations
+     * @param array  $specialConversion
+     * @param null   $defNoInsert
+     * @param null   $defNoUpdate
+     * @param null   $baseClass
+     * @param array  $extraColumn
+     *
+     * @return string|string[]
+     * @throws Exception
+     */
+    public function generateAbstractModelClass(
+        $tableName,
+        $namespace = '',
+        $customRelation = null,
+        $classRelations = null,
+        $specialConversion = [],
+        $defNoInsert = null,
+        $defNoUpdate = null,
+        $baseClass = null,
+        $extraColumn=[]
+    ) {
+        $r = <<<'eot'
+<?php
+/** @noinspection PhpIncompatibleReturnTypeInspection
+ * @noinspection ReturnTypeCanBeDeclaredInspection
+ * @noinspection DuplicatedCode
+ * @noinspection PhpUnused
+ * @noinspection PhpUndefinedMethodInspection
+ * @noinspection PhpUnusedLocalVariableInspection
+ * @noinspection PhpUnusedAliasInspection
+ * @noinspection NullPointerExceptionInspection
+ * @noinspection SenselessProxyMethodInspection
+ * @noinspection PhpParameterByRefIsNotUsedAsReferenceInspection
+ */
+{namespace}
+use eftec\PdoOne;
+{exception}
+
+/**
+ * Generated by PdoOne Version {version}. 
+ * DO NOT EDIT THIS CODE. THIS CODE WILL SELF GENERATE.
+ * @copyright (c) Jorge Castro C. MIT License  https://github.com/EFTEC/PdoOne
+ * Class {classname}
+ * <pre>
+ * $code=$pdoOne->generateAbstractModelClass({args});
+ * </pre>
+ */
+abstract class Abstract{classname}
+{
+{fields}
+
+{fieldsrel}
+
+    //<editor-fold desc="array conversion">
+    public static function fromArray($array) {
+        if($array===null) {
+            return null;
+        }
+        $obj=new {classname}();
+{fieldsfa}
+{fieldsrelfa}
+
+        return $obj;
+    }
+    public function toArray() {
+        return (array) $this;
+    }
+    public static function fromArrayMultiple($array) {
+        if($array===null) {
+            return null;
+        }
+        $objs=[];
+        foreach($array as $v) {
+            $objs[]=self::fromArray($v);
+        }
+        return $objs;
+    }
+    //</editor-fold>
+    
+} // end class
+eot;
+        //$lastns = explode('\\', $namespace);
+        //$baseClass = ($baseClass === null) ? end($lastns) : $baseClass;
+
+        $fa = func_get_args();
+        foreach ($fa as $f => $k) {
+            if (is_array($k)) {
+                $fa[$f] = str_replace([' ', "\r\n", "\n"], ['', '', ''], var_export($k, true));
+            } else {
+                $fa[$f] = "'$k'";
+            }
+        }
+        if ($classRelations === null || !isset($classRelations[$tableName])) {
+            $className = self::camelize($tableName);
+        } else {
+            $className = $classRelations[$tableName];
+        }
+
+        $r = str_replace(array(
+            '{version}',
+            '{classname}',
+            '{exception}',
+            '{namespace}'
+        ), array(
+            self::VERSION . ' Date generated ' . date('r'), //{version}
+            $className, // {classname}
+            ($namespace) ? 'use Exception;' : '',
+            ($namespace) ? "namespace $namespace;" : ''
+        ), $r);
+        $pk = '??';
+        $pk = $this->service->getPK($tableName, $pk);
+        $pkFirst = (is_array($pk) && count($pk) > 0) ? $pk[0] : null;
+
+
+        try {
+            $relation = $this->getDefTableFK($tableName, false, true);
+        } catch (Exception $e) {
+            return 'Error: Unable read fk of table ' . $e->getMessage();
+        }
+
+
+        try {
+            $deps = $this->tableDependency(true, false);
+        } catch (Exception $e) {
+            return 'Error: Unable read table dependencies ' . $e->getMessage();
+        } //  ["city"]=> {["city_id"]=> "address"}
+        $after = @$deps[1][$tableName];
+        if ($after === null) {
+            $after = @$deps[1][strtolower($tableName)];
+        }
+        $before = @$deps[2][$tableName];
+        if ($before === null) {
+            $before = @$deps[2][strtolower($tableName)];
+        }
+        if (is_array($after) && is_array($before)) {
+            foreach ($before as $key => $rows) { // $value is [relcol,table]
+                foreach ($rows as $value) {
+                    $relation['' . self::$prefixBase . $value[1]] = [
+                        'key'      => 'ONETOMANY',
+                        'col'      => $key,
+                        'reftable' => $value[1],
+                        'refcol'   => $value[0]
+                    ];
+                }
+            }
+        }
+        // converts relations to ONETOONE
+        foreach ($relation as $k => $rel) {
+            if ($rel['key'] === 'ONETOMANY') {
+                $pkref = null;
+                $pkref = $this->service->getPK($rel['reftable'], $pkref);
+                if ('' . self::$prefixBase . $pkref[0] === $rel['refcol'] && count($pkref) === 1) {
+                    $relation[$k]['key'] = 'ONETOONE';
+                }
+            }
+            if ($rel['key'] === 'MANYTOONE') {
+                $pkref = null;
+                $pkref = $this->service->getPK($rel['reftable'], $pkref);
+
+                if ($pkref[0] === $rel['refcol'] && count($pkref) === 1
+                    && (strcasecmp($k, '' . self::$prefixBase . $pkFirst) === 0)
+                ) {
+                    // if they are linked by the pks and the pks are only 1.
+                    $relation[$k]['key'] = 'ONETOONE';
+                }
+            }
+        }
+        if ($customRelation) {
+            foreach ($relation as $k => $rel) {
+                if (isset($customRelation[$k])) {
+                    // parent.
+                    if ($customRelation[$k] === 'PARENT') {
+                        $relation[$k]['key'] = 'PARENT';
+                    } elseif ($customRelation[$k] === 'MANYTOMANY') {
+                        // the table must has 2 primary keys.
+                        $pks = null;
+                        $pks = $this->service->getPK($relation[$k]['reftable'], $pks);
+                        if ($pks !== false || count($pks) === 2) {
+                            $relation[$k]['key'] = 'MANYTOMANY';
+                            $refcol2 = ('' . self::$prefixBase . $pks[0] === $relation[$k]['refcol']) ? $pks[1]
+                                : $pks[0];
+
+                            try {
+                                $defsFK = $this->service->getDefTableFK($relation[$k]['reftable'], false);
+                            } catch (Exception $e) {
+                                return 'Error: Unable read table dependencies ' . $e->getMessage();
+                            }
+                            try {
+                                $keys2 = $this->service->getDefTableKeys($defsFK[$refcol2]['reftable'], true,
+                                    'PRIMARY KEY');
+                            } catch (Exception $e) {
+                                return 'Error: Unable read table dependencies' . $e->getMessage();
+                            }
+                            $relation[$k]['refcol2'] = '' . self::$prefixBase . $refcol2;
+                            if (is_array($keys2)) {
+                                $keys2 = array_keys($keys2);
+                                $relation[$k]['col2'] = $keys2[0];
+                            } else {
+                                $relation[$k]['col2'] = null;
+                            }
+                            $relation[$k]['table2'] = $defsFK[$refcol2]['reftable'];
+                        }
+                    }
+                    // manytomany
+                }
+            }
+        }
+        //die(1);
+
+        $gdf = $this->getDefTable($tableName, $specialConversion);
+        $fields = [];
+        $fieldsb = [];
+        foreach ($gdf as $varn => $field) {
+            switch ($field['phptype']) { //binary, date, datetime, decimal,int, string,time, timestamp 
+                case 'binary':
+                case 'date':
+                case 'datetime':
+                case 'decimal':
+                case 'int':
+                case 'string':
+                case 'time':
+                case 'timestamp':
+                    $fields[] = "\t/** @var " . $field['phptype'] . " \$$varn  */\n\tpublic \$$varn;";
+                    $fieldsb[] = "\t\t\$obj->$varn=isset(\$array['$varn']) ?  \$array['$varn'] : null;";
+                    break;
+            }
+        }
+        foreach($extraColumn as $varn=>$value) {
+            $fields[] = "\t/** @var mixed \$$varn extra column: $value */\n\tpublic \$$varn;";
+            $fieldsb[] = "\t\t\$obj->$varn=isset(\$array['$varn']) ?  \$array['$varn'] : null;";
+        }
+        $fieldsArr = implode("\n", $fields);
+        $fieldsbArr = implode("\n", $fieldsb);
+
+        $field2s = [];
+        $field2sb = [];
+        foreach ($relation as $varn => $field) {
+            //$varnclean = ltrim($varn, self::$prefixBase);
+            switch ($field['key']) {
+                case 'FOREIGN KEY':
+                    break;
+                case 'MANYTOONE':
+                    $class = $classRelations[$field['reftable']];
+                    $field2s[] = "\t/** @var $class \$$varn manytoone */
+    public \$$varn;";
+                    $field2sb[] = "\t\t\$obj->$varn=isset(\$array['$varn']) ? 
+            \$obj->$varn=$class::fromArray(\$array['$varn']) 
+            : null; // manytoone";
+                    break;
+                case 'MANYTOMANY':
+                    $class = $classRelations[$field['reftable']];
+                    $field2s[] = "\t/** @var {$class}[] \$$varn manytomany */
+    public \$$varn;";
+                    $field2sb[] = "\t\t\$obj->$varn=isset(\$array['$varn']) ?  
+            \$obj->$varn=$class::fromArrayMultiple(\$array['$varn']) 
+            : null; // manytomany";
+                    break;
+                case 'ONETOMANY':
+                    $class = $classRelations[$field['reftable']];
+                    $field2s[] = "\t/** @var {$class}[] \$$varn onetomany */
+    public \$$varn;";
+                    $field2sb[] = "\t\t\$obj->$varn=isset(\$array['$varn']) ?  
+            \$obj->$varn=$class::fromArrayMultiple(\$array['$varn']) 
+            : null; // onetomany";
+                    break;
+                case 'ONETOONE':
+                    $class = $classRelations[$field['reftable']];
+                    $field2s[] = "\t/** @var $class \$$varn onetoone */
+    public \$$varn;";
+                    $field2sb[] = "\t\t\$obj->$varn=isset(\$array['$varn']) ?  
+            \$obj->$varn=$class::fromArray(\$array['$varn']) 
+            : null; // onetoone";
+                    break;
+            }
+        }
+
+        $fields2Arr = implode("\n", $field2s);
+        $fields2Arrb = implode("\n", $field2sb);
+
+
+        $r = str_replace(['{fields}', '{fieldsrel}', '{fieldsfa}', '{fieldsrelfa}'],
+            [$fieldsArr, $fields2Arr, $fieldsbArr, $fields2Arrb], $r);
+        //  return $r;
+        //  die(1);
+
+        if (@count($this->codeClassConversion) > 0) {
+            // we forced the conversion but only if it is not specified explicit
+            foreach ($gdf as $k => $colDef) {
+                $type = $colDef['type'];
+                if (isset($this->codeClassConversion[$type]) && $gdf[$k]['conversion'] === null) {
+                    $gdf[$k]['conversion'] = $this->codeClassConversion[$type];
+                }
+            }
+        }
+
+        // discard columns
+        $identities = $this->getDefIdentities($tableName);
+        if ($defNoInsert !== null) {
+            $noInsert = array_merge($identities, $defNoInsert);
+        } else {
+            $noInsert = $identities;
+        }
+        if ($defNoInsert !== null) {
+            $noUpdate = array_merge($identities, $defNoUpdate);
+        } else {
+            $noUpdate = $identities;
+        }
+
+
+        try {
+            $r = str_replace(array(
+                '{pk}',
+                '{def}',
+                '{defname}',
+                '{defkey}',
+                '{defnoinsert}',
+                '{defnoupdate}',
+                '{deffk}',
+                '{deffktype}',
+                '{array}',
+                '{array_null}'
+            ), array(
+                self::varExport($pk),
+                //str_replace(["\n\t\t        ", "\n\t\t    ],"], ['', '],'], self::varExport($gdf, "\t\t")), // {def}
+                self::varExport($gdf, "\t\t"),
+                self::varExport(array_keys($gdf), "\t\t"), // {defname}
+                self::varExport($this->getDefTableKeys($tableName), "\t\t"), // {defkey}
+                self::varExport($noInsert, "\t\t"), // {defnoinsert}
+                self::varExport($noUpdate, "\t\t"), // {defnoupdate}
+                self::varExport($this->getDefTableFK($tableName), "\t\t\t"), //{deffk}
+                self::varExport($relation, "\t\t"), //{deffktype}
+                str_replace("\n", "\n\t\t",
+                    rtrim($this->generateCodeArray($tableName, null, false, false, true, $classRelations, $relation),
+                        "\n")),
+                str_replace("\n", "\n\t\t",
+                    rtrim($this->generateCodeArray($tableName, null, true, false, true, $classRelations, $relation),
+                        "\n"))
+            ), $r);
+        } catch (Exception $e) {
+            return "Unable read definition of tables " . $e->getMessage();
+        }
+
+        return $r;
     }
 
     /**
@@ -3479,350 +4045,6 @@ eot;
         return $r;
     }
 
-    /**
-     * @param string $tableName
-     * @param string $namespace
-     * @param null   $customRelation
-     * @param null   $classRelations
-     * @param array  $specialConversion
-     * @param null   $defNoInsert
-     * @param null   $defNoUpdate
-     * @param null   $baseClass
-     *
-     * @return string|string[]
-     * @throws Exception
-     */
-    public function generateAbstractModelClass(
-        $tableName,
-        $namespace = '',
-        $customRelation = null,
-        $classRelations = null,
-        $specialConversion = [],
-        $defNoInsert = null,
-        $defNoUpdate = null,
-        $baseClass = null
-    ) {
-        $r = <<<'eot'
-<?php
-/** @noinspection PhpIncompatibleReturnTypeInspection
- * @noinspection ReturnTypeCanBeDeclaredInspection
- * @noinspection DuplicatedCode
- * @noinspection PhpUnused
- * @noinspection PhpUndefinedMethodInspection
- * @noinspection PhpUnusedLocalVariableInspection
- * @noinspection PhpUnusedAliasInspection
- * @noinspection NullPointerExceptionInspection
- * @noinspection SenselessProxyMethodInspection
- * @noinspection PhpParameterByRefIsNotUsedAsReferenceInspection
- */
-{namespace}
-use eftec\PdoOne;
-{exception}
-
-/**
- * Generated by PdoOne Version {version}. 
- * DO NOT EDIT THIS CODE. THIS CODE WILL SELF GENERATE.
- * @copyright (c) Jorge Castro C. MIT License  https://github.com/EFTEC/PdoOne
- * Class {classname}
- * <pre>
- * $code=$pdoOne->generateAbstractModelClass({args});
- * </pre>
- */
-abstract class Abstract{classname}
-{
-{fields}
-
-{fieldsrel}
-
-    //<editor-fold desc="array conversion">
-    public static function fromArray($array) {
-        if($array===null) {
-            return null;
-        }
-        $obj=new {classname}();
-{fieldsfa}
-{fieldsrelfa}
-
-        return $obj;
-    }
-    public function toArray() {
-        return (array) $this;
-    }
-    public static function fromArrayMultiple($array) {
-        if($array===null) {
-            return null;
-        }
-        $objs=[];
-        foreach($array as $v) {
-            $objs[]=self::fromArray($v);
-        }
-        return $objs;
-    }
-    //</editor-fold>
-    
-} // end class
-eot;
-        //$lastns = explode('\\', $namespace);
-        //$baseClass = ($baseClass === null) ? end($lastns) : $baseClass;
-
-        $fa = func_get_args();
-        foreach ($fa as $f => $k) {
-            if (is_array($k)) {
-                $fa[$f] = str_replace([' ', "\r\n", "\n"], ['', '', ''], var_export($k, true));
-            } else {
-                $fa[$f] = "'$k'";
-            }
-        }
-        if ($classRelations === null || !isset($classRelations[$tableName])) {
-            $className = self::camelize($tableName);
-        } else {
-            $className = $classRelations[$tableName];
-        }
-
-        $r = str_replace(array(
-            '{version}',
-            '{classname}',
-            '{exception}',
-            '{namespace}'
-        ), array(
-            self::VERSION . ' Date generated ' . date('r'), //{version}
-            $className, // {classname}
-            ($namespace) ? 'use Exception;' : '',
-            ($namespace) ? "namespace $namespace;" : ''
-        ), $r);
-        $pk = '??';
-        $pk = $this->service->getPK($tableName, $pk);
-        $pkFirst = (is_array($pk) && count($pk) > 0) ? $pk[0] : null;
-
-
-        try {
-            $relation = $this->getDefTableFK($tableName, false, true);
-        } catch (Exception $e) {
-            return 'Error: Unable read fk of table ' . $e->getMessage();
-        }
-
-
-        try {
-            $deps = $this->tableDependency(true, false);
-        } catch (Exception $e) {
-            return 'Error: Unable read table dependencies ' . $e->getMessage();
-        } //  ["city"]=> {["city_id"]=> "address"}
-        $after = @$deps[1][$tableName];
-        if ($after === null) {
-            $after = @$deps[1][strtolower($tableName)];
-        }
-        $before = @$deps[2][$tableName];
-        if ($before === null) {
-            $before = @$deps[2][strtolower($tableName)];
-        }
-        if (is_array($after) && is_array($before)) {
-            foreach ($before as $key => $rows) { // $value is [relcol,table]
-                foreach ($rows as $value) {
-                    $relation['' . self::$prefixBase . $value[1]] = [
-                        'key'      => 'ONETOMANY',
-                        'col'      => $key,
-                        'reftable' => $value[1],
-                        'refcol'   => $value[0]
-                    ];
-                }
-            }
-        }
-        // converts relations to ONETOONE
-        foreach ($relation as $k => $rel) {
-            if ($rel['key'] === 'ONETOMANY') {
-                $pkref = null;
-                $pkref = $this->service->getPK($rel['reftable'], $pkref);
-                if ('' . self::$prefixBase . $pkref[0] === $rel['refcol'] && count($pkref) === 1) {
-                    $relation[$k]['key'] = 'ONETOONE';
-                }
-            }
-            if ($rel['key'] === 'MANYTOONE') {
-                $pkref = null;
-                $pkref = $this->service->getPK($rel['reftable'], $pkref);
-
-                if ($pkref[0] === $rel['refcol'] && count($pkref) === 1
-                    && (strcasecmp($k, '' . self::$prefixBase . $pkFirst) === 0)
-                ) {
-                    // if they are linked by the pks and the pks are only 1.
-                    $relation[$k]['key'] = 'ONETOONE';
-                }
-            }
-        }
-        if ($customRelation) {
-            foreach ($relation as $k => $rel) {
-                if (isset($customRelation[$k])) {
-                    // parent.
-                    if ($customRelation[$k] === 'PARENT') {
-                        $relation[$k]['key'] = 'PARENT';
-                    } elseif ($customRelation[$k] === 'MANYTOMANY') {
-                        // the table must has 2 primary keys.
-                        $pks = null;
-                        $pks = $this->service->getPK($relation[$k]['reftable'], $pks);
-                        if ($pks !== false || count($pks) === 2) {
-                            $relation[$k]['key'] = 'MANYTOMANY';
-                            $refcol2 = ('' . self::$prefixBase . $pks[0] === $relation[$k]['refcol']) ? $pks[1]
-                                : $pks[0];
-
-                            try {
-                                $defsFK = $this->service->getDefTableFK($relation[$k]['reftable'], false);
-                            } catch (Exception $e) {
-                                return 'Error: Unable read table dependencies ' . $e->getMessage();
-                            }
-                            try {
-                                $keys2 = $this->service->getDefTableKeys($defsFK[$refcol2]['reftable'], true,
-                                    'PRIMARY KEY');
-                            } catch (Exception $e) {
-                                return 'Error: Unable read table dependencies' . $e->getMessage();
-                            }
-                            $relation[$k]['refcol2'] = '' . self::$prefixBase . $refcol2;
-                            if (is_array($keys2)) {
-                                $keys2 = array_keys($keys2);
-                                $relation[$k]['col2'] = $keys2[0];
-                            } else {
-                                $relation[$k]['col2'] = null;
-                            }
-                            $relation[$k]['table2'] = $defsFK[$refcol2]['reftable'];
-                        }
-                    }
-                    // manytomany
-                }
-            }
-        }
-        //die(1);
-
-        $gdf = $this->getDefTable($tableName, $specialConversion);
-        $fields = [];
-        $fieldsb = [];
-        foreach ($gdf as $varn => $field) {
-            switch ($field['phptype']) { //binary, date, datetime, decimal,int, string,time, timestamp 
-                case 'binary':
-                case 'date':
-                case 'datetime':
-                case 'decimal':
-                case 'int':
-                case 'string':
-                case 'time':
-                case 'timestamp':
-                    $fields[] = "\t/** @var " . $field['phptype'] . " \$$varn  */\n\tpublic \$$varn;";
-                    $fieldsb[] = "\t\t\$obj->$varn=isset(\$array['$varn']) ?  \$array['$varn'] : null;";
-                    break;
-            }
-        }
-        $fieldsArr = implode("\n", $fields);
-        $fieldsbArr = implode("\n", $fieldsb);
-
-        $field2s = [];
-        $field2sb = [];
-        foreach ($relation as $varn => $field) {
-            //$varnclean = ltrim($varn, self::$prefixBase);
-            switch ($field['key']) {
-                case 'FOREIGN KEY':
-                    break;
-                case 'MANYTOONE':
-                    $class = $classRelations[$field['reftable']];
-                    $field2s[] = "\t/** @var $class \$$varn manytoone */
-    public \$$varn;";
-                    $field2sb[] = "\t\t\$obj->$varn=isset(\$array['$varn']) ? 
-            \$obj->$varn=$class::fromArray(\$array['$varn']) 
-            : null; // manytoone";
-                    break;
-                case 'MANYTOMANY':
-                    $class = $classRelations[$field['reftable']];
-                    $field2s[] = "\t/** @var {$class}[] \$$varn manytomany */
-    public \$$varn;";
-                    $field2sb[] = "\t\t\$obj->$varn=isset(\$array['$varn']) ?  
-            \$obj->$varn=$class::fromArrayMultiple(\$array['$varn']) 
-            : null; // manytomany";
-                    break;
-                case 'ONETOMANY':
-                    $class = $classRelations[$field['reftable']];
-                    $field2s[] = "\t/** @var {$class}[] \$$varn onetomany */
-    public \$$varn;";
-                    $field2sb[] = "\t\t\$obj->$varn=isset(\$array['$varn']) ?  
-            \$obj->$varn=$class::fromArrayMultiple(\$array['$varn']) 
-            : null; // onetomany";
-                    break;
-                case 'ONETOONE':
-                    $class = $classRelations[$field['reftable']];
-                    $field2s[] = "\t/** @var $class \$$varn onetoone */
-    public \$$varn;";
-                    $field2sb[] = "\t\t\$obj->$varn=isset(\$array['$varn']) ?  
-            \$obj->$varn=$class::fromArray(\$array['$varn']) 
-            : null; // onetoone";
-                    break;
-            }
-        }
-
-        $fields2Arr = implode("\n", $field2s);
-        $fields2Arrb = implode("\n", $field2sb);
-
-
-        $r = str_replace(['{fields}', '{fieldsrel}', '{fieldsfa}', '{fieldsrelfa}'],
-            [$fieldsArr, $fields2Arr, $fieldsbArr, $fields2Arrb], $r);
-        //  return $r;
-        //  die(1);
-
-        if (@count($this->codeClassConversion) > 0) {
-            // we forced the conversion but only if it is not specified explicit
-            foreach ($gdf as $k => $colDef) {
-                $type = $colDef['type'];
-                if (isset($this->codeClassConversion[$type]) && $gdf[$k]['conversion'] === null) {
-                    $gdf[$k]['conversion'] = $this->codeClassConversion[$type];
-                }
-            }
-        }
-
-        // discard columns
-        $identities = $this->getDefIdentities($tableName);
-        if ($defNoInsert !== null) {
-            $noInsert = array_merge($identities, $defNoInsert);
-        } else {
-            $noInsert = $identities;
-        }
-        if ($defNoInsert !== null) {
-            $noUpdate = array_merge($identities, $defNoUpdate);
-        } else {
-            $noUpdate = $identities;
-        }
-
-
-        try {
-            $r = str_replace(array(
-                '{pk}',
-                '{def}',
-                '{defname}',
-                '{defkey}',
-                '{defnoinsert}',
-                '{defnoupdate}',
-                '{deffk}',
-                '{deffktype}',
-                '{array}',
-                '{array_null}'
-            ), array(
-                self::varExport($pk),
-                //str_replace(["\n\t\t        ", "\n\t\t    ],"], ['', '],'], self::varExport($gdf, "\t\t")), // {def}
-                self::varExport($gdf, "\t\t"),
-                self::varExport(array_keys($gdf), "\t\t"), // {defname}
-                self::varExport($this->getDefTableKeys($tableName), "\t\t"), // {defkey}
-                self::varExport($noInsert, "\t\t"), // {defnoinsert}
-                self::varExport($noUpdate, "\t\t"), // {defnoupdate}
-                self::varExport($this->getDefTableFK($tableName), "\t\t\t"), //{deffk}
-                self::varExport($relation, "\t\t"), //{deffktype}
-                str_replace("\n", "\n\t\t",
-                    rtrim($this->generateCodeArray($tableName, null, false, false, true, $classRelations, $relation),
-                        "\n")),
-                str_replace("\n", "\n\t\t",
-                    rtrim($this->generateCodeArray($tableName, null, true, false, true, $classRelations, $relation),
-                        "\n"))
-            ), $r);
-        } catch (Exception $e) {
-            return "Unable read definition of tables " . $e->getMessage();
-        }
-
-        return $r;
-    }
-    
-    
     public function generateCodeClassRepo(
         $tableClassName,
         $namespace = '',
@@ -3981,15 +4203,34 @@ eot;
      * , instead of specify per each column.<br>
      * <b>Example:</b><br>
      * <pre>
-     * $this->generateCodeClassConversions(['datetime'=>'datetime2','tinyint'=>'bool']);
+     * $this->generateCodeClassConversions(
+     *      ['datetime'=>'datetime2'
+     *      ,'tinyint'=>'bool' // converts tinyint as boolean
+     *      ,'int'=['int',null] // converts input int as integer, and doesn't convert output int
+     *      ]);
      * echo $this->generateCodeClassAll('table');
      * $this->generateCodeClassConversions(); // reset.
      * </pre>
-     * <b>PHP Conversions</b>: datetime3 (human string), datetime2 (iso),datetime(datetime class), timestamp (int), bool, int, float<br>
+     * <b>PHP Conversions</b>:
+     * <ul>
+     * <li>encrypt (encrypt value. Encryption must be set)</li>
+     * <li>decrypt (decrypt a value if can. Encryption must be set)</li>
+     * <li>datetime3 (human string). input (30/12/2010) --> db (2020-12-30) ---> output (30/12/2010)</li>
+     * <li>datetime2 (iso format)</li>
+     * <li>datetime (datetime class)</li>
+     * <li>timestamp (int)</li>
+     * <li>bool (boolean true or false <-> 1 or 0)</li>
+     * <li>int (integer)</li>
+     * <li>float (decimal)</li>
+     * <li>custom function are defined by expression plus %s. Example trim(%s)</li>
+     * <li>null (no conversion)</li>
+     * </ul>
      *
      * @param array $conversion An associative array where the key is the type and the value is the conversion.
      *
-     * @see \eftec\PdoOne::generateCodeClass
+     * @link https://github.com/EFTEC/PdoOne
+     * @see  \eftec\PdoOne::generateCodeClass
+     * @see  \eftec\PdoOne::setEncryption
      */
     public function generateCodeClassConversions($conversion = [])
     {

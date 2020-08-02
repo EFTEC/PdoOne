@@ -1590,6 +1590,16 @@ In a nutshell:
 * Every minor version means that it adds a new functionality i.e. 1.5 -> 1.6 (new methods)  
 * Every decimal version means that it patches/fixes/refactoring a previous functionality i.e. 1.5.0 -> 1.5.1 (fix)  
 
+* 1.54 2020-8-02    
+  * connect does not set attribute directly. Mysql and sql server sets different arguments.      
+  * generateCodeClass has an additional argument and it generares an extra field.   
+  * generateAllClasses has an additional field (allows adds new fields)   
+  * generateAbstractCodeclass has an additional field (allows adds new fields)   
+  * BasePdoOneRepo updated to 4.8. Now it uses new functionalities.  
+       * It allows custom input and output conversions.
+       * Input and output conversions code is generated at compile time instead to evaluates at runtime.  
+       * It allows toList() and first() to returns extra columns. Those columns are also added to the model-class
+
 * 1.53 2020-7-27   
   * Method connect() sets PDO::ATTR_EMULATE_PREPARES to false      
 * 1.52 2020-7-19    

@@ -32,7 +32,7 @@ new dBug($parent);
 //$r=TableParentRepo::toList();
 
 //echo Collection::generateTable($r);
-
+//TableParentRepo::$useModel=false;
 
 
 

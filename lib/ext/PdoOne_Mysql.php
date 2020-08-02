@@ -57,6 +57,8 @@ class PdoOne_Mysql implements PdoOne_IExt
             $this->parent->user, $this->parent->pwd);
         $this->parent->user = '';
         $this->parent->pwd = '';
+        $this->parent->conn1->setAttribute(PDO::ATTR_EMULATE_PREPARES, false);
+       
     }
 
     public function getDefTable($table)
