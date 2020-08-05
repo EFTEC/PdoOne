@@ -1592,7 +1592,8 @@ In a nutshell:
 
 * 1.55 2020-8-05    
   * Updated generation of code. Now, the relations manytoony and onetoone returns linked values.   Linked values 
-  are values that are linked (one of them is a pointer to the other value)   
+  are values that are linked (one of them is a pointer to the other value).        
+  * Fixed: the relation onetoone, the field refcol now uses the right column.   
 
 * 1.54 2020-8-02    
   * connect does not set attribute directly. Mysql and sql server sets different arguments.      

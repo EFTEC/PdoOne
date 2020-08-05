@@ -34,7 +34,8 @@ $columnRelation = [
         '_TableParentxCategory' => 'MANYTOMANY',
         'fieldKey'              => ['encrypt', null],
         'extracol'              => 'datetime3'
-    ]
+    ],
+    'TableParentExt'=>['_idtablaparentExtPK'=>'PARENT']
 ];
 $columnRemove=[
     'TableParent'=>['idchild2FK']

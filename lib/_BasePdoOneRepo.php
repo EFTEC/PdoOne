@@ -599,7 +599,7 @@ abstract class _BasePdoOneRepo
                             $colRelAlias = $pColumn . $nameCol;
                             $class = $ns
                                 . static::RELATIONS[$keyRel['reftable']]; // $ns . PdoOne::camelize($keyRel['reftable']) . $postfix;
-                            $refCol = ltrim($keyRel['refcol'], PdoOne::$prefixBase);
+                            $refCol = $keyRel['refcol']; // ltrim($keyRel['refcol'], PdoOne::$prefixBase);
                             $newQuery['joins'] .= " left join {$keyRel['reftable']} as $tableRelAlias "
                                 . "on {$pTable}{$col}=$tableRelAlias.$refCol \n"; // $recursiveInit$nameCol\n"; // adds a query to the current query
                             $class::generationRecursive($newQuery, $tableRelAlias . '.', $colRelAlias . '.',

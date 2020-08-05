@@ -23,6 +23,7 @@ $parent= (TableParentRepo::setRecursive(
         ,'_TableParentExt'
     ]))::first(1);
 new dBug($parent);
+die(1);
 
 
 

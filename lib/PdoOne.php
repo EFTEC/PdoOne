@@ -2835,7 +2835,7 @@ eot;
                 $pkref = $this->service->getPK($rel['reftable'], $pkref);
                 if (self::$prefixBase . $pkref[0] === $rel['refcol'] && count($pkref) === 1) {
                     $relation[$k]['key'] = 'ONETOONE';
-                    $relation[$k]['refcol']=ltrim($relation[$k]['refcol'],'_');
+                    $relation[$k]['refcol']=ltrim($relation[$k]['refcol'],self::$prefixBase);
                 }
             }
             if ($rel['key'] === 'MANYTOONE') {
@@ -2846,7 +2846,7 @@ eot;
                 ) {
                     // if they are linked by the pks and the pks are only 1.
                     $relation[$k]['key'] = 'ONETOONE';
-                    $relation[$k]['refcol']=ltrim($relation[$k]['refcol'],'_');
+                    $relation[$k]['refcol']=ltrim($relation[$k]['refcol'],self::$prefixBase);
                 }
             }
         }
@@ -3588,7 +3588,7 @@ eot;
                 $pkref = $this->service->getPK($rel['reftable'], $pkref);
                 if ('' . self::$prefixBase . $pkref[0] === $rel['refcol'] && count($pkref) === 1) {
                     $relation[$k]['key'] = 'ONETOONE';
-                    $relation[$k]['refcol']=ltrim($relation[$k]['refcol'],'_');
+                    $relation[$k]['refcol']=ltrim($relation[$k]['refcol'],self::$prefixBase);
                 }
             }
             if ($rel['key'] === 'MANYTOONE') {
@@ -3600,7 +3600,7 @@ eot;
                 ) {
                     // if they are linked by the pks and the pks are only 1.
                     $relation[$k]['key'] = 'ONETOONE';
-                    $relation[$k]['refcol']=ltrim($relation[$k]['refcol'],'_');
+                    $relation[$k]['refcol']=ltrim($relation[$k]['refcol'],self::$prefixBase);
                 }
             }
         }
@@ -3690,7 +3690,7 @@ eot;
                     $field2sb[] = "\t\t\$obj->$varn=isset(\$array['$varn']) ? 
             \$obj->$varn=$class::fromArray(\$array['$varn']) 
             : null; // manytoone";
-                    $col=ltrim($varn,'_');
+                    $col=ltrim($varn,self::$prefixBase);
                     $rcol=$field['refcol'];
                     $field2sb[] ="\t\t(\$obj->$varn !== null) 
             and \$obj->{$varn}->{$rcol}=&\$obj->$col; // linked manytoone";
@@ -3925,7 +3925,7 @@ eot;
                 $pkref = $this->service->getPK($rel['reftable'], $pkref);
                 if ('' . self::$prefixBase . $pkref[0] === $rel['refcol'] && count($pkref) === 1) {
                     $relation[$k]['key'] = 'ONETOONE';
-                    $relation[$k]['refcol']=ltrim($relation[$k]['refcol'],'_');
+                    $relation[$k]['refcol']=ltrim($relation[$k]['refcol'],self::$prefixBase);
                 }
             }
             if ($rel['key'] === 'MANYTOONE') {
@@ -3937,7 +3937,7 @@ eot;
                 ) {
                     // if they are linked by the pks and the pks are only 1.
                     $relation[$k]['key'] = 'ONETOONE';
-                    $relation[$k]['refcol']=ltrim($relation[$k]['refcol'],'_');
+                    $relation[$k]['refcol']=ltrim($relation[$k]['refcol'],self::$prefixBase);
                 }
             }
         }
