@@ -34,8 +34,10 @@ $columnRelation = [
         '_TableParentxCategory' => 'MANYTOMANY',
         'fieldKey'              => ['encrypt', null],
         'extracol'              => 'datetime3'
-
     ]
+];
+$columnRemove=[
+    'TableParent'=>['idchild2FK']
 ];
 $extraColumn = [
     'TableParent' => ['extracol' => 'CURRENT_TIMESTAMP', 'extracol2' => '20']
@@ -55,7 +57,8 @@ $dao->generateCodeClassConversions([
     'decimal'  => 'decimal'
 ]);
 $logs = $dao->generateAllClasses($relations, 'TestDb', ['repomysql', 'mysql\repomodel'],
-    [__DIR__ . '/generated', __DIR__ . '/generatedmodel'], true, $columnRelation, $extraColumn);
+    [__DIR__ . '/generated', __DIR__ . '/generatedmodel'], true, $columnRelation, $extraColumn
+    ,$columnRemove);
 
 echo "errors:<br>";
 echo "<pre>";

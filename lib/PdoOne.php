@@ -30,7 +30,7 @@ use stdClass;
  * @package       eftec
  * @author        Jorge Castro Castillo
  * @copyright (c) Jorge Castro C. MIT License  https://github.com/EFTEC/PdoOne
- * @version       1.54 2020-08-02
+ * @version       1.55 2020-08-05
  */
 class PdoOne
 {
@@ -440,7 +440,6 @@ class PdoOne
                 }
 
                 return $tmpDate->format(self::$dateFormat);
-                break;
             case 'human':
                 if ($ms) {
                     return $tmpDate->format(self::$dateTimeMicroHumanFormat);
@@ -450,7 +449,6 @@ class PdoOne
                 }
 
                 return $tmpDate->format(self::$dateHumanFormat);
-                break;
             case 'sql':
                 if ($ms) {
                     return $tmpDate->format(self::$isoDateInputTimeMs);
@@ -460,13 +458,10 @@ class PdoOne
                 }
 
                 return $tmpDate->format(self::$isoDateInput);
-                break;
             case 'class':
                 return $tmpDate;
-                break;
             case 'timestamp':
                 return $tmpDate->getTimestamp();
-                break;
         }
 
         return false;
@@ -1117,7 +1112,6 @@ eot;
                 }
 
                 return $r;
-                break;
             case 'json':
                 $result = $this->runRawQuery($query, [], true);
                 if (!is_array($result)) {
@@ -1125,22 +1119,16 @@ eot;
                 }
 
                 return json_encode($result);
-                break;
             case 'selectcode':
                 return $this->generateCodeSelect($query);
-                break;
             case 'arraycode':
                 return $this->generateCodeArray($input, $query, false, false, false);
-                break;
             case 'createcode':
                 return $this->generateCodeCreate($input);
-                break;
             case 'classcode':
                 return $this->generateCodeClass($input, $namespace);
-                break;
             default:
                 return "Output $output not defined. Use csv/json/selectcode/arraycode/createcode/classcode";
-                break;
         }
     }
 
@@ -1174,7 +1162,7 @@ eot;
             }
             $this->conn1->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
             $this->conn1->setAttribute(PDO::ATTR_STRINGIFY_FETCHES, false);
-            
+
             //$this->conn1->setAttribute(PDO::ATTR_STRINGIFY_FETCHES, false); It is not required.
 
             $this->isOpen = true;
@@ -1183,9 +1171,6 @@ eot;
             $this->throwError("Failed to connect to {$this->databaseType}", $ex->getMessage(),
                 '\nTRACE:' . $ex->getTraceAsString());
         }
-        
-        
-
     }
 
     /**
@@ -1935,12 +1920,11 @@ eot;
                                     string(26) "FK_TableParent_TableChild1"
                                   }*/
                                 $key = $relation[$namep]['key'];
-                                if ($key === 'PARENT') {
-                                    $default = 'null';
+                                if ($key !== 'PARENT') {
+                                    // $default = 'null';
+                                    $result .= "'" . $namep . "'=>" . $default . ', /* ' . $key . '!! */' . $ln;
+                                    $norepeat[] = $name;
                                 }
-
-                                $result .= "'" . $namep . "'=>" . $default . ', /* ' . $key . '!! */' . $ln;
-                                $norepeat[] = $name;
                             } else {
                                 $result .= "'" . $namep . "'=>" . $default . ', /* manytoone */' . $ln;
                                 $norepeat[] = $name;
@@ -2385,17 +2369,19 @@ eot;
      * @param array         $specialConversion    An associative array to specify a custom conversion<br>
      *                                            The key is the name of the columns and the value is the type of
      *                                            relation<br>
-     * @param string[] $defNoInsert               An array with the name of the columns to not to insert. The identity
+     * @param string[]      $defNoInsert          An array with the name of the columns to not to insert. The identity
      *                                            is added automatically to this list
-     * @param string[] $defNoUpdate               An array with the name of the columns to not to update. The identity
+     * @param string[]      $defNoUpdate          An array with the name of the columns to not to update. The identity
      *                                            is added automatically to this list
      * @param string|null   $baseClass            The name of the base class. If no name then it uses the last namespace
-     * @param string $modelfullClass              (default:'') The full class of the model (with the namespace). If
+     * @param string        $modelfullClass       (default:'') The full class of the model (with the namespace). If
      *                                            empty, then it doesn't use a model
      * @param array         $extraCols            An associative array with extra columns where they key is the name of
      *                                            the column and the value is the value to return (it is evaluated in
      *                                            the query). It is used by toList() and first(), it's also added to
      *                                            the model.
+     *
+     * @param array         $columnRemove
      *
      * @return string|string[]
      * @throws Exception
@@ -2410,7 +2396,8 @@ eot;
         $defNoUpdate = null,
         $baseClass = null,
         $modelfullClass = '',
-        $extraCols=[]
+        $extraCols = [],
+        $columnRemove = []
     ) {
         $r = <<<'eot'
 <?php
@@ -2492,6 +2479,7 @@ abstract class Abstract{classname} extends {baseclass}
      */    
     public static function convertOutputVal(&$row) {
 {convertoutput}
+{linked}
     }
 
     /**
@@ -2574,13 +2562,14 @@ abstract class Abstract{classname} extends {baseclass}
      * @param string $type=['*','MANYTOONE','ONETOMANY','ONETOONE','MANYTOMANY'][$i]
      *
      * @return string[]
+     * @noinspection SlowArrayOperationsInLoopInspection
      */        
     public static function getRelations($type='all') {
         $r= {deffktype2};
         if($type==='*') {
             $result=[];
             foreach($r as $arr) {
-                $result += $arr;
+                $result = array_merge($result,$arr);
             }
             return $result;
         }
@@ -2607,7 +2596,7 @@ abstract class Abstract{classname} extends {baseclass}
     public static function setRecursive($recursive)
     {
         if(is_string($recursive)) {
-            $recursive=AbstractChamberRepo::getRelations($recursive);
+            $recursive={classname}::getRelations($recursive);
         }
         return parent::_setRecursive($recursive); 
     }
@@ -2720,7 +2709,9 @@ abstract class Abstract{classname} extends {baseclass}
      */
     public static function factory($recursivePrefix='') {
         $recursive=static::getRecursive();
-        return {array};
+        $row= {array};
+{linked}        
+        return $row;
     }
     
     /**
@@ -2762,11 +2753,11 @@ eot;
             $className = $classRelations[$tableName];
         }
 
-        $extraColArray='';
-        foreach($extraCols as $k=>$v) {
-            $extraColArray.=$v.' as '.$this->addQuote($k).',';
+        $extraColArray = '';
+        foreach ($extraCols as $k => $v) {
+            $extraColArray .= $v . ' as ' . $this->addQuote($k) . ',';
         }
-        $extraColArray=rtrim($extraColArray,',');
+        $extraColArray = rtrim($extraColArray, ',');
 
         $r = str_replace(array(
             '{version}',
@@ -2792,7 +2783,8 @@ eot;
             $modelUse ? "$modelClass::fromArrayMultiple( self::_toList(\$filter, \$filterValue));"
                 : 'false; // no model set',  // {classmodellist}
             $modelUse ? "$modelClass::fromArray(self::_first(\$pk));" : 'false; // no model set' // {classmodelfirst}
-            ,$extraColArray // {extracol}
+            ,
+            $extraColArray // {extracol}
         ), $r);
         $pk = '??';
         $pk = $this->service->getPK($tableName, $pk);
@@ -2843,17 +2835,18 @@ eot;
                 $pkref = $this->service->getPK($rel['reftable'], $pkref);
                 if (self::$prefixBase . $pkref[0] === $rel['refcol'] && count($pkref) === 1) {
                     $relation[$k]['key'] = 'ONETOONE';
+                    $relation[$k]['refcol']=ltrim($relation[$k]['refcol'],'_');
                 }
             }
             if ($rel['key'] === 'MANYTOONE') {
                 $pkref = null;
                 $pkref = $this->service->getPK($rel['reftable'], $pkref);
-
                 if ($pkref[0] === $rel['refcol'] && count($pkref) === 1
                     && (strcasecmp($k, self::$prefixBase . $pkFirst) === 0)
                 ) {
                     // if they are linked by the pks and the pks are only 1.
                     $relation[$k]['key'] = 'ONETOONE';
+                    $relation[$k]['refcol']=ltrim($relation[$k]['refcol'],'_');
                 }
             }
         }
@@ -2900,28 +2893,36 @@ eot;
         $convertOutput = '';
         $convertInput = '';
         $getDefTable = $this->getDefTable($tableName, $specialConversion);
-        
-        // we forced the conversion but only if it is not specified explicit
-            
-        $allColumns= array_merge($getDefTable , $extraCols); // $extraColArray does not has type
 
-        
+        //var_dump($getDefTable);
+        foreach ($columnRemove as $v) {
+            unset($getDefTable[$v]);
+        }
+        //die(1);
+
+        // we forced the conversion but only if it is not specified explicit
+
+        $allColumns = array_merge($getDefTable, $extraCols); // $extraColArray does not has type
+
+
         foreach ($allColumns as $kcol => $colDef) {
-            $type =isset($colDef['type']) ? $colDef['type'] : null;
-            $conversion=null;
+            $type = isset($colDef['type']) ? $colDef['type'] : null;
+            $conversion = null;
             if (isset($columnRelations[$kcol])) {
-                $conversion=$columnRelations[$kcol];
-                if ($type!==null) {
-                    $getDefTable[$kcol]['conversion'] =$conversion;
+                $conversion = $columnRelations[$kcol];
+                if ($type !== null) {
+                    $getDefTable[$kcol]['conversion'] = $conversion;
                 } else {
-                    $type='new column';
+                    $type = 'new column';
                 }
-            } elseif ($type!==null && isset($this->codeClassConversion[$type]) && $getDefTable[$kcol]['conversion'] === null) {
-                $conversion=$this->codeClassConversion[$type];
+            } elseif ($type !== null && isset($this->codeClassConversion[$type])
+                && $getDefTable[$kcol]['conversion'] === null
+            ) {
+                $conversion = $this->codeClassConversion[$type];
                 $getDefTable[$kcol]['conversion'] = $conversion;
             }
-          
-            if ($conversion!==null) {
+
+            if ($conversion !== null) {
                 if (is_array($conversion)) {
                     list($input, $output) = $conversion;
                 } else {
@@ -3014,7 +3015,20 @@ eot;
                 $convertOutput .= "\t\t" . str_replace('%s', "\$row['$kcol']", $tmp) . "\n";
             }
         }
-  
+
+        $linked = '';
+        foreach ($relation as $k => $v) {
+            $key = $v['key'];
+            if ($key === 'MANYTOONE' || $key === 'ONETOONE') {
+                $col = ltrim($v['refcol'], '_');
+                $linked .= str_replace(['{_col}', '{refcol}', '{col}'], [$k, $v['refcol'], $col],
+                    "\t\tis_array(\$row['{_col}'])
+            and \$row['{_col}']['{refcol}']=&\$row['{col}']; // linked $key\n");
+            }
+        }
+        //$convertOutput.=$linked;
+
+
         $convertOutput = rtrim($convertOutput, "\n");
         $convertInput = rtrim($convertInput, "\n");
 
@@ -3032,7 +3046,7 @@ eot;
         }
         $relation2 = [];
         foreach ($relation as $col => $arr) {
-            if ($arr['key'] !== 'FOREIGN KEY') {
+            if ($arr['key'] !== 'FOREIGN KEY' && $arr['key'] !== 'PARENT' && $arr['key'] !== 'NONE') {
                 @$relation2[$arr['key']][] = $col;
             }
             //if($arr['key']==='MANYTOONE') {
@@ -3055,7 +3069,8 @@ eot;
                 '{deffktype}',
                 '{deffktype2}',
                 '{array}',
-                '{array_null}'
+                '{array_null}',
+                '{linked}'
             ), array(
                 self::varExport($pk),
                 //str_replace(["\n\t\t        ", "\n\t\t    ],"], ['', '],'], self::varExport($gdf, "\t\t")), // {def}
@@ -3068,19 +3083,45 @@ eot;
                 self::varExport($noUpdate, "\t\t"), // {defnoupdate}
                 self::varExport($this->getDefTableFK($tableName), "\t\t\t"), //{deffk}
                 self::varExport($relation, "\t\t"), //{deffktype}
-                self::varExport($relation2, "\t\t"), //{deffktype}
+                self::varExport($relation2, "\t\t"), //{deffktype2}
                 str_replace("\n", "\n\t\t",
                     rtrim($this->generateCodeArray($tableName, null, false, false, true, $classRelations, $relation),
                         "\n")),
                 str_replace("\n", "\n\t\t",
                     rtrim($this->generateCodeArray($tableName, null, true, false, true, $classRelations, $relation),
-                        "\n"))
+                        "\n")),
+                $linked // {linked}
             ), $r);
         } catch (Exception $e) {
             return "Unable read definition of tables " . $e->getMessage();
         }
 
         return $r;
+    }
+
+    /**
+     * It returns a field, column or table, the quotes defined by the current database type. It doesn't considers points
+     * or space<br>
+     * <pre>
+     * $this->addQuote("aaa"); // [aaa] (sqlserver) `aaa` (mysql)
+     * $this->addQuote("[aaa]"); // [aaa] (sqlserver, unchanged)
+     * </pre>
+     *
+     * @param string $txt
+     *
+     * @return string
+     * @see \eftec\PdoOne::addDelimiter to considers points
+     */
+    public function addQuote($txt)
+    {
+        if (strlen($txt) < 2) {
+            return $txt;
+        }
+        if ($txt[0] === $this->database_delimiter0 && substr($txt, -1) === $this->database_delimiter1) {
+            // it is already quoted.
+            return $txt;
+        }
+        return $this->database_delimiter0 . $txt . $this->database_delimiter1;
     }
 
     /**
@@ -3180,6 +3221,10 @@ eot;
      *                                      than $columnRelations. The columns are returned when we use toList() and
      *                                      first() and they are added to the model (if any) but they are not used in
      *                                      insert,update or delete<br>
+     * @param array        $columnRemoves   An associative array to skip in the generation with the key as the name of
+     *                                      the table and value an array with columns to be removed.<br>
+     *                                      Example:['products'=>['colnotread']]
+     *
      *
      * @return array It returns an array with all the errors (if any).
      * @see \eftec\PdoOne::generateCodeClassConversions
@@ -3191,7 +3236,8 @@ eot;
         $folders = '',
         $force = false,
         $columnRelations = [],
-        $extraColumns = []
+        $extraColumns = [],
+        $columnRemoves = []
     ) {
         if (is_array($folders)) {
             list($folder, $folderModel) = $folders;
@@ -3247,8 +3293,10 @@ eot;
             try {
                 $custom = (isset($columnRelations[$tableName])) ? $columnRelations[$tableName] : [];
                 $extraCols = (isset($extraColumns[$tableName])) ? $extraColumns[$tableName] : [];
+                $columnRem = (isset($columnRemoves[$tableName])) ? $columnRemoves[$tableName] : [];
+
                 $classCode1 = $this->generateCodeClass($tableName, $namespace, $custom, $relationsRepo, [], null, null,
-                    $baseClass, $modelname,$extraCols);
+                    $baseClass, $modelname, $extraCols, $columnRem);
                 $result = @file_put_contents($folder . "Abstract{$className}.php", $classCode1);
             } catch (Exception $e) {
                 $result = false;
@@ -3261,7 +3309,7 @@ eot;
                 try {
                     //$custom = (isset($customRelation[$tableName])) ? $customRelation[$tableName] : [];
                     $classModel1 = $this->generateAbstractModelClass($tableName, $namespaceModel, $custom,
-                        $relationsModel, [], null, null, $baseClass,$extraCols);
+                        $relationsModel, [], null, null, $baseClass, $extraCols, $columnRem);
 
                     $result = @file_put_contents($folderModel . 'Abstract' . $relationsModel[$tableName] . '.php',
                         $classModel1);
@@ -3391,6 +3439,7 @@ eot;
      * @param null   $defNoUpdate
      * @param null   $baseClass
      * @param array  $extraColumn
+     * @param array  $columnRemove
      *
      * @return string|string[]
      * @throws Exception
@@ -3404,7 +3453,8 @@ eot;
         $defNoInsert = null,
         $defNoUpdate = null,
         $baseClass = null,
-        $extraColumn=[]
+        $extraColumn = [],
+        $columnRemove = []
     ) {
         $r = <<<'eot'
 <?php
@@ -3538,6 +3588,7 @@ eot;
                 $pkref = $this->service->getPK($rel['reftable'], $pkref);
                 if ('' . self::$prefixBase . $pkref[0] === $rel['refcol'] && count($pkref) === 1) {
                     $relation[$k]['key'] = 'ONETOONE';
+                    $relation[$k]['refcol']=ltrim($relation[$k]['refcol'],'_');
                 }
             }
             if ($rel['key'] === 'MANYTOONE') {
@@ -3549,6 +3600,7 @@ eot;
                 ) {
                     // if they are linked by the pks and the pks are only 1.
                     $relation[$k]['key'] = 'ONETOONE';
+                    $relation[$k]['refcol']=ltrim($relation[$k]['refcol'],'_');
                 }
             }
         }
@@ -3595,6 +3647,11 @@ eot;
         //die(1);
 
         $gdf = $this->getDefTable($tableName, $specialConversion);
+
+        foreach ($columnRemove as $v) {
+            unset($gdf[$v]);
+        }
+
         $fields = [];
         $fieldsb = [];
         foreach ($gdf as $varn => $field) {
@@ -3612,7 +3669,7 @@ eot;
                     break;
             }
         }
-        foreach($extraColumn as $varn=>$value) {
+        foreach ($extraColumn as $varn => $value) {
             $fields[] = "\t/** @var mixed \$$varn extra column: $value */\n\tpublic \$$varn;";
             $fieldsb[] = "\t\t\$obj->$varn=isset(\$array['$varn']) ?  \$array['$varn'] : null;";
         }
@@ -3633,6 +3690,10 @@ eot;
                     $field2sb[] = "\t\t\$obj->$varn=isset(\$array['$varn']) ? 
             \$obj->$varn=$class::fromArray(\$array['$varn']) 
             : null; // manytoone";
+                    $col=ltrim($varn,'_');
+                    $rcol=$field['refcol'];
+                    $field2sb[] ="\t\t(\$obj->$varn !== null) 
+            and \$obj->{$varn}->{$rcol}=&\$obj->$col; // linked manytoone";
                     break;
                 case 'MANYTOMANY':
                     $class = $classRelations[$field['reftable']];
@@ -3657,6 +3718,13 @@ eot;
                     $field2sb[] = "\t\t\$obj->$varn=isset(\$array['$varn']) ?  
             \$obj->$varn=$class::fromArray(\$array['$varn']) 
             : null; // onetoone";
+
+                    $col=isset($field['col']) ? $field['col'] : $pkFirst;
+                    
+                    $rcol=$field['refcol'];
+                    
+                    $field2sb[] ="\t\t(\$obj->$varn !== null) 
+            and \$obj->{$varn}->{$rcol}=&\$obj->$col; // linked onetoone";
                     break;
             }
         }
@@ -3857,6 +3925,7 @@ eot;
                 $pkref = $this->service->getPK($rel['reftable'], $pkref);
                 if ('' . self::$prefixBase . $pkref[0] === $rel['refcol'] && count($pkref) === 1) {
                     $relation[$k]['key'] = 'ONETOONE';
+                    $relation[$k]['refcol']=ltrim($relation[$k]['refcol'],'_');
                 }
             }
             if ($rel['key'] === 'MANYTOONE') {
@@ -3868,6 +3937,7 @@ eot;
                 ) {
                     // if they are linked by the pks and the pks are only 1.
                     $relation[$k]['key'] = 'ONETOONE';
+                    $relation[$k]['refcol']=ltrim($relation[$k]['refcol'],'_');
                 }
             }
         }
@@ -4169,31 +4239,6 @@ eot;
             $extra
         ];
         return $prefix . hash($this->encryption->hashType, json_encode($all));
-    }
-
-    /**
-     * It returns a field, column or table, the quotes defined by the current database type. It doesn't considers points
-     * or space<br>
-     * <pre>
-     * $this->addQuote("aaa"); // [aaa] (sqlserver) `aaa` (mysql)
-     * $this->addQuote("[aaa]"); // [aaa] (sqlserver, unchanged)
-     * </pre>
-     *
-     * @param string $txt
-     *
-     * @return string
-     * @see \eftec\PdoOne::addDelimiter to considers points
-     */
-    public function addQuote($txt)
-    {
-        if (strlen($txt) < 2) {
-            return $txt;
-        }
-        if ($txt[0] === $this->database_delimiter0 && substr($txt, -1) === $this->database_delimiter1) {
-            // it is already quoted.
-            return $txt;
-        }
-        return $this->database_delimiter0 . $txt . $this->database_delimiter1;
     }
 
     /**
