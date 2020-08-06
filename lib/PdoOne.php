@@ -30,7 +30,7 @@ use stdClass;
  * @package       eftec
  * @author        Jorge Castro Castillo
  * @copyright (c) Jorge Castro C. MIT License  https://github.com/EFTEC/PdoOne
- * @version       1.55 2020-08-05
+ * @version       1.55.1 2020-08-05
  */
 class PdoOne
 {
@@ -3022,7 +3022,7 @@ eot;
             if ($key === 'MANYTOONE' || $key === 'ONETOONE') {
                 $col = ltrim($v['refcol'], '_');
                 $linked .= str_replace(['{_col}', '{refcol}', '{col}'], [$k, $v['refcol'], $col],
-                    "\t\tis_array(\$row['{_col}'])
+                    "\t\tisset(\$row['{_col}'])
             and \$row['{_col}']['{refcol}']=&\$row['{col}']; // linked $key\n");
             }
         }

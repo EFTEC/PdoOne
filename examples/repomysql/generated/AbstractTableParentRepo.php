@@ -164,9 +164,9 @@ abstract class AbstractTableParentRepo extends TestDb
 		!isset($row['fieldKey']) and $row['fieldKey']=null; // no conversion
 		$row['extracol']=isset($row['extracol']) ? PdoOne::dateConvert($row['extracol'], 'sql', 'human') : null;
 		!isset($row['extracol2']) and $row['extracol2']=null; // 
-		is_array($row['_idchildFK'])
+		isset($row['_idchildFK']) and is_array($row['_idchildFK'])
             and $row['_idchildFK']['idtablachildPK']=&$row['idtablachildPK']; // linked MANYTOONE
-		is_array($row['_TableParentExt'])
+        isset($row['_TableParentExt']) and is_array($row['_TableParentExt'])
             and $row['_TableParentExt']['idtablaparentExtPK']=&$row['idtablaparentExtPK']; // linked ONETOONE
 
     }

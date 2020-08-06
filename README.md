@@ -1590,6 +1590,8 @@ In a nutshell:
 * Every minor version means that it adds a new functionality i.e. 1.5 -> 1.6 (new methods)  
 * Every decimal version means that it patches/fixes/refactoring a previous functionality i.e. 1.5.0 -> 1.5.1 (fix)  
 
+* 1.55.1 2020-08-05
+  * In the generation of the code, changed is_array() by isset() 
 * 1.55 2020-8-05    
   * Updated generation of code. Now, the relations manytoony and onetoone returns linked values.   Linked values 
   are values that are linked (one of them is a pointer to the other value).        
