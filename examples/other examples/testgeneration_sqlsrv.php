@@ -5,7 +5,7 @@ use eftec\PdoOne;
 
 include '../vendor/autoload.php';
 include '../lib/_BasePdoOneRepo.php';
-include "Collection.php";
+include "../Collection.php";
 
 // connecting to database sakila at 127.0.0.1 with user root and password abc.123
 

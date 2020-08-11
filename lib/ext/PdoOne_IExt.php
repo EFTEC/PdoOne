@@ -78,7 +78,7 @@ interface PdoOne_IExt
      *
      * @param string $type
      *
-     * @return string
+     * @return string|null (null on error)
      * @throws Exception
      */
     public function objectExist($type = 'table');
@@ -90,7 +90,7 @@ interface PdoOne_IExt
      * @param string $type     =['table','function'][$i]
      * @param bool   $onlyName If true then it only returns the name of the objects
      *
-     * @return string|string[]
+     * @return string|string[]|null null on error
      * @throws Exception
      */
     public function objectList($type = 'table', $onlyName = false);

@@ -197,7 +197,7 @@ abstract class _BasePdoOneRepo
      * </pre>
      *
      * @param string     $sql   The query to run
-     * @param array|null $param [Optional] The arguments of the query in the form [type,value,type2,value2..]
+     * @param array|null $param [Optional] The arguments of the query in the form [value,value2..]
      *
      * @return array|bool|false|null
      * @throws Exception
@@ -442,6 +442,7 @@ abstract class _BasePdoOneRepo
      * @param int $numPage Number of page. It starts with 1.
      *
      * @return mixed
+     * @throws Exception
      */
     public static function page($numPage) {
         $p0=static::$pageSize * ($numPage-1);
@@ -1020,7 +1021,6 @@ abstract class _BasePdoOneRepo
                             . static::RELATIONS[$def['reftable']]; // $ns . PdoOne::camelize($def['reftable']) . $postfix;
                         foreach ($entity[$key] as $item) {
                             // we only insert it if it has a recursive
-                            // TODO : CHECK RECURSIVE FOR INSERT AND UPDATE ***********
                             $refCol = ltrim($def['refcol'], PdoOne::$prefixBase);
                             $item[$refCol]
                                 = $entityCopy[$def['col']]; // if the pk (of the original object) is identity.

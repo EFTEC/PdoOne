@@ -7,6 +7,7 @@ namespace eftec\ext;
 
 
 use eftec\PdoOne;
+use Exception;
 use PDO;
 
 /**
@@ -96,7 +97,7 @@ class PdoOne_Mysql implements PdoOne_IExt
         $fkArr = $this->parent->select('k.CONSTRAINT_NAME,k.COLUMN_NAME,k.REFERENCED_TABLE_NAME,k.REFERENCED_COLUMN_NAME
                     ,c.UPDATE_RULE,c.DELETE_RULE')->from('INFORMATION_SCHEMA.KEY_COLUMN_USAGE k')->innerjoin('information_schema.REFERENTIAL_CONSTRAINTS c 
                         ON k.referenced_table_schema=c.CONSTRAINT_SCHEMA AND k.CONSTRAINT_NAME=c.CONSTRAINT_NAME')
-            ->where('k.TABLE_SCHEMA=? AND k.TABLE_NAME = ?', ['s', $this->parent->db, 's', $table])
+            ->where('k.TABLE_SCHEMA=? AND k.TABLE_NAME = ?', [ $this->parent->db,$table])
             ->order('k.COLUMN_NAME')->toList();
 
         /*echo "table:";
@@ -175,8 +176,7 @@ class PdoOne_Mysql implements PdoOne_IExt
             default:
                 $this->parent->throwError("objectExist: type [$type] not defined for {$this->parent->databaseType}",
                     '');
-                die(1);
-                break;
+                return null;
         }
 
         return $query;
@@ -202,8 +202,7 @@ class PdoOne_Mysql implements PdoOne_IExt
             default:
                 $this->parent->throwError("objectExist: type [$type] not defined for {$this->parent->databaseType}",
                     '');
-                die(1);
-                break;
+                return null;
         }
 
         return $query;
@@ -396,7 +395,7 @@ class PdoOne_Mysql implements PdoOne_IExt
             }
             $pkAsArray = (is_array($pk)) ? $pk : array($pk);
             return count($pkResult) === 0 ? $pkAsArray : $pkResult;
-        } catch (\Exception $ex) {
+        } catch (Exception $ex) {
             return false;
         }
     }

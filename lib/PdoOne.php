@@ -1,5 +1,7 @@
 <?php
-/** @noinspection OnlyWritesOnParameterInspection
+/**
+ * @noinspection UnknownInspectionInspection
+ * @noinspection OnlyWritesOnParameterInspection
  * @noinspection TypeUnsafeComparisonInspection
  * @noinspection NestedTernaryOperatorInspection
  * @noinspection DuplicatedCode
@@ -183,16 +185,17 @@ class PdoOne
     /** @var array */
     private $where = [];
 
-    /** @var int[] PDO::PARAM_STR,PDO::PARAM_INT,PDO::PARAM_BOOL */
-    private $whereParamType = [];
+    /** @var array parameters for the set. [paramvar,value,type,size] */
+    private $setParamAssoc = [];
+    /** @var array parameters for the where. [paramvar,value,type,size] */
+    private $whereParamAssoc = [];
+    /** @var array parameters for the having. [paramvar,value,type,size] */
+    private $havingParamAssoc = [];
 
-    /** @var null|array */
-    private $whereParamAssoc;
-
-    private $whereCounter = 0;
+    private $whereCounter = 1;
 
     /** @var array */
-    private $whereParamValue = [];
+    //private $whereParamValue = [];
 
     /** @var array */
     private $set = [];
@@ -534,7 +537,7 @@ class PdoOne
     }
 
     /**
-     * Returns the current date(and time) in the regular format. (Y-m-d\TH:i:s\Z in long format)
+     * Returns the current (PHP server) date and time in the regular format. (Y-m-d\TH:i:s\Z in long format)
      *
      * @param bool $hasTime
      * @param bool $hasMicroseconds
@@ -1168,8 +1171,7 @@ eot;
             $this->isOpen = true;
         } catch (Exception $ex) {
             $this->isOpen = false;
-            $this->throwError("Failed to connect to {$this->databaseType}", $ex->getMessage(),
-                '\nTRACE:' . $ex->getTraceAsString());
+            $this->throwError("Failed to connect to {$this->databaseType}", $ex->getMessage(), '', true, $ex);
         }
     }
 
@@ -1177,38 +1179,45 @@ eot;
      * Write a log line for debug, clean the command chain then throw an error
      * (if throwOnError==true)
      *
-     * @param string       $txt            The message to show.
-     * @param string       $txtExtra       It's only used if $logLevel>=2. It
+     * @param string         $txt          The message to show.
+     * @param string         $txtExtra     It's only used if $logLevel>=2. It
      *                                     shows an extra message
-     * @param string|array $extraParam     It's only used if $logLevel>=3  It
+     * @param string|array   $extraParam   It's only used if $logLevel>=3  It
      *                                     shows parameters (if any)
      *
-     * @param bool         $throwError     if true then it throw error (is enabled). Otherwise it store the error.
+     * @param bool           $throwError   if true then it throw error (is enabled). Otherwise it store the error.
      *
-     * @throws Exception
+     * @param null|Exception $exception
+     *
      * @see \eftec\PdoOne::$logLevel
      */
-    public function throwError($txt, $txtExtra, $extraParam = '', $throwError = true)
+    public function throwError($txt, $txtExtra, $extraParam = '', $throwError = true, $exception = null)
     {
         if ($this->logLevel === 0) {
             $txt = 'Error on database';
         }
         if ($this->logLevel >= 2) {
-            $txt .= $txtExtra;
+            $txt .= "\n<br><b>extra:</b>[{$txtExtra}]";
         }
         if ($this->logLevel >= 2) {
-            $txt .= ".\nLast query:[{$this->lastQuery}].";
+            $txt .= "\n<br><b>last query:</b>[{$this->lastQuery}]";
         }
         if ($this->logLevel >= 3) {
-            $txt .= "\nDatabase:" . $this->server . ' - ' . $this->db;
+            $txt .= "\n<br><b>database:</b>" . $this->server . ' - ' . $this->db;
             if (is_array($extraParam)) {
-                $txt .= "\nParams :[";
-                foreach ($extraParam as $key => $item) {
-                    $txt .= "\n$key = [$item] (" . strlen($item) . '),';
+                foreach ($extraParam as $k => $v) {
+                    if (is_array($v) || is_object($v)) {
+                        $v = json_encode($v);
+                    }
+                    $txt .= "\n<br><b>$k</b>:$v";
                 }
-                $txt .= ']';
             } else {
-                $txt .= "\nParams :[" . $extraParam . ']';
+                $txt .= "\n<br><b>Params :</b>[" . $extraParam . "]\n<br>";
+            }
+            if ($exception !== null) {
+                $txt .= "\n<br><b>message :</b>[" . str_replace("\n", "\n<br>", $exception->getMessage()) . "]";
+                $txt .= "\n<br><b>trace :</b>[" . str_replace("\n", "\n<br>", $exception->getTraceAsString()) . "]";
+                $txt .= "\n<br><b>code :</b>[" . str_replace("\n", "\n<br>", $exception->getCode()) . "]\n<br>";
             }
         }
         if ($this->getMessages() === null) {
@@ -1287,10 +1296,13 @@ eot;
         $this->useCache = false;
         $this->from = '';
         $this->where = [];
-        $this->whereParamType = [];
-        $this->whereParamAssoc = null;
-        $this->whereCounter = 0;
-        $this->whereParamValue = [];
+
+        $this->whereParamAssoc = [];
+        $this->setParamAssoc = [];
+        $this->havingParamAssoc = [];
+
+        $this->whereCounter = 1;
+        //$this->whereParamValue = [];
         $this->set = [];
         $this->group = '';
         $this->recursive = [];
@@ -1382,15 +1394,18 @@ eot;
     }
 
     /**
-     * It runs an unprepared query.
+     * It runs a raw query
      * <br><b>Example</b>:<br>
      * <pre>
-     * $values=$con->runRawQuery('select * from table where id=?',["i",20]',true);
+     * $values=$con->runRawQuery('select * from table where id=?',[20]',true); // with parameter
+     * $values=$con->runRawQuery('select * from table where id=:name',['name'=>20]',true); // with named parameter
+     * $values=$con->runRawQuery('select * from table,[]',true); // without parameter.
+     ** $values=$con->runRawQuery('select * from table where id=?,[[1,20,PDO::PARAM_INT]]',true); // a full parameter.
      * </pr>
      *
-     * @param string     $rawSql
-     * @param array|null $param
-     * @param bool       $returnArray
+     * @param string     $rawSql      The query to execute
+     * @param array|null $param       [type1,value1,type2,value2] or [name1=>value,name2=value2]
+     * @param bool       $returnArray if true then it returns an array. If false then it returns a PDOStatement
      *
      * @return bool|PDOStatement|array an array of associative or a pdo
      *     statement
@@ -1432,18 +1447,32 @@ eot;
         $counter = 0;
         if ($this->isAssoc($param)) {
             $this->lastBindParam = $param;
+            // [':name'=>value,':name2'=>value2];
             foreach ($param as $k => $v) {
-                $counter++;
-                $stmt->bindParam($k, $v);
+                // note: the second field is & so we could not use $v
+                $stmt->bindParam($k, $param[$k], $this->getType($v));
             }
         } else {
+            // parameters numeric
             $this->lastBindParam = [];
-            $c = count($param);
-            for ($i = 0; $i < $c; $i += 2) {
-                $counter++;
-                $typeP = $this->stringToPdoParam($param[$i]);
-                $this->lastBindParam[$counter] = $param[$i + 1];
-                $stmt->bindParam($counter, $param[$i + 1], $typeP);
+            $f = reset($param);
+            if (is_array($f)) {
+                // arrays of arrays.
+                // [[name1,value1,type1,l1],[name2,value2,type2,l1]]
+                foreach ($param as $k => $v) {
+                    $this->lastBindParam[$counter] = $v[0];
+                    // note: the second field is & so we could not use $v
+                    $stmt->bindParam($v[0], $param[$k][1], $v[2], $v[3]);
+                }
+            } else {
+                // [value1,value2]
+                foreach ($param as $i => $iValue) {
+                    //$counter++;
+                    //$typeP = $this->stringToPdoParam($param[$i]);
+                    $this->lastBindParam[$i] = $param[$i];
+                    //$stmt->bindParam($counter, $param[$i + 1], $typeP);
+                    $stmt->bindParam($i + 1, $param[$i], $this->getType($param[$i]));
+                }
             }
         }
 
@@ -1499,14 +1528,14 @@ eot;
         // the "where" chain doesn't have parameters.
         try {
             $rows = $this->conn1->query($rawSql);
+            if ($rows === false) {
+                throw new RuntimeException('Unable to run raw runRawQueryParamLess', 9001);
+            }
         } catch (Exception $ex) {
             $rows = false;
-            $this->throwError('Exception in runRawQueryParamLess :', $rawSql,
-                json_encode($this->lastParam) . '\nTRACE:' . $ex->getTraceAsString());
+            $this->throwError('Exception in runRawQueryParamLess :', $rawSql, ['param' => $this->lastParam], true, $ex);
         }
-        if ($rows === false) {
-            $this->throwError('Unable to run raw runRawQueryParamLess', $rawSql, $this->lastParam);
-        }
+
 
         if ($returnArray && $rows instanceof PDOStatement) {
             if ($rows->columnCount() > 0) {
@@ -1558,11 +1587,10 @@ eot;
             $stmt = $this->conn1->prepare($statement);
         } catch (Exception $ex) {
             $stmt = false;
-            $this->throwError('Failed to prepare', $ex->getMessage(),
-                json_encode($this->lastParam) . '\nTRACE:' . $ex->getTraceAsString());
+            $this->throwError('Failed to prepare', $ex->getMessage(), ['param' => $this->lastParam]);
         }
         if ($stmt === false) {
-            $this->throwError('Unable to prepare query', $this->lastQuery, json_encode($this->lastParam));
+            $this->throwError('Unable to prepare query', $this->lastQuery, ['param' => $this->lastParam]);
         }
 
         return $stmt;
@@ -1598,33 +1626,36 @@ eot;
     //<editor-fold desc="Date functions" defaultstate="collapsed" >
 
     /**
-     * It converts a simple type 'b','i','d','f','s' as a pdo type PDO:PARAM_*<br>
+     * @param mixed $v Variable
      *
-     * @param string|int $string
-     *
-     * @return int|null
+     * @return int=[PDO::PARAM_STR,PDO::PARAM_INT,PDO::PARAM_BOOL][$i]
+     * @test equals PDO::PARAM_STR,(20.3)
+     * @test equals PDO::PARAM_STR,('hello')
      */
-    private function stringToPdoParam($string)
+    private function getType(&$v)
     {
-        if (is_int($string)) {
-            // if the parameter is expressed as numeric, then it's returned as is.
-            return $string;
-        }
-        switch ($string) {
-            case 'b':
-                return PDO::PARAM_BOOL;
-            case 'i':
-                return PDO::PARAM_INT;
-            case 'd':
-            case 'f':
-            case 's':
-                // decimal, float, date and strings are expressed in the same way
-                return PDO::PARAM_STR;
-            default:
-                trigger_error("param type not defined [$string]");
+        switch (1) {
+            case (is_float($v)):
+            case ($v === null):
+                $vt = PDO::PARAM_STR;
+                break;
+            case (is_numeric($v)):
+                $vt = PDO::PARAM_INT;
+                break;
+            case (is_bool($v)):
 
-                return null;
+                $vt = PDO::PARAM_INT;
+                $v = ($v) ? 1 : 0;
+                break;
+            case (is_object($v) && $v instanceof DateTime):
+                $vt = PDO::PARAM_STR;
+                $v = self::dateTimePHP2Sql($v);
+                break;
+            default:
+                $vt = PDO::PARAM_STR;
         }
+
+        return $vt;
     }
 
     /**
@@ -1652,16 +1683,16 @@ eot;
             return null;
         }
         try {
-            $namedArgument = ($namedArgument === null) ? $this->whereParamAssoc : $namedArgument;
+            //$namedArgument = ($namedArgument === null) 
+            //    ? array_merge($this->setParamAssoc,$this->whereParamAssoc,$this->havingParamAssoc) : $namedArgument;
             $r = $stmt->execute($namedArgument);
         } catch (Exception $ex) {
-            $this->throwError($this->databaseType . ':Failed to run query <b>',
-                $this->lastQuery . "\n</b>CAUSE: " . $ex->getMessage(),
-                json_encode($this->lastParam) . '\nTRACE:' . $ex->getTraceAsString(), $throwError);
+            $this->throwError($this->databaseType . ':Failed to run query', $this->lastQuery,
+                ['param' => $this->lastParam], $throwError, $ex);
             return false;
         }
         if ($r === false) {
-            $this->throwError('Exception query ', $this->lastQuery, $this->lastParam, $throwError);
+            $this->throwError('Exception query ', $this->lastQuery, ['param' => $this->lastParam], $throwError);
             return false;
         }
 
@@ -1886,14 +1917,6 @@ eot;
                         }
                     }
                     if (@$after[$table][$name]) {
-                        //$colName = $name . '.' . $after[$table][$name];
-                        /*echo "<hr>";
-                        var_dump($name);
-                        var_dump($table);
-                        var_dump($after);
-                        echo "<hr>";
-                        die(1);*/
-                        //$colName = '/' . $after[$table][$name];
                         if (!$defaultNull) {
                             if ($classRelations === null || !isset($classRelations[$after[$table][$name]])) {
                                 $className = self::camelize($after[$table][$name]) . 'Repo';
@@ -1960,7 +1983,7 @@ eot;
         if ($sql === null) {
             $this->beginTry();
             /** @var PDOStatement $stmt */
-            $stmt = $this->runGen(false, PDO::FETCH_ASSOC, 'tometa');
+            $stmt = $this->runGen(false, PDO::FETCH_ASSOC, 'tometa', $this->genError);
             if ($this->endtry() === false) {
                 return false;
             }
@@ -2016,27 +2039,28 @@ eot;
         $throwError = true
     ) {
         $this->errorText = '';
+        $allparam = '';
         $sql = $this->sqlGen();
-        /** @var PDOStatement $stmt */
-        $stmt = $this->prepare($sql);
-        if ($stmt === null) {
+        try {
+            $allparam = array_merge($this->setParamAssoc, $this->whereParamAssoc, $this->havingParamAssoc);
+            /** @var PDOStatement $stmt */
+            $stmt = $this->prepare($sql);
+        } catch (Exception $e) {
+            $this->throwError('Error in prepare runGen', $extraIdCache, ['values' => $allparam], $throwError, $e);
             $this->builderReset();
             return false;
         }
-        $values = array_values($this->whereParamValue);
-        if (count($this->whereParamType)) {
-            $counter = 0;
-            $reval = true;
-            $this->lastBindParam = [];
-            foreach ($this->whereParamType as $k => $v) {
-                $counter++;
-                $typeP = $this->stringToPdoParam($this->whereParamType[$k]);
-                $this->lastBindParam[$counter] = $values[$k];
-                $reval = $reval && $stmt->bindParam($counter, $values[$k], $typeP);
+        if ($stmt === null || $stmt === false) {
+            $this->builderReset();
+            return false;
+        }
+        $reval = true;
+        if ($allparam != null) {
+            foreach ($allparam as $k => $v) {
+                $reval = $reval && $stmt->bindParam($v[0], $allparam[$k][1], $v[2]);
             }
             if (!$reval) {
-                $this->throwError('Error in bind', '',
-                    'type: ' . json_encode($this->whereParamType) . ' values:' . json_encode($values), $throwError);
+                $this->throwError('Error in bind', $extraIdCache, ['values' => $allparam], $throwError);
                 $this->builderReset();
                 return false;
             }
@@ -2056,7 +2080,6 @@ eot;
             $this->uid = null;
         }
         $this->runQuery($stmt, null, false);
-
         if ($returnArray && $stmt instanceof PDOStatement) {
             $result = ($stmt->columnCount() > 0) ? $stmt->fetchAll($extraMode) : [];
             $this->affected_rows = $stmt->rowCount();
@@ -2099,17 +2122,8 @@ eot;
         } else {
             $sql .= $this->from;
         }
-        if (!in_array('where', $words) && count($this->where)) {
-            $where = ' where ' . implode(' and ', $this->where);
-            //$where = implode(' and ', $this->where);
-        } else {
-            $where = '';
-        }
-        if (count($this->having)) {
-            $having = ' having ' . implode(' and ', $this->having);
-        } else {
-            $having = '';
-        }
+        $where = $this->constructWhere();
+        $having = $this->constructHaving();
 
         $sql .= $where . $this->group . $having . $this->order . $this->limit;
 
@@ -2121,6 +2135,25 @@ eot;
     }
 
     /**
+     * @return string
+     */
+    private function constructWhere()
+    {
+        return count($this->where) ? ' where ' . implode(' and ', $this->where) : '';
+    }
+    //</editor-fold>
+
+    //<editor-fold desc="Query Builder functions" defaultstate="collapsed" >
+
+    /**
+     * @return string
+     */
+    private function constructHaving()
+    {
+        return count($this->having) ? ' having ' . implode(' and ', $this->having) : '';
+    }
+
+    /**
      * It ends a try block and throws the error (if any)
      *
      * @return bool
@@ -2129,14 +2162,11 @@ eot;
     private function endTry()
     {
         if ($this->errorText) {
-            $this->throwError($this->errorText, '', '', $this->isThrow);
+            $this->throwError('endtry:' . $this->errorText, '', '', $this->isThrow);
             return false;
         }
         return true;
     }
-    //</editor-fold>
-
-    //<editor-fold desc="Query Builder functions" defaultstate="collapsed" >
 
     /**
      * It returns an array with all the tables of the schema, also the foreign key and references  of each table<br>
@@ -2532,8 +2562,8 @@ abstract class Abstract{classname} extends {baseclass}
      * <b>Example:</b><br>
      * <pre>
      * self::where(['col'=>'value'])::toList();
-     * self::where(['col']=>['s','value'])::toList(); // s= string/double/date, i=integer, b=bool
-     * self::where(['col=?']=>['s','value'])::toList(); // s= string/double/date, i=integer, b=bool
+     * self::where(['col']=>['value'])::toList(); // s= string/double/date, i=integer, b=bool
+     * self::where(['col=?']=>['value'])::toList(); // s= string/double/date, i=integer, b=bool
      * </pre>
      * 
      * @param array|string   $sql =self::factory()
@@ -2835,7 +2865,7 @@ eot;
                 $pkref = $this->service->getPK($rel['reftable'], $pkref);
                 if (self::$prefixBase . $pkref[0] === $rel['refcol'] && count($pkref) === 1) {
                     $relation[$k]['key'] = 'ONETOONE';
-                    $relation[$k]['refcol']=ltrim($relation[$k]['refcol'],self::$prefixBase);
+                    $relation[$k]['refcol'] = ltrim($relation[$k]['refcol'], self::$prefixBase);
                 }
             }
             if ($rel['key'] === 'MANYTOONE') {
@@ -2846,7 +2876,7 @@ eot;
                 ) {
                     // if they are linked by the pks and the pks are only 1.
                     $relation[$k]['key'] = 'ONETOONE';
-                    $relation[$k]['refcol']=ltrim($relation[$k]['refcol'],self::$prefixBase);
+                    $relation[$k]['refcol'] = ltrim($relation[$k]['refcol'], self::$prefixBase);
                 }
             }
         }
@@ -2860,6 +2890,7 @@ eot;
                         // the table must has 2 primary keys.
                         $pks = null;
                         $pks = $this->service->getPK($relation[$k]['reftable'], $pks);
+                        /** @noinspection PhpParamsInspection */
                         if ($pks !== false || count($pks) === 2) {
                             $relation[$k]['key'] = 'MANYTOMANY';
                             $refcol2 = (self::$prefixBase . $pks[0] === $relation[$k]['refcol']) ? $pks[1] : $pks[0];
@@ -2894,7 +2925,6 @@ eot;
         $convertInput = '';
         $getDefTable = $this->getDefTable($tableName, $specialConversion);
 
-        //var_dump($getDefTable);
         foreach ($columnRemove as $v) {
             unset($getDefTable[$v]);
         }
@@ -3021,8 +3051,7 @@ eot;
             $key = $v['key'];
             if ($key === 'MANYTOONE' || $key === 'ONETOONE') {
                 $col = ltrim($v['refcol'], '_');
-                $linked .= str_replace(['{_col}', '{refcol}', '{col}'], [$k, $v['refcol'], $col],
-                    "\t\tisset(\$row['{_col}'])
+                $linked .= str_replace(['{_col}', '{refcol}', '{col}'], [$k, $v['refcol'], $col], "\t\tisset(\$row['{_col}'])
             and \$row['{_col}']['{refcol}']=&\$row['{col}']; // linked $key\n");
             }
         }
@@ -3588,7 +3617,7 @@ eot;
                 $pkref = $this->service->getPK($rel['reftable'], $pkref);
                 if ('' . self::$prefixBase . $pkref[0] === $rel['refcol'] && count($pkref) === 1) {
                     $relation[$k]['key'] = 'ONETOONE';
-                    $relation[$k]['refcol']=ltrim($relation[$k]['refcol'],self::$prefixBase);
+                    $relation[$k]['refcol'] = ltrim($relation[$k]['refcol'], self::$prefixBase);
                 }
             }
             if ($rel['key'] === 'MANYTOONE') {
@@ -3600,7 +3629,7 @@ eot;
                 ) {
                     // if they are linked by the pks and the pks are only 1.
                     $relation[$k]['key'] = 'ONETOONE';
-                    $relation[$k]['refcol']=ltrim($relation[$k]['refcol'],self::$prefixBase);
+                    $relation[$k]['refcol'] = ltrim($relation[$k]['refcol'], self::$prefixBase);
                 }
             }
         }
@@ -3614,6 +3643,7 @@ eot;
                         // the table must has 2 primary keys.
                         $pks = null;
                         $pks = $this->service->getPK($relation[$k]['reftable'], $pks);
+                        /** @noinspection PhpParamsInspection */
                         if ($pks !== false || count($pks) === 2) {
                             $relation[$k]['key'] = 'MANYTOMANY';
                             $refcol2 = ('' . self::$prefixBase . $pks[0] === $relation[$k]['refcol']) ? $pks[1]
@@ -3690,9 +3720,9 @@ eot;
                     $field2sb[] = "\t\t\$obj->$varn=isset(\$array['$varn']) ? 
             \$obj->$varn=$class::fromArray(\$array['$varn']) 
             : null; // manytoone";
-                    $col=ltrim($varn,self::$prefixBase);
-                    $rcol=$field['refcol'];
-                    $field2sb[] ="\t\t(\$obj->$varn !== null) 
+                    $col = ltrim($varn, self::$prefixBase);
+                    $rcol = $field['refcol'];
+                    $field2sb[] = "\t\t(\$obj->$varn !== null) 
             and \$obj->{$varn}->{$rcol}=&\$obj->$col; // linked manytoone";
                     break;
                 case 'MANYTOMANY':
@@ -3719,11 +3749,11 @@ eot;
             \$obj->$varn=$class::fromArray(\$array['$varn']) 
             : null; // onetoone";
 
-                    $col=isset($field['col']) ? $field['col'] : $pkFirst;
-                    
-                    $rcol=$field['refcol'];
-                    
-                    $field2sb[] ="\t\t(\$obj->$varn !== null) 
+                    $col = isset($field['col']) ? $field['col'] : $pkFirst;
+
+                    $rcol = $field['refcol'];
+
+                    $field2sb[] = "\t\t(\$obj->$varn !== null) 
             and \$obj->{$varn}->{$rcol}=&\$obj->$col; // linked onetoone";
                     break;
             }
@@ -3925,7 +3955,7 @@ eot;
                 $pkref = $this->service->getPK($rel['reftable'], $pkref);
                 if ('' . self::$prefixBase . $pkref[0] === $rel['refcol'] && count($pkref) === 1) {
                     $relation[$k]['key'] = 'ONETOONE';
-                    $relation[$k]['refcol']=ltrim($relation[$k]['refcol'],self::$prefixBase);
+                    $relation[$k]['refcol'] = ltrim($relation[$k]['refcol'], self::$prefixBase);
                 }
             }
             if ($rel['key'] === 'MANYTOONE') {
@@ -3937,7 +3967,7 @@ eot;
                 ) {
                     // if they are linked by the pks and the pks are only 1.
                     $relation[$k]['key'] = 'ONETOONE';
-                    $relation[$k]['refcol']=ltrim($relation[$k]['refcol'],self::$prefixBase);
+                    $relation[$k]['refcol'] = ltrim($relation[$k]['refcol'], self::$prefixBase);
                 }
             }
         }
@@ -3951,6 +3981,7 @@ eot;
                         // the table must has 2 primary keys.
                         $pks = null;
                         $pks = $this->service->getPK($relation[$k]['reftable'], $pks);
+                        /** @noinspection PhpParamsInspection */
                         if ($pks !== false || count($pks) === 2) {
                             $relation[$k]['key'] = 'MANYTOMANY';
                             $refcol2 = ('' . self::$prefixBase . $pks[0] === $relation[$k]['refcol']) ? $pks[1]
@@ -4223,13 +4254,15 @@ eot;
      */
     public function buildUniqueID($extra = null, $prefix = '')
     {
+        // set and setparam are not counted
         $all = [
             $this->select,
             $this->from,
             $this->where,
-            $this->whereParamType,
             $this->whereParamAssoc,
-            $this->whereParamValue,
+            $this->havingParamAssoc,
+            // $this->setParamAssoc,
+            //$this->whereParamValue,
             $this->group,
             $this->recursive,
             $this->having,
@@ -4790,7 +4823,7 @@ BOOTS;
     {
         $query = $this->service->objectExist($type);
 
-        $arr = $this->runRawQuery($query, [PDO::PARAM_STR, $objectName], true);
+        $arr = $this->runRawQuery($query, [$objectName], true);
         return is_array($arr) && count($arr) > 0;
     }
 
@@ -5157,8 +5190,8 @@ BOOTS;
      * $this->createFK('table',['col'=>"FOREIGN KEY REFERENCES[tableref]([colref])"]); // sqlsrv
      * </pre>
      *
-     * @param $tableName
-     * @param $definition
+     * @param string $tableName  The name of the table.
+     * @param array  $definition Associative array with the definition (SQL) of the foreign keys.
      *
      * @return bool
      * @throws Exception
@@ -5172,7 +5205,7 @@ BOOTS;
     /**
      * Returns true if the sql starts with "select " or with "show ".
      *
-     * @param string $sql
+     * @param string $sql The query
      *
      * @return bool
      */
@@ -5251,7 +5284,7 @@ BOOTS;
     /**
      * Rollback and close a transaction
      *
-     * @param bool $throw if true and it fails then it throws an error.
+     * @param bool $throw [optional] if true and it fails then it throws an error.
      *
      * @return bool
      * @throws Exception
@@ -5285,8 +5318,8 @@ BOOTS;
      * table<br>
      * </pre>
      *
-     * @param string|null $sql
-     * @param string      $arg
+     * @param string|null $sql [optional]
+     * @param string      $arg [optional]
      *
      * @return PdoOne
      */
@@ -5440,16 +5473,17 @@ BOOTS;
     /**
      * It sets a value into the query (insert or update)<br>
      * <b>Example:</b><br>
-     *      ->from("table")->set('field1=?,field2=?',['i',20,'s','hello'])->insert()<br>
-     *      ->from("table")->set("type=?",['i',6])->where("i=1")->update()<br>
+     *      ->from("table")->set('field1=?,field2=?',[20,'hello'])->insert()<br>
+     *      ->from("table")->set("type=?",[6])->where("i=1")->update()<br>
      *      set("type=?",6) // automatic<br>
      *
      * @param string|array $sqlOrArray
      * @param array|mixed  $param
      *
+     *
      * @return PdoOne
      * @test InstanceOf
-     *       PdoOne::class,this('field1=?,field2=?',['i',20,'s','hello'])
+     *       PdoOne::class,this('field1=?,field2=?',[20,'hello'])
      */
     public function set($sqlOrArray, $param = self::NULL)
     {
@@ -5457,160 +5491,185 @@ BOOTS;
             return $this;
         }
         if (count($this->where)) {
-            trigger_error("you can't execute set() after a where()");
-            //$this->throwError("you can't execute set() after a where()","");
-        }
-        if (is_string($sqlOrArray)) {
-            $this->set[] = $sqlOrArray;
-            // self::NULL  is used when no value is set. We can't use null because it is a valid option.
-            if ($param === self::NULL) {
-                return $this;
-            }
-            if (is_array($param)) {
-                $cp = count($param);
-                for ($i = 0; $i < $cp; $i += 2) {
-                    $this->whereParamType[] = $param[$i];
-                    $this->whereParamValue['i_' . $this->whereCounter] = $param[$i + 1];
-                    $this->whereCounter++;
-                }
-            } else {
-                $this->whereParamType[] = 's';
-                $this->whereParamValue['i_' . $this->whereCounter] = $param;
-                $this->whereCounter++;
-            }
-        } else {
-            $col = [];
-            $colT = [];
-            $p = [];
-            $this->constructParam($sqlOrArray, $param, $col, $colT, $p);
-            foreach ($col as $k => $c) {
-                $this->set[] = $this->addDelimiter($c) . '=?';
-                $this->whereParamType[] = $p[$k * 2];
-                $this->whereParamValue['i_' . $this->whereCounter] = $p[$k * 2 + 1];
-                $this->whereCounter++;
-            }
+            $this->throwError('method set() must be before where()', 'set');
+            return $this;
         }
 
+        $this->constructParam2($sqlOrArray, $param, 'set', false);
         return $this;
     }
 
     /**
-     * @param array|null|int $tableDefs   It could be a definition with or
-     *                                    without values. If null then it is
-     *                                    defined automatically by $arrayValue.
-     * @param array|int      $values      if value is self::NULL then it's
-     *                                    calculated without this value
-     * @param array          $col
-     * @param array          $colT
-     * @param array          $param
+     * <b>Example:</b><br>
+     *      where( ['field'=>20] ) // associative array with automatic type
+     *      where( ['field'=>[20]] ) // associative array with type defined
+     *      where( ['field',20] ) // indexed array automatic type
+     *      where (['field',[20]] ) // indexed array type defined
+     *      where('field=20') // literal value
+     *      where('field=?',[20]) // automatic type
+     *      where('field',[20]) // automatic type (it's the same than
+     *      where('field=?',[20]) where('field=?', [20] ) // type(i,d,s,b)
+     *      defined where('field=?,field2=?', [20,'hello'] )
+     *      where('field=:field,field2=:field2',
+     *      ['field'=>'hello','field2'=>'world'] ) // associative array as value
      *
-     * @noinspection NotOptimalIfConditionsInspection
+     * @param array|string     $where
+     * @param string|array|int $params
+     * @param string           $type
+     * @param bool             $return
+     *
+     * @return array|null
      */
-    private function constructParam($tableDefs, $values, &$col, &$colT, &$param)
+    public function constructParam2($where, $params = PdoOne::NULL, $type = 'where', $return = false)
     {
-        if ($tableDefs === null || $this->isAssoc($tableDefs)) {
-            if ($values === self::NULL && $tableDefs !== null) {
-                // the type is calculated automatically. It could fails and it doesn't work with blob
-                reset($tableDefs);
-                foreach ($tableDefs as $k => $v) {
-                    if ($colT === null) {
-                        $col[] = $this->addDelimiter($k) . '=?';
-                    } else {
-                        $col[] = $this->addDelimiter($k);
-                        $colT[] = '?';
+        $queryEnd = [];
+        $named = [];
+        $pars = [];
+
+        if ($params === self::NULL || $params === null) {
+            if (is_array($where)) {
+                $numeric = isset($where[0]);
+                if ($numeric) {
+                    // numeric
+                    $c = count($where) - 1;
+                    for ($i = 0; $i < $c; $i += 2) {
+                        $v = $where[$i + 1];
+                        // constructParam2(['field',20]])
+                        $param = [$this->whereCounter, $v, $this->getType($v), null];
+                        $queryEnd[] = $where[$i];
+                        $named[] = '?';
+                        $this->whereCounter++;
+                        $pars[] = $param;
                     }
-                    $vt = $this->getType($v);
-                    $param[] = $vt;
-                    $param[] = $v;
+                } else {
+                    // named
+                    foreach ($where as $k => $v) {
+                        if (strpos($k, ':') !== false && strpos($k, '?') !== false) {
+                            $paramName = ':' . $k;
+                            $named[] = $paramName;
+                        } else {
+                            $paramName = $this->whereCounter;
+                            $this->whereCounter++;
+                            $named[] = '?';
+                        }
+                        // constructParam2(['field'=>20])
+                        $param = [$paramName, $v, $this->getType($v), null];
+                        $pars[] = $param;
+                        $queryEnd[] = $k;
+                    }
                 }
             } else {
-                if ($tableDefs === null) {
-                    $tableDefs = $values;
-                    if (is_array($tableDefs)) {
-                        foreach ($tableDefs as $k => $v) {
-                            $tableDefs[$k] = 's';
-                        }
-                    }
-                }
-                // it uses two associative array, one for the type and another for the value
-                if (is_array($tableDefs)) {
-                    foreach ($tableDefs as $k => $v) {
-                        if ($colT === null) {
-                            $col[] = $this->addDelimiter($k) . '=?';
-                        } else {
-                            $col[] = $this->addDelimiter($k);
-                            $colT[] = '?';
-                        }
-
-                        $param[] = $v;
-                        $param[] = @$values[$k];
-                    }
-                }
-            }
-        } elseif ($values === self::NULL) {
-            // it uses a single list, the first value is the column, the second value
-            // is the type and the third is the value
-            if (is_array($tableDefs)) {
-                $ctd = count($tableDefs);
-                for ($i = 0; $i < $ctd; $i += 3) {
-                    if ($colT === null) {
-                        $col[] = $this->addDelimiter($tableDefs[$i]) . '=?';
-                    } else {
-                        $col[] = $tableDefs[$i];
-                        $colT[] = '?';
-                    }
-                    $param[] = $tableDefs[$i + 1];
-                    $param[] = $tableDefs[$i + 2];
-                }
+                // constructParam2('query=xxx')
+                $named[] = '';
+                $queryEnd[] = $where;
             }
         } else {
-            // it uses two list, the first value of the first list is the column, the second value is the type
-            // , the second list only contains values.
-            $ctd = count($tableDefs);
-            for ($i = 0; $i < $ctd; $i += 2) {
-                if ($colT === null) {
-                    $col[] = $this->addDelimiter($tableDefs[$i]) . '=?';
+            // where and params are not empty
+            if (!is_array($params)) {
+                $params = [$params];
+            }
+            if (!is_array($where)) {
+                $queryEnd[] = $where;
+                $numeric = isset($params[0]);
+                if ($numeric) {
+                    foreach ($params as $k => $v) {
+                        // constructParam2('name=? and type>?', ['Coca-Cola',12345]);
+                        $named[] = '?';
+                        $pars[] = [
+                            $this->whereCounter,
+                            $v,
+                            $this->getType($v),
+                            null
+                        ];
+                        $this->whereCounter++;
+                    }
                 } else {
-                    $col[] = $tableDefs[$i];
-                    $colT[] = '?';
+                    foreach ($params as $k => $v) {
+                        $named[] = $k;
+                        // constructParam2('name=:name and type<:type', ['name'=>'Coca-Cola','type'=>987]);;
+                        $pars[] = [$k, $v, $this->getType($v), null];
+                        //$paramEnd[]=$param;
+                    }
                 }
-                $param[] = $tableDefs[$i + 1];
-                $param[] = $values[$i / 2];
+                if (count($named) === 0) {
+                    $named[] = '?'; // at least one argument.
+                }
+            } else {
+                // constructParam2([],..);
+                $numeric = isset($where[0]);
+
+                if ($numeric) {
+                    foreach ($where as $k => $v) {
+                        //$named[] = '?';
+                        $queryEnd[] = $v;
+                    }
+                } else {
+                    trigger_error('parameteres not correctly defined');
+                    /*foreach ($where as $k => $v) {
+                        $named[] = '?';
+                        $queryEnd[] = $k;
+                    }*/
+                }
+                $numeric = isset($params[0]);
+                if ($numeric) {
+                    foreach ($params as $k => $v) {
+                        //$paramEnd[]=$param;
+                        // constructParam2(['name','type'], ['Coca-Cola',123]);
+                        $named[] = '?';
+                        $pars[] = [$this->whereCounter, $v, $this->getType($v), null];
+                        $this->whereCounter++;
+                        //$paramEnd[]=$param;
+                    }
+                } else {
+                    foreach ($params as $k => $v) {
+                        $named[] = $k;
+                        // constructParam2(['name=:name','type<:type'], ['name'=>'Coca-Cola','type'=>987]);;
+                        $pars[] = [$k, $v, $this->getType($v), null];
+                        //$paramEnd[]=$param;
+                    }
+                }
             }
         }
-    }
+        //echo "<br>where:";
 
-    /**
-     * @param mixed $v Variable
-     *
-     * @return int=[PDO::PARAM_STR,PDO::PARAM_INT,PDO::PARAM_BOOL][$i]
-     * @test equals PDO::PARAM_STR,(20.3)
-     * @test equals PDO::PARAM_STR,('hello')
-     */
-    private function getType(&$v)
-    {
-        switch (1) {
-            case (is_float($v)):
-            case ($v === null):
-                $vt = PDO::PARAM_STR;
-                break;
-            case (is_numeric($v)):
-                $vt = PDO::PARAM_INT;
-                break;
-            case (is_bool($v)):
+        $i = -1;
 
-                $vt = PDO::PARAM_INT;
-                $v = ($v) ? 1 : 0;
-                break;
-            case (is_object($v) && $v instanceof DateTime):
-                $vt = PDO::PARAM_STR;
-                $v = self::dateTimePHP2Sql($v);
-                break;
-            default:
-                $vt = PDO::PARAM_STR;
+        foreach ($queryEnd as $k => $v) {
+            $i++;
+
+            if ($named[$i] !== '' && strpos($v, '?') === false && strpos($v, $named[$i]) === false) {
+                $v .= '=' . $named[$i];
+                $queryEnd[$k] = $v;
+            }
+            switch ($type) {
+                case 'where':
+                    $this->where[] = $v;
+                    break;
+                case 'having':
+                    $this->having[] = $v;
+                    break;
+                case 'set':
+                    $this->set[] = $v;
+                    break;
+            }
         }
 
-        return $vt;
+        switch ($type) {
+            case 'where':
+                $this->whereParamAssoc = array_merge($this->whereParamAssoc, $pars);
+                break;
+            case 'having':
+                $this->havingParamAssoc = array_merge($this->havingParamAssoc, $pars);
+                break;
+            case 'set':
+                $this->setParamAssoc = array_merge($this->setParamAssoc, $pars);
+                break;
+        }
+
+        if ($return) {
+            return [$queryEnd, $pars];
+        }
+        return null;
     }
 
     /**
@@ -5706,14 +5765,14 @@ BOOTS;
      * <br><b>Example</b>:<br>
      *      select('*')->from('table')->group('col')->having('field=2')
      *      having( ['field'=>20] ) // associative array with automatic type
-     *      having( ['field'=>['i',20]] ) // associative array with type defined
+     *      having( ['field'=>[20]] ) // associative array with type defined
      *      having( ['field',20] ) // array automatic type
-     *      having(['field',['i',20]] ) // array type defined
+     *      having(['field',[20]] ) // array type defined
      *      having('field=20') // literal value
      *      having('field=?',[20]) // automatic type
      *      having('field',[20]) // automatic type (it's the same than
-     *      where('field=?',[20]) having('field=?', ['i',20] ) // type(i,d,s,b)
-     *      defined having('field=?,field2=?', ['i',20,'s','hello'] )
+     *      where('field=?',[20]) having('field=?', [20] ) // type(i,d,s,b)
+     *      defined having('field=?,field2=?', [20,'hello'] )
      *
      * @param string|array $sql
      * @param array|mixed  $param
@@ -5721,7 +5780,7 @@ BOOTS;
      * @return PdoOne
      * @see  http://php.net/manual/en/mysqli-stmt.bind-param.php for types
      * @test InstanceOf
-     *       PdoOne::class,this('field1=?,field2=?',['i',20,'s','hello'])
+     *       PdoOne::class,this('field1=?,field2=?',[20,'hello'])
      */
     public function having($sql, $param = self::NULL)
     {
@@ -5735,14 +5794,14 @@ BOOTS;
     /**
      * <b>Example:</b><br>
      *      where( ['field'=>20] ) // associative array with automatic type
-     *      where( ['field'=>['i',20]] ) // associative array with type defined
+     *      where( ['field'=>[20]] ) // associative array with type defined
      *      where( ['field',20] ) // array automatic type
-     *      where (['field',['i',20]] ) // array type defined
+     *      where (['field',[20]] ) // array type defined
      *      where('field=20') // literal value
      *      where('field=?',[20]) // automatic type
      *      where('field',[20]) // automatic type (it's the same than
-     *      where('field=?',[20]) where('field=?', ['i',20] ) // type(i,d,s,b)
-     *      defined where('field=?,field2=?', ['i',20,'s','hello'] )
+     *      where('field=?',[20]) where('field=?', [20] ) // type(i,d,s,b)
+     *      defined where('field=?,field2=?', [20,'hello'] )
      *      where('field=:field,field2=:field2',
      *      ['field'=>'hello','field2'=>'world'] ) // associative array as value
      *
@@ -5756,75 +5815,14 @@ BOOTS;
      * @return PdoOne
      * @see  http://php.net/manual/en/mysqli-stmt.bind-param.php for types
      * @test InstanceOf
-     *       PdoOne::class,this('field1=?,field2=?',['i',20,'s','hello'])
+     *       PdoOne::class,this('field1=?,field2=?',[20,'hello'])
      */
     public function where($sql, $param = self::NULL, $isHaving = false)
     {
         if ($sql === null) {
             return $this;
         }
-        if (is_string($sql)) {
-            if ($param === self::NULL) {
-                if ($isHaving) {
-                    $this->having[] = $sql;
-                } else {
-                    $this->where[] = $sql;
-                }
-
-                return $this;
-            }
-            switch (true) {
-                case $this->isAssoc($param):
-                    $this->whereParamAssoc = $param;
-                    $this->whereParamType = [];
-                    $this->whereParamValue = [];
-                    $this->whereCounter = 0;
-                    break;
-                case !is_array($param):
-                    if (strpos($sql, '?') === false && strpos($sql, '=:') === false) {
-                        // The query lacks of an argument.
-                        $sql .= '=?';
-                    } // transform 'condition' to 'condition=?'
-                    $this->whereParamType[] = $this->getType($param);
-                    $this->whereParamValue['i_' . $this->whereCounter] = $param;
-                    $this->whereCounter++;
-                    break;
-                case count($param) === 1:
-                    $this->whereParamType[] = $this->getType($param[0]);
-                    $this->whereParamValue['i_' . $this->whereCounter] = $param[0];
-                    $this->whereCounter++;
-                    break;
-                default:
-                    $cp = count($param);
-                    for ($i = 0; $i < $cp; $i += 2) {
-                        $this->whereParamType[] = $param[$i];
-                        $this->whereParamValue['i_' . $this->whereCounter] = $param[$i + 1];
-                        $this->whereCounter++;
-                    }
-            }
-            if ($isHaving) {
-                $this->having[] = $sql;
-            } else {
-                $this->where[] = $sql;
-            }
-        } else {
-            $col = [];
-            $colT = [];
-            $p = [];
-            $this->constructParam($sql, $param, $col, $colT, $p);
-
-            foreach ($col as $k => $c) {
-                if ($isHaving) {
-                    $this->having[] = "$c=?";
-                } else {
-                    $this->where[] = "$c=?";
-                }
-                $this->whereParamType[] = $p[$k * 2];
-                $this->whereParamValue['i_' . $this->whereCounter] = $p[$k * 2 + 1];
-                $this->whereCounter++;
-            }
-        }
-
+        $this->constructParam2($sql, $param, $isHaving ? 'having' : 'where');
         return $this;
     }
 
@@ -5986,8 +5984,8 @@ BOOTS;
         if ($useCache !== false) {
             $sql = $this->sqlGen();
             $this->uid = hash($this->encryption->hashType,
-                $sql . PDO::FETCH_ASSOC . serialize($this->whereParamType) . serialize($this->whereParamValue)
-                . 'first');
+                $sql . PDO::FETCH_ASSOC . serialize($this->whereParamAssoc) . serialize($this->havingParamAssoc)
+                . 'firstscalar');
             $rows = $this->cacheService->getCache($this->uid, $this->cacheFamily);
             if ($rows !== false) {
                 $this->builderReset();
@@ -6046,7 +6044,7 @@ BOOTS;
         if ($useCache !== false) {
             $sql = $this->sqlGen();
             $this->uid = hash($this->encryption->hashType,
-                $sql . PDO::FETCH_ASSOC . serialize($this->whereParamType) . serialize($this->whereParamValue)
+                $sql . PDO::FETCH_ASSOC . serialize($this->whereParamAssoc) . serialize($this->havingParamAssoc)
                 . 'firstscalar');
             $rows = $this->cacheService->getCache($this->uid, $this->cacheFamily);
             if ($rows !== false) {
@@ -6107,7 +6105,7 @@ BOOTS;
         if ($useCache !== false) {
             $sql = $this->sqlGen();
             $this->uid = hash($this->encryption->hashType,
-                $sql . PDO::FETCH_ASSOC . serialize($this->whereParamType) . serialize($this->whereParamValue)
+                $sql . PDO::FETCH_ASSOC . serialize($this->whereParamAssoc) . serialize($this->havingParamAssoc)
                 . 'last');
             $rows = $this->cacheService->getCache($this->uid, $this->cacheFamily);
             if ($rows !== false) {
@@ -6173,23 +6171,21 @@ BOOTS;
      * Generate and run an update in the database.
      * <br><b>Example</b>:<br>
      * <pre>
-     *      update('table',['col1','i',10,'col2','s','hello
-     *      world'],['where','i',10]);
-     *      update('table',['col1','i','col2','s'],[10,'hello
-     *      world'],['where','i'],[10]);
-     *      ->from("producttype")
-     *          ->set("name=?",['s','Captain-Crunch'])
-     *          ->where('idproducttype=?',['i',6])
+     *      update('table',['col1',10,'col2','hello world'],['wherecol',10]);
+     *      update('table',['col1','col2'],[10,'hello world'],['wherecol'],[10]);
+     *      $this->from("producttype")
+     *          ->set("name=?",['Captain-Crunch'])
+     *          ->where('idproducttype=?',[6])
      *          ->update();
      *      update('product_category set col1=10 where idproducttype=1')
      * </pre>
      *
-     * @param string       $tableName     The name of the table or the whole
-     *                                    query.
-     * @param string[]     $tableDef
-     * @param string[]|int $values
-     * @param string[]     $tableDefWhere
-     * @param string[]|int $valueWhere
+     * @param string            $tableName The name of the table or the whole
+     *                                     query.
+     * @param string[]          $tableDef
+     * @param string[]|int|null $values
+     * @param string[]          $tableDefWhere
+     * @param string[]|int|null $valueWhere
      *
      * @return mixed
      * @throws Exception
@@ -6203,57 +6199,45 @@ BOOTS;
     ) {
         if ($tableName === null) {
             // using builder. from()->set()->where()->update()
-            $errorCause = '';
-            if ($this->from === '') {
-                $errorCause = "you can't execute an empty update() without a from()";
-            }
-            if (count($this->set) === 0) {
-                $errorCause = "you can't execute an empty update() without a set()";
-            }
-            if (count($this->where) === 0) {
-                $errorCause = "you can't execute an empty update() without a where()";
-            }
-            if ($errorCause) {
-                $this->throwError($errorCause, '');
-
-                return false;
-            }
-            $sql = 'update ' . $this->addDelimiter($this->from) . ' ' . $this->constructSet() . ' '
-                . $this->constructWhere();
-            if ($this->whereParamAssoc) {
-                $param = $this->whereParamAssoc;
-            } else {
-                $param = [];
-                foreach ($this->whereParamType as $i => $iValue) {
-                    // parameters expressed as 'type','value',...
-                    $param[] = $iValue;
-                    $param[] = $this->whereParamValue['i_' . $i];
-                }
-            }
-            $this->builderReset();
-            $stmt = $this->runRawQuery($sql, $param, true);
-
-            return $this->affected_rows($stmt);
+            $tableName = $this->from;
         }
 
-        $col = [];
-        $colT = null;
-        $colWhere = [];
-        $param = [];
-        if ($tableDefWhere === null) {
-            $this->constructParam($tableDef, self::NULL, $col, $colT, $param);
-            $this->constructParam($values, self::NULL, $colWhere, $colT, $param);
-        } else {
-            $this->constructParam($tableDef, $values, $col, $colT, $param);
-            $this->constructParam($tableDefWhere, $valueWhere, $colWhere, $colT, $param);
+        if ($tableDef !== null) {
+            $this->constructParam2($tableDef, $values, 'set');
         }
+
+
+        if ($tableDefWhere !== null) {
+            $this->constructParam2($tableDefWhere, $valueWhere, 'where');
+        }
+
+        $errorCause = '';
+
+        if (!$tableName) {
+            $errorCause = "you can't execute an empty update() without a from()";
+        }
+        if (count($this->set) === 0) {
+            $errorCause = "you can't execute an empty update() without a set()";
+        }
+        if ($errorCause) {
+            $this->throwError('Update:' . $errorCause, 'update');
+            return false;
+        }
+
+
         $sql = 'update ' . $this->addDelimiter($tableName);
-        $sql .= count($col) ? ' set ' . implode(',', $col) : '';
-        $sql .= count($colWhere) ? ' where ' . implode(' and ', $colWhere) : '';
-        $this->builderReset();
-        $this->runRawQuery($sql, $param);
+        $sql .= $this->constructSet();
+        $sql .= $this->constructWhere();
+        $param = array_merge($this->setParamAssoc, $this->whereParamAssoc); // the order matters.
 
-        return $this->insert_id();
+        // $this->builderReset();
+        $this->beginTry();
+        $stmt = $this->runRawQuery($sql, $param, false);
+        $this->builderReset(true);
+        if ($this->endtry() === false) {
+            return false;
+        }
+        return $this->affected_rows($stmt);
     }
 
     /**
@@ -6261,30 +6245,10 @@ BOOTS;
      */
     private function constructSet()
     {
-        if (count($this->set)) {
-            $where = ' set ' . implode(',', $this->set);
-        } else {
-            $where = '';
-        }
-
-        return $where;
+        return count($this->set) ? ' set ' . implode(',', $this->set) : '';
     }
     //</editor-fold>
     //<editor-fold desc="Cache" defaultstate="collapsed" >
-
-    /**
-     * @return string
-     */
-    private function constructWhere()
-    {
-        if (count($this->where)) {
-            $where = ' where ' . implode(' and ', $this->where);
-        } else {
-            $where = '';
-        }
-
-        return $where;
-    }
 
     /**
      * Returns the number of affected rows.
@@ -6299,6 +6263,142 @@ BOOTS;
             return $stmt->rowCount();
         }
         return $this->affected_rows; // returns previous calculated information
+    }
+
+    /**
+     * It allows to insert a declarative array. It uses "s" (string) as
+     * filetype.
+     * <p>Example: ->insertObject('table',['field1'=>1,'field2'=>'aaa']);
+     *
+     * @param string       $tableName     The name of the table.
+     * @param array|object $object        associative array with the colums and
+     *                                    values. If the insert returns an identity then it changes the value
+     * @param array        $excludeColumn (optional) columns to exclude. Example
+     *                                    ['col1','col2']
+     *
+     * @return mixed
+     * @throws Exception
+     */
+    public function insertObject($tableName, &$object, $excludeColumn = [])
+    {
+        $objectCopy = (array)$object;
+        foreach ($excludeColumn as $ex) {
+            unset($objectCopy[$ex]);
+        }
+
+        $id = $this->insert($tableName, $objectCopy);
+        /** id could be 0,false or null (when it is not generated */
+        if ($id) {
+            $pks = $this->service->getDefTableKeys($tableName, true, 'PRIMARY KEY');
+            if ($pks > 0) {
+                // we update the object because it returned an identity.
+                $k = array_keys($pks)[0]; // first primary key
+                if (is_array($object)) {
+                    $object[$k] = $id;
+                } else {
+                    $object->$k = $id;
+                }
+            }
+        }
+        return $id;
+    }
+
+    /**
+     * Generates and execute an insert command. Example:
+     * Example:
+     *      insert('table',['col1',10,'col2','hello world']); // ternary
+     *      colname,type,value,...
+     * insert('table',null,['col1'=>10,'col2'=>'hello world']); // definition is obtained from the values
+     * insert('table',['col1'=>10,'col2'=>'hello world']); // definition is obtained from the values
+     * insert('table',['col1','col2'],[10,'hello world']); // definition (binary) and value
+     * insert('table',['col1','col2'],['col1'=>10,'col2'=>'hello world']); // definition declarative array)
+     *      ->set(['col1',10,'col2','hello world'])
+     *          ->from('table')
+     *          ->insert();
+     *
+     * @param string            $tableName
+     * @param string[]|null     $tableDef
+     * @param string[]|int|null $values
+     *
+     * @return mixed
+     * @throws Exception
+     */
+    public function insert(
+        $tableName = null,
+        $tableDef = null,
+        $values = self::NULL
+    ) {
+        if ($tableName === null) {
+            $tableName = $this->from;
+        }
+        if ($tableDef !== null) {
+            $this->constructParam2($tableDef, $values, 'set');
+        }
+        // using builder. from()->set()->insert()
+        $errorCause = '';
+        if (!$tableName) {
+            $errorCause = "you can't execute an empty insert() without a from()";
+        }
+        if (count($this->set) === 0) {
+            $errorCause = "you can't execute an empty insert() without a set()";
+        }
+        if ($errorCause) {
+            $this->throwError('Insert:' . $errorCause, 'insert');
+            return false;
+        }
+
+
+        //$sql = 'insert into ' . $this->addDelimiter($tableName) . '  (' . implode(',', $col) . ') values('
+        //    . implode(',', $colT) . ')';
+        $sql
+            = /** @lang text */
+            'insert into ' . $this->addDelimiter($tableName) . '  ' . $this->constructInsert();
+        $param = $this->setParamAssoc;
+
+
+        $this->beginTry();
+        $this->runRawQuery($sql, $param);
+        $this->builderReset(true);
+        if ($this->endtry() === false) {
+            return false;
+        }
+
+        return $this->insert_id();
+    }
+
+    /**
+     * @return string
+     */
+    private function constructInsert()
+    {
+        if (count($this->set)) {
+            $arr = [];
+            $val = [];
+            $first = $this->set[0];
+            if (strpos($first, '=') !== false) {
+                // set([])
+                foreach ($this->set as $v) {
+                    $tmp = explode('=', $v);
+                    $arr[] = $tmp[0];
+                    $val[] = $tmp[1];
+                }
+                $set = '(' . implode(',', $arr) . ') values (' . implode(',', $val) . ')';
+            } else {
+                // set('(a,b,c) values(?,?,?)',[])
+                foreach ($this->setParamAssoc as $v) {
+                    $vn = $v[0];
+                    if ($vn[0] !== ':') {
+                        $vn = ':' . $vn;
+                    }
+                    $val[] = $vn;
+                }
+                $set = '(' . implode(',', $this->set) . ') values (' . implode(',', $val) . ')';
+            }
+        } else {
+            $set = '';
+        }
+
+        return $set;
     }
 
     /**
@@ -6317,154 +6417,14 @@ BOOTS;
         return $this->conn1->lastInsertId($sequenceName);
     }
 
-    /**
-     * It allows to insert a declarative array. It uses "s" (string) as
-     * filetype.
-     * <p>Example: ->insertObject('table',['field1'=>1,'field2'=>'aaa']);
-     *
-     * @param string $tableName         The name of the table.
-     * @param array  $object            associative array with the colums and
-     *                                  values. If the insert returns an identity then it changes the value
-     * @param array  $excludeColumn     (optional) columns to exclude. Example
-     *                                  ['col1','col2']
-     *
-     * @return mixed
-     * @throws Exception
-     */
-    public function insertObject($tableName, &$object, $excludeColumn = [])
-    {
-        $tabledef = [];
-        foreach ($object as $k => $field) {
-            if (!in_array($k, $excludeColumn, true)) { // avoid $k=0 is always valid for numeric columns
-                $tabledef[$k] = 's';
-            }
-        }
-        $objectCopy = $object;
-        foreach ($excludeColumn as $ex) {
-            unset($objectCopy[$ex]);
-        }
-
-        $id = $this->insert($tableName, $tabledef, $objectCopy);
-        /** id could be 0,false or null (when it is not generated */
-        if ($id) {
-            $pks = $this->service->getDefTableKeys($tableName, true, 'PRIMARY KEY');
-            if ($pks > 0) {
-                // we update the object because it returned an identity.
-                $k = array_keys($pks)[0]; // first primary key
-
-                $object[$k] = $id;
-            }
-        }
-        return $id;
-    }
-
-    /**
-     * Generates and execute an insert command. Example:
-     * Example:
-     *      insert('table',['col1','i',10,'col2','s','hello world']); //
-     * ternary
-     *      colname,type,value,...
-     * insert('table',null,['col1'=>10,'col2'=>'hello world']); // definition
-     * is obtained from the values insert('table',['col1'=>10,'col2'=>'hello
-     * world']); // definition is obtained from the values
-     * insert('table',['col1','i','col2','s'],[10,'hello world']); //
-     * definition (binary) and value
-     * insert('table',['col1'=>'i','col2'=>'s'],['col1'=>10,'col2'=>'hello
-     * world']); // definition declarative array)
-     *      ->set(['col1','i',10,'col2','s','hello world'])
-     *          ->from('table')
-     *          ->insert();
-     *
-     * @param string        $tableName
-     * @param string[]|null $tableDef
-     * @param string[]|int  $values
-     *
-     * @return mixed
-     * @throws Exception
-     */
-    public function insert(
-        $tableName = null,
-        $tableDef = null,
-        $values = self::NULL
-    ) {
-        if ($tableName === null) {
-            // using builder. from()->set()->insert()
-            $errorCause = '';
-            if ($this->from == '') {
-                $errorCause = "you can't execute an empty insert() without a from()";
-            }
-            if (count($this->set) === 0) {
-                $errorCause = "you can't execute an empty insert() without a set()";
-            }
-            if ($errorCause) {
-                $this->throwError($errorCause, '');
-
-                return false;
-            }
-            $sql
-                = /** @lang text */
-                'insert into ' . $this->addDelimiter($this->from) . '  ' . $this->constructInsert();
-            $param = [];
-
-            foreach ($this->whereParamType as $i => $iValue) {
-                $param[] = $iValue;
-                $param[] = $this->whereParamValue['i_' . $i];
-            }
-            $this->builderReset();
-            $this->runRawQuery($sql, $param, true);
-
-            return $this->insert_id();
-        }
-
-        $col = [];
-        $colT = [];
-        $param = [];
-        $this->constructParam($tableDef, $values, $col, $colT, $param);
-        $sql = 'insert into ' . $this->addDelimiter($tableName) . '  (' . implode(',', $col) . ') values('
-            . implode(',', $colT) . ')';
-        $this->builderReset();
-
-        $this->runRawQuery($sql, $param);
-
-        return $this->insert_id();
-    }
-
     //</editor-fold>
     //<editor-fold desc="Log functions" defaultstate="collapsed" >
 
     /**
-     * @return string
-     */
-    private function constructInsert()
-    {
-        if (count($this->set)) {
-            $arr = [];
-            $val = [];
-            $first = $this->set[0];
-            if (strpos($first, '=') !== false) {
-                // set([])
-                foreach ($this->set as $v) {
-                    $tmp = explode('=', $v);
-                    $arr[] = $tmp[0];
-                    $val[] = $tmp[1];
-                }
-                $where = '(' . implode(',', $arr) . ') values (' . implode(',', $val) . ')';
-            } else {
-                // set('(a,b,c) values(?,?,?)',[])
-                $where = $first;
-            }
-        } else {
-            $where = '';
-        }
-
-        return $where;
-    }
-
-    /**
      * Delete a row(s) if they exists.
      * Example:
-     *      delete('table',['col1','i',10,'col2','s','hello world']);
-     *      delete('table',['col1','i','col2','s'],[10,'hello world']);
+     *      delete('table',['col1',10,'col2','hello world']);
+     *      delete('table',['col1','col2'],[10,'hello world']);
      *      $db->from('table')
      *          ->where('..')
      *          ->delete() // running on a chain
@@ -6483,41 +6443,32 @@ BOOTS;
         $valueWhere = self::NULL
     ) {
         if ($tableName === null) {
-            // using builder. from()->where()->delete()
-            $errorCause = '';
-            if ($this->from == '') {
-                $errorCause = "you can't execute an empty delete() without a from()";
-            }
-            if (count($this->where) === 0) {
-                $errorCause = "you can't execute an empty delete() without a where()";
-            }
-            if ($errorCause) {
-                $this->throwError($errorCause, '');
-
-                return false;
-            }
-            $sql = 'delete from ' . $this->addDelimiter($this->from) . ' ';
-            $sql .= $this->constructWhere();
-            $param = [];
-            foreach ($this->whereParamType as $i => $iValue) {
-                $param[] = $iValue;
-                $param[] = $this->whereParamValue['i_' . $i];
-            }
-            $this->builderReset();
-            $stmt = $this->runRawQuery($sql, $param, true);
-
-            return $this->affected_rows($stmt);
+            $tableName = $this->from;
+        }
+        // using builder. from()->set()->where()->update()
+        $errorCause = '';
+        if (!$tableName) {
+            $errorCause = "you can't execute an empty delete() without a from()";
+        }
+        if ($errorCause) {
+            $this->throwError('Delete:' . $errorCause, '');
+            return false;
         }
 
-// using table/tabldefwhere/valuewhere
-        $colWhere = [];
-        $colT = null;
-        $param = [];
-        $this->constructParam($tableDefWhere, $valueWhere, $colWhere, $colT, $param);
+        if ($tableDefWhere !== null) {
+            $this->constructParam2($tableDefWhere, $valueWhere, 'where');
+        }
+
         $sql = 'delete from ' . $this->addDelimiter($tableName);
-        $sql .= (count($colWhere)) ? ' where ' . implode(' and ', $colWhere) : '';
-        $this->builderReset();
-        $stmt = $this->runRawQuery($sql, $param, true);
+        $sql .= $this->constructWhere();
+        $param = $this->whereParamAssoc;
+
+        $this->beginTry();
+        $stmt = $this->runRawQuery($sql, $param, false);
+        $this->builderReset(true);
+        if ($this->endtry() === false) {
+            return false;
+        }
 
         return $this->affected_rows($stmt);
     }
@@ -6544,9 +6495,6 @@ BOOTS;
         return $this;
     }
 
-    //</editor-fold>
-    //<editor-fold desc="cli functions" defaultstate="collapsed" >
-
     /**
      * Invalidate a single cache or a list of cache based in a single uid or in
      * a family/group of cache.
@@ -6571,6 +6519,9 @@ BOOTS;
         }
         return $this;
     }
+
+    //</editor-fold>
+    //<editor-fold desc="cli functions" defaultstate="collapsed" >
 
     /**
      * @param string|int $password      <p>Use a integer if the method is
@@ -6619,7 +6570,6 @@ BOOTS;
         return $this->encryption->hash($data);
     }
 
-
     /**
      * Wrapper of PdoOneEncryption->decrypt
      *
@@ -6632,6 +6582,36 @@ BOOTS;
     {
         return $this->encryption->decrypt($data);
     }
+
+    /**
+     * It converts a simple type 'b','i','d','f','s' as a pdo type PDO:PARAM_*<br>
+     *
+     * @param string|int $string
+     *
+     * @return int|null
+     */
+    private function stringToPdoParam($string)
+    {
+        if (is_int($string)) {
+            // if the parameter is expressed as numeric, then it's returned as is.
+            return $string;
+        }
+        switch ($string) {
+            case 'b':
+                return PDO::PARAM_BOOL;
+            case 'i':
+                return PDO::PARAM_INT;
+            case 'd':
+            case 'f':
+            case 's':
+                // decimal, float, date and strings are expressed in the same way
+                return PDO::PARAM_STR;
+            default:
+                trigger_error("param type not defined [$string]");
+                return null;
+        }
+    }
+
 
     //</editor-fold>
 }

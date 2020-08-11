@@ -3,9 +3,9 @@
 use eftec\PdoOne;
 use mapache_commons\Collection;
 
-include "../vendor/autoload.php";
-include "Collection.php";
-include "dBug.php";
+include "../../vendor/autoload.php";
+include "../Collection.php";
+include "../dBug.php";
 echo "<body><div>";
 // connecting to database sakila at 127.0.0.1 with user root and password abc.123
 $dao=new PdoOne("mysql","127.0.0.1","root","abc.123","sakila","logpdoone.txt");
@@ -45,8 +45,8 @@ try {
 
 echo "<hr>toMeta:";
 $results = $dao->select("*")->from("producttype")
-    ->where('name=?', [PDO::PARAM_STR, 'Coca-Cola'])
-    ->where('idproducttype=?', [PDO::PARAM_INT, 1])
+    ->where('name=?', ['Coca-Cola'])
+    ->where('idproducttype=?', [1])
     ->toMeta();
 echo "<pre>";
 var_dump($results);
@@ -58,16 +58,16 @@ echo Collection::generateTable($results);
 
 try {
 	echo "<hr>toList (raw query):";
-	$results = $dao->runRawQuery("select * from producttype where name=?",[PDO::PARAM_STR, 'Coca-Cola'],true);
+	$results = $dao->runRawQuery("select * from producttype where name=?",['Coca-Cola'],true);
 	echo $dao->lastQuery;
 	echo Collection::generateTable($results);
 	
 	
 	
-    echo "<hr>toList:";
+    echo "<hr>toList: (1)";
     $results = $dao->select("*")->from("producttype")
-        ->where('name=?', [PDO::PARAM_STR, 'Coca-Cola'])
-        ->where('idproducttype=?', [PDO::PARAM_INT, 1])
+        ->where('name=?', ['Coca-Cola'])
+        ->where('idproducttype=?', [1])
         ->toList();
     echo $dao->lastQuery;
     echo Collection::generateTable($results);
@@ -81,44 +81,38 @@ try {
     echo $dao->lastQuery;
     echo Collection::generateTable($results);
 
-    echo "<hr>toList:";
+    echo "<hr>toList: (where string)";
     $results = $dao->select("*")->from("producttype")
         ->where("name='Coca-Cola'")
         ->toList();
     echo $dao->lastQuery;
     echo Collection::generateTable($results);
 
-    echo "<hr>toList using associative array:";
+    echo "<hr>toList using associative array:<br>";
     $results = $dao->select("*")->from("producttype")
         ->where(['name'=>'Coca-Cola','idproducttype'=>1])
         ->toList();
     echo $dao->lastQuery;
     echo Collection::generateTable($results);
 
-    echo "<hr>toList using associative array:";
+    echo "<hr>toList using associative array (using named where and arguments):<br>";
     $results = $dao->select("*")->from("producttype")
-        ->where(['name'=>PDO::PARAM_STR,'idproducttype'=>PDO::PARAM_INT],
+        ->where(['name=:name','idproducttype=:idproducttype'],
         ['name'=>'Coca-Cola','idproducttype'=>1])
         ->toList();
     echo $dao->lastQuery;
     echo Collection::generateTable($results);
 
-    echo "<hr>toList using associative array:";
+    echo "<h2>toList using associative array:</h2>";
     $results = $dao->select("*")->from("producttype")
-        ->where(['name',PDO::PARAM_STR,'idproducttype',PDO::PARAM_INT],
+        ->where(['name','idproducttype'],
             ['Coca-Cola',1])
         ->toList();
     echo $dao->lastQuery;
     echo Collection::generateTable($results);
 
-    echo "<hr>toList using associative array:";
-    $results = $dao->select("*")->from("producttype")
-        ->where(['name',PDO::PARAM_STR,'Coca-Cola','idproducttype',PDO::PARAM_INT,1])
-        ->toList();
-    echo $dao->lastQuery;
-    echo Collection::generateTable($results);
-
-    echo "<hr>toList (from join):";
+    
+    echo "<h2>toList (from join):</h2>";
     $results = $dao->select("pt.*,tt.name typetable_name")
         ->from("producttype pt")
         ->join("typetable tt on pt.type=tt.type")
@@ -126,7 +120,7 @@ try {
     echo $dao->lastQuery;
     echo Collection::generateTable($results);
 
-    echo "<hr>toList (join left):";
+    echo "<h2>toList (join left):</h2>";
     $results = $dao->select("pt.*,tt.name typetable_name")
         ->from("producttype pt")
         ->left("typetable tt on pt.type=tt.type")
@@ -134,7 +128,7 @@ try {
     echo $dao->lastQuery;
     echo Collection::generateTable($results);
 
-    echo "<hr>toList (join left):";
+    echo "<h2>toList (join left):</h2>";
     $results = $dao->select("pt.*,tt.name typetable_name")
         ->from("producttype pt")
         ->left("typetable tt on pt.type=tt.type")
@@ -142,15 +136,15 @@ try {
     echo $dao->lastQuery;
     echo Collection::generateTable($results);
 
-    echo "<hr>toList: ";
+    echo "<h2>toList: (3)</h2>";
     $results = $dao->select("*")->from("producttype")
-        ->where('idproducttype>=?', [PDO::PARAM_INT, 1])
+        ->where('idproducttype>=?', [ 1])
         ->order('idproducttype desc')
         ->toList();
     echo $dao->lastQuery;
     echo Collection::generateTable($results);
 
-    echo "<hr>toList: (2) ";
+    echo "<h2>toList: (4) </h2>";
     $results = $dao->select("*")->from("producttype")
                    ->where('idproducttype>0')
                    ->order('idproducttype desc')
@@ -159,30 +153,30 @@ try {
     echo Collection::generateTable($results);
 
 
-    echo "<hr>toResult: ";
+    echo "<h2>toResult:</h2>";
     $resultsQuery = $dao->select("*")->from("producttype")
-        ->where('name=?', [PDO::PARAM_STR, 'Coca-Cola'])
-        ->where('idproducttype=?', [PDO::PARAM_INT, 1])
+        ->where('name=?', ['Coca-Cola'])
+        ->where('idproducttype=?', [1])
         ->toResult();
     echo $dao->lastQuery;
     $results=$resultsQuery->fetchAll(PDO::FETCH_ASSOC);
     echo Collection::generateTable($results);
     $resultsQuery=null;
 
-    echo "<hr>first: ";
+    echo "<h2>first:</h2>";
     $results = $dao->select("*")->from("producttype")
-        ->where('name=?', [PDO::PARAM_STR, 'Coca-Cola'])
-        ->where('idproducttype=?', [PDO::PARAM_INT, 1])
+        ->where('name=?', ['Coca-Cola'])
+        ->where('idproducttype=?', [1])
 	    ->order('name')
         ->limit('1')
         ->first();
     echo $dao->lastQuery;
     echo Collection::generateTable($results);
 
-    echo "<hr>first returns nothing :";
+    echo "<h2>first returns nothing :</h2>";
     $results = $dao->select("*")->from("producttype")
-        ->where('name=?', [PDO::PARAM_STR, 'Coca-Cola'])
-        ->where('idproducttype=?', [PDO::PARAM_INT, 55])
+        ->where('name=?', ['Coca-Cola'])
+        ->where('idproducttype=?', [55])
         ->limit('1')
         ->first();
     echo $dao->lastQuery;
@@ -190,25 +184,25 @@ try {
     var_dump($results);
     echo "</pre>";
 
-    echo "<hr>";
+    echo "<h2>where simple fixed</h2>";
     $results = $dao->select("*")->from("producttype")
         ->where('idproducttype=1')
         ->runGen();
     echo $dao->lastQuery;
     echo Collection::generateTable($results);
 
-    echo "<hr>";
+    echo "<h2>string and array</h2>";
     $results = $dao->select("*")->from("producttype p")
-        ->where('idproducttype between ? and ?', [PDO::PARAM_INT, 1, PDO::PARAM_INT, 3])
+        ->where('idproducttype between ? and ?', [1, 3])
         ->toList();
     echo $dao->lastQuery;
 
     echo Collection::generateTable($results);
 
-    echo "<hr>";
+    echo "<h2>having</h2>";
     $results = $dao->select("p.type,count(*) c")->from("producttype p")
         ->group("p.type")
-        ->having('p.type>?',[PDO::PARAM_INT,0])
+        ->having('p.type>?',[0])
         ->toList();
     echo $dao->lastQuery;
     echo Collection::generateTable($results);

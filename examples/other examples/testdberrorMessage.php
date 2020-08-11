@@ -3,7 +3,7 @@
 use eftec\PdoOne;
 use eftec\MessageList;
 
-include "../vendor/autoload.php";
+include "../../vendor/autoload.php";
 include "MessageList.php";
 include "MessageItem.php";
 

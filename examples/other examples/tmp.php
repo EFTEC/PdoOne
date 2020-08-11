@@ -2,7 +2,7 @@
 
 use eftec\PdoOne;
 
-include "../vendor/autoload.php";
+include "../../vendor/autoload.php";
 
 $dao=new PdoOne("mysql","127.0.0.1","root","abc.123","sakila");
 

@@ -277,10 +277,8 @@ class PdoOne_Sqlsrv implements PdoOne_IExt
                 break;
             default:
                 $this->parent->throwError("objectExist: type [$type] not defined for {$this->parent->databaseType}", '');
-                die(1);
-                break;
+                return null;
         }
-
         return $query;
     }
 
@@ -301,8 +299,7 @@ class PdoOne_Sqlsrv implements PdoOne_IExt
                 break;
             default:
                 $this->parent->throwError("objectExist: type [$type] not defined for {$this->parent->databaseType}", '');
-                die(1);
-                break;
+                return null;
         }
 
         return $query;
@@ -438,7 +435,6 @@ class PdoOne_Sqlsrv implements PdoOne_IExt
                 trigger_error('createFK: Key with a wrong syntax. Example: "PRIMARY KEY.." ,
                                  "KEY...", "UNIQUE KEY..." "FOREIGN KEY.." ');
                 return null;
-                break;
             }
             $type = strtoupper(trim(substr($value, 0, $p0)));
             $value = substr($value, $p0 + 4);

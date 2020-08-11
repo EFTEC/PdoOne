@@ -2,8 +2,8 @@
 use eftec\PdoOne;
 use mapache_commons\Collection;
 
-include "../vendor/autoload.php";
-include "Collection.php";
+include "../../vendor/autoload.php";
+include "../Collection.php";
 
 // connecting to database sakila at 127.0.0.1 with user root and password abc.123
 $dao=new PdoOne("mysql","127.0.0.1","root","abc.123","sakila","");

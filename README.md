@@ -33,7 +33,7 @@ into this
 $products=$pdoOne
     ->select("*")
     ->from("myTable")
-    ->where("name = ?",['s',$_POST['name']]) // 's' = string/float/date, 'i'=integer, 'b'=boolean
+    ->where("name = ?",[$_POST['name']]) 
     ->toList();
 ```
 
@@ -41,7 +41,7 @@ or using the generation of class.
 
 ```php
 ProductRepo // this class was generated with echo $pdoOne()->generateCodeClass(['Product']);
-    ::where("name = ?",['s',$_POST['name']])
+    ::where("name = ?",[$_POST['name']])
     ::toList();
 ```
 
@@ -183,7 +183,7 @@ $pdoOne->runQuery($stmt);
 ```php
 // native query
 $pdoOne->runRawQuery('insert into `product` (name) values(?)'
-    ,array('s','cocacola'));
+    ,array('cocacola'));
 // query builder
 $pdoOne->set(['name'=>'cocacola'])
     ->from('product')
@@ -496,8 +496,8 @@ You could also build a procedural query.
 Example:
 ```php
 $results = $pdoOne->select("*")->from("producttype")
-    ->where('name=?', ['s', 'Cocacola'])
-    ->where('idproducttype=?', ['i', 1])
+    ->where('name=?', [ 'Cocacola'])
+    ->where('idproducttype=?', [ 1])
     ->toList();   
 ```
 
@@ -618,18 +618,18 @@ $results = $pdoOne->select("*")->from('table')->where("p1=1 and p2>2.5 or p3 lik
 
 ```php
 $aa='aa';
-$results = $pdoOne->select("*")->from('table')->where("p1=? and p2>? or p3 like ?",['i',1
-                                                                                    ,'s',2.5
-                                                                                    ,'s',"%$aa%"]);
+$results = $pdoOne->select("*")->from('table')->where("p1=? and p2>? or p3 like ?",[1
+                                                                                    ,2.5
+                                                                                    ,"%$aa%"]);
 ```
 
 It also works 
 
 ```php
 // (if there is only a single argument without a type)
-$results = $pdoOne->select("*")->from('table')->where("p1=?",[1]);  // = where("p1=?",['i',1]);
+$results = $pdoOne->select("*")->from('table')->where("p1=?",[1]);  // = where("p1=?",[1]);
 // (if we don't define to where to put the value)
-$results = $pdoOne->select("*")->from('table')->where("p1",[1]); // = where("p1=?",['i',1]);
+$results = $pdoOne->select("*")->from('table')->where("p1",[1]); // = where("p1=?",[1]);
 ```
 
 
@@ -651,9 +651,9 @@ Also it is possible to specify the type of parameter.
 
 ```php
 // select * from table where p1=1 and p2='2.5' and p3='aa'
-$results = $pdoOne->select("*")->from('table')->where(['p1'=>['i',1]
-                                                       ,'p2'=>['s',2.5]
-                                                       ,'p3'=>['s','aa']]);  
+$results = $pdoOne->select("*")->from('table')->where(['p1'=>[1]
+                                                       ,'p2'=>[2.5]
+                                                       ,'p3'=>['aa']]);  
 ```
 
 #### 4) Where() using an associative array and named arguments
@@ -677,19 +677,19 @@ $results = $pdoOne->select("*")->from("table")
 > Note: ArrayParameters is an array as follow: **type,value.**     
 >   Where type is i=integer, d=double, s=string or b=blob. In case of doubt, use "s" (see table bellow)   
 > Example of arrayParameters:   
-> ['i',1 ,'s','hello' ,'d',20.3 ,'s','world']
+> [1 ,'hello' ,20.3 ,'world']
 
 ```php
 $results = $pdoOne->select("*")
 ->from('table')
-->where('p1=?',['i',1]); //...
+->where('p1=?',[1]); //...
 ```
 > Generates the query: select * from table **where p1=?(1)**
 
 ```php
 $results = $pdoOne->select("*")
 ->from('table')
-->where('p1=? and p2=?',['i',1,'s','hello']); //...
+->where('p1=? and p2=?',[1,'hello']); //...
 ```
 
 > Generates the query: select * from table **where p1=?(1) and p2=?('hello')**
@@ -698,8 +698,8 @@ $results = $pdoOne->select("*")
 ```php
 $results = $pdoOne->select("*")
 ->from('table')
-->where('p1=?',['i',1])
-->where('p2=?',['s','hello']); //...
+->where('p1=?',[1])
+->where('p2=?',['hello']); //...
 ```
 > Generates the query: select * from table **where p1=?(1) and p2=?('hello')**
 
@@ -748,7 +748,7 @@ Generates a group command.
 $results = $pdoOne->select("*")
 ->from('table')
 ->group('p1')
-->having('p1>?',array('i',1)); //...
+->having('p1>?',array(1)); //...
 ```
 > Generates the query: select * from table group by p1 having p1>?(1)
 
@@ -910,20 +910,20 @@ Let's say that we want to add an **integer** in the column **col1** with the val
 __Schema and values using a list of values__: Where the first value is the column, the second is the type of value (i=integer,d=double,s=string,b=blob) and second array contains the values.
 ```php
 $pdoOne->insert("table"
-    ,['col1','i']
+    ,['col1']
     ,[20]);
 ```
 __Schema and values in the same list__: Where the first value is the column, the second is the type of value (i=integer,d=double,s=string,b=blob) and the third is the value.
 ```php
 $pdoOne->insert("table"
-    ,['col1','i',20]);
+    ,['col1',20]);
 ```
 
 __Schema and values using two associative arrays__:
 
 ```php
 $pdoOne->insert("table"
-    ,['col1'=>'i']
+    ,['col1']
     ,['col1'=>20]);
 ```
 __Schema and values using a single associative array__: The type is calculated automatically.
@@ -938,29 +938,29 @@ Generates a insert command.
 
 ```php
 $pdoOne->insert("producttype"
-    ,['idproducttype','i','name','s','type','i']
+    ,['idproducttype','name','type']
     ,[1,'cocacola',1]);
 ```
 
 Using nested chain (single array)
 ```php
     $pdoOne->from("producttype")
-        ->set(['idproducttype','i',0 ,'name','s','Pepsi' ,'type','i',1])
+        ->set(['idproducttype',0 ,'name','Pepsi' ,'type',1])
         ->insert();
 ```
 
 Using nested chain multiple set
 ```php
     $pdoOne->from("producttype")
-        ->set("idproducttype=?",['i',101])
-        ->set('name=?',['s','Pepsi'])
-        ->set('type=?',['i',1])
+        ->set("idproducttype=?",[101])
+        ->set('name=?',['Pepsi'])
+        ->set('type=?',[1])
         ->insert();
 ```
 or (the type is defined, in the possible, automatically by MySql)     
 ```php
     $pdoOne->from("producttype")
-        ->set("idproducttype=?",['i',101])
+        ->set("idproducttype=?",[101])
         ->set('name=?','Pepsi')
         ->set('type=?',1)
         ->insert();
@@ -975,7 +975,7 @@ or (the type is defined, in the possible, automatically by MySql)
 Using nested chain declarative set
 ```php
     $pdoOne->from("producttype")
-        ->set('(idproducttype,name,type) values (?,?,?)',['i',100,'s','Pepsi','i',1])
+        ->set('(idproducttype,name,type) values (?,?,?)',[100,'Pepsi',1])
         ->insert();
 ```
 
@@ -988,9 +988,9 @@ Generates a insert command.
 
 ```php
 $pdoOne->update("producttype"
-    ,['name','s','type','i'] //set
+    ,['name','type'] //set
     ,[6,'Captain-Crunch',2] //set
-    ,['idproducttype','i'] // where
+    ,['idproducttype'] // where
     ,[6]); // where
 ```
 
@@ -1002,9 +1002,9 @@ $pdoOne->update("producttype"
 
 ```php
 $pdoOne->from("producttype")
-    ->set("name=?",['s','Captain-Crunch']) //set
-    ->set("type=?",['i',6]) //set
-    ->where('idproducttype=?',['i',6]) // where
+    ->set("name=?",['Captain-Crunch']) //set
+    ->set("type=?",[6]) //set
+    ->where('idproducttype=?',[6]) // where
     ->update(); // update
 ```
 
@@ -1014,7 +1014,7 @@ or
 $pdoOne->from("producttype")
     ->set("name=?",'Captain-Crunch') //set
     ->set("type=?",6) //set
-    ->where('idproducttype=?',['i',6]) // where
+    ->where('idproducttype=?',[6]) // where
     ->update(); // update
 ```
 
@@ -1026,7 +1026,7 @@ Generates a delete command.
 
 ```php
 $pdoOne->delete("producttype"
-    ,['idproducttype','i'] // where
+    ,['idproducttype'] // where
     ,[7]); // where
 ```
 ```php
@@ -1038,7 +1038,7 @@ $pdoOne->delete("producttype"
 You could also delete via a DQL builder chain.
 ```php
 $pdoOne->from("producttype")
-    ->where('idproducttype=?',['i',7]) // where
+    ->where('idproducttype=?',[7]) // where
     ->delete(); 
 ```
 ```php
@@ -1524,11 +1524,11 @@ $ok=TablaParentRepo::validTable(); // it returns true if the table matches with 
 ```php
 $data=TableNameRepo::toList(); // select * from tablerepo
 $data=TableNameRepo::first($pk); // select * from tablerepo where pk=$pk (it always returns 1 or zero values)
-$data=TableNameRepo::where('a1=?',['i',$value])::toList(); // select * from tablerepo where a1=$value 
-$data=TableNameRepo::where('a1=?',['i',$value])::first(); // it returns the first value (or false if not found)
+$data=TableNameRepo::where('a1=?',[$value])::toList(); // select * from tablerepo where a1=$value 
+$data=TableNameRepo::where('a1=?',[$value])::first(); // it returns the first value (or false if not found)
 $data=TableNameRepo::exist($pk); // returns true if the object exists.
 $data=TableNameRepo::count($conditions); 
-$data=TableNameRepo::where('a1=?',['i',$value])::count();
+$data=TableNameRepo::where('a1=?',[$value])::count();
 ```
 
 ### DML Database Model Language
@@ -1590,13 +1590,29 @@ In a nutshell:
 * Every minor version means that it adds a new functionality i.e. 1.5 -> 1.6 (new methods)  
 * Every decimal version means that it patches/fixes/refactoring a previous functionality i.e. 1.5.0 -> 1.5.1 (fix)  
 
+
+
+* 2.0 2020-08-11
+  * **Core**: The arguments are rebuild from scratch.  Now, arguments are more natural and we don't need to specify the type.  It also allows many other different kind of combinations.
+  * Before: **$this->runRawQuery($sql,['i',20,'s','hello]);**    
+  * Now: **$this->runRawQuery($sql,[20,'hello']);**    
+  * Also (named): **$this->runRawQuery($sql,['col1'=>20,'col2'=>'hello']);**    
+  * Since it is a core change, then former code that uses the version 1.x could not be compatible without changing all references to methods that use arguments specifying the types.
+      * runRawQuery()
+      * set()
+      * select()
+      * where()
+      * insert()
+      * update()
+      * delete()
+      * toMeta()
+  * 
 * 1.55.1 2020-08-05
   * In the generation of the code, changed is_array() by isset() 
 * 1.55 2020-8-05    
   * Updated generation of code. Now, the relations manytoony and onetoone returns linked values.   Linked values 
   are values that are linked (one of them is a pointer to the other value).        
   * Fixed: the relation onetoone, the field refcol now uses the right column.   
-
 * 1.54 2020-8-02    
   * connect does not set attribute directly. Mysql and sql server sets different arguments.      
   * generateCodeClass has an additional argument and it generares an extra field.   
@@ -1606,7 +1622,6 @@ In a nutshell:
        * It allows custom input and output conversions.
        * Input and output conversions code is generated at compile time instead to evaluates at runtime.  
        * It allows toList() and first() to returns extra columns. Those columns are also added to the model-class
-
 * 1.53 2020-7-27   
   * Method connect() sets PDO::ATTR_EMULATE_PREPARES to false      
 * 1.52 2020-7-19    
@@ -1621,12 +1636,10 @@ In a nutshell:
   * Updated method generateCodeClass()
   * Updated method generateCodeClassRepo()
   * new method generateModelClass() It generates model from tables
-
 * 1.50 2020-7-04
   * Updated method generateCodeArray()
   * Updated method generateCodeClass()
   * Updated method generateCodeClassRepo()
-
 * 1.49 2020-6-19
      * New method generateAllClasses()   
 * 1.48 2020-6-15

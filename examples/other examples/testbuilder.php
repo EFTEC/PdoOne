@@ -2,11 +2,12 @@
 
 use eftec\PdoOne;
 
-include "../vendor/autoload.php";
-include "dBug.php";
+include "../../vendor/autoload.php";
+include "../dBug.php";
 
 // connecting to database sakila at 127.0.0.1 with user root and password abc.123
 $dao=new PdoOne("mysql","127.0.0.1","root","abc.123","sakila","logpdoone.txt");
+$dao->logLevel=3;
 try {
     echo "<h1>Connection. The instance {$dao->server}, base:{$dao->db}  user:{$dao->user} and password:{$dao->pwd} must exists</h1>";
     $dao->connect();
@@ -57,16 +58,16 @@ try {
     echo "<h1>Table update:</h1>";
 
     $dao->from("producttype")
-        ->set("name=?",['s','Captain-Crunch'])
-        ->set("type=?",['i',6])
-        ->where('idproducttype=?',['i',6])
+        ->set("name=?",['Captain-Crunch'])
+        ->set("type=?",[6])
+        ->where('idproducttype=?',[6])
         ->update();
     echo $dao->lastQuery."<br>";
 
     $dao->update("producttype"
-        ,['name','s','type','i']
+        ,['name','type']
         ,['Captain-Crunch',2]
-        ,['idproducttype','i']
+        ,['idproducttype']
         ,[6]);
     echo $dao->lastQuery."<br>";
 
@@ -74,14 +75,15 @@ try {
 
 
     $dao->update("producttype"
-        ,['name','s','type','i']
+        ,['name','type']
         ,['Captain-Crunch',2]
-        ,['idproducttype','i']
+        ,['idproducttype']
         ,[6]);
     echo $dao->lastQuery."<br>";
 
     $dao->update("producttype"
         ,['Name'=>'Mountain Dew']
+        ,null
         ,['idproducttype'=>3]
         );
     echo $dao->lastQuery."<br>";
@@ -94,7 +96,7 @@ try {
     echo "<h1>Table delete:</h1>";
 
     $dao->from("producttype")
-        ->where("`idproducttype`=?",['i',7])
+        ->where("`idproducttype`=?",[7])
         ->delete();
     echo $dao->lastQuery."<br>";
 
@@ -104,7 +106,7 @@ try {
     echo $dao->lastQuery."<br>";
 
     $dao->delete("producttype"
-        ,['idproducttype','i']
+        ,['idproducttype']
         ,[7]);
     echo $dao->lastQuery."<br>";
     $dao->delete("producttype"
@@ -123,30 +125,30 @@ try {
 try {
     echo "<hr>toList:";
     $results = $dao->select("*")->from("producttype")
-        ->where('name=?', ['s', 'Coca-Cola'])
-        ->where('idproducttype=?', ['i', 1])
+        ->where('name=?', [ 'Coca-Cola'])
+        ->where('idproducttype=?', [ 1])
         ->toList();
     echo $dao->lastQuery;
     echo build_table($results);
 
-    echo "<hr>toList using associative array:";
+    echo "<hr>toList using associative array (1):";
     $results = $dao->select("*")->from("producttype")
         ->where(['name'=>'Coca-Cola','idproducttype'=>1])
         ->toList();
     echo $dao->lastQuery;
     echo build_table($results);
 
-    echo "<hr>toList using associative array:";
+    echo "<hr>toList using associative array (2):";
     $results = $dao->select("*")->from("producttype")
-        ->where(['name'=>'s','idproducttype'=>'i'],
+        ->where(['name=:name','idproducttype=:idproducttype'],
         ['name'=>'Coca-Cola','idproducttype'=>1])
         ->toList();
     echo $dao->lastQuery;
     echo build_table($results);
 
-    echo "<hr>toList using associative array:";
+    echo "<hr>toList using associative array (3):";
     $results = $dao->select("*")->from("producttype")
-        ->where(['name','s','idproducttype','i'],
+        ->where(['name','idproducttype'],
             ['Coca-Cola',1])
         ->toList();
     echo $dao->lastQuery;
@@ -154,7 +156,7 @@ try {
 
     echo "<hr>toList using associative array:";
     $results = $dao->select("*")->from("producttype")
-        ->where(['name','s','Coca-Cola','idproducttype','i',1])
+        ->where(['name','Coca-Cola','idproducttype',1])
         ->toList();
     echo $dao->lastQuery;
     echo build_table($results);
@@ -167,17 +169,17 @@ try {
     echo $dao->lastQuery;
     echo build_table($results);
 
-    echo "<hr>toList (join left):";
+    echo "<hr>toList (join left 1):";
     $results = $dao->select("pt.*,tt.name typetable_name")
-        ->join("producttype pt")
+        ->from("producttype pt")
         ->left("typetable tt on pt.type=tt.type")
         ->toList();
     echo $dao->lastQuery;
     echo build_table($results);
 
-    echo "<hr>toList (join left):";
+    echo "<hr>toList (join left 2):";
     $results = $dao->select("pt.*,tt.name typetable_name")
-        ->join("producttype pt")
+        ->from("producttype pt")
         ->left("typetable tt on pt.type=tt.type")
         ->first();
     echo $dao->lastQuery;
@@ -185,7 +187,7 @@ try {
 
     echo "<hr>toList: ";
     $results = $dao->select("*")->from("producttype")
-        ->where('idproducttype>=?', ['i', 1])
+        ->where('idproducttype>=?', [ 1])
         ->order('idproducttype desc')
         ->toList();
     echo $dao->lastQuery;
@@ -194,8 +196,8 @@ try {
 
     echo "<hr>toResult: ";
     $resultsQuery = $dao->select("*")->from("producttype")
-        ->where('name=?', ['s', 'Coca-Cola'])
-        ->where('idproducttype=?', ['i', 1])
+        ->where('name=?', [ 'Coca-Cola'])
+        ->where('idproducttype=?', [ 1])
         ->toResult();
     echo $dao->lastQuery;
     $results=$resultsQuery->fetch_all(PDO::FETCH_ASSOC);
@@ -204,8 +206,8 @@ try {
 
     echo "<hr>first: ";
     $results = $dao->select("*")->from("producttype")
-        ->where('name=?', ['s', 'Coca-Cola'])
-        ->where('idproducttype=?', ['i', 1])
+        ->where('name=?', [ 'Coca-Cola'])
+        ->where('idproducttype=?', [ 1])
         ->limit('1')
         ->first();
     echo $dao->lastQuery;
@@ -213,8 +215,8 @@ try {
 
     echo "<hr>first returns nothing :";
     $results = $dao->select("*")->from("producttype")
-        ->where('name=?', ['s', 'Coca-Cola'])
-        ->where('idproducttype=?', ['i', 55])
+        ->where('name=?', [ 'Coca-Cola'])
+        ->where('idproducttype=?', [ 55])
         ->limit('1')
         ->first();
     echo $dao->lastQuery;
@@ -231,7 +233,7 @@ try {
 
     echo "<hr>";
     $results = $dao->select("*")->from("producttype p")
-        ->where('idproducttype between ? and ?', ['i', 1, 'i', 3])
+        ->where('idproducttype between ? and ?', [ 1,  3])
         ->toList();
     echo $dao->lastQuery;
 
@@ -240,7 +242,7 @@ try {
     echo "<hr>";
     $results = $dao->select("p.type,count(*) c")->from("producttype p")
         ->group("p.type")
-        ->having('p.type>?',['i',0])
+        ->having('p.type>?',[0])
         ->toList();
     echo $dao->lastQuery;
     echo build_table($results);
