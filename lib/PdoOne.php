@@ -32,11 +32,11 @@ use stdClass;
  * @package       eftec
  * @author        Jorge Castro Castillo
  * @copyright (c) Jorge Castro C. MIT License  https://github.com/EFTEC/PdoOne
- * @version       2.0 2020-08-11
+ * @version       2.0.1 2020-08-11
  */
 class PdoOne
 {
-    const VERSION = '2.0';
+    const VERSION = '2.0.1';
     const NULL = PHP_INT_MAX;
     public static $prefixBase = '_';
     /** @var string|null Static date (when the date is empty) */
@@ -2876,6 +2876,7 @@ eot;
                 ) {
                     // if they are linked by the pks and the pks are only 1.
                     $relation[$k]['key'] = 'ONETOONE';
+                    $relation[$k]['col']=$pkFirst;
                     $relation[$k]['refcol'] = ltrim($relation[$k]['refcol'], self::$prefixBase);
                 }
             }
@@ -3049,10 +3050,24 @@ eot;
         $linked = '';
         foreach ($relation as $k => $v) {
             $key = $v['key'];
-            if ($key === 'MANYTOONE' || $key === 'ONETOONE') {
-                $col = ltrim($v['refcol'], '_');
+            if ($key === 'MANYTOONE') {
+                //$col = ltrim($v['refcol'], '_');
+                $col = ltrim($k, '_');
                 $linked .= str_replace(['{_col}', '{refcol}', '{col}'], [$k, $v['refcol'], $col], "\t\tisset(\$row['{_col}'])
-            and \$row['{_col}']['{refcol}']=&\$row['{col}']; // linked $key\n");
+            and \$row['{_col}']['{refcol}']=&\$row['{col}']; // linked MANYTOONE\n");
+            }
+            if ($key === 'ONETOONE') {
+                //$col = ltrim($v['refcol'], '_');
+                $col = ltrim($k, '_');
+                if(!isset($v['col'])) {
+                    echo "<pre>";
+                    var_dump($tableName);
+                    var_dump($relation);
+                    echo "</pre>";
+                }
+                $linked .= str_replace(['{_col}', '{refcol}', '{col}']
+                    , [$k, $v['refcol'], $v['col']], "\t\tisset(\$row['{_col}'])
+            and \$row['{_col}']['{refcol}']=&\$row['{col}']; // linked ONETOONE\n");
             }
         }
         //$convertOutput.=$linked;
@@ -3617,6 +3632,7 @@ eot;
                 $pkref = $this->service->getPK($rel['reftable'], $pkref);
                 if ('' . self::$prefixBase . $pkref[0] === $rel['refcol'] && count($pkref) === 1) {
                     $relation[$k]['key'] = 'ONETOONE';
+                    $relation[$k]['col']='xxx1';
                     $relation[$k]['refcol'] = ltrim($relation[$k]['refcol'], self::$prefixBase);
                 }
             }
@@ -3629,6 +3645,7 @@ eot;
                 ) {
                     // if they are linked by the pks and the pks are only 1.
                     $relation[$k]['key'] = 'ONETOONE';
+                    $relation[$k]['col']='xxx2';
                     $relation[$k]['refcol'] = ltrim($relation[$k]['refcol'], self::$prefixBase);
                 }
             }
@@ -3955,6 +3972,7 @@ eot;
                 $pkref = $this->service->getPK($rel['reftable'], $pkref);
                 if ('' . self::$prefixBase . $pkref[0] === $rel['refcol'] && count($pkref) === 1) {
                     $relation[$k]['key'] = 'ONETOONE';
+                    $relation[$k]['col']='xxx3';
                     $relation[$k]['refcol'] = ltrim($relation[$k]['refcol'], self::$prefixBase);
                 }
             }
@@ -3967,6 +3985,7 @@ eot;
                 ) {
                     // if they are linked by the pks and the pks are only 1.
                     $relation[$k]['key'] = 'ONETOONE';
+                    $relation[$k]['col']='xxx4';
                     $relation[$k]['refcol'] = ltrim($relation[$k]['refcol'], self::$prefixBase);
                 }
             }

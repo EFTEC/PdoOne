@@ -10,7 +10,15 @@ use repomysql\TableParentRepo;
 
 include "common.php";
 
-new dBug(TableParentRepo::base()->runRawQuery('select * from tableparent',[],true));
+//new dBug(TableParentRepo::base()->runRawQuery('select * from tableparent',[],true));
+TableParentRepo::$useModel=false;
+$parent= (TableParentRepo::setRecursive(
+    [
+        '_TableParentExt' // onetoone
+    ]))::first(1);
+new dBug($parent);
+
+die(1);
 
 
 $parent= (TableParentRepo::setRecursive(
