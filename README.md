@@ -1591,7 +1591,8 @@ In a nutshell:
 * Every decimal version means that it patches/fixes/refactoring a previous functionality i.e. 1.5.0 -> 1.5.1 (fix)  
 
 
-
+* 2.0.1 2020-08-12   
+  * Fixed a bug with the generated code with linked relation manytoone and onetonone.
 * 2.0 2020-08-11
   * **Core**: The arguments are rebuild from scratch.  Now, arguments are more natural and we don't need to specify the type.  It also allows many other different kind of combinations.
   * Before: **$this->runRawQuery($sql,['i',20,'s','hello]);**    
