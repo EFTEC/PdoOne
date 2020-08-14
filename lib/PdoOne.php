@@ -32,11 +32,11 @@ use stdClass;
  * @package       eftec
  * @author        Jorge Castro Castillo
  * @copyright (c) Jorge Castro C. MIT License  https://github.com/EFTEC/PdoOne
- * @version       2.1 2020-08-14
+ * @version       2.2 2020-08-14
  */
 class PdoOne
 {
-    const VERSION = '2.1';
+    const VERSION = '2.2';
     const NULL = PHP_INT_MAX;
     public static $prefixBase = '_';
     /** @var string|null Static date (when the date is empty) */

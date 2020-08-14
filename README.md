@@ -1590,7 +1590,7 @@ In a nutshell:
 * Every minor version means that it adds a new functionality i.e. 1.5 -> 1.6 (new methods)  
 * Every decimal version means that it patches/fixes/refactoring a previous functionality i.e. 1.5.0 -> 1.5.1 (fix)  
 
-* 2.1 2020-08-14
+* 2.2 2020-08-14
   * New method setUseInternalCache() and flushInternalCache() where we could set an internal cache. The internal cache stores
   results and they are keep into memory.   For example
   
