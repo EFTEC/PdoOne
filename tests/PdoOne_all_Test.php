@@ -87,7 +87,11 @@ class PdoOne_mysql_Test extends TestCase
         self::assertNotEquals(false,$this->pdoOne->delete('tdummy',['c1'],[2]));
         self::assertEquals([['c1' => 1,'c2' => 'hellox']],$this->pdoOne->select('*')->from('tdummy')->toList());
     }
-    public function test_raw() {
+
+    /**
+     * @throws Exception
+     */
+    public function test_raw_and_internal_cache() {
         if($this->pdoOne->tableExist('tdummy')) {
             $this->pdoOne->dropTable('tdummy');
         }
@@ -98,8 +102,34 @@ class PdoOne_mysql_Test extends TestCase
         self::assertNotEquals(false
             ,$this->pdoOne->runRawQuery('insert into tdummy(c1,c2) values (:c1 , :c2)',[':c1'=>2,':c2'=>'hello2'],true));
 
-        var_dump($this->pdoOne->select('*')->from('tdummy')->first());
+        self::assertEquals(['c1'=>1,'c2'=>'hello'], $this->pdoOne->select('*')->from('tdummy')->first());
         
+        $this->pdoOne->setUseInternalCache(true);
+        //$this->pdoOne->flushInternalCache(true);
+        self::assertEquals(['c1'=>1,'c2'=>'hello'], $this->pdoOne->select('*')->from('tdummy')->first());
+        self::assertEquals(['c1'=>1,'c2'=>'hello'], $this->pdoOne->select('*')->from('tdummy')->first());
+        self::assertEquals(['c1'=>1,'c2'=>'hello'], $this->pdoOne->select('*')->from('tdummy')->first());
+        self::assertEquals(2, $this->pdoOne->internalCacheCounter);
+        $this->pdoOne->flushInternalCache();
+
+        $this->pdoOne->setUseInternalCache(true);
+        //$this->pdoOne->flushInternalCache(true);
+        $result=[['c1'=>1,'c2'=>'hello'],['c1'=>2,'c2'=>'hello2']];
+        self::assertEquals($result, $this->pdoOne->select('*')->from('tdummy')->toList());
+        self::assertEquals($result, $this->pdoOne->select('*')->from('tdummy')->toList());
+        self::assertEquals($result, $this->pdoOne->select('*')->from('tdummy')->toList());
+        self::assertEquals(2, $this->pdoOne->internalCacheCounter);
+        $this->pdoOne->setUseInternalCache(false);
+
+        $this->pdoOne->flushInternalCache();
+        $this->pdoOne->setUseInternalCache(true);
+        //$this->pdoOne->flushInternalCache(true);
+        $result=[['c1'=>1,'c2'=>'hello'],['c1'=>2,'c2'=>'hello2']];
+        self::assertEquals($result, $this->pdoOne->select('*')->from('tdummy')->where(['c1>?'=>0])->toList());
+        self::assertEquals($result, $this->pdoOne->select('*')->from('tdummy')->where(['c1>?'=>0])->toList());
+        self::assertEquals($result, $this->pdoOne->select('*')->from('tdummy')->where(['c1>?'=>0])->toList());
+        self::assertEquals(2, $this->pdoOne->internalCacheCounter);
+        $this->pdoOne->setUseInternalCache(false);
     }
 
     /**

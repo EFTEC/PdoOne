@@ -1590,7 +1590,24 @@ In a nutshell:
 * Every minor version means that it adds a new functionality i.e. 1.5 -> 1.6 (new methods)  
 * Every decimal version means that it patches/fixes/refactoring a previous functionality i.e. 1.5.0 -> 1.5.1 (fix)  
 
+* 2.1 2020-08-14
+  * New method setUseInternalCache() and flushInternalCache() where we could set an internal cache. The internal cache stores
+  results and they are keep into memory.   For example
+  
+```php
+$this->setUseInternalCache(true);
+$rows=$this->select('*')->from('table')->where(['i'=>1])->toList(); // read from the database
+// ...
+$rows2=$this->select('*')->from('table')->where(['i'=>1])->toList(); // read from memory
+// ...
+$rows3=$this->select('*')->from('table')->where(['i'=>2])->toList(); // read from the database because the query is in 
+                                                                     // memory but the parameters are different 
 
+echo $this->internalCacheCounter; 
+
+```  
+  * The internal cache is tested with runRawQuery (if returns an array), toList(), meta() and first()   
+  
 * 2.0.1 2020-08-12   
   * Fixed a bug with the generated code with linked relation manytoone and onetonone.
 * 2.0 2020-08-11

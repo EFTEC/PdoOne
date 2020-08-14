@@ -32,18 +32,15 @@ use stdClass;
  * @package       eftec
  * @author        Jorge Castro Castillo
  * @copyright (c) Jorge Castro C. MIT License  https://github.com/EFTEC/PdoOne
- * @version       2.0.1 2020-08-11
+ * @version       2.1 2020-08-14
  */
 class PdoOne
 {
-    const VERSION = '2.0.1';
+    const VERSION = '2.1';
     const NULL = PHP_INT_MAX;
     public static $prefixBase = '_';
     /** @var string|null Static date (when the date is empty) */
     public static $dateEpoch = '2000-01-01 00:00:00.00000';
-
-    //<editor-fold desc="server fields">
-
     /**
      * Text date format
      *
@@ -51,9 +48,7 @@ class PdoOne
      * @see https://secure.php.net/manual/en/function.date.php
      */
     public static $dateFormat = 'Y-m-d';
-
     public static $dateHumanFormat = 'd/m/Y';
-
     /**
      * Text datetime format
      *
@@ -62,8 +57,8 @@ class PdoOne
      */
     public static $dateTimeFormat = 'Y-m-d\TH:i:s\Z';
 
+    //<editor-fold desc="server fields">
     public static $dateTimeHumanFormat = 'd/m/Y H:i:s';
-
     /**
      * Text datetime format with microseconds
      *
@@ -71,25 +66,21 @@ class PdoOne
      * @see https://secure.php.net/manual/en/function.date.php
      */
     public static $dateTimeMicroFormat = 'Y-m-d\TH:i:s.u\Z';
-
     public static $dateTimeMicroHumanFormat = 'd/m/Y H:i:s.u';
-
     /**
      * @var string ISO format for date
      */
     public static $isoDate = '';
     public static $isoDateTimeMs = '';
     public static $isoDateTime = '';
-
     public static $isoDateInput = '';
     public static $isoDateInputTimeMs = '';
     public static $isoDateInputTime = '';
-
+    public $internalCacheCounter = 0;
+    public $internalCache = [];
     /** @var int nodeId It is the identifier of the node. It must be between 0..1023 */
     public $nodeId = 1;
-
     public $tableSequence = 'snowflake';
-
     /**
      * it is used to generate an unpredictable number by flipping positions. It
      * must be changed.
@@ -103,7 +94,6 @@ class PdoOne
      * @see \eftec\PdoOne::getUnpredictable
      */
     public $masks0 = [2, 0, 4, 5];
-
     public $masks1 = [16, 13, 12, 11];
     /** @var PdoOneEncryption */
     public $encryption;
@@ -114,8 +104,8 @@ class PdoOne
     public $database_identityName = 'identity';
     /** @var string server ip. Ex. 127.0.0.1 127.0.0.1:3306 */
     public $server;
-    //</editor-fold>
     public $user;
+    //</editor-fold>
     public $pwd;
     /** @var string The name of the database/schema */
     public $db;
@@ -149,6 +139,7 @@ class PdoOne
     public $limit = '';
     public $order = '';
     public $from = '';
+    private $useInternalCache = false;
 
     //<editor-fold desc="query builder fields">
     /**
@@ -1407,8 +1398,7 @@ eot;
      * @param array|null $param       [type1,value1,type2,value2] or [name1=>value,name2=value2]
      * @param bool       $returnArray if true then it returns an array. If false then it returns a PDOStatement
      *
-     * @return bool|PDOStatement|array an array of associative or a pdo
-     *     statement
+     * @return bool|PDOStatement|array an array of associative or a pdo statement. False is the operation fails
      * @throws Exception
      * @test equals [0=>[1=>1]],this('select 1',null,true)
      */
@@ -1419,18 +1409,33 @@ eot;
 
             return false;
         }
-        if ($this->readonly) {
-            if (stripos($rawSql, 'insert ') === 0 || stripos($rawSql, 'update ') === 0
-                || stripos($rawSql, 'delete ') === 0
-            ) {
-                // we aren't checking SQL-DLC queries. Also, "insert into" is stopped but "  insert into" not.
-                $this->throwError('Database is in READ ONLY MODE', '');
-            }
+        if (!$rawSql) {
+            $this->throwError("Query empty", '');
+            return false;
+        }
+        $writeCommand = self::queryCommand($rawSql, true) !== 'dql';
+
+        /** @var bool|string $uid it stores the unique identifier of the query */
+        $uid = false;
+
+
+        if ($this->readonly && $writeCommand) {
+            // we aren't checking SQL-DLC queries. Also, "insert into" is stopped but "  insert into" not.
+            $this->throwError('Database is in READ ONLY MODE', '');
+            return false;
         }
         if (!is_array($param) && $param !== null) {
             $this->throwError('runRawQuery, param must be null or an array', '');
-
             return false;
+        }
+        if ($this->useInternalCache && $returnArray === true && !$writeCommand) {
+            // if we use internal cache and we returns an array and it is not a write command
+            $uid = hash($this->encryption->hashType, $rawSql . serialize($param));
+            if (isset($this->internalCache[$uid])) {
+                // we have an internal cache, so we will return it.
+                $this->internalCacheCounter++;
+                return $this->internalCache[$uid];
+            }
         }
 
         $this->lastParam = $param;
@@ -1439,7 +1444,11 @@ eot;
             $this->storeInfo($rawSql);
         }
         if ($param === null) {
-            return $this->runRawQueryParamLess($rawSql, $returnArray);
+            $rows = $this->runRawQueryParamLess($rawSql, $returnArray);
+            if ($uid !== false && $returnArray) {
+                $this->internalCache[$uid] = $rows;
+            }
+            return $rows;
         }
 
         // the "where" has parameters.
@@ -1486,7 +1495,9 @@ eot;
                 } else {
                     $this->affected_rows = 0;
                 }
-
+                if ($uid !== false) {
+                    $this->internalCache[$uid] = $result;
+                }
                 return $result;
             }
         } else {
@@ -1498,7 +1509,9 @@ eot;
             $rows = ($stmt->columnCount() > 0) ? $stmt->fetchAll(PDO::FETCH_ASSOC) : [];
             $this->affected_rows = $stmt->rowCount();
             $stmt = null;
-
+            if ($uid !== false) {
+                $this->internalCache[$uid] = $rows;
+            }
             return $rows;
         }
 
@@ -1509,6 +1522,35 @@ eot;
         }
 
         return $stmt;
+    }
+
+    /**
+     * It returns the command (in lower case) or the type of command of a query<br>
+     * Example:<br>
+     * <pre>
+     * $this->queryCommand("select * from table") // returns "select"
+     * $this->queryCommand("select * from table",true) // returns "dql"
+     * </pre>
+     *
+     * @param string $sql
+     * @param false  $returnType if true then it returns DML (insert/updat/delete/etc) or DQL (select/show/display)
+     *
+     * @return string
+     *
+     */
+    public static function queryCommand($sql, $returnType = false)
+    {
+        if (!$sql) {
+            return $returnType ? 'dml' : 'dql';
+        }
+        $command = strtolower((explode(' ', trim($sql)))[0]);
+        if ($returnType) {
+            if ($command === 'select' || $command === 'show' || $command === 'display') {
+                return 'dql';
+            }
+            return 'dml';
+        }
+        return $command;
     }
 
     //<editor-fold desc="transaction functions">
@@ -1828,7 +1870,7 @@ eot;
     }
 
     /**
-     * @param             $table
+     * @param string      $table
      * @param null|string $sql
      * @param bool        $defaultNull
      * @param bool        $inline
@@ -1851,7 +1893,9 @@ eot;
         if ($sql === null) {
             $sql = 'select * from ' . $this->addDelimiter($table);
         }
-        $r = ($this->toMeta($sql));
+        $r = $this->toMeta($sql);
+
+
         $ln = ($inline) ? '' : "\n";
         if ($recursive) {
             /** @noinspection PhpUnusedLocalVariableInspection */
@@ -1980,6 +2024,7 @@ eot;
      */
     public function toMeta($sql = null, $args = [])
     {
+        $uid = false;
         if ($sql === null) {
             $this->beginTry();
             /** @var PDOStatement $stmt */
@@ -1988,6 +2033,14 @@ eot;
                 return false;
             }
         } else {
+            if ($this->useInternalCache) {
+                $uid = hash($this->encryption->hashType, 'meta:' . $sql . serialize($args));
+                if (isset($this->internalCache[$uid])) {
+                    // we have an internal cache, so we will return it.
+                    $this->internalCacheCounter++;
+                    return $this->internalCache[$uid];
+                }
+            }
             /** @var PDOStatement $stmt */
             $stmt = $this->runRawQuery($sql, $args, false);
         }
@@ -2002,6 +2055,9 @@ eot;
             $rows[] = $stmt->getColumnMeta($i);
         }
         $stmt = null;
+        if ($uid !== false) {
+            $this->internalCache[$uid] = $rows;
+        }
         return $rows;
     }
 
@@ -2040,9 +2096,23 @@ eot;
     ) {
         $this->errorText = '';
         $allparam = '';
+        $uid = false;
         $sql = $this->sqlGen();
+        $isSelect = self::queryCommand($sql, true) === 'dql';
+
         try {
             $allparam = array_merge($this->setParamAssoc, $this->whereParamAssoc, $this->havingParamAssoc);
+
+            if ($isSelect && $this->useInternalCache && $returnArray) {
+                $uid = hash($this->encryption->hashType, $sql . $extraMode . serialize($allparam));
+                if (isset($this->internalCache[$uid])) {
+                    // we have an internal cache, so we will return it.
+                    $this->internalCacheCounter++;
+                    $this->builderReset();
+                    return $this->internalCache[$uid];
+                }
+            }
+
             /** @var PDOStatement $stmt */
             $stmt = $this->prepare($sql);
         } catch (Exception $e) {
@@ -2074,6 +2144,9 @@ eot;
             if ($result !== false) {
                 // it's found in the cache.
                 $this->builderReset();
+                if ($uid !== false) {
+                    $this->internalCache[$uid] = $result;
+                }
                 return $result;
             }
         } elseif ($extraIdCache === 'rungen') {
@@ -2089,6 +2162,9 @@ eot;
                 $this->cacheService->setCache($this->uid, $this->cacheFamily, $result, $useCache);
             }
             $this->builderReset();
+            if ($uid !== false) {
+                $this->internalCache[$uid] = $result;
+            }
             return $result;
         }
 
@@ -2106,8 +2182,8 @@ eot;
      */
     public function sqlGen($resetStack = false)
     {
-        if (stripos($this->select, 'select') !== false) {
-            // is it a full query? ->select=select * ..." instead of ->select=*
+        if (stripos($this->select, 'select ') === 0) {
+            // is it a full query? $this->select=select * ..." instead of $this->select=*
             $words = preg_split('#\s+#', strtolower($this->select));
         } else {
             $words = [];
@@ -2621,7 +2697,6 @@ abstract class Abstract{classname} extends {baseclass}
      * @param string|array $recursive=self::factory();
      *
      * @return {classname}
-     * {@inheritDoc}
      */
     public static function setRecursive($recursive)
     {
@@ -2876,7 +2951,7 @@ eot;
                 ) {
                     // if they are linked by the pks and the pks are only 1.
                     $relation[$k]['key'] = 'ONETOONE';
-                    $relation[$k]['col']=$pkFirst;
+                    $relation[$k]['col'] = $pkFirst;
                     $relation[$k]['refcol'] = ltrim($relation[$k]['refcol'], self::$prefixBase);
                 }
             }
@@ -3058,15 +3133,8 @@ eot;
             }
             if ($key === 'ONETOONE') {
                 //$col = ltrim($v['refcol'], '_');
-                $col = ltrim($k, '_');
-                if(!isset($v['col'])) {
-                    echo "<pre>";
-                    var_dump($tableName);
-                    var_dump($relation);
-                    echo "</pre>";
-                }
-                $linked .= str_replace(['{_col}', '{refcol}', '{col}']
-                    , [$k, $v['refcol'], $v['col']], "\t\tisset(\$row['{_col}'])
+                //$col = ltrim($k, '_');
+                $linked .= str_replace(['{_col}', '{refcol}', '{col}'], [$k, $v['refcol'], $v['col']], "\t\tisset(\$row['{_col}'])
             and \$row['{_col}']['{refcol}']=&\$row['{col}']; // linked ONETOONE\n");
             }
         }
@@ -3203,6 +3271,33 @@ eot;
     }
 
     /**
+     * If true then the library will use the internal cache that stores DQL commands.<br>
+     * By default, the internal cache is disabled<br>
+     * The internal cache only lasts for the execution of the code and it uses memory but
+     * it avoid to query values that are in memory.
+     *
+     * @param bool $useInternalCache
+     */
+    public function setUseInternalCache($useInternalCache = true)
+    {
+        $this->useInternalCache = $useInternalCache;
+    }
+
+    /**
+     * Flush and disable the internal cache. By default, the internal cache is not used unless it is set.
+     *
+     * @param bool $useInternalCache if true then it enables the internal cache.
+     *
+     * @see \eftec\PdoOne::setUseInternalCache
+     */
+    public function flushInternalCache($useInternalCache = false)
+    {
+        $this->internalCacheCounter = 0;
+        $this->internalCache = [];
+        $this->useInternalCache = $useInternalCache;
+    }
+
+    /**
      * It builds (generates source code) of the base, repo and repoext classes of the current schema.<br>
      * <b>Example:</b><br>
      * <pre>
@@ -3283,6 +3378,9 @@ eot;
         $extraColumns = [],
         $columnRemoves = []
     ) {
+        $internalCache=$this->useInternalCache;
+        $this->setUseInternalCache(true);
+        
         if (is_array($folders)) {
             list($folder, $folderModel) = $folders;
         } else {
@@ -3393,6 +3491,7 @@ eot;
                 $logs[] = "Unable to save Repo Class file '{$folder}{$className}.php'";
             }
         }
+        $this->setUseInternalCache($internalCache);
         return $logs;
     }
 
@@ -3632,7 +3731,7 @@ eot;
                 $pkref = $this->service->getPK($rel['reftable'], $pkref);
                 if ('' . self::$prefixBase . $pkref[0] === $rel['refcol'] && count($pkref) === 1) {
                     $relation[$k]['key'] = 'ONETOONE';
-                    $relation[$k]['col']='xxx1';
+                    $relation[$k]['col'] = 'xxx1';
                     $relation[$k]['refcol'] = ltrim($relation[$k]['refcol'], self::$prefixBase);
                 }
             }
@@ -3645,7 +3744,7 @@ eot;
                 ) {
                     // if they are linked by the pks and the pks are only 1.
                     $relation[$k]['key'] = 'ONETOONE';
-                    $relation[$k]['col']='xxx2';
+                    $relation[$k]['col'] = 'xxx2';
                     $relation[$k]['refcol'] = ltrim($relation[$k]['refcol'], self::$prefixBase);
                 }
             }
@@ -3972,7 +4071,7 @@ eot;
                 $pkref = $this->service->getPK($rel['reftable'], $pkref);
                 if ('' . self::$prefixBase . $pkref[0] === $rel['refcol'] && count($pkref) === 1) {
                     $relation[$k]['key'] = 'ONETOONE';
-                    $relation[$k]['col']='xxx3';
+                    $relation[$k]['col'] = 'xxx3';
                     $relation[$k]['refcol'] = ltrim($relation[$k]['refcol'], self::$prefixBase);
                 }
             }
@@ -3985,7 +4084,7 @@ eot;
                 ) {
                     // if they are linked by the pks and the pks are only 1.
                     $relation[$k]['key'] = 'ONETOONE';
-                    $relation[$k]['col']='xxx4';
+                    $relation[$k]['col'] = 'xxx4';
                     $relation[$k]['refcol'] = ltrim($relation[$k]['refcol'], self::$prefixBase);
                 }
             }
@@ -6000,6 +6099,7 @@ BOOTS;
     public function first()
     {
         $useCache = $this->useCache; // because builderReset cleans this value
+        $uid=false;
         if ($useCache !== false) {
             $sql = $this->sqlGen();
             $this->uid = hash($this->encryption->hashType,
@@ -6010,6 +6110,17 @@ BOOTS;
                 $this->builderReset();
 
                 return $rows;
+            }
+        }
+        if ($this->useInternalCache) {
+            $sql=(!isset($sql)) ? $this->sqlGen() : $sql;
+            $allparam = array_merge($this->setParamAssoc, $this->whereParamAssoc, $this->havingParamAssoc);
+            $uid = hash($this->encryption->hashType,'first'.$sql  . serialize($allparam));
+            if (isset($this->internalCache[$uid])) {
+                // we have an internal cache, so we will return it.
+                $this->internalCacheCounter++;
+                $this->builderReset();
+                return $this->internalCache[$uid];
             }
         }
         $this->beginTry();
@@ -6032,6 +6143,9 @@ BOOTS;
         if ($this->uid) {
             // we store the information of the cache.
             $this->cacheService->setCache($this->uid, $this->cacheFamily, $row, $useCache);
+        }
+        if($uid!==false) {
+            $this->internalCache[$uid]=$row;
         }
 
         return $row;
@@ -6601,37 +6715,7 @@ BOOTS;
     {
         return $this->encryption->decrypt($data);
     }
-
-    /**
-     * It converts a simple type 'b','i','d','f','s' as a pdo type PDO:PARAM_*<br>
-     *
-     * @param string|int $string
-     *
-     * @return int|null
-     */
-    private function stringToPdoParam($string)
-    {
-        if (is_int($string)) {
-            // if the parameter is expressed as numeric, then it's returned as is.
-            return $string;
-        }
-        switch ($string) {
-            case 'b':
-                return PDO::PARAM_BOOL;
-            case 'i':
-                return PDO::PARAM_INT;
-            case 'd':
-            case 'f':
-            case 's':
-                // decimal, float, date and strings are expressed in the same way
-                return PDO::PARAM_STR;
-            default:
-                trigger_error("param type not defined [$string]");
-                return null;
-        }
-    }
-
-
+    
     //</editor-fold>
 }
 
