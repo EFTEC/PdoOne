@@ -18,7 +18,7 @@ use RuntimeException;
 /**
  * Class _BasePdoOneRepo
  *
- * @version       4.8 2020-08-02
+ * @version       4.8.1 2020-08-16
  * @package       eftec
  * @author        Jorge Castro Castillo
  * @copyright (c) Jorge Castro C. MIT License  https://github.com/EFTEC/PdoOne
@@ -740,8 +740,14 @@ abstract class _BasePdoOneRepo
             (static::ME)::convertInputVal($entity);
             self::invalidateCache();
             // only the fields that are defined are inserted
-            $entityCopy = self::intersectArrays($entity, static::getDefName());
+            $entityCopy = self::intersectArraysNotNull($entity, static::getDefName());
             $entityCopy = self::diffArrays($entityCopy, static::getDefNoUpdate()); // columns discarded
+            if($pdoOne->transactionOpen===true) {
+                // we disable transaction to avoid nested transactions.
+                // mysql does not allows nested transactions
+                // sql server allows nested transaction but afaik, it only counts the outer one.
+                $transaction=false;
+            }
             if ($transaction) {
                 $pdoOne->startTransaction();
             }
@@ -861,7 +867,7 @@ abstract class _BasePdoOneRepo
         }
     }
 
-    
+
 
     /**
      * It invalidates a family/group of cache<br>
@@ -1001,8 +1007,14 @@ abstract class _BasePdoOneRepo
             self::invalidateCache();
             $recursiveBack = $pdoOne->getRecursive();  // recursive is deleted by insertObject
             // only the fields that are defined are inserted
-            $entityCopy = self::intersectArrays($entity, static::getDefName());
+            $entityCopy = self::intersectArraysNotNull($entity, static::getDefName());
             $entityCopy = self::diffArrays($entityCopy, static::getDefNoInsert()); // discard some columns
+            if($pdoOne->transactionOpen===true) {
+                // we disable transaction to avoid nested transactions.
+                // mysql does not allows nested transactions
+                // sql server allows nested transaction but afaik, it only counts the outer one.
+                $transaction=false;
+            }
             if ($transaction) {
                 $pdoOne->startTransaction();
             }
@@ -1287,6 +1299,12 @@ abstract class _BasePdoOneRepo
             $entityCopy = self::intersectArraysNotNull($entity, $columns);
             self::invalidateCache();
             $pdoOne = self::getPdoOne();
+            if($pdoOne->transactionOpen===true) {
+                // we disable transaction to avoid nested transactions.
+                // mysql does not allows nested transactions
+                // sql server allows nested transaction but afaik, it only counts the outer one.
+                $transaction=false;
+            }
             if ($transaction) {
                 $pdoOne->startTransaction();
             }

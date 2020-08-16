@@ -32,11 +32,11 @@ use stdClass;
  * @package       eftec
  * @author        Jorge Castro Castillo
  * @copyright (c) Jorge Castro C. MIT License  https://github.com/EFTEC/PdoOne
- * @version       2.2 2020-08-14
+ * @version       2.2.1 2020-08-14
  */
 class PdoOne
 {
-    const VERSION = '2.2';
+    const VERSION = '2.2.1';
     const NULL = PHP_INT_MAX;
     public static $prefixBase = '_';
     /** @var string|null Static date (when the date is empty) */
@@ -384,6 +384,9 @@ class PdoOne
                     $tmpDate = DateTime::createFromFormat(self::$dateTimeFormat, $sqlField);
                 } else {
                     $tmpDate = DateTime::createFromFormat(self::$dateFormat, $sqlField);
+                    if ($tmpDate===false) {
+                        return false;
+                    }
                     $tmpDate->setTime(0, 0, 0);
                 }
                 break;
@@ -396,6 +399,9 @@ class PdoOne
                     $tmpDate = DateTime::createFromFormat(self::$dateTimeHumanFormat, $sqlField);
                 } else {
                     $tmpDate = DateTime::createFromFormat(self::$dateHumanFormat, $sqlField);
+                    if ($tmpDate===false) {
+                        return false;
+                    }
                     $tmpDate->setTime(0, 0, 0);
                 }
                 break;
@@ -3380,7 +3386,7 @@ eot;
     ) {
         $internalCache=$this->useInternalCache;
         $this->setUseInternalCache(true);
-        
+
         if (is_array($folders)) {
             list($folder, $folderModel) = $folders;
         } else {
@@ -6715,7 +6721,7 @@ BOOTS;
     {
         return $this->encryption->decrypt($data);
     }
-    
+
     //</editor-fold>
 }
 

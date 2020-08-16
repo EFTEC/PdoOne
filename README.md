@@ -1590,6 +1590,10 @@ In a nutshell:
 * Every minor version means that it adds a new functionality i.e. 1.5 -> 1.6 (new methods)  
 * Every decimal version means that it patches/fixes/refactoring a previous functionality i.e. 1.5.0 -> 1.5.1 (fix)  
 
+* 2.2.1 2020-08-16
+  * Fixed a bug when the system is unable to convert the date. Now, it returns false.   
+  * BasePdoOneRepo update to 4.8.1, if the transaction is open, then it doesn't nest a new transaction.    
+
 * 2.2 2020-08-14
   * New method setUseInternalCache() and flushInternalCache() where we could set an internal cache. The internal cache stores
   results and they are keep into memory.   For example
