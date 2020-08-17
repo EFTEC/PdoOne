@@ -18,7 +18,7 @@ use RuntimeException;
 /**
  * Class _BasePdoOneRepo
  *
- * @version       4.8.1 2020-08-16
+ * @version       4.8.2 2020-08-17
  * @package       eftec
  * @author        Jorge Castro Castillo
  * @copyright (c) Jorge Castro C. MIT License  https://github.com/EFTEC/PdoOne
@@ -30,7 +30,7 @@ abstract class _BasePdoOneRepo
     /** @var array $gQuery =[['columns'=>[],'joins'=>[],'where'=>[]] */
     public static $gQuery = [];
     public static $gQueryCounter = 0;
-    public static $pageSize=20;
+    public static $pageSize = 20;
     public static $lastException = '';
     /** @var bool if true then it returns a false on error. If false, it throw an exception in case of error */
     protected static $falseOnError = false;
@@ -423,6 +423,21 @@ abstract class _BasePdoOneRepo
     }
 
     /**
+     * Its a macro of limit but it works for paging. It uses static::$pageSize to determine the rows to return
+     *
+     * @param int $numPage Number of page. It starts with 1.
+     *
+     * @return mixed
+     * @throws Exception
+     */
+    public static function page($numPage)
+    {
+        $p0 = static::$pageSize * ($numPage - 1);
+        $p1 = $p0 + static::$pageSize;
+        return static::limit("$p0,$p1");
+    }
+
+    /**
      * It adds an "limit" in a query. It depends on the type of database<br>
      *
      * @param $sql
@@ -434,20 +449,6 @@ abstract class _BasePdoOneRepo
     {
         self::getPdoOne()->limit($sql);
         return static::ME;
-    }
-
-    /**
-     * Its a macro of limit but it works for paging. It uses static::$pageSize to determine the rows to return
-     *
-     * @param int $numPage Number of page. It starts with 1.
-     *
-     * @return mixed
-     * @throws Exception
-     */
-    public static function page($numPage) {
-        $p0=static::$pageSize * ($numPage-1);
-        $p1=$p0+static::$pageSize ;
-        return static::limit("$p0,$p1");
     }
 
     /**
@@ -571,7 +572,7 @@ abstract class _BasePdoOneRepo
         $ns = self::getNamespace();
         foreach ($keyRels as $nameCol => $keyRel) {
             $type = $keyRel['key'];
-            if($type!=='FOREIGN KEY') {
+            if ($type !== 'FOREIGN KEY') {
                 // $nameColClean = trim($nameCol, PdoOne::$prefixBase);
                 $recursiveComplete = ltrim($recursiveInit . '/' . $nameCol, '/');
                 //echo "check recursive: $recursiveComplete<br>";
@@ -695,6 +696,9 @@ abstract class _BasePdoOneRepo
     {
         try {
             $pks = static::PK;
+            if(is_object($entity)) {
+                $entity=(array)$entity;
+            }
             if (is_array($entity)) {
                 foreach ($entity as $k => $v) { // we keep the pks
                     if (!in_array($k, $pks, true)) {
@@ -704,7 +708,7 @@ abstract class _BasePdoOneRepo
             } elseif (is_array($pks) && count($pks)) {
                 $entity = [$pks[0] => $entity];
             } else {
-                self::getPdoOne()->throwError('exist: entity not specified as an array or table lacks of PKs', $entity);
+                self::getPdoOne()->throwError('exist: entity not specified as an array or table lacks of PKs',json_encode($entity));
                 return false;
             }
             $r = self::getPdoOne()->genError(false)->select('1')->from(static::TABLE)->where($entity)->firstScalar();
@@ -735,6 +739,9 @@ abstract class _BasePdoOneRepo
     protected static function _update($entity, $transaction = true)
     {
         try {
+            if (is_object($entity)) {
+                $entity = (array)$entity;
+            }
             $pdoOne = self::getPdoOne();
             //$defTable = static::getDef('conversion');
             (static::ME)::convertInputVal($entity);
@@ -742,11 +749,11 @@ abstract class _BasePdoOneRepo
             // only the fields that are defined are inserted
             $entityCopy = self::intersectArraysNotNull($entity, static::getDefName());
             $entityCopy = self::diffArrays($entityCopy, static::getDefNoUpdate()); // columns discarded
-            if($pdoOne->transactionOpen===true) {
+            if ($pdoOne->transactionOpen === true) {
                 // we disable transaction to avoid nested transactions.
                 // mysql does not allows nested transactions
                 // sql server allows nested transaction but afaik, it only counts the outer one.
-                $transaction=false;
+                $transaction = false;
             }
             if ($transaction) {
                 $pdoOne->startTransaction();
@@ -868,7 +875,6 @@ abstract class _BasePdoOneRepo
     }
 
 
-
     /**
      * It invalidates a family/group of cache<br>
      * <b>Example</b>
@@ -893,6 +899,56 @@ abstract class _BasePdoOneRepo
             }
         }
         return static::ME;
+    }
+
+    /**
+     * It filter an associative array<br>
+     * <b>Example:</b><br>
+     * <pre>
+     * self::intersectArraysNotNull(['a1'=>1,'a2'=>2],['a1','a3']); // ['a1'=>1]
+     * </pre>
+     *
+     * @param array $arrayValues An associative array with key as the column
+     * @param array $arrayIndex  An indexed array with the name of the columns
+     *
+     * @return array
+     */
+    public static function intersectArraysNotNull($arrayValues, $arrayIndex)
+    {
+        $result = [];
+        foreach ($arrayIndex as $k) {
+            if (isset($arrayValues[$k])) {
+                $result[$k] = $arrayValues[$k];
+            }
+        }
+        return $result;
+    }
+
+    /**
+     * Remove elements of an array unsing an array (indexed or not)<br>
+     * <pre>
+     * $this->diffArrays(['a'=>'aaa','b'=>'bbb'],['a'],false); // [b'=>'bbb']
+     * $this->diffArrays(['a'=>'aaa','b'=>'bbb'],[0=>'a'],true); // [b'=>'bbb']
+     * </pre>
+     *
+     * @param      $arrayValues
+     * @param      $arrayIndex
+     * @param bool $indexIsKey
+     *
+     * @return array
+     */
+    public static function diffArrays($arrayValues, $arrayIndex, $indexIsKey = false)
+    {
+        $result = [];
+        foreach ($arrayValues as $k => $v) {
+            if (!$indexIsKey && !in_array($k, $arrayIndex)) {
+                $result[$k] = $v;
+            }
+            if ($indexIsKey && !array_key_exists($k, $arrayIndex)) {
+                $result[$k] = $v;
+            }
+        }
+        return $result;
     }
 
     /**
@@ -924,30 +980,112 @@ abstract class _BasePdoOneRepo
     }
 
     /**
-     * Remove elements of an array unsing an array (indexed or not)<br>
-     * <pre>
-     * $this->diffArrays(['a'=>'aaa','b'=>'bbb'],['a'],false); // [b'=>'bbb']
-     * $this->diffArrays(['a'=>'aaa','b'=>'bbb'],[0=>'a'],true); // [b'=>'bbb']
-     * </pre>
+     * Insert an new row
      *
-     * @param      $arrayValues
-     * @param      $arrayIndex
-     * @param bool $indexIsKey
+     * @param array|object $entity =static::factory()
      *
-     * @return array
+     * @param bool         $transaction
+     *
+     * @return mixed
+     * @throws Exception
      */
-    public static function diffArrays($arrayValues, $arrayIndex, $indexIsKey = false)
+    protected static function _insert(&$entity, $transaction = true)
     {
-        $result = [];
-        foreach ($arrayValues as $k => $v) {
-            if (!$indexIsKey && !in_array($k, $arrayIndex)) {
-                $result[$k] = $v;
+        $returnObject = false;
+        try {
+            $pdoOne = self::getPdoOne();
+            //$defTable = static::getDef('conversion');
+            //self::_convertInputValue($entity, $defTable);
+
+            if (is_object($entity)) {
+                $returnObject = clone $entity;
+                $entity = (array)$entity;
             }
-            if ($indexIsKey && !array_key_exists($k, $arrayIndex)) {
-                $result[$k] = $v;
+            (static::ME)::convertInputVal($entity);
+            self::invalidateCache();
+            $recursiveBack = $pdoOne->getRecursive();  // recursive is deleted by insertObject
+            // only the fields that are defined are inserted
+            $entityCopy = self::intersectArraysNotNull($entity, static::getDefName());
+            $entityCopy = self::diffArrays($entityCopy, static::getDefNoInsert()); // discard some columns
+            if ($pdoOne->transactionOpen === true) {
+                // we disable transaction to avoid nested transactions.
+                // mysql does not allows nested transactions
+                // sql server allows nested transaction but afaik, it only counts the outer one.
+                $transaction = false;
             }
+            if ($transaction) {
+                $pdoOne->startTransaction();
+            }
+            $insert = $pdoOne->insertObject(static::TABLE, $entityCopy);
+            $pks = $pdoOne->getDefTableKeys(static::TABLE, true, 'PRIMARY KEY');
+            if (count($pks) > 0) {
+                // we update the identity of $entity ($entityCopy is already updated).
+                $firstPK = array_keys($pks)[0];
+                if ($returnObject !== false) {
+                    $returnObject->$firstPK = $insert;
+                } else {
+                    $entity[$firstPK] = $insert;
+                }
+            }
+            $defs = static::getDefFK();
+            $ns = self::getNamespace();
+            foreach ($defs as $key => $def) { // ['/tablaparentxcategory']=['key'=>...]
+                if (isset($entity[$key]) && is_array($entity[$key])) {
+                    if ($def['key'] === 'ONETOMANY' && $pdoOne->hasRecursive($key, $recursiveBack)) {
+                        $classRef = $ns
+                            . static::RELATIONS[$def['reftable']]; // $ns . PdoOne::camelize($def['reftable']) . $postfix;
+                        foreach ($entity[$key] as $item) {
+                            // we only insert it if it has a recursive
+                            $refCol = ltrim($def['refcol'], PdoOne::$prefixBase);
+                            $item[$refCol]
+                                = $entityCopy[$def['col']]; // if the pk (of the original object) is identity.
+                            $classRef::insert($item, false);
+                        }
+                    }
+                    if ($def['key'] === 'MANYTOMANY') {
+                        $class2 = $ns
+                            . static::RELATIONS[$def['table2']]; // $ns . PdoOne::camelize($def['table2']) . $postfix;
+                        foreach ($entity[$key] as $item) {
+                            $pk2 = $item[$def['col2']];
+                            if ($pdoOne->hasRecursive($key, $recursiveBack) && $class2::exist($item) === false) {
+                                // we only update it if it has a recursive
+                                $pk2 = $class2::insert($item, false);
+                            }
+                            $classRel = $ns
+                                . static::RELATIONS[$def['reftable']]; // $ns . PdoOne::camelize($def['reftable']) . $postfix;
+                            $refCol = ltrim($def['refcol'], PdoOne::$prefixBase);
+                            $refCol2 = ltrim($def['refcol2'], PdoOne::$prefixBase);
+                            $relationalObj = [$refCol => $entityCopy[$def['col']], $refCol2 => $pk2];
+                            $classRel::insert($relationalObj, false);
+                        }
+                    }
+                }
+            }
+            if ($transaction) {
+                self::getPdoOne()->commit();
+            }
+            if ($returnObject !== false) {
+                $entity = $returnObject;
+            }
+            return $insert;
+        } catch (Exception $exception) {
+            if ($transaction) {
+                self::getPdoOne()->rollback();
+            }
+            if (self::$falseOnError) {
+                self::reset();
+                self::$lastException = $exception->getMessage();
+                if ($returnObject !== false) {
+                    $entity = $returnObject;
+                }
+                return false;
+            }
+            self::reset();
+            if ($returnObject !== false) {
+                $entity = $returnObject;
+            }
+            throw $exception;
         }
-        return $result;
     }
 
     /**
@@ -987,95 +1125,6 @@ abstract class _BasePdoOneRepo
         return static::ME;
     }
 
-    /**
-     * Insert an new row
-     *
-     * @param array|object $entity =static::factory()
-     *
-     * @param bool         $transaction
-     *
-     * @return mixed
-     * @throws Exception
-     */
-    protected static function _insert(&$entity, $transaction = true)
-    {
-        try {
-            $pdoOne = self::getPdoOne();
-            //$defTable = static::getDef('conversion');
-            //self::_convertInputValue($entity, $defTable);
-            (static::ME)::convertInputVal($entity);
-            self::invalidateCache();
-            $recursiveBack = $pdoOne->getRecursive();  // recursive is deleted by insertObject
-            // only the fields that are defined are inserted
-            $entityCopy = self::intersectArraysNotNull($entity, static::getDefName());
-            $entityCopy = self::diffArrays($entityCopy, static::getDefNoInsert()); // discard some columns
-            if($pdoOne->transactionOpen===true) {
-                // we disable transaction to avoid nested transactions.
-                // mysql does not allows nested transactions
-                // sql server allows nested transaction but afaik, it only counts the outer one.
-                $transaction=false;
-            }
-            if ($transaction) {
-                $pdoOne->startTransaction();
-            }
-            $insert = $pdoOne->insertObject(static::TABLE, $entityCopy);
-            $pks = $pdoOne->getDefTableKeys(static::TABLE, true, 'PRIMARY KEY');
-            if (count($pks) > 0) {
-                // we update the identity of $entity ($entityCopy is already updated).
-                $entity[array_keys($pks)[0]] = $insert;
-            }
-            $defs = static::getDefFK();
-            $ns = self::getNamespace();
-            foreach ($defs as $key => $def) { // ['/tablaparentxcategory']=['key'=>...]
-                if (isset($entity[$key]) && is_array($entity[$key])) {
-                    if ($def['key'] === 'ONETOMANY' && $pdoOne->hasRecursive($key, $recursiveBack)) {
-                        $classRef = $ns
-                            . static::RELATIONS[$def['reftable']]; // $ns . PdoOne::camelize($def['reftable']) . $postfix;
-                        foreach ($entity[$key] as $item) {
-                            // we only insert it if it has a recursive
-                            $refCol = ltrim($def['refcol'], PdoOne::$prefixBase);
-                            $item[$refCol]
-                                = $entityCopy[$def['col']]; // if the pk (of the original object) is identity.
-                            $classRef::insert($item, false);
-                        }
-                    }
-                    if ($def['key'] === 'MANYTOMANY') {
-                        $class2 = $ns
-                            . static::RELATIONS[$def['table2']]; // $ns . PdoOne::camelize($def['table2']) . $postfix;
-                        foreach ($entity[$key] as $item) {
-                            $pk2 = $item[$def['col2']];
-                            if ($pdoOne->hasRecursive($key, $recursiveBack) && $class2::exist($item) === false) {
-                                // we only update it if it has a recursive
-                                $pk2 = $class2::insert($item, false);
-                            }
-                            $classRel = $ns
-                                . static::RELATIONS[$def['reftable']]; // $ns . PdoOne::camelize($def['reftable']) . $postfix;
-                            $refCol = ltrim($def['refcol'], PdoOne::$prefixBase);
-                            $refCol2 = ltrim($def['refcol2'], PdoOne::$prefixBase);
-                            $relationalObj = [$refCol => $entityCopy[$def['col']], $refCol2 => $pk2];
-                            $classRel::insert($relationalObj, false);
-                        }
-                    }
-                }
-            }
-            if ($transaction) {
-                self::getPdoOne()->commit();
-            }
-            return $insert;
-        } catch (Exception $exception) {
-            if ($transaction) {
-                self::getPdoOne()->rollback();
-            }
-            if (self::$falseOnError) {
-                self::reset();
-                self::$lastException = $exception->getMessage();
-                return false;
-            }
-            self::reset();
-            throw $exception;
-        }
-    }
-
     protected static function _toList($filter, $filterValue)
     {
         return self::generationStart('toList', $filter, $filterValue);
@@ -1112,8 +1161,8 @@ abstract class _BasePdoOneRepo
                 if ($query['type'] === 'QUERY') {
                     $from = $query['joins'];
                     $cols = implode(',', $query['columns']);
-                    if(static::EXTRACOLS!=='') {
-                        $cols .=(($cols!=='')?',':'').static::EXTRACOLS;
+                    if (static::EXTRACOLS !== '') {
+                        $cols .= (($cols !== '') ? ',' : '') . static::EXTRACOLS;
                     }
                     switch ($type) {
                         case 'toList':
@@ -1260,7 +1309,6 @@ abstract class _BasePdoOneRepo
         }
     }
 
-
     /**
      * It deletes a registry
      *
@@ -1285,9 +1333,9 @@ abstract class _BasePdoOneRepo
     /**
      * It deletes a registry
      *
-     * @param array      $entity
-     * @param bool       $transaction
-     * @param array|null $columns
+     * @param array|object $entity
+     * @param bool         $transaction
+     * @param array|null   $columns
      *
      * @return mixed
      * @throws Exception
@@ -1296,14 +1344,17 @@ abstract class _BasePdoOneRepo
     {
         $columns = ($columns === null) ? static::getDefName() : $columns;
         try {
+            if (is_object($entity)) {
+                $entity = (array)$entity;
+            }
             $entityCopy = self::intersectArraysNotNull($entity, $columns);
             self::invalidateCache();
             $pdoOne = self::getPdoOne();
-            if($pdoOne->transactionOpen===true) {
+            if ($pdoOne->transactionOpen === true) {
                 // we disable transaction to avoid nested transactions.
                 // mysql does not allows nested transactions
                 // sql server allows nested transaction but afaik, it only counts the outer one.
-                $transaction=false;
+                $transaction = false;
             }
             if ($transaction) {
                 $pdoOne->startTransaction();
@@ -1375,29 +1426,6 @@ abstract class _BasePdoOneRepo
             self::reset();
             throw $exception;
         }
-    }
-
-    /**
-     * It filter an associative array<br>
-     * <b>Example:</b><br>
-     * <pre>
-     * self::intersectArraysNotNull(['a1'=>1,'a2'=>2],['a1','a3']); // ['a1'=>1]
-     * </pre>
-     *
-     * @param array $arrayValues An associative array with key as the column
-     * @param array $arrayIndex  An indexed array with the name of the columns
-     *
-     * @return array
-     */
-    public static function intersectArraysNotNull($arrayValues, $arrayIndex)
-    {
-        $result = [];
-        foreach ($arrayIndex as $k) {
-            if (isset($arrayValues[$k])) {
-                $result[$k] = $arrayValues[$k];
-            }
-        }
-        return $result;
     }
 
     public static function getRecursive()
