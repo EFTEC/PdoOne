@@ -18,7 +18,7 @@ use RuntimeException;
 /**
  * Class _BasePdoOneRepo
  *
- * @version       4.8.2 2020-08-17
+ * @version       4.8.3 2020-08-23
  * @package       eftec
  * @author        Jorge Castro Castillo
  * @copyright (c) Jorge Castro C. MIT License  https://github.com/EFTEC/PdoOne
@@ -156,6 +156,41 @@ abstract class _BasePdoOneRepo
         }
         self::reset(true);
         return self::getPdoOne();
+    }
+    
+    public static function testRecursive($initClass=null,$recursiveInit='') {
+        $recursiveArray=[];
+        
+        if($initClass===null) {
+            $local=static::ME;
+        } else {
+            $local=static::NS.$initClass;
+        }
+        $recursive=$local::getPdoOne()->getRecursive();
+
+
+        $relations = $local::getDefFK();
+        foreach($relations as $nameCol=>$r) {
+            $key=$r['key'];
+            $recursiveComplete = ltrim($recursiveInit . '/' . $nameCol, '/');
+            if (self::getPdoOne()->hasRecursive($recursiveComplete)) {
+                switch ($key) {
+                    case 'MANYTOONE':
+                    case 'ONETOONE':
+                    case 'ONETOMANY':
+                        $class = static::RELATIONS[$r['reftable']];
+                        echo $local . '->' . $class . " ($key)<br>";
+                        self::testRecursive($class);
+                        break;
+                    case 'MANYTOMANY':
+                        $class = static::RELATIONS[$r['table2']];
+                        echo $local . '->' . $class . " ($key)<br>";
+                        self::testRecursive($class);
+                        break;
+                }
+            }
+        }
+        
     }
 
     /**
@@ -1294,11 +1329,11 @@ abstract class _BasePdoOneRepo
                             break;
                         case 'ONETOMANY':
                             $class = $ns . static::RELATIONS[$v['reftable']];
-                            $class::convertSQLValueInit($row[$k]);
+                            $class::convertSQLValueInit($row[$k],true);
                             break;
                         case 'MANYTOMANY':
                             $class = $ns . static::RELATIONS[$v['table2']];
-                            $class::convertSQLValueInit($row[$k]);
+                            $class::convertSQLValueInit($row[$k],true);
                             break;
                     }
                 }

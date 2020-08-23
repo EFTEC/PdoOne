@@ -5,12 +5,22 @@ use eftec\PdoOne;
 use mapache_commons\Collection;
 
 use mysql\repomodel\TableParentModel;
+use repomysql\TableChildRepo;
 use repomysql\TableParentRepo;
 
 
 include "common.php";
 
+//TableParentRepo::setRecursive('*')::testRecursive();
+//die(1);
+
 //new dBug(TableParentRepo::base()->runRawQuery('select * from tableparent',[],true));
+TableChildRepo::$useModel=false;
+$child= TableChildRepo::setRecursive('*')::first(2)['_TableParent'];
+new dBug($child);
+
+die(1);
+
 TableParentRepo::$useModel=false;
 $parent= (TableParentRepo::setRecursive(
     [
