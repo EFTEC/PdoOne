@@ -32,11 +32,11 @@ use stdClass;
  * @package       eftec
  * @author        Jorge Castro Castillo
  * @copyright (c) Jorge Castro C. MIT License  https://github.com/EFTEC/PdoOne
- * @version       2.2.3 2020-08-23
+ * @version       2.2.5 2020-08-30
  */
 class PdoOne
 {
-    const VERSION = '2.2.2';
+    const VERSION = '2.2.5';
     const NULL = PHP_INT_MAX;
     public static $prefixBase = '_';
     /** @var string|null Static date (when the date is empty) */
@@ -373,7 +373,6 @@ class PdoOne
     {
         $ms = false;
         $time = false;
-        $tmpDate = '';
         switch ($inputFormat) {
             case 'iso':
                 if (strpos($sqlField, '.') !== false) {
@@ -418,13 +417,18 @@ class PdoOne
                 }
                 break;
             case 'class':
+                /** @var DateTime $tmpDate */
                 $tmpDate = $sqlField;
+                $time = $tmpDate->format('Gis')!=='000000';
                 break;
             case 'timestamp':
                 $tmpDate = new DateTime();
                 $tmpDate->setTimestamp($sqlField);
+                $time = $tmpDate->format('Gis')!=='000000';
+                $ms= fmod($sqlField, 1) !== 0.0;
                 break;
             default:
+                $tmpDate = false;
                 trigger_error('PdoOne: dateConvert type not defined');
         }
         if (!$tmpDate) {
@@ -438,7 +442,6 @@ class PdoOne
                 if ($time) {
                     return $tmpDate->format(self::$dateTimeFormat);
                 }
-
                 return $tmpDate->format(self::$dateFormat);
             case 'human':
                 if ($ms) {
@@ -463,7 +466,6 @@ class PdoOne
             case 'timestamp':
                 return $tmpDate->getTimestamp();
         }
-
         return false;
     }
 
@@ -2697,14 +2699,24 @@ abstract class Abstract{classname} extends {baseclass}
     }
     
     /**
-     * It sets the recursivity.<br>
+     * It sets the recursivity. By default, if we query or modify a value, it operates with the fields of the entity.
+     * With recursivity, we could use the recursivity of the fields, for example, loading a MANYTOONE relation<br>
+     * <b>Example:</b><br>
+     * <pre>
+     * self::setRecursive([]); // (default) no use recursivity.
+     * self::setRecursive('*'); // recursive every MANYTOONE,ONETOONE,MANYTOONE and ONETOONE relations (first level) 
+     * self::setRecursive('MANYTOONE'); // recursive all relations of the type MANYTOONE (first level)
+     * self::setRecursive(['_relation1','_relation2']); // recursive only the relations of the first level 
+     * self::setRecursive(['_relation1','_relation1/_subrelation1']); // recursive the relations (first and second level)
+     * </pre>
      * If array then it uses the values to set the recursivity.<br>
      * If string then the values allowed are '*', 'MANYTOONE','ONETOMANY','MANYTOMANY','ONETOONE' (first level only)<br>
+     *
      * @param string|array $recursive=self::factory();
      *
-     * @return {classname}
+     * @return TableParentRepo
      */
-    public static function setRecursive($recursive)
+    public static function setRecursive($recursive=[])
     {
         if(is_string($recursive)) {
             $recursive={classname}::getRelations($recursive);

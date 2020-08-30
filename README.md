@@ -1590,6 +1590,8 @@ In a nutshell:
 * Every minor version means that it adds a new functionality i.e. 1.5 -> 1.6 (new methods)  
 * Every decimal version means that it patches/fixes/refactoring a previous functionality i.e. 1.5.0 -> 1.5.1 (fix)  
 
+* 2.2.5 2020-08-30
+  * Fixed a bug with the method dateConvert(). The conversion from date -> any other format misses the time.   
 * 2.2.3 2020-08-23
   * BasePdoOneRepo update to 4.8.2. Solved a fix returning a ONETOMANY field.
 * 2.2.2 2020-08-17    

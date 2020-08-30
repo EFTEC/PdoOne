@@ -1,50 +1,54 @@
-<?php 
+<?php
 
 use dBug\dBug;
-use eftec\PdoOne;
 use mapache_commons\Collection;
-
-use mysql\repomodel\TableParentModel;
 use repomysql\TableChildRepo;
 use repomysql\TableParentRepo;
 
 
 include "common.php";
 
-//TableParentRepo::setRecursive('*')::testRecursive();
-//die(1);
+TableParentRepo::setRecursive([
+    '_idchildFK',
+    '_TableParentExt',
+    '_TableParentxCategory',
+    '_idchildFK/_idgrandchildFK',
+    '_idchildFK/_idgrandchildFK/_TableChild'
+])::testRecursive();
+
 
 //new dBug(TableParentRepo::base()->runRawQuery('select * from tableparent',[],true));
-TableChildRepo::$useModel=false;
-$child= TableChildRepo::setRecursive('*')::first(2)['_TableParent'];
+TableChildRepo::$useModel = false;
+$child = TableParentRepo::setRecursive([
+    '_idchildFK',
+    '_TableParentExt',
+    '_TableParentxCategory',
+    '_idchildFK/_idgrandchildFK',
+    '_idchildFK/_idgrandchildFK/_TableChild'
+])::first(2);
 new dBug($child);
 
 die(1);
 
-TableParentRepo::$useModel=false;
-$parent= (TableParentRepo::setRecursive(
-    [
-        '_TableParentExt' // onetoone
-    ]))::first(1);
+TableParentRepo::$useModel = false;
+$parent = (TableParentRepo::setRecursive([
+    '_TableParentExt' // onetoone
+]))::first(1);
 new dBug($parent);
 
 die(1);
 
 
-$parent= (TableParentRepo::setRecursive(
-    [
-        '_idchildFK',
-        '_idchild2FK',
-        '_idchildFK/_idgrandchildFK',
-        '_idchildFK/_idgrandchildFK/_TableGrandChildTag',
-        '_TableParentxCategory' // manytomany
-        ,'_TableParentExt'
-    ]))::first(1);
+$parent = (TableParentRepo::setRecursive([
+    '_idchildFK',
+    '_idchild2FK',
+    '_idchildFK/_idgrandchildFK',
+    '_idchildFK/_idgrandchildFK/_TableGrandChildTag',
+    '_TableParentxCategory' // manytomany
+    ,
+    '_TableParentExt'
+]))::first(1);
 new dBug($parent);
-
-
-
-
 
 
 //$r=TableParentRepo::toList();
@@ -53,42 +57,41 @@ new dBug($parent);
 //TableParentRepo::$useModel=false;
 
 
+$r = (TableParentRepo::setRecursive([
 
-$r=(TableParentRepo::setRecursive(
-    [
-
-        '/idchildFK'
-        ,'/idchild2FK'
-        ,'/idchildFK/idgrandchildFK'
-        ,'/idchildFK/idgrandchildFK/tablagrandchildcat'
-        ,'/idchildFK/idgrandchildFK/tablachild'
-        ,'/tablaparentxcategory' // one to many
-        ,'/idchildFK/idgrandchildFK/tablachild'
-        ,'/tablaparentxcategory/idcategoryPKFK'
-        //,'/tablaparentxcategory' // one to many
-        //,'/tablaparentxcategory/idcategoryPKFK'
-    ])) ::toList();
+    '/idchildFK',
+    '/idchild2FK',
+    '/idchildFK/idgrandchildFK',
+    '/idchildFK/idgrandchildFK/tablagrandchildcat',
+    '/idchildFK/idgrandchildFK/tablachild',
+    '/tablaparentxcategory' // one to many
+    ,
+    '/idchildFK/idgrandchildFK/tablachild',
+    '/tablaparentxcategory/idcategoryPKFK'
+    //,'/tablaparentxcategory' // one to many
+    //,'/tablaparentxcategory/idcategoryPKFK'
+]))::toList();
 
 //new dBug($r);
 
 echo Collection::generateTable($r);
 
 
-
 //$parent= TablaParentRepo::first(1);
 //die(1);
-$parent= (TableParentRepo::setRecursive(
-    [
-        '/idchildFK'
-        ,'/idchild2FK'
-        ,'/idchildFK/idgrandchildFK'
-        ,'/idchildFK/idgrandchildFK/tablagrandchildcat'
-        ,'/idchildFK/idgrandchildFK/tablachild'
-        //,'/idchildFK/idgrandchildFK/tablachild'
-        //,'/tablaparentxcategory/idgrandchildFK'
-        ,'/tablaparentxcategory' // one to many
-        ,'/tablaparentxcategory/idcategoryPKFK'
-    ]))::first(1);
+$parent = (TableParentRepo::setRecursive([
+    '/idchildFK',
+    '/idchild2FK',
+    '/idchildFK/idgrandchildFK',
+    '/idchildFK/idgrandchildFK/tablagrandchildcat',
+    '/idchildFK/idgrandchildFK/tablachild'
+    //,'/idchildFK/idgrandchildFK/tablachild'
+    //,'/tablaparentxcategory/idgrandchildFK'
+    ,
+    '/tablaparentxcategory' // one to many
+    ,
+    '/tablaparentxcategory/idcategoryPKFK'
+]))::first(1);
 //var_dump($parent['/idchildFK']['idtablachildPK']);
 echo "<br>";
 

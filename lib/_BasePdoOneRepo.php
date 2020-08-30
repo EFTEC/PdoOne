@@ -157,40 +157,53 @@ abstract class _BasePdoOneRepo
         self::reset(true);
         return self::getPdoOne();
     }
-    
-    public static function testRecursive($initClass=null,$recursiveInit='') {
-        $recursiveArray=[];
-        
-        if($initClass===null) {
-            $local=static::ME;
+
+    /**
+     * It test the recursivity by displaying all recursivity.
+     *
+     * @param null   $initClass
+     * @param string $recursiveInit
+     */
+    public static function testRecursive($initClass = null, $recursiveInit = '')
+    {
+        if ($initClass === null) {
+            $local = static::ME;
         } else {
-            $local=static::NS.$initClass;
+            $local = static::NS . $initClass;
         }
-        $recursive=$local::getPdoOne()->getRecursive();
-
-
+        //$recursive=$local::getPdoOne()->getRecursive();
         $relations = $local::getDefFK();
-        foreach($relations as $nameCol=>$r) {
-            $key=$r['key'];
+        foreach ($relations as $nameCol => $r) {
+            $key = $r['key'];
             $recursiveComplete = ltrim($recursiveInit . '/' . $nameCol, '/');
             if (self::getPdoOne()->hasRecursive($recursiveComplete)) {
-                switch ($key) {
-                    case 'MANYTOONE':
-                    case 'ONETOONE':
-                    case 'ONETOMANY':
-                        $class = static::RELATIONS[$r['reftable']];
-                        echo $local . '->' . $class . " ($key)<br>";
-                        self::testRecursive($class);
-                        break;
-                    case 'MANYTOMANY':
-                        $class = static::RELATIONS[$r['table2']];
-                        echo $local . '->' . $class . " ($key)<br>";
-                        self::testRecursive($class);
-                        break;
-                }
+                $used = '';
+            } else {
+                $used='// ';
+            }             
+            switch ($key) {
+                case 'PARENT':
+                    $class = static::RELATIONS[$r['reftable']];
+                    echo "// \$relation['".$recursiveComplete. "']; //".$local . '->' . $class . " ($key)<br>";
+                    break;
+                case 'MANYTOONE':
+                case 'ONETOONE':
+                case 'ONETOMANY':
+                    $class = static::RELATIONS[$r['reftable']];
+                    echo $used."\$relation['".$recursiveComplete. "']; //".$local . '->' . $class . " ($key)<br>";
+                    if($used==='') {
+                        self::testRecursive($class,$recursiveComplete);
+                    }
+                    break;
+                case 'MANYTOMANY':
+                    $class = static::RELATIONS[$r['table2']];
+                    echo $used."\$relation['".$recursiveComplete. "']; //".$local . '->' . $class . " ($key)<br>";
+                    if($used!=='') {
+                        self::testRecursive($class,$recursiveComplete);
+                    }
+                    break;
             }
         }
-        
     }
 
     /**
@@ -731,8 +744,8 @@ abstract class _BasePdoOneRepo
     {
         try {
             $pks = static::PK;
-            if(is_object($entity)) {
-                $entity=(array)$entity;
+            if (is_object($entity)) {
+                $entity = (array)$entity;
             }
             if (is_array($entity)) {
                 foreach ($entity as $k => $v) { // we keep the pks
@@ -743,7 +756,8 @@ abstract class _BasePdoOneRepo
             } elseif (is_array($pks) && count($pks)) {
                 $entity = [$pks[0] => $entity];
             } else {
-                self::getPdoOne()->throwError('exist: entity not specified as an array or table lacks of PKs',json_encode($entity));
+                self::getPdoOne()
+                    ->throwError('exist: entity not specified as an array or table lacks of PKs', json_encode($entity));
                 return false;
             }
             $r = self::getPdoOne()->genError(false)->select('1')->from(static::TABLE)->where($entity)->firstScalar();
@@ -815,8 +829,8 @@ abstract class _BasePdoOneRepo
                     foreach ($newRows as $v) {
                         $newRowsKeys[] = $v[$refpk];
                     }
-                    //self::setRecursive([$def['refcol2']]);
-                    self::setRecursive([]);
+                    //self::_setRecursive([$def['refcol2']]);
+                    self::_setRecursive([]);
                     $oldRows = ($classRef::where($refcol, $entity[$col1]))::toList();
                     $oldRowsKeys = [];
                     foreach ($oldRows as $v) {
@@ -854,8 +868,8 @@ abstract class _BasePdoOneRepo
                     foreach ($newRows as $v) {
                         $newRowsKeys[] = $v[$col2];
                     }
-                    //self::setRecursive([$def['refcol2']]);
-                    self::setRecursive([]);
+                    //self::_setRecursive([$def['refcol2']]);
+                    self::_setRecursive([]);
                     $oldRows = ($classRef::where($refcol, $entity[$col1]))::toList();
                     $oldRowsKeys = [];
                     foreach ($oldRows as $v) {
@@ -1015,6 +1029,43 @@ abstract class _BasePdoOneRepo
     }
 
     /**
+     * It sets the recursivity to read/insert/update the information.<br>
+     * The fields recursives are marked with the prefix '/'.  For example 'customer' is a single field (column), while
+     * '/customer' is a relation. Usually, a relation has both fields and relation.
+     * - If the relation is manytoone, then the query is joined with the table indicated in the relation. Example:<br>
+     * <pre>
+     * ProductRepo::setRecursive(['/Category'])::toList(); // select .. from Producto inner join Category on ..
+     * </pre>
+     * - If the relation is onetomany, then it creates an extra query (or queries) with the corresponding values.
+     * Example:<br>
+     * <pre>
+     * CategoryRepo::setRecursive(['/Product'])::toList(); // select .. from Category and select from Product where..
+     * </pre>
+     * - If the reation is onetoone, then it is considered as a manytoone, but it returns a single value. Example:<br>
+     * <pre>
+     * ProductRepo::setRecursive(['/ProductExtension'])::toList(); // select .. from Product inner join ProductExtension
+     * </pre>
+     * - If the relation is manytomany, then the system load the relational table (always, not matter the recursivity),
+     * and it reads/insert/update the next values only if the value is marked as recursive. Example:<br>
+     * <pre>
+     * ProductRepo::setRecursive(['/product_x_category'])::toList(); // it returns porduct, productxcategory and category
+     * ProductRepo::setRecursive([])->toList(); // it returns porduct and productxcategory (if /productcategory is marked as
+     * manytomany)
+     * </pre>
+     *
+     *
+     * @param array $recursive An indexed array with the recursivity.
+     *
+     * @return self
+     * @see static::getDefFK for where to define the relation.
+     */
+    protected static function _setRecursive($recursive)
+    {
+        self::getPdoOne()->recursive($recursive);
+        return static::ME;
+    }
+
+    /**
      * Insert an new row
      *
      * @param array|object $entity =static::factory()
@@ -1121,43 +1172,6 @@ abstract class _BasePdoOneRepo
             }
             throw $exception;
         }
-    }
-
-    /**
-     * It sets the recursivity to read/insert/update the information.<br>
-     * The fields recursives are marked with the prefix '/'.  For example 'customer' is a single field (column), while
-     * '/customer' is a relation. Usually, a relation has both fields and relation.
-     * - If the relation is manytoone, then the query is joined with the table indicated in the relation. Example:<br>
-     * <pre>
-     * ProductRepo::setRecursive(['/Category'])::toList(); // select .. from Producto inner join Category on ..
-     * </pre>
-     * - If the relation is onetomany, then it creates an extra query (or queries) with the corresponding values.
-     * Example:<br>
-     * <pre>
-     * CategoryRepo::setRecursive(['/Product'])::toList(); // select .. from Category and select from Product where..
-     * </pre>
-     * - If the reation is onetoone, then it is considered as a manytoone, but it returns a single value. Example:<br>
-     * <pre>
-     * ProductRepo::setRecursive(['/ProductExtension'])::toList(); // select .. from Product inner join ProductExtension
-     * </pre>
-     * - If the relation is manytomany, then the system load the relational table (always, not matter the recursivity),
-     * and it reads/insert/update the next values only if the value is marked as recursive. Example:<br>
-     * <pre>
-     * ProductRepo::setRecursive(['/product_x_category'])::toList(); // it returns porduct, productxcategory and category
-     * ProductRepo::setRecursive([])->toList(); // it returns porduct and productxcategory (if /productcategory is marked as
-     * manytomany)
-     * </pre>
-     *
-     *
-     * @param array $recursive An indexed array with the recursivity.
-     *
-     * @return self
-     * @see static::getDefFK for where to define the relation.
-     */
-    protected static function _setRecursive($recursive)
-    {
-        self::getPdoOne()->recursive($recursive);
-        return static::ME;
     }
 
     protected static function _toList($filter, $filterValue)
@@ -1329,11 +1343,11 @@ abstract class _BasePdoOneRepo
                             break;
                         case 'ONETOMANY':
                             $class = $ns . static::RELATIONS[$v['reftable']];
-                            $class::convertSQLValueInit($row[$k],true);
+                            $class::convertSQLValueInit($row[$k], true);
                             break;
                         case 'MANYTOMANY':
                             $class = $ns . static::RELATIONS[$v['table2']];
-                            $class::convertSQLValueInit($row[$k],true);
+                            $class::convertSQLValueInit($row[$k], true);
                             break;
                     }
                 }
@@ -1424,8 +1438,8 @@ abstract class _BasePdoOneRepo
                     $refcol = ltrim($def['refcol'], PdoOne::$prefixBase);
                     //$refcol2 = ltrim($def['refcol2'], PdoOne::$prefixBase);
                     $col2 = $def['col2'];
-                    //self::setRecursive([$def['refcol2']]);
-                    self::setRecursive([]);
+                    //self::_setRecursive([$def['refcol2']]);
+                    self::_setRecursive([]);
                     $cols2 = [];
                     foreach ($entity[$key] as $item) {
                         $cols2[] = $item[$col2];
@@ -1439,7 +1453,7 @@ abstract class _BasePdoOneRepo
                             $class2::delete($object2Delete, false);
                         }
                     }
-                    self::setRecursive($recursiveBackup);
+                    self::_setRecursive($recursiveBackup);
                 }
             }
             $r = self::getPdoOne()->delete(static::TABLE, $entityCopy);

@@ -356,13 +356,22 @@ abstract class AbstractTableParentRepo extends TestDb
     }
     
     /**
-     * It sets the recursivity.<br>
+     * It sets the recursivity. By default, if we query or modify a value, it operates with the fields of the entity.
+     * With recursivity, we could use the recursivity of the fields, for example, loading a MANYTOONE relation<br>
+     * <b>Example:</b><br>
+     * <pre>
+     * self::setRecursive([]); // (default) no use recursivity.
+     * self::setRecursive('*'); // recursive every MANYTOONE,ONETOONE,MANYTOONE and ONETOONE relations (first level) 
+     * self::setRecursive('MANYTOONE'); // recursive all relations of the type MANYTOONE (first level)
+     * self::setRecursive(['_relation1','_relation2']); // recursive only the relations first level 
+     * self::setRecursive(['_relation1','_relation1/_subrelation1']); // recursive the relations (first and second level)
+     * </pre>
      * If array then it uses the values to set the recursivity.<br>
      * If string then the values allowed are '*', 'MANYTOONE','ONETOMANY','MANYTOMANY','ONETOONE' (first level only)<br>
+     *
      * @param string|array $recursive=self::factory();
      *
      * @return TableParentRepo
-     * {@inheritDoc}
      */
     public static function setRecursive($recursive)
     {
