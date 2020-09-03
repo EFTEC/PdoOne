@@ -18,7 +18,7 @@ use RuntimeException;
 /**
  * Class _BasePdoOneRepo
  *
- * @version       4.8.3 2020-08-23
+ * @version       4.9 2020-09-03
  * @package       eftec
  * @author        Jorge Castro Castillo
  * @copyright (c) Jorge Castro C. MIT License  https://github.com/EFTEC/PdoOne
@@ -156,6 +156,21 @@ abstract class _BasePdoOneRepo
         }
         self::reset(true);
         return self::getPdoOne();
+    }
+
+    /**
+     * It validates if the table has changed in comparison with the Repository class.<br>
+     * It returns an array with all the differences (if any).
+     * 
+     * @return array
+     * @throws Exception
+     */
+    public static function validate() {
+        return self::base()->validateDefTable(
+            static::TABLE
+            ,static::getDef()
+            ,static::getDefKey()
+            ,static::getDefFK(true));
     }
 
     /**

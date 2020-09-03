@@ -1,4 +1,6 @@
 <?php
+/** @noinspection PhpRedundantVariableDocTypeInspection */
+
 /**
  * @noinspection UnknownInspectionInspection
  * @noinspection OnlyWritesOnParameterInspection
@@ -14,6 +16,7 @@
 namespace eftec;
 
 use DateTime;
+use dBug\dBug;
 use eftec\ext\PdoOne_IExt;
 use eftec\ext\PdoOne_Mysql;
 use eftec\ext\PdoOne_Sqlsrv;
@@ -32,7 +35,7 @@ use stdClass;
  * @package       eftec
  * @author        Jorge Castro Castillo
  * @copyright (c) Jorge Castro C. MIT License  https://github.com/EFTEC/PdoOne
- * @version       2.2.5 2020-08-30
+ * @version       2.2.6 2020-09-03
  */
 class PdoOne
 {
@@ -363,15 +366,23 @@ class PdoOne
      * <b>sql</b> depends on the database<br>
      * <b>class</b> is a DateTime() object<br>
      *
-     * @param string $sqlField     The date to convert
-     * @param string $inputFormat  =['iso','human','sql','class','timestamp'][$i]
-     * @param string $outputFormat =['iso','human','sql','class','timestamp'][$i]
+     * @param string      $sqlField     The date to convert
+     * @param string      $inputFormat  =['iso','human','sql','class','timestamp'][$i]
+     * @param string      $outputFormat =['iso','human','sql','class','timestamp'][$i]
+     * @param null|string $force        =[null,'time','ms','none'][$i] It forces if the result gets time or
+     *                                  microseconds<br>
+     *                                  null = no force the result (it is calculated automatically)<br>
+     *                                  time = returns with a precision of seconds<br>
+     *                                  ms = returns with a precision of microseconds<br>
+     *                                  none = it never returns any time<br>
      *
      * @return bool|DateTime
      */
-    public static function dateConvert($sqlField, $inputFormat, $outputFormat)
+    public static function dateConvert($sqlField, $inputFormat, $outputFormat, $force = null)
     {
+        /** @var boolean $ms if true then the value has microseconds */
         $ms = false;
+        /** @var boolean $time if true then the value has time */
         $time = false;
         switch ($inputFormat) {
             case 'iso':
@@ -383,7 +394,7 @@ class PdoOne
                     $tmpDate = DateTime::createFromFormat(self::$dateTimeFormat, $sqlField);
                 } else {
                     $tmpDate = DateTime::createFromFormat(self::$dateFormat, $sqlField);
-                    if ($tmpDate===false) {
+                    if ($tmpDate === false) {
                         return false;
                     }
                     $tmpDate->setTime(0, 0, 0);
@@ -398,7 +409,7 @@ class PdoOne
                     $tmpDate = DateTime::createFromFormat(self::$dateTimeHumanFormat, $sqlField);
                 } else {
                     $tmpDate = DateTime::createFromFormat(self::$dateHumanFormat, $sqlField);
-                    if ($tmpDate===false) {
+                    if ($tmpDate === false) {
                         return false;
                     }
                     $tmpDate->setTime(0, 0, 0);
@@ -417,15 +428,14 @@ class PdoOne
                 }
                 break;
             case 'class':
-                /** @var DateTime $tmpDate */
-                $tmpDate = $sqlField;
-                $time = $tmpDate->format('Gis')!=='000000';
+                /** @var DateTime $tmpDate */ $tmpDate = $sqlField;
+                $time = $tmpDate->format('Gis') !== '000000';
                 break;
             case 'timestamp':
                 $tmpDate = new DateTime();
                 $tmpDate->setTimestamp($sqlField);
-                $time = $tmpDate->format('Gis')!=='000000';
-                $ms= fmod($sqlField, 1) !== 0.0;
+                $time = $tmpDate->format('Gis') !== '000000';
+                $ms = fmod($sqlField, 1) !== 0.0;
                 break;
             default:
                 $tmpDate = false;
@@ -433,6 +443,17 @@ class PdoOne
         }
         if (!$tmpDate) {
             return false;
+        }
+        if($force!==null) {
+            if ($force === 'ms') {
+                $ms = true;
+            } elseif ($force === 'time') {
+                $time = true;
+                $ms = false;
+            } elseif ($force === 'none') {
+                $time = false;
+                $ms = false;
+            }
         }
         switch ($outputFormat) {
             case 'iso':
@@ -637,19 +658,20 @@ class PdoOne
         $defCurrent = $this->getDefTable($table);
         // if keys exists
         $error = [];
+        //new dBug($defCurrent);
         foreach ($defCurrent as $k => $dc) {
-            if (!isset($defArray[$k])) {
-                $error[$k] = "$k $dc deleted";
+            if (!isset($defArray[$k]) && !isset($defFK[$k]) ) {
+                $error[$k] = "$k ".json_encode($dc)." deleted";
             }
         }
         foreach ($defArray as $k => $dc) {
             if (!isset($defCurrent[$k])) {
-                $error[$k] = "$k $dc added";
+                $error[$k] = "$k ".json_encode($dc)." added";
             }
         }
         foreach ($defCurrent as $k => $dc) {
-            if (isset($defArray[$k]) && strtolower($defArray[$k]) != strtolower($dc)) {
-                $error[$k] = "$k $dc , $k {$defArray[$k]} are different";
+            if (isset($defArray[$k]) && strtolower($defArray[$k]['sql']) != strtolower($dc['sql'])) {
+                $error[$k] = "$k ".$dc['sql']." , $k ".$defArray[$k]['sql']." are different";
             }
         }
         // keys
@@ -3289,19 +3311,6 @@ eot;
     }
 
     /**
-     * If true then the library will use the internal cache that stores DQL commands.<br>
-     * By default, the internal cache is disabled<br>
-     * The internal cache only lasts for the execution of the code and it uses memory but
-     * it avoid to query values that are in memory.
-     *
-     * @param bool $useInternalCache
-     */
-    public function setUseInternalCache($useInternalCache = true)
-    {
-        $this->useInternalCache = $useInternalCache;
-    }
-
-    /**
      * Flush and disable the internal cache. By default, the internal cache is not used unless it is set.
      *
      * @param bool $useInternalCache if true then it enables the internal cache.
@@ -3396,7 +3405,7 @@ eot;
         $extraColumns = [],
         $columnRemoves = []
     ) {
-        $internalCache=$this->useInternalCache;
+        $internalCache = $this->useInternalCache;
         $this->setUseInternalCache(true);
 
         if (is_array($folders)) {
@@ -3511,6 +3520,19 @@ eot;
         }
         $this->setUseInternalCache($internalCache);
         return $logs;
+    }
+
+    /**
+     * If true then the library will use the internal cache that stores DQL commands.<br>
+     * By default, the internal cache is disabled<br>
+     * The internal cache only lasts for the execution of the code and it uses memory but
+     * it avoid to query values that are in memory.
+     *
+     * @param bool $useInternalCache
+     */
+    public function setUseInternalCache($useInternalCache = true)
+    {
+        $this->useInternalCache = $useInternalCache;
     }
 
     public function generateBaseClass($baseClassName, $namespace, $classes, $modelUse = false)
@@ -6117,7 +6139,7 @@ BOOTS;
     public function first()
     {
         $useCache = $this->useCache; // because builderReset cleans this value
-        $uid=false;
+        $uid = false;
         if ($useCache !== false) {
             $sql = $this->sqlGen();
             $this->uid = hash($this->encryption->hashType,
@@ -6131,9 +6153,9 @@ BOOTS;
             }
         }
         if ($this->useInternalCache) {
-            $sql=(!isset($sql)) ? $this->sqlGen() : $sql;
+            $sql = (!isset($sql)) ? $this->sqlGen() : $sql;
             $allparam = array_merge($this->setParamAssoc, $this->whereParamAssoc, $this->havingParamAssoc);
-            $uid = hash($this->encryption->hashType,'first'.$sql  . serialize($allparam));
+            $uid = hash($this->encryption->hashType, 'first' . $sql . serialize($allparam));
             if (isset($this->internalCache[$uid])) {
                 // we have an internal cache, so we will return it.
                 $this->internalCacheCounter++;
@@ -6162,8 +6184,8 @@ BOOTS;
             // we store the information of the cache.
             $this->cacheService->setCache($this->uid, $this->cacheFamily, $row, $useCache);
         }
-        if($uid!==false) {
-            $this->internalCache[$uid]=$row;
+        if ($uid !== false) {
+            $this->internalCache[$uid] = $row;
         }
 
         return $row;

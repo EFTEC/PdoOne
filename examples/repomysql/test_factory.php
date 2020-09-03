@@ -3,12 +3,19 @@
 use eftec\PdoOne;
 use mapache_commons\Collection;
 use repomysql\TableParentRepo;
+use repomysql\TestDb;
 
 include "common.php";
+echo "<pre>";
 
+var_dump(TestDb::base()->validateDefTable(
+    TableParentRepo::TABLE
+    ,TableParentRepo::getDef()
+    ,TableParentRepo::getDefKey()
+    ,TableParentRepo::getDefFK(true)));
 
-
-
+echo "</pre>";
+die(1);
 
 
 
