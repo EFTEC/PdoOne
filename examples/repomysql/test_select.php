@@ -8,6 +8,10 @@ use repomysql\TableParentRepo;
 
 include "common.php";
 
+\repomysql\TestDb::base()->truncate(TableParentRepo::TABLE,'',true);
+
+die(1);
+
 TableParentRepo::setRecursive([
     '_idchildFK',
     '_TableParentExt',

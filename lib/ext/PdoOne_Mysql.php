@@ -61,6 +61,40 @@ class PdoOne_Mysql implements PdoOne_IExt
         $this->parent->conn1->setAttribute(PDO::ATTR_EMULATE_PREPARES, false);
        
     }
+    
+    public function truncate($tableName,$extra,$force) {
+        if(!$force) {
+            $sql = 'truncate table ' . $this->parent->addDelimiter($tableName) . " $extra";
+            return $this->parent->runRawQuery($sql, null, true);
+        }
+        $sql="SET FOREIGN_KEY_CHECKS = 0;
+            TRUNCATE ".$this->parent->addDelimiter($tableName)." $extra;
+            SET FOREIGN_KEY_CHECKS = 1;";
+        return $this->parent->runMultipleRawQuery($sql, true);
+    }
+
+    public function resetIdentity($tableName,$newValue=0) {
+        $sql="ALTER TABLE " . $this->parent->addDelimiter($tableName) . " AUTO_INCREMENT = $newValue";
+        return $this->parent->runRawQuery($sql, null, true);
+    }
+
+    /**
+     * @param array $table
+     * @param bool $onlyDescription
+     *
+     * @return array|string|null
+     * @throws Exception
+     */
+    public function getDefTableExtended($table,$onlyDescription=false) {
+        $query="SELECT table_name as `table`,engine as `engine`, table_schema as `schema`,".
+            " table_collation as `collation`, table_comment as `description` ".
+            "FROM information_schema.tables WHERE table_schema = '?' and table_name='?'";
+        $result=$this->parent->runRawQuery($query,[$this->parent->db,$table],true);
+        if($onlyDescription) {
+            return $result['description'];
+        }
+        return $result;
+    }
 
     public function getDefTable($table)
     {

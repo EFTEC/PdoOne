@@ -54,6 +54,23 @@ class PdoOne_TestMockup implements PdoOne_IExt
         $this->parent->pwd = '';
     }
 
+    public function truncate($tableName,$extra,$force) {
+        return true;
+    }
+    public function resetIdentity($tableName,$newValue=0) {
+        return true;
+    }
+    public function getDefTableExtended($table,$onlyDescription=false) {
+        //   $query="SELECT table_name as `table`,engine as `engine`, table_schema as `schema`,".
+        //            " table_collation as `collation`, table_comment as `description` ".
+        $result=['name'=>'name','engine'=>'engine','schema'=>$this->parent->db
+                ,'collation'=>'collation','description'=>'description'];
+        if($onlyDescription) {
+            return $result['description'];
+        }
+        return $result;
+    }
+
     public function getDefTable($table)
     {
         $defArray = [
@@ -130,7 +147,6 @@ class PdoOne_TestMockup implements PdoOne_IExt
                 $this->parent->throwError("objectExist: type [$type] not defined for {$this->parent->databaseType}",
                     '');
                 die(1);
-                break;
         }
 
         return $query;
@@ -157,7 +173,6 @@ class PdoOne_TestMockup implements PdoOne_IExt
                 $this->parent->throwError("objectExist: type [$type] not defined for {$this->parent->databaseType}",
                     '');
                 die(1);
-                break;
         }
 
         return $query;

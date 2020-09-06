@@ -59,6 +59,43 @@ class PdoOne_Sqlsrv implements PdoOne_IExt
 
     }
 
+    public function truncate($tableName,$extra,$force) {
+        if(!$force) {
+            $sql = 'truncate table ' . $this->parent->addDelimiter($tableName) . " $extra";
+            return $this->parent->runRawQuery($sql, null, true);
+        }
+        $sql="DELETE FROM ".$this->parent->addDelimiter($tableName)." $extra";
+        return $this->parent->runRawQuery($sql,null, true);
+    }
+    
+    public function resetIdentity($tableName,$newValue=0) {
+        $sql="DBCC CHECKIDENT ('$tableName',RESEED, $newValue)";
+        return $this->parent->runRawQuery($sql, null, true);
+    }
+
+    /**
+     * @param string $table
+     * @param false $onlyDescription
+     *
+     * @return array|bool|mixed|\PDOStatement|null
+     * @throws Exception
+     */
+    public function getDefTableExtended($table,$onlyDescription=false) {
+        $query="SELECT objects.name as [table],'' as [engine],schemas.name as [schema]
+                ,'' as [collation],value description
+                FROM sys.objects
+                inner join sys.schemas on objects.schema_id=schemas.schema_id
+                CROSS APPLY fn_listextendedproperty(default,
+                                    'SCHEMA', schema_name(objects.schema_id),
+                                    'TABLE', objects.name, null, null) ep
+                WHERE sys.objects.name=?";
+        $result=$this->parent->runRawQuery($query,[$table],true);
+        if($onlyDescription) {
+            return $result['description'];
+        }
+        return $result;
+    }
+
     public function getDefTable($table)
     {
         /** @var array $result =array(["name"=>'',"is_identity"=>0,"increment_value"=>0,"seed_value"=>0]) */

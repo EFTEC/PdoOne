@@ -16,7 +16,6 @@
 namespace eftec;
 
 use DateTime;
-use dBug\dBug;
 use eftec\ext\PdoOne_IExt;
 use eftec\ext\PdoOne_Mysql;
 use eftec\ext\PdoOne_Sqlsrv;
@@ -35,11 +34,11 @@ use stdClass;
  * @package       eftec
  * @author        Jorge Castro Castillo
  * @copyright (c) Jorge Castro C. MIT License  https://github.com/EFTEC/PdoOne
- * @version       2.2.6 2020-09-03
+ * @version       2.3
  */
 class PdoOne
 {
-    const VERSION = '2.2.5';
+    const VERSION = '2.3';
     const NULL = PHP_INT_MAX;
     public static $prefixBase = '_';
     /** @var string|null Static date (when the date is empty) */
@@ -444,7 +443,7 @@ class PdoOne
         if (!$tmpDate) {
             return false;
         }
-        if($force!==null) {
+        if ($force !== null) {
             if ($force === 'ms') {
                 $ms = true;
             } elseif ($force === 'time') {
@@ -658,20 +657,19 @@ class PdoOne
         $defCurrent = $this->getDefTable($table);
         // if keys exists
         $error = [];
-        //new dBug($defCurrent);
         foreach ($defCurrent as $k => $dc) {
-            if (!isset($defArray[$k]) && !isset($defFK[$k]) ) {
-                $error[$k] = "$k ".json_encode($dc)." deleted";
+            if (!isset($defArray[$k]) && !isset($defFK[$k])) {
+                $error[$k] = "$k " . json_encode($dc) . " deleted";
             }
         }
         foreach ($defArray as $k => $dc) {
             if (!isset($defCurrent[$k])) {
-                $error[$k] = "$k ".json_encode($dc)." added";
+                $error[$k] = "$k " . json_encode($dc) . " added";
             }
         }
         foreach ($defCurrent as $k => $dc) {
-            if (isset($defArray[$k]) && strtolower($defArray[$k]['sql']) != strtolower($dc['sql'])) {
-                $error[$k] = "$k ".$dc['sql']." , $k ".$defArray[$k]['sql']." are different";
+            if (isset($defArray[$k]) && strtolower($defArray[$k]) != strtolower($dc['sql'])) {
+                $error[$k] = "$k " . $dc['sql'] . " , $k " . $defArray[$k] . " are different";
             }
         }
         // keys
@@ -818,7 +816,7 @@ class PdoOne
             case 'numeric':
             case 'real':
             case 'smallmoney':
-                return ['decimal', PDO::PARAM_STR];
+                return ['float', PDO::PARAM_STR];
             case 'bigint':
             case 'bit':
             case 'int':
@@ -897,6 +895,36 @@ class PdoOne
     public function getDefTableFK($table, $returnSimple = true, $assocArray = false)
     {
         return $this->service->getDefTableFK($table, $returnSimple, null, $assocArray);
+    }
+
+    /**
+     * It returns an associative array or a string with extended values of a table<br>
+     * The results of the table depend on the kind of database. For example, sqlsrv returns the schema used (dbo),
+     * while mysql returns the current schema (database).
+     * <b>Example:</b><br>
+     * <pre>
+     * $this->getDefTableExtended('table'); // ['name','engine','schema','collation','description']
+     * $this->getDefTableExtended('table',true); // "some description of the table"
+     *
+     * </pre><br>
+     * <b>Fields returned:</b><br>
+     * <ul>
+     * <li>name = name of the table</li>
+     * <li>engine = the engine of the table (mysql)</li>
+     * <li>schema = the current schema (sqlserver) or database (mysql)</li>
+     * <li>collation = the collation (mysql)</li>
+     * <li>description = the description of the table</li>
+     * </ul>
+     *
+     * @param array $table           The name of the table
+     * @param bool  $onlyDescription If true then it only returns a description
+     *
+     * @return array|string|null
+     * @throws Exception
+     */
+    public function getDefTableExtended($table, $onlyDescription = false)
+    {
+        return $this->service->getDefTableExtended($table, $onlyDescription);
     }
 
     /**
@@ -1200,15 +1228,15 @@ eot;
      * Write a log line for debug, clean the command chain then throw an error
      * (if throwOnError==true)
      *
-     * @param string         $txt          The message to show.
-     * @param string         $txtExtra     It's only used if $logLevel>=2. It
-     *                                     shows an extra message
-     * @param string|array   $extraParam   It's only used if $logLevel>=3  It
-     *                                     shows parameters (if any)
+     * @param string                $txt        The message to show.
+     * @param string                $txtExtra   It's only used if $logLevel>=2. It
+     *                                          shows an extra message
+     * @param string|array          $extraParam It's only used if $logLevel>=3  It
+     *                                          shows parameters (if any)
      *
-     * @param bool           $throwError   if true then it throw error (is enabled). Otherwise it store the error.
+     * @param bool                  $throwError if true then it throw error (is enabled). Otherwise it store the error.
      *
-     * @param null|Exception $exception
+     * @param null|RuntimeException $exception
      *
      * @see \eftec\PdoOne::$logLevel
      */
@@ -1977,7 +2005,7 @@ eot;
                                                 $className = $relation[$colName]['reftable'];
                                             }
                                             $default = '(in_array($recursivePrefix.\'' . $colName . '\',$recursive,true))
-                            ? ' . $className . '::factory($recursivePrefix.\'' . $colName . '\') 
+                            ? ' . $className . '::factory(null,$recursivePrefix.\'' . $colName . '\') 
                             : null';
                                         }
                                         $result .= "'" . $colName . "'=>" . $default . ', /* ' . $key . '! */' . $ln;
@@ -1998,7 +2026,7 @@ eot;
                                 $className = $classRelations[$after[$table][$name]];
                             }
                             $default = '(in_array($recursivePrefix.\'' . self::$prefixBase . $name . '\',$recursive,true)) 
-                            ? ' . $className . '::factory($recursivePrefix.\'' . self::$prefixBase . $name . '\') 
+                            ? ' . $className . '::factory(null,$recursivePrefix.\'' . self::$prefixBase . $name . '\') 
                             : null';
                         }
                         if (!in_array($name, $norepeat)) {
@@ -2577,7 +2605,7 @@ abstract class Abstract{classname} extends {baseclass}
      * self::getDef('sql'); // ['colName'=>'sql','colname2'=>'sql2']
      * self::getDef('identity',true); // it returns the columns that are identities ['col1','col2']
      * </pre>
-     * <b>PHP Types</b>: binary, date, datetime, decimal,int, string,time, timestamp<br>
+     * <b>PHP Types</b>: binary, date, datetime, decimal/float,int, string,time, timestamp<br>
      * <b>PHP Conversions</b>: datetime3 (human string), datetime2 (iso), datetime (datetime class), timestamp (int), bool, int, float<br>
      * <b>Param Types</b>: PDO::PARAM_LOB, PDO::PARAM_STR, PDO::PARAM_INT<br>
      *
@@ -2736,7 +2764,7 @@ abstract class Abstract{classname} extends {baseclass}
      *
      * @param string|array $recursive=self::factory();
      *
-     * @return TableParentRepo
+     * @return {classname}
      */
     public static function setRecursive($recursive=[])
     {
@@ -2846,26 +2874,36 @@ abstract class Abstract{classname} extends {baseclass}
     }
     
     /**
-     * Initialize an empty array with default values (0 for numbers, empty for string, and array|null if recursive)
-     * 
-     * @param string $recursivePrefix It is the prefix of the recursivity.
+     * Returns an array with the default values (0 for numbers, empty for string, and array|null if recursive)
+     *
+     * @param array|null $values          =self::factory()
+     * @param string     $recursivePrefix It is the prefix of the recursivity.
      *
      * @return array
      */
-    public static function factory($recursivePrefix='') {
+    public static function factory($values = null, $recursivePrefix = '') {
         $recursive=static::getRecursive();
+        static::setRecursive(); // reset the recursivity.
         $row= {array};
-{linked}        
+{linked}
+        if ($values !== null) {
+            $row = array_merge($row, $values);
+        }        
         return $row;
     }
     
     /**
-     * Initialize an empty array with null values
+     * It returns an empty array with null values and no recursivity.
+     * @param array|null $values=self::factoryNull()
      * 
-     * @return null[]
+     * @return array
      */
-    public static function factoryNull() {
-        return {array_null};
+    public static function factoryNull($values=null) {
+        $row= {array_null};
+        if ($values !== null) {
+            $row = array_merge($row, $values);
+        }    
+        return $row;        
     }
 
 }
@@ -3360,7 +3398,8 @@ eot;
      * @param array        $relations       Where the key is the name of the table, and the value is an array with
      *                                      the name of the repository class and the name of the model class <br>
      *                                      If the value is not an array, then it doesn't build a model class<br>
-     *                                      Example: ['products'=>'ProductRepo','types'=>'TypeRepo']
+     *                                      <b>Example:</b> ['products'=>'ProductRepo','types'=>'TypeRepo']<br>
+     *                                      <b>Example:</b> ['products'=>['ProductRepo','ProductModel'] ]<br>
      * @param string       $baseClass       The name of the base class.
      * @param array|string $namespaces      (default:'') The name of the namespace. Example 'eftec\repo'<br>
      *                                      If we want to use a model class, then we need to set the namespace of the
@@ -3420,7 +3459,9 @@ eot;
             $namespace = $namespaces;
             $namespaceModel = $namespaces;
         }
-        $firstRelation = reset($relations);
+        $firstKeyRelation = array_keys($relations)[0];
+
+        $firstRelation = $relations[$firstKeyRelation]; // the first value of the relation arrays.
         if (is_array($firstRelation)) {
             $useModel = true;
             $relationsRepo = [];
@@ -3471,8 +3512,8 @@ eot;
                 $result = false;
             }
             if ($result === false) {
-                $logs[] = "Unable to save Repo Abstract Class file '{$folder}Abstract{$className}.php'";
-            }
+                $logs[] = "Unable to save Repo Abstract Class file '{$folder}Abstract{$className}.php' "
+                    .json_encode(error_get_last());            }
             // creating model
             if ($useModel) {
                 try {
@@ -3487,7 +3528,7 @@ eot;
                 }
                 if ($result === false) {
                     $logs[] = "Unable to save Abstract Model Class file '{$folder}Abstract"
-                        . $relationsModel[$tableName] . ".php'";
+                        . $relationsModel[$tableName] . ".php' ".json_encode(error_get_last());
                 }
                 try {
                     $filename = $folderModel . $relationsModel[$tableName] . '.php';
@@ -3500,7 +3541,7 @@ eot;
                     $result = false;
                 }
                 if ($result === false) {
-                    $logs[] = "Unable to save Model Class file '$filename'";
+                    $logs[] = "Unable to save Model Class file '$filename' ".json_encode(error_get_last());
                 }
             }
             try {
@@ -3515,7 +3556,7 @@ eot;
                 $result = false;
             }
             if ($result === false) {
-                $logs[] = "Unable to save Repo Class file '{$folder}{$className}.php'";
+                $logs[] = "Unable to save Repo Class file '{$folder}{$className}.php' ".json_encode(error_get_last());
             }
         }
         $this->setUseInternalCache($internalCache);
@@ -3846,6 +3887,7 @@ eot;
                 case 'date':
                 case 'datetime':
                 case 'decimal':
+                case 'float':
                 case 'int':
                 case 'string':
                 case 'time':
@@ -4181,6 +4223,7 @@ eot;
                 case 'date':
                 case 'datetime':
                 case 'decimal':
+				case 'float':
                 case 'int':
                 case 'string':
                 case 'time':
@@ -5203,15 +5246,27 @@ BOOTS;
      * @param string $tableName
      * @param string $extra     (optional) An extra value added at the end of the
      *                          query
+     * @param bool   $forced    If true then it forces the truncate (it is useful when the table has a foreign key)
      *
-     * @return array|bool|PDOStatement
+     * @return array|bool
      * @throws Exception
      */
-    public function truncate($tableName, $extra = '')
+    public function truncate($tableName, $extra = '', $forced = false)
     {
-        $sql = 'truncate table ' . $this->addDelimiter($tableName) . " $extra";
+        return $this->service->truncate($tableName, $extra, $forced);
+    }
 
-        return $this->runRawQuery($sql, null, true);
+    /**
+     * It resets the identity of a table (if any)
+     *
+     * @param string $tableName The name of the table
+     * @param int    $newValue
+     *
+     * @return array|bool|null
+     * @throws Exception
+     */
+    public function resetIdentity($tableName,$newValue=0) {
+        return $this->service->resetIdentity($tableName,$newValue);
     }
 
     /**
@@ -5239,11 +5294,11 @@ BOOTS;
     }
 
     /**
-     * Run many  unprepared query separated by ;<br>
+     * Run multiples unprepared query added as an array or separated by ;<br>
      * <b>Example:</b><br>
      * <pre>
-     * ->runMultipleRawQuery("insert into() values(1); insert into()
-     * values(2)");<br>
+     * $this->runMultipleRawQuery("insert into() values(1); insert into() values(2)");
+     * $this->runMultipleRawQuery(["insert into() values(1)","insert into() values(2)"]);
      * </pre>
      *
      * @param string|array $listSql             SQL multiples queries separated
@@ -6087,10 +6142,14 @@ BOOTS;
 
     /**
      * It returns an declarative array of rows.<br>
-     * Example:
+     * This method is an <b>end of the chain method</b>, so it clears the method stack<br>
+     * <b>Example</b>:<br>
      * <pre>
-     * select('select id,name from table')->toList() //
-     * [['id'=>'1','name'='john'],['id'=>'2','name'=>'anna']]
+     * $this->select('select id,name from table')->toList() // [['id'=>'1','name'='john'],['id'=>'2','name'=>'anna']]
+     * $this->select('id,name')
+     *      ->from('table')
+     *      ->where('condition=?',[20])
+     *      ->toList();
      * </pre>
      *
      * @param int $pdoMode (optional) By default is PDO::FETCH_ASSOC
@@ -6126,8 +6185,9 @@ BOOTS;
     }
 
     /**
-     * It returns the first row.  If there is not row then it returns empty.
-     * <br><b>Example</b>:<br>
+     * It returns the first row.  If there is not row then it returns an empty [] array.<br>
+     * This method is an <b>end of the chain method</b>, so it clears the method stack<br>
+     * <b>Example</b>:<br>
      * <pre>
      *      $con->select('*')->from('table')->first(); // select * from table
      *      (first value)
@@ -6196,12 +6256,12 @@ BOOTS;
 
     /**
      * Executes the query, and returns the first column of the first row in the
-     * result set returned by the query. Additional columns or rows are ignored.
-     * If value is found then it returns null.
-     * <br><b>Example</b>:<br>
+     * result set returned by the query. Additional columns or rows are ignored.<br>
+     * If value is not found then it returns null.<br>
+     * * This method is an <b>end of the chain method</b>, so it clears the method stack<br>
+     * <b>Example</b>:<br>
      * <pre>
-     *      $con->select('*')->from('table')->firstScalar(); // select * from
-     *      table (first scalar value)
+     * $con->select('*')->from('table')->firstScalar(); // select * from table (first scalar value)
      * </pre>
      *
      * @param string|null $colName     If it's null then it uses the first
@@ -6260,12 +6320,13 @@ BOOTS;
     }
 
     /**
-     * Returns the last row. It's not recommended. Use instead first() and
-     * change the order.
-     * <br><b>Example</b>:<br>
+     * Returns the last row. It's not recommended. Use instead first() and change the order.<br>
+     * This method is an <b>end of the chain method</b>, so it clears the method stack<br>
+     * <b>Note</b>: This method could not be efficient because it reads all the values.
+     * If you can, then use the methods sort()::first()<br>
+     * <b>Example</b>:<br>
      * <pre>
-     *      $con->select('*')->from('table')->last(); // select * from table
-     *      (last scalar value)
+     * $con->select('*')->from('table')->last(); // select * from table (last scalar value)
      * </pre>
      *
      * @return array|null
@@ -6477,23 +6538,24 @@ BOOTS;
     }
 
     /**
-     * Generates and execute an insert command. Example:
-     * Example:
-     *      insert('table',['col1',10,'col2','hello world']); // ternary
-     *      colname,type,value,...
+     * Generates and execute an insert command.<br>
+     * <b>Example:</b><br>
+     * <pre>
+     * insert('table',['col1',10,'col2','hello world']); // simple array: name1,value1,name2,value2..
      * insert('table',null,['col1'=>10,'col2'=>'hello world']); // definition is obtained from the values
      * insert('table',['col1'=>10,'col2'=>'hello world']); // definition is obtained from the values
      * insert('table',['col1','col2'],[10,'hello world']); // definition (binary) and value
      * insert('table',['col1','col2'],['col1'=>10,'col2'=>'hello world']); // definition declarative array)
      *      ->set(['col1',10,'col2','hello world'])
-     *          ->from('table')
-     *          ->insert();
+     *      ->from('table')
+     *      ->insert();
+     *</pre>
      *
      * @param string            $tableName
      * @param string[]|null     $tableDef
      * @param string[]|int|null $values
      *
-     * @return mixed
+     * @return mixed Returns the identity (if any) or false if the operation fails.
      * @throws Exception
      */
     public function insert(

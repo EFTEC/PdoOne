@@ -19,6 +19,50 @@ interface PdoOne_IExt
     public function connect($cs);
 
     /**
+     * It truncates a table
+     * 
+     * @param string $tableName The name of the table
+     * @param string $extra An extra argument
+     * @param boolean $force if true, then it forces the operation. It is useful when the table has a foreign key,
+     *                       however, it could be slow or breaks the consistency of the data because we ignore the
+     *                       foreign keys.
+     *
+     * @return array|bool|null
+     * @throws Exception
+     */
+    public function truncate($tableName,$extra,$force);
+
+    /**
+     * It resets the identity of a table (if any)
+     *
+     * @param string $tableName The name of the table
+     * @param int    $newValue
+     *
+     * @return array|bool|null
+     * @throws Exception
+     */
+    public function resetIdentity($tableName,$newValue=0);
+
+    /**
+     * It returns an associative array or a string with values of a table<br>
+     * The results of the table depend on the kind of database. For example, sqlsrv returns the schema used (dbo), 
+     * while mysql returns the current schema (database).  
+     * <b>Example:</b><br>
+     * <pre>
+     * $this->getDefTableExtended('table'); // ['name','engine','schema','collation','description']
+     * $this->getDefTableExtended('table',true); // "some description of the table"
+     * 
+     * </pre>
+     * 
+     * @param array $table The name of the table
+     * @param bool $onlyDescription If true then it only returns a description
+     *
+     * @return array|string|null
+     * @throws Exception
+     */
+    public function getDefTableExtended($table,$onlyDescription=false);
+
+    /**
      * Returns an associative array with the definition of a table (columns of the table).
      *
      * @param string $table

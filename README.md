@@ -1590,15 +1590,22 @@ In a nutshell:
 * Every minor version means that it adds a new functionality i.e. 1.5 -> 1.6 (new methods)  
 * Every decimal version means that it patches/fixes/refactoring a previous functionality i.e. 1.5.0 -> 1.5.1 (fix)  
 
+* 2.3 2020-09-06
+  * new method getDefTableExtended() that returns extended information about the table (motor,description,collation and schema)  
+  * method truncate() has a new argument $forced. Now, it is possible to force truncate (for example, when the table has FK)     
+  * new method resetIdentity() that reset the identity/autonumeric of a table (if any)   
+  * Updated \_BasePdoOneRepo        
+  * The code generated now allows to set values using the factory()  
+  * The code generated now reset the recursivity when we use the method factory()  
 * 2.2.6 2020-09-03   
   * Updated \_BasePdoOneRepo      
   * Method validateDefTable() works with table     
 * 2.2.5 2020-08-30
   * Fixed a bug with the method dateConvert(). The conversion from date -> any other format misses the time.   
 * 2.2.3 2020-08-23
-  * BasePdoOneRepo update to 4.8.2. Solved a fix returning a ONETOMANY field.
+  * \_BasePdoOneRepo update to 4.8.2. Solved a fix returning a ONETOMANY field.
 * 2.2.2 2020-08-17    
-  * BasePdoOneRepo update to 4.8.2. It solved a problem with insert,update,delete and merge when the input is an object.     
+  * \_BasePdoOneRepo update to 4.8.2. It solved a problem with insert,update,delete and merge when the input is an object.     
 * 2.2.1 2020-08-16
   * Fixed a bug when the system is unable to convert the date. Now, it returns false.   
   * BasePdoOneRepo update to 4.8.1, if the transaction is open, then it doesn't nest a new transaction.    
@@ -1618,7 +1625,7 @@ $rows3=$this->select('*')->from('table')->where(['i'=>2])->toList(); // read fro
 
 echo $this->internalCacheCounter; 
 
-```  
+```
   * The internal cache is tested with runRawQuery (if returns an array), toList(), meta() and first()   
   
 * 2.0.1 2020-08-12   

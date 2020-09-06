@@ -18,7 +18,7 @@ use RuntimeException;
 /**
  * Class _BasePdoOneRepo
  *
- * @version       4.9 2020-09-03
+ * @version       4.10 2020-09-06
  * @package       eftec
  * @author        Jorge Castro Castillo
  * @copyright (c) Jorge Castro C. MIT License  https://github.com/EFTEC/PdoOne
@@ -106,7 +106,7 @@ abstract class _BasePdoOneRepo
         if (function_exists('pdoOne')) {
             return pdoOne();
         }
-        if (isset($GLOBALS['pdoOne'])) {
+        if (isset($GLOBALS['pdoOne']) && $GLOBALS['pdoOne'] instanceof PdoOne) {
             return $GLOBALS['pdoOne'];
         }
         return null;
@@ -157,21 +157,7 @@ abstract class _BasePdoOneRepo
         self::reset(true);
         return self::getPdoOne();
     }
-
-    /**
-     * It validates if the table has changed in comparison with the Repository class.<br>
-     * It returns an array with all the differences (if any).
-     * 
-     * @return array
-     * @throws Exception
-     */
-    public static function validate() {
-        return self::base()->validateDefTable(
-            static::TABLE
-            ,static::getDef()
-            ,static::getDefKey()
-            ,static::getDefFK(true));
-    }
+    
 
     /**
      * It test the recursivity by displaying all recursivity.
@@ -393,7 +379,7 @@ abstract class _BasePdoOneRepo
     {
         try {
             return self::getPdoOne()
-                ->validateDefTable(static::TABLE, static::getDef('sql'), static::getDefKey(), static::getDefFk());
+                ->validateDefTable(static::TABLE, static::getDef('sql'), static::getDefKey(), static::getDefFk(true));
         } catch (Exception $exception) {
             if (self::$falseOnError) {
                 self::reset();
@@ -408,13 +394,36 @@ abstract class _BasePdoOneRepo
     /**
      * It cleans the whole table (delete all rows)
      *
+     * @param bool $force If true then it forces the truncate (it is useful when the table has a foreign key)
+     *
      * @return array|bool|PDOStatement
      * @throws Exception
      */
-    public static function truncate()
+    public static function truncate($force=false)
     {
         try {
-            return self::getPdoOne()->truncate(static::TABLE);
+            return self::getPdoOne()->truncate(static::TABLE,'',$force);
+        } catch (Exception $exception) {
+            if (self::$falseOnError) {
+                self::$lastException = $exception->getMessage();
+                return false;
+            }
+            throw $exception;
+        }
+    }
+
+    
+    /**
+     *  It resets the identity of a table (if any)
+     * 
+     * @param int $newValue
+     *
+     * @return array|bool|null
+     * @throws Exception
+     */
+    public static function resetIdentity($newValue=0) {
+        try {
+            return self::getPdoOne()->resetIdentity(static::TABLE,$newValue);
         } catch (Exception $exception) {
             if (self::$falseOnError) {
                 self::$lastException = $exception->getMessage();
@@ -1108,6 +1117,11 @@ abstract class _BasePdoOneRepo
             // only the fields that are defined are inserted
             $entityCopy = self::intersectArraysNotNull($entity, static::getDefName());
             $entityCopy = self::diffArrays($entityCopy, static::getDefNoInsert()); // discard some columns
+            if(count($entityCopy)===0) {
+                self::getPdoOne()
+                    ->throwError('insert: insert without fields. Please check the syntax and case of the fields');
+                return false;
+            }
             if ($pdoOne->transactionOpen === true) {
                 // we disable transaction to avoid nested transactions.
                 // mysql does not allows nested transactions
