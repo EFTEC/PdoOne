@@ -1,5 +1,9 @@
-<?php
-/** @noinspection UnknownInspectionInspection
+<?php 
+
+/**
+ * @noinspection PhpMissingParamTypeInspection
+ * @noinspection ReturnTypeCanBeDeclaredInspection
+ * @noinspection UnknownInspectionInspection
  * @noinspection DuplicatedCode
  * @noinspection PhpUnhandledExceptionInspection
  * @noinspection DisconnectedForeachInstructionInspection
@@ -11,6 +15,7 @@
 
 namespace eftec;
 
+
 use Exception;
 use PDOStatement;
 use RuntimeException;
@@ -18,7 +23,7 @@ use RuntimeException;
 /**
  * Class _BasePdoOneRepo
  *
- * @version       4.10 2020-09-06
+ * @version       4.11 2020-09-06
  * @package       eftec
  * @author        Jorge Castro Castillo
  * @copyright (c) Jorge Castro C. MIT License  https://github.com/EFTEC/PdoOne
@@ -769,7 +774,7 @@ abstract class _BasePdoOneRepo
         try {
             $pks = static::PK;
             if (is_object($entity)) {
-                $entity = (array)$entity;
+                $entity = static::objectToArray($entity);
             }
             if (is_array($entity)) {
                 foreach ($entity as $k => $v) { // we keep the pks
@@ -813,7 +818,7 @@ abstract class _BasePdoOneRepo
     {
         try {
             if (is_object($entity)) {
-                $entity = (array)$entity;
+                $entity = static::objectToArray($entity);
             }
             $pdoOne = self::getPdoOne();
             //$defTable = static::getDef('conversion');
@@ -837,6 +842,7 @@ abstract class _BasePdoOneRepo
             $pdoOne->recursive($recursiveBack); // update() delete recursive
             $defs = static::getDefFK();
             $ns = self::getNamespace();
+            $fatherPK=$entity[static::PK[0]];
             foreach ($defs as $key => $def) { // ['/tablaparentxcategory']=['key'=>...]
                 if ($def['key'] === 'ONETOMANY' && $pdoOne->hasRecursive($key, $recursiveBack)) {
                     if (!isset($entity[$key]) || !is_array($entity[$key])) {
@@ -855,7 +861,8 @@ abstract class _BasePdoOneRepo
                     }
                     //self::_setRecursive([$def['refcol2']]);
                     self::_setRecursive([]);
-                    $oldRows = ($classRef::where($refcol, $entity[$col1]))::toList();
+                    
+                    $oldRows = ($classRef::where($refcol, $entity[$col1]))::_toList();
                     $oldRowsKeys = [];
                     foreach ($oldRows as $v) {
                         $oldRowsKeys[] = $v[$refpk];
@@ -864,9 +871,10 @@ abstract class _BasePdoOneRepo
                     $deleteKeys = array_diff($oldRowsKeys, $newRowsKeys);
                     // inserting a new value
                     foreach ($newRows as $item) {
-                        if (in_array($item[$refpk], $insertKeys)) {
+                        if (in_array($item[$refpk], $insertKeys,false)) {
+                            $item[$refcol]=$fatherPK;
                             $classRef::insert($item, false);
-                        } elseif (!in_array($item[$refpk], $deleteKeys)) {
+                        } elseif (!in_array($item[$refpk], $deleteKeys,false)) {
                             $classRef::update($item, false);
                         }
                     }
@@ -894,7 +902,7 @@ abstract class _BasePdoOneRepo
                     }
                     //self::_setRecursive([$def['refcol2']]);
                     self::_setRecursive([]);
-                    $oldRows = ($classRef::where($refcol, $entity[$col1]))::toList();
+                    $oldRows = ($classRef::where($refcol, $entity[$col1]))::_toList();
                     $oldRowsKeys = [];
                     foreach ($oldRows as $v) {
                         $oldRowsKeys[] = $v[$refcol2];
@@ -903,7 +911,7 @@ abstract class _BasePdoOneRepo
                     $deleteKeys = array_diff($oldRowsKeys, $newRowsKeys);
                     // inserting a new value
                     foreach ($newRows as $item) {
-                        if (in_array($item[$col2], $insertKeys)) {
+                        if (in_array($item[$col2], $insertKeys,false)) {
                             $pk2 = $item[$def['col2']];
                             if ($class2::exist($item) === false
                                 && self::getPdoOne()->hasRecursive($key, $recursiveBack)
@@ -1109,7 +1117,7 @@ abstract class _BasePdoOneRepo
 
             if (is_object($entity)) {
                 $returnObject = clone $entity;
-                $entity = (array)$entity;
+                $entity = static::objectToArray($entity);
             }
             (static::ME)::convertInputVal($entity);
             self::invalidateCache();
@@ -1119,7 +1127,8 @@ abstract class _BasePdoOneRepo
             $entityCopy = self::diffArrays($entityCopy, static::getDefNoInsert()); // discard some columns
             if(count($entityCopy)===0) {
                 self::getPdoOne()
-                    ->throwError('insert: insert without fields. Please check the syntax and case of the fields');
+                    ->throwError('insert: insert without fields or fields incorrects. Please check the syntax'.
+                    ' and case of the fields',$entity);
                 return false;
             }
             if ($pdoOne->transactionOpen === true) {
@@ -1132,15 +1141,17 @@ abstract class _BasePdoOneRepo
                 $pdoOne->startTransaction();
             }
             $insert = $pdoOne->insertObject(static::TABLE, $entityCopy);
-            $pks = $pdoOne->getDefTableKeys(static::TABLE, true, 'PRIMARY KEY');
-            if (count($pks) > 0) {
+            $pks = static::IDENTITY; 
+            if ($pks!==null) {
                 // we update the identity of $entity ($entityCopy is already updated).
-                $firstPK = array_keys($pks)[0];
                 if ($returnObject !== false) {
-                    $returnObject->$firstPK = $insert;
+                    $returnObject->$pks = $insert;
                 } else {
-                    $entity[$firstPK] = $insert;
+                    $entity[$pks] = $insert;
                 }
+            } else {
+                $pks=static::PK[0];
+                $insert = $returnObject !== false ? $returnObject->$pks : $entity[$pks];
             }
             $defs = static::getDefFK();
             $ns = self::getNamespace();
@@ -1203,7 +1214,18 @@ abstract class _BasePdoOneRepo
         }
     }
 
-    protected static function _toList($filter, $filterValue)
+    protected static function objectToArray($obj) {
+        if(is_object($obj) || is_array($obj)) {
+            $ret = (array) $obj;
+            foreach($ret as &$item) {
+                $item = self::objectToArray($item);
+            }
+            return $ret;
+        }
+        return $obj;
+    }
+
+    protected static function _toList($filter=null, $filterValue=null)
     {
         return self::generationStart('toList', $filter, $filterValue);
     }
@@ -1423,7 +1445,7 @@ abstract class _BasePdoOneRepo
         $columns = ($columns === null) ? static::getDefName() : $columns;
         try {
             if (is_object($entity)) {
-                $entity = (array)$entity;
+                $entity = static::objectToArray($entity);
             }
             $entityCopy = self::intersectArraysNotNull($entity, $columns);
             self::invalidateCache();

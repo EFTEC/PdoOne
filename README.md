@@ -1590,6 +1590,10 @@ In a nutshell:
 * Every minor version means that it adds a new functionality i.e. 1.5 -> 1.6 (new methods)  
 * Every decimal version means that it patches/fixes/refactoring a previous functionality i.e. 1.5.0 -> 1.5.1 (fix)  
 
+* 2.4 2020-09-06
+  * update \_BasePdoOneRepo to 4.11   
+  * The code generated now store the column of the identity SELF::IDENTITY;     
+  * \_BasePdoOneRepo now converts objects to array recursively (array)$obj only converts the first level.  
 * 2.3 2020-09-06
   * new method getDefTableExtended() that returns extended information about the table (motor,description,collation and schema)  
   * method truncate() has a new argument $forced. Now, it is possible to force truncate (for example, when the table has FK)     

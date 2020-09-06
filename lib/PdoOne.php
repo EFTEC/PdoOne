@@ -34,11 +34,11 @@ use stdClass;
  * @package       eftec
  * @author        Jorge Castro Castillo
  * @copyright (c) Jorge Castro C. MIT License  https://github.com/EFTEC/PdoOne
- * @version       2.3
+ * @version       2.4
  */
 class PdoOne
 {
-    const VERSION = '2.3';
+    const VERSION = '2.4';
     const NULL = PHP_INT_MAX;
     public static $prefixBase = '_';
     /** @var string|null Static date (when the date is empty) */
@@ -1788,7 +1788,7 @@ eot;
             $r = $stmt->execute($namedArgument);
         } catch (Exception $ex) {
             $this->throwError($this->databaseType . ':Failed to run query', $this->lastQuery,
-                ['param' => $this->lastParam], $throwError, $ex);
+                ['param' => $this->lastParam,'error_last'=>json_encode(error_get_last())], $throwError, $ex);
             return false;
         }
         if ($r === false) {
@@ -2593,6 +2593,7 @@ use eftec\PdoOne;
 abstract class Abstract{classname} extends {baseclass}
 {
     const TABLE = '{table}';
+    const IDENTITY = {identity};
     const PK = {pk};
     const ME=__CLASS__;
     CONST EXTRACOLS='{extracol}';
@@ -3224,6 +3225,11 @@ eot;
 
         // discard columns
         $identities = $this->getDefIdentities($tableName);
+        if(count($identities)>0) {
+            $identity=$identities[0];
+        } else {
+            $identity=null;
+        }
         if ($defNoInsert !== null) {
             $noInsert = array_merge($identities, $defNoInsert);
         } else {
@@ -3248,6 +3254,7 @@ eot;
         try {
             $r = str_replace(array(
                 '{pk}',
+                '{identity}',
                 '{def}',
                 '{convertoutput}',
                 '{convertinput}',
@@ -3263,6 +3270,7 @@ eot;
                 '{linked}'
             ), array(
                 self::varExport($pk),
+                self::varExport($identity), // {identity}
                 //str_replace(["\n\t\t        ", "\n\t\t    ],"], ['', '],'], self::varExport($gdf, "\t\t")), // {def}
                 self::varExport($getDefTable, "\t\t"), // {def}
                 $convertOutput, // {convertoutput}
@@ -3712,6 +3720,22 @@ abstract class Abstract{classname}
 
 {fieldsrel}
 
+
+    /**
+     * Abstract{classname} constructor.
+     *
+     * @param array|null $array
+     */
+    public function __construct($array=null)
+    {
+        if($array===null) {
+            return;
+        }
+        foreach($array as $k=>$v) {
+            $this->{$k}=$v;
+        }
+    }
+
     //<editor-fold desc="array conversion">
     public static function fromArray($array) {
         if($array===null) {
@@ -3723,9 +3747,23 @@ abstract class Abstract{classname}
 
         return $obj;
     }
+    
+    /**
+     * It converts the current object in an array
+     * 
+     * @return mixed
+     */
     public function toArray() {
-        return (array) $this;
+        return static::objectToArray($this);
     }
+    
+    /**
+     * It converts an array of arrays into an array of objects.
+     * 
+     * @param array|null $array
+     *
+     * @return array|null
+     */
     public static function fromArrayMultiple($array) {
         if($array===null) {
             return null;
