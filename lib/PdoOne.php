@@ -34,12 +34,13 @@ use stdClass;
  * @package       eftec
  * @author        Jorge Castro Castillo
  * @copyright (c) Jorge Castro C. MIT License  https://github.com/EFTEC/PdoOne
- * @version       2.4
+ * @version       2.4.1
  */
 class PdoOne
 {
-    const VERSION = '2.4';
-    const NULL = PHP_INT_MAX;
+    const VERSION = '2.4.1';
+    /** @var int We need this value because null and false could be a valid value.  */
+    const NULL = PHP_INT_MAX; 
     public static $prefixBase = '_';
     /** @var string|null Static date (when the date is empty) */
     public static $dateEpoch = '2000-01-01 00:00:00.00000';
@@ -2638,11 +2639,14 @@ abstract class Abstract{classname} extends {baseclass}
     
     /**
      * It converts a row returned from the database.<br>
-     * If the column is missing then it sets the null value.
+     * If the column is missing then it sets the field as null.
      * 
      * @param array $row [ref]
      */    
     public static function convertOutputVal(&$row) {
+        if($row===false || $row===null) { 
+            return;
+        }
 {convertoutput}
 {linked}
     }
@@ -2693,7 +2697,7 @@ abstract class Abstract{classname} extends {baseclass}
     }
 
     /**
-     * It adds a where to the income query. It could be stacked with more where()<br>
+     * It adds a where to the query pipeline. It could be stacked with many where()
      * <b>Example:</b><br>
      * <pre>
      * self::where(['col'=>'value'])::toList();
@@ -2785,7 +2789,7 @@ abstract class Abstract{classname} extends {baseclass}
      * It returns the first row of a query.
      * @param array|mixed|null $pk [optional] Specify the value of the primary key.
      *
-     * @return array|bool
+     * @return array|bool It returns false if not file is found.
      * @throws Exception
      */
     public static function first($pk = null) {
@@ -4261,7 +4265,7 @@ eot;
                 case 'date':
                 case 'datetime':
                 case 'decimal':
-				case 'float':
+                case 'float':
                 case 'int':
                 case 'string':
                 case 'time':
@@ -6180,6 +6184,7 @@ BOOTS;
 
     /**
      * It returns an declarative array of rows.<br>
+     * If not data is found, then it returns an empty array<br>
      * This method is an <b>end of the chain method</b>, so it clears the method stack<br>
      * <b>Example</b>:<br>
      * <pre>
@@ -6223,7 +6228,7 @@ BOOTS;
     }
 
     /**
-     * It returns the first row.  If there is not row then it returns an empty [] array.<br>
+     * It returns the first row.  If there is not row then it returns false.<br>
      * This method is an <b>end of the chain method</b>, so it clears the method stack<br>
      * <b>Example</b>:<br>
      * <pre>
@@ -6231,7 +6236,7 @@ BOOTS;
      *      (first value)
      * </pre>
      *
-     * @return array|null
+     * @return array|null|false
      * @throws Exception
      */
     public function first()

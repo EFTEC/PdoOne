@@ -1,4 +1,4 @@
-<?php 
+<?php
 
 /**
  * @noinspection PhpMissingParamTypeInspection
@@ -162,7 +162,7 @@ abstract class _BasePdoOneRepo
         self::reset(true);
         return self::getPdoOne();
     }
-    
+
 
     /**
      * It test the recursivity by displaying all recursivity.
@@ -186,7 +186,7 @@ abstract class _BasePdoOneRepo
                 $used = '';
             } else {
                 $used='// ';
-            }             
+            }
             switch ($key) {
                 case 'PARENT':
                     $class = static::RELATIONS[$r['reftable']];
@@ -417,10 +417,10 @@ abstract class _BasePdoOneRepo
         }
     }
 
-    
+
     /**
      *  It resets the identity of a table (if any)
-     * 
+     *
      * @param int $newValue
      *
      * @return array|bool|null
@@ -861,7 +861,7 @@ abstract class _BasePdoOneRepo
                     }
                     //self::_setRecursive([$def['refcol2']]);
                     self::_setRecursive([]);
-                    
+
                     $oldRows = ($classRef::where($refcol, $entity[$col1]))::_toList();
                     $oldRowsKeys = [];
                     foreach ($oldRows as $v) {
@@ -1128,7 +1128,7 @@ abstract class _BasePdoOneRepo
             if(count($entityCopy)===0) {
                 self::getPdoOne()
                     ->throwError('insert: insert without fields or fields incorrects. Please check the syntax'.
-                    ' and case of the fields',$entity);
+                        ' and case of the fields',$entity);
                 return false;
             }
             if ($pdoOne->transactionOpen === true) {
@@ -1141,7 +1141,7 @@ abstract class _BasePdoOneRepo
                 $pdoOne->startTransaction();
             }
             $insert = $pdoOne->insertObject(static::TABLE, $entityCopy);
-            $pks = static::IDENTITY; 
+            $pks = static::IDENTITY;
             if ($pks!==null) {
                 // we update the identity of $entity ($entityCopy is already updated).
                 if ($returnObject !== false) {
@@ -1431,7 +1431,7 @@ abstract class _BasePdoOneRepo
     }
 
     /**
-     * It deletes a registry
+     * It deletes a row or rows.
      *
      * @param array|object $entity
      * @param bool         $transaction
@@ -1561,8 +1561,9 @@ abstract class _BasePdoOneRepo
     }
 
     /**
-     * @param $sql
-     * @param $param
+     * It adds an having condition to the query pipeline. It could be stacked with many having()
+     * @param array|string   $sql =self::factory()
+     * @param null|array|int $param
      *
      * @return self
      */

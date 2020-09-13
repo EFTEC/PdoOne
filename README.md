@@ -109,10 +109,13 @@ ProductRepo // this class was generated with echo $pdoOne()->generateCodeClass([
 ## Examples
 
 ## Some example
-| [ExampleTicketPHP](https://github.com/jorgecc/ExampleTicketPHP) | [Example cupcakes](https://github.com/EFTEC/example.cupcakes) | [Example Search](https://github.com/EFTEC/example-search)    |
-| ------------------------------------------------------------ | ------------------------------------------------------------ | ------------------------------------------------------------ |
-| <img src="https://camo.githubusercontent.com/3c938f71f46a90eb85bb104f0f396fcba62b8f4a/68747470733a2f2f74686570726163746963616c6465762e73332e616d617a6f6e6177732e636f6d2f692f3436696b7061376661717677726533797537706a2e6a7067" alt="example php bladeone" width="200"/> | <img src="https://github.com/EFTEC/example.cupcakes/raw/master/docs/result.jpg" alt="example php bladeone cupcakes" width="200"/> | <img src="https://github.com/EFTEC/example-search/raw/master/img/search_bootstrap.jpg" alt="example php bladeone search" width="200"/> |
+| [ExampleTicketPHP](https://github.com/jorgecc/ExampleTicketPHP) | [Example cupcakes](https://github.com/EFTEC/example.cupcakes) | [Example Search](https://github.com/EFTEC/example-search)    | [Example Different Method](https://github.com/escuelainformatica/example-pdoone) |
+| ------------------------------------------------------------ | ------------------------------------------------------------ | ------------------------------------------------------------ | ------------------------------------------------------------ |
+| <img src="https://camo.githubusercontent.com/3c938f71f46a90eb85bb104f0f396fcba62b8f4a/68747470733a2f2f74686570726163746963616c6465762e73332e616d617a6f6e6177732e636f6d2f692f3436696b7061376661717677726533797537706a2e6a7067" alt="example php bladeone" width="200"/> | <img src="https://github.com/EFTEC/example.cupcakes/raw/master/docs/result.jpg" alt="example php bladeone cupcakes" width="200"/> | <img src="https://github.com/EFTEC/example-search/raw/master/img/search_bootstrap.jpg" alt="example php bladeone search" width="200"/> | <img src='https://github.com/escuelainformatica/example-pdoone/raw/master/docs/database.jpg' width=200 /> |
 
+More examples:
+
+[Example Mysql PHP and PDO using PDOOne](https://www.southprojects.com/Programming/mysql-php-pdo)
 
 
 
@@ -125,7 +128,7 @@ Add to composer.json the next requirement, then update composer.
 ```json
   {
       "require": {
-        "eftec/PdoOne": "^1.6"
+        "eftec/PdoOne": "^2.0"
       }
   }
 ```
@@ -1590,6 +1593,12 @@ In a nutshell:
 * Every minor version means that it adds a new functionality i.e. 1.5 -> 1.6 (new methods)  
 * Every decimal version means that it patches/fixes/refactoring a previous functionality i.e. 1.5.0 -> 1.5.1 (fix)  
 
+
+
+
+
+* 2.4.1 2020-09-13
+  * The code generated now the method first() returns false if it doesn't found any value, instead of an empty array.
 * 2.4 2020-09-06
   * update \_BasePdoOneRepo to 4.11   
   * The code generated now store the column of the identity SELF::IDENTITY;     
@@ -1613,7 +1622,6 @@ In a nutshell:
 * 2.2.1 2020-08-16
   * Fixed a bug when the system is unable to convert the date. Now, it returns false.   
   * BasePdoOneRepo update to 4.8.1, if the transaction is open, then it doesn't nest a new transaction.    
-
 * 2.2 2020-08-14
   * New method setUseInternalCache() and flushInternalCache() where we could set an internal cache. The internal cache stores
   results and they are keep into memory.   For example
