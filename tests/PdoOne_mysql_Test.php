@@ -1,4 +1,5 @@
-<?php /** @noinspection SuspiciousAssignmentsInspection */
+<?php
+/** @noinspection SuspiciousAssignmentsInspection */
 
 /** @noinspection PhpUndefinedClassInspection */
 
@@ -14,30 +15,83 @@ use eftec\PdoOne;
 use Exception;
 use PHPUnit\Framework\TestCase;
 
+/**
+ * Class CacheServicesmysql
+ *
+ * @package eftec\tests
+ * @noautoload
+ */
 // it is an example of a CacheService
 class CacheServicesmysql implements IPdoOneCache
 {
     public $cacheData = [];
+    public $cacheDataFamily = [];
     public $cacheCounter = 0; // for debug
 
     public function getCache($uid, $family = '')
     {
+        
         if (isset($this->cacheData[$uid])) {
             $this->cacheCounter++;
-            echo "test:using cache\n";
+            echo "test:reading the cache $uid $family\n";
             return $this->cacheData[$uid];
         }
         return false;
     }
 
+    /**
+     * @param string $uid
+     * @param string $family
+     * @param null   $data
+     * @param null   $ttl
+     */
     public function setCache($uid, $family = '', $data = null, $ttl = null)
     {
-        $this->cacheData[$uid] = $data;
+        if ($family === '') {
+            $this->cacheData[$uid] = $data;
+        } else {
+            if (!is_array($family)) {
+                $family = [$family];
+            }
+            foreach ($family as $fam) {
+                if (!isset($this->cacheDataFamily[$fam])) {
+                    $this->cacheDataFamily[$fam] = [];
+                }
+                
+                $this->cacheDataFamily[$fam][] = $uid;
+                $this->cacheData[$uid] = $data;
+                //var_dump($fam);
+                //var_dump($this->cacheDataFamily[$fam]);
+            }
+        }
     }
 
+    /**
+     * @param string       $uid
+     * @param string|array $family
+     *
+     * @return mixed|void
+     */
     public function invalidateCache($uid = '', $family = '')
     {
-        $this->cacheData = []; // we delete all the cache
+        if ($family === '') {
+            if ($uid === '') {
+                $this->cacheData = []; // we delete all the cache
+            } else {
+                $this->cacheData[$uid] = [];
+            }
+        } else {
+            if (!is_array($family)) {
+                $family = [$family];
+            }
+            foreach ($family as $fam) {
+                foreach($this->cacheDataFamily[$fam] as $id) {
+                    unset($this->cacheData[$id]);
+                    echo "deleting cache $id\n";
+                }
+                $this->cacheDataFamily[$fam]=[];
+            }
+        }
         //unset($this->cacheData[$uid]);
     }
 }
@@ -321,17 +375,58 @@ class PdoOne_mysql_Test extends TestCase
 
         $rows = $this->pdoOne->select('select 123 field1 from dual')->useCache()->toList();
         self::assertEquals([['field1' => 123]], $rows);
-        
+
         $this->pdoOne->select('select 123 field1 from dual')->where('1=1')->order('1')->useCache()->toList();
-        
+
         $rows = $this->pdoOne->select('select 123 field1 from dual')->useCache()->toList();
         self::assertEquals([['field1' => 123]], $rows);
         self::assertEquals(1, $this->pdoOne->getCacheService()->cacheCounter); // 1= cache used 1 time
         $this->pdoOne->invalidateCache();
-        $rows = $this->pdoOne->select('select 123 field1 from dual')->useCache()->toList();
+        $rows = $this->pdoOne->select('select 123 field1 from dual')->useCache()
+            ->toList(); // it should not find any cache
         self::assertEquals([['field1' => 123]], $rows);
         self::assertEquals(1, $this->pdoOne->getCacheService()->cacheCounter); // 1= cache used 1 time
         $this->pdoOne->getCacheService()->cacheCounter = 0;
+    }
+
+    function test_cache_expire()
+    {
+        $this->pdoOne->getCacheService()->cacheCounter = 0;
+        $this->pdoOne->invalidateCache();
+        $rows = $this->pdoOne->select('select 123 field1 from dual')->useCache(1, 'dual')->toList(); // no cache
+        sleep(2); // enough time to expire the cache.
+        $rows = $this->pdoOne->select('select 123 field1 from dual')->useCache(1, 'dual')->toList(); // +1 cache
+        self::assertEquals(1, $this->pdoOne->getCacheService()->cacheCounter); // 1= cache used 1 time
+    }
+
+    function test_cache_family()
+    {
+        $this->pdoOne->getCacheService()->cacheCounter = 0;
+        $this->pdoOne->invalidateCache();
+        $rows = $this->pdoOne->select('123 field1')->from('dual')->useCache(5555, 'dual')->toList(); // no cache
+        $rows = $this->pdoOne->select('123 field1')->from('dual')->useCache(5555, 'dual')->toList(); // +1 cache
+        $rows = $this->pdoOne->select('123 field1')->from('dual')->useCache(5555, '*')->toList(); // +1 cache
+        $rows = $this->pdoOne->select('123 field2')->from('dual')->useCache(5555, '*')
+            ->toList(); // other family no cache
+        self::assertEquals(2, $this->pdoOne->getCacheService()->cacheCounter); // 1= cache used 1 time
+    }
+
+    function test_cache_multiple_family()
+    {
+        $this->pdoOne->getCacheService()->cacheCounter = 0;
+        $this->pdoOne->invalidateCache();
+        $rows = $this->pdoOne->select('select 123 field1 from dual')->useCache(5555, 'dual')->toList(); // no cache
+        $rows = $this->pdoOne->select('select 123 field2 from dual')->useCache(5555, 'dual2')->toList(); // no cache
+        $rows = $this->pdoOne->select('select 123 field1 from dual')->useCache(5555, 'dual')->toList(); // +1 cache used
+        $rows = $this->pdoOne->select('select 123 field2 from dual')->useCache(5555, 'dual2')
+            ->toList(); // +1 cache used
+        self::assertEquals(2, $this->pdoOne->getCacheService()->cacheCounter); // 1= cache used 1 time
+        $this->pdoOne->invalidateCache('', ['dual']); // invalidate one family.
+        $rows = $this->pdoOne->select('select 123 field1 from dual')->useCache(5555, 'dual')->toList(); // no cache
+        $rows = $this->pdoOne->select('select 123 field2 from dual')->useCache(5555, 'dual2')
+            ->toList(); // +1 cache used
+        self::assertEquals(3, $this->pdoOne->getCacheService()->cacheCounter); // 1= cache used 1 time
+
     }
 
     function test_cache_noCache()
@@ -384,11 +479,11 @@ class PdoOne_mysql_Test extends TestCase
         self::assertGreaterThan(1, count($this->pdoOne->objectList('table')));
         // we add some values
         $this->pdoOne->set(['id_category' => 123, 'catname' => 'cheap'])->from('product_category')->insert();
-        $this->pdoOne->insert('product_category', ['id_category' , 'catname'],
+        $this->pdoOne->insert('product_category', ['id_category', 'catname'],
             ['id_category' => 2, 'catname' => 'cheap']);
-        
+
         $this->pdoOne->insert('product_category', ['id_category' => 3, 'catname' => 'cheap']);
-        
+
         $this->pdoOne->insert('product_category', ['id_category' => 4, 'catname' => 'cheap4']);
         $this->pdoOne->insert('product_category', ['id_category', '5', 'catname', 'cheap']);
         $count = $this->pdoOne->count('from product_category')->firstScalar();
@@ -448,20 +543,20 @@ class PdoOne_mysql_Test extends TestCase
         self::assertEquals(27.4, $this->pdoOne->avg('id_category')->from('product_category')->firstScalar(),
             'avg must value 27.4');
         self::assertEquals([
-                ['id_category' => 2],
-                ['id_category' => 3],
-                ['id_category' => 4],
-                ['id_category' => 5],
-                ['id_category' => 123]
-            ], $this->pdoOne->select('id_category')->from('product_category')->useCache()->toList());
+            ['id_category' => 2],
+            ['id_category' => 3],
+            ['id_category' => 4],
+            ['id_category' => 5],
+            ['id_category' => 123]
+        ], $this->pdoOne->select('id_category')->from('product_category')->useCache()->toList());
 
         self::assertEquals([
-                ['id_category' => 2],
-                ['id_category' => 3],
-                ['id_category' => 4],
-                ['id_category' => 5],
-                ['id_category' => 123]
-            ], $this->pdoOne->select('id_category')->from('product_category')->useCache()->toList());
+            ['id_category' => 2],
+            ['id_category' => 3],
+            ['id_category' => 4],
+            ['id_category' => 5],
+            ['id_category' => 123]
+        ], $this->pdoOne->select('id_category')->from('product_category')->useCache()->toList());
         self::assertEquals(6, $this->pdoOne->getCacheService()->cacheCounter); // 1= cache used 1 time
 
         self::assertEquals([2, 3, 4, 5, 123],
@@ -647,7 +742,7 @@ class PdoOne_mysql_Test extends TestCase
             $this->pdoOne->select(['1', '2'])->from('DUAL')->where('field=?', [20])->sqlGen(true));
 
         self::assertEquals('select 1, 2 from DUAL where field=:field',
-            $this->pdoOne->select(['1', '2'])->from('DUAL')->where('field=:field', [':field'=>20])->sqlGen(true));
+            $this->pdoOne->select(['1', '2'])->from('DUAL')->where('field=:field', [':field' => 20])->sqlGen(true));
 
         self::assertEquals('select 1, 2 from DUAL where field=? group by 2 having field2=? order by 1',
             $this->pdoOne->select(['1', '2'])->from('DUAL')->where('field=?', [20])->order('1')->group('2')

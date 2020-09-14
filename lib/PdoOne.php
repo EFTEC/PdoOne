@@ -34,11 +34,11 @@ use stdClass;
  * @package       eftec
  * @author        Jorge Castro Castillo
  * @copyright (c) Jorge Castro C. MIT License  https://github.com/EFTEC/PdoOne
- * @version       2.4.1
+ * @version       2.5
  */
 class PdoOne
 {
-    const VERSION = '2.4.1';
+    const VERSION = '2.5';
     /** @var int We need this value because null and false could be a valid value.  */
     const NULL = PHP_INT_MAX; 
     public static $prefixBase = '_';
@@ -142,6 +142,8 @@ class PdoOne
     public $limit = '';
     public $order = '';
     public $from = '';
+    /** @var array the tables used by from and joins */
+    public $tables = [];
     private $useInternalCache = false;
 
     //<editor-fold desc="query builder fields">
@@ -172,7 +174,7 @@ class PdoOne
      * and methods
      */
     private $uid;
-    /** @var string [optional] It is the family or group of the cache */
+    /** @var string|array [optional] It is the family or group of the cache */
     private $cacheFamily = '';
     /** @var IPdoOneCache The service of cache [optional] */
     private $cacheService;
@@ -991,6 +993,7 @@ class PdoOne
             $sql = "$sql on $condition";
         }
         $this->from .= ($sql) ? " inner join $sql " : '';
+        $this->tables[]=explode(' ',$sql)[0];
 
         return $this;
     }
@@ -1017,6 +1020,7 @@ class PdoOne
             return $this;
         }
         $this->from = ($sql) ? $sql . $this->from : $this->from;
+        $this->tables[]=explode(' ',$sql)[0];
 
         return $this;
     }
@@ -1345,6 +1349,7 @@ eot;
         $this->noReset = false;
         $this->useCache = false;
         $this->from = '';
+        $this->tables = [];
         $this->where = [];
 
         $this->whereParamAssoc = [];
@@ -2218,7 +2223,7 @@ eot;
             $stmt = null; // close
             if ($extraIdCache === 'rungen' && $this->uid) {
                 // we store the information of the cache.
-                $this->cacheService->setCache($this->uid, $this->cacheFamily, $result, $useCache);
+                $this->setCache($this->uid, $this->cacheFamily, $result, $useCache);
             }
             $this->builderReset();
             if ($uid !== false) {
@@ -2410,7 +2415,7 @@ eot;
         }
         if ($this->uid) {
             // we store the information of the cache.
-            $this->cacheService->setCache($this->uid, $this->cacheFamily, $rows, $useCache);
+            $this->setCache($this->uid, $this->cacheFamily, $rows, $useCache);
         }
 
         return $rows;
@@ -5698,7 +5703,7 @@ BOOTS;
             return $this;
         }
         $this->from .= ($sql) ? " left join $sql" : '';
-
+        $this->tables[]=explode(' ',$sql)[0];
         return $this;
     }
 
@@ -5721,7 +5726,7 @@ BOOTS;
             return $this;
         }
         $this->from .= ($sql) ? " right join $sql" : '';
-
+        $this->tables[]=explode(' ',$sql)[0];
         return $this;
     }
 
@@ -6210,7 +6215,7 @@ BOOTS;
         }
         if ($this->uid) {
             // we store the information of the cache.
-            $this->cacheService->setCache($this->uid, $this->cacheFamily, $rows, $useCache);
+            $this->setCache($this->uid, $this->cacheFamily, $rows, $useCache);
         }
         return $rows;
     }
@@ -6285,7 +6290,7 @@ BOOTS;
 
         if ($this->uid) {
             // we store the information of the cache.
-            $this->cacheService->setCache($this->uid, $this->cacheFamily, $row, $useCache);
+            $this->setCache($this->uid, $this->cacheFamily, $row, $useCache);
         }
         if ($uid !== false) {
             $this->internalCache[$uid] = $row;
@@ -6356,7 +6361,7 @@ BOOTS;
         }
         if ($this->uid) {
             // we store the information of the cache.
-            $this->cacheService->setCache($this->uid, $this->cacheFamily, $row, $useCache);
+            $this->setCache($this->uid, $this->cacheFamily, $row, $useCache);
         }
 
         return $row;
@@ -6412,26 +6417,40 @@ BOOTS;
 
         if ($this->uid) {
             // we store the information of the cache.
-            $this->cacheService->setCache($this->uid, $this->cacheFamily, $row, $useCache);
+            $this->setCache($this->uid, $this->cacheFamily, $row, $useCache);
         }
 
         return $row;
     }
 
     /**
-     * It sets to use cache (if the cacheservice is set) for the current
-     * pipelines.
+     * It sets to use cache for the current pipelines. It is disabled at the end of the pipeline<br>
+     * It only works if we set the cacheservice<br>
+     * <b>Example</b><br>
+     * <pre>
+     * $this->setCacheService($instanceCache);
+     * $this->useCache()->select()..; // The cache never expires
+     * $this->useCache(60)->select()..; // The cache lasts 60 seconds.
+     * $this->useCache(60,'customers')
+     *        ->select()..; // cache associated with customers
+     *                      // it could be invalidated by invalidateCache()
+     * $this->useCache(60,['customers','invoices'])
+     *        ->select()..; // cache associated with customers
+     *                      // it could be invalidated by invalidateCache()
+     * $this->useCache(60,'*')->select('col')
+     *      ->from('table')->toList(); // '*' uses all the table assigned.
+     * </pre>
      *
-     * @param null|bool|int $ttl        If null then the cache never expires.<br>
-     *                                  If false then we don't use cache.<br>
-     *                                  If int then it is the duration of the
-     *                                  cache (in seconds)
-     * @param string        $family     [optional] It is the family or group of
-     *                                  the cache. It could be used to identify
-     *                                  a group of cache to invalidate the whole group (for example,
-     *                                  invalidate all cache from a specific table).
+     * @param null|bool|int $ttl        <b>null</b> then the cache never expires.<br>
+     *                                  <b>false</b> then we don't use cache.<br>
+     *                                  <b>int</b> then it is the duration of the cache (in seconds)
+     * @param string|array $family      [optional] It is the family or group of the cache. It could be used to
+     *                                  identify a group of cache to invalidate the whole group (for example
+     *                                  ,invalidate all cache from a specific table).<br>
+     *                                  <b>*</b> If "*" then it uses the tables assigned by from() and join()
      *
      * @return $this
+     * @see \eftec\PdoOne::invalidateCache             
      */
     public function useCache($ttl = null, $family = '')
     {
@@ -6762,7 +6781,7 @@ BOOTS;
     /**
      * It sets the cache service (optional).
      *
-     * @param IPdoOneCache $cacheService
+     * @param IPdoOneCache $cacheService Instance of an object that implements IPdoOneCache
      *
      * @return $this
      */
@@ -6771,6 +6790,26 @@ BOOTS;
         $this->cacheService = $cacheService;
 
         return $this;
+    }
+    /**
+     * It stores a cache. This method is used internally by PdoOne.<br>
+     *
+     * @param string $uid    The unique id. It is generate by sha256 based in the query, parameters, type of query
+     *                       and method.
+     * @param string|string[] $family [optional] It is the family or group of the cache. It could be used to invalidate
+     *                       the whole group. For example, to invalidate all the cache related with a table.
+     * @param mixed|null $data The data to store
+     * @param null|bool|int $ttl If null then the cache never expires.<br>
+     *                           If false then we don't use cache.<br>
+     *                           If int then it is the duration of the cache (in seconds)
+     *
+     * @return void.
+     */
+    public function setCache($uid, $family = '', $data = null, $ttl = null) {
+        if($family==='*') {
+            $family=$this->tables;
+        } 
+        $this->cacheService->setCache($uid,$family,$data,$ttl);
     }
 
     /**

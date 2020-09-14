@@ -23,7 +23,7 @@ use RuntimeException;
 /**
  * Class _BasePdoOneRepo
  *
- * @version       4.11 2020-09-06
+ * @version       4.12 2020-09-13
  * @package       eftec
  * @author        Jorge Castro Castillo
  * @copyright (c) Jorge Castro C. MIT License  https://github.com/EFTEC/PdoOne
@@ -481,14 +481,30 @@ abstract class _BasePdoOneRepo
     }
 
     /**
-     * The next operation (in the chain of function) must be cached<br>
-     * <b>Example</b>
+     * It sets to use cache for the current pipelines. It is disabled at the end of the pipeline<br>
+     * It only works if we set the cacheservice<br>
+     * <b>Example</b><br>
      * <pre>
-     * self::useCache(5000,'city')->toList();
+     * $this->setCacheService($instanceCache);
+     * $this->useCache()->select()..; // The cache never expires
+     * $this->useCache(60)->select()..; // The cache lasts 60 seconds.
+     * $this->useCache(60,'customers')
+     *        ->select()..; // cache associated with customers
+     *                      // it could be invalidated by invalidateCache()
+     * $this->useCache(60,['customers','invoices'])
+     *        ->select()..; // cache associated with customers
+     *                      // it could be invalidated by invalidateCache()
+     * $this->useCache(60,'*')->select('col')
+     *      ->from('table')->toList(); // '*' uses all the table assigned.
      * </pre>
      *
-     * @param null   $ttl
-     * @param string $family
+     * @param null|bool|int $ttl        <b>null</b> then the cache never expires.<br>
+     *                                  <b>false</b> then we don't use cache.<br>
+     *                                  <b>int</b> then it is the duration of the cache (in seconds)
+     * @param string|array $family      [optional] It is the family or group of the cache. It could be used to
+     *                                  identify a group of cache to invalidate the whole group (for example
+     *                                  ,invalidate all cache from a specific table).<br>
+     *                                  <b>*</b> If "*" then it uses the tables assigned by from() and join()
      *
      * @return self
      */

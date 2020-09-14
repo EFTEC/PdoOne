@@ -1596,7 +1596,10 @@ In a nutshell:
 
 
 
-
+* 2.5 2020-09-13   
+  * update \_BasePdoOneRepo to 4.12  
+  * new method setCache()  
+  * updated method useCache(). Now it allows '*' to use the same tables assigned by from() and joins()   
 * 2.4.1 2020-09-13
   * The code generated now the method first() returns false if it doesn't found any value, instead of an empty array.
 * 2.4 2020-09-06
