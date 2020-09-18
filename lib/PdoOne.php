@@ -34,13 +34,13 @@ use stdClass;
  * @package       eftec
  * @author        Jorge Castro Castillo
  * @copyright (c) Jorge Castro C. MIT License  https://github.com/EFTEC/PdoOne
- * @version       2.5
+ * @version       2.6
  */
 class PdoOne
 {
-    const VERSION = '2.5';
+    const VERSION = '2.6';
     /** @var int We need this value because null and false could be a valid value.  */
-    const NULL = PHP_INT_MAX; 
+    const NULL = PHP_INT_MAX;
     public static $prefixBase = '_';
     /** @var string|null Static date (when the date is empty) */
     public static $dateEpoch = '2000-01-01 00:00:00.00000';
@@ -142,7 +142,7 @@ class PdoOne
     public $limit = '';
     public $order = '';
     public $from = '';
-    /** @var array the tables used by from and joins */
+    /** @var array the tables used in the queries and added by the methods from() and join() */
     public $tables = [];
     private $useInternalCache = false;
 
@@ -274,332 +274,6 @@ class PdoOne
         $this->nodeId = $nodeId;
         // by default, the encryption uses the same password than the db.
         $this->encryption = new PdoOneEncryption($pwd, $user . $pwd);
-    }
-
-    /**
-     * Convert date from unix timestamp -> ISO (database format).
-     * <p>Example: ::unixtime2Sql(1558656785); // returns 2019-05-24 00:13:05
-     *
-     * @param integer $dateNum
-     *
-     * @return string
-     */
-    public static function unixtime2Sql($dateNum)
-    {
-        // 31/01/2016 20:20:00 --> 2016-01-31 00:00
-        if ($dateNum == null) {
-            return self::$dateEpoch;
-        }
-
-        return date(self::$isoDateTimeMs, $dateNum);
-    }
-
-    /**
-     * Convert date, from mysql date -> text (using a format pre-established)
-     *
-     * @param string $sqlField
-     * @param bool   $hasTime if true then the date contains time.
-     *
-     * @return string Returns a text with the date formatted (human readable)
-     */
-    public static function dateSql2Text($sqlField, $hasTime = false)
-    {
-        $tmpDate = self::dateTimeSql2PHP($sqlField, $hasTime);
-        if ($tmpDate === null) {
-            return null;
-        }
-        if ($hasTime) {
-            return $tmpDate->format((strpos($sqlField, '.') !== false) ? self::$dateTimeMicroHumanFormat
-                : self::$dateTimeHumanFormat);
-        }
-
-        return $tmpDate->format(self::$dateHumanFormat);
-    }
-
-    /**
-     * Convert date, from mysql -> php
-     *
-     * @param string $sqlField
-     * @param bool   $hasTime
-     *
-     * @return bool|DateTime|null
-     */
-    public static function dateTimeSql2PHP($sqlField, &$hasTime = false)
-    {
-        // 3  2016-01-31 00:00:00 -> 01/01/2016 00:00:00
-        // mysql always returns the date/datetime/timestmamp in ansi format.
-        if ($sqlField === '' || $sqlField === null) {
-            if (self::$dateEpoch === null) {
-                return null;
-            }
-
-            return DateTime::createFromFormat(self::$isoDateTimeMs, self::$dateEpoch);
-        }
-
-        if (strpos($sqlField, '.')) {
-            // with date with time and microseconds
-            //2018-02-06 05:06:07.123
-            // Y-m-d H:i:s.v
-            $hasTime = true;
-            //$x = DateTime::createFromFormat("Y-m-d H:i:s.u", "2018-02-06 05:06:07.1234");
-            return DateTime::createFromFormat(self::$isoDateTimeMs, $sqlField);
-        }
-
-        if (strpos($sqlField, ':')) {
-            // date with time
-            $hasTime = true;
-            return DateTime::createFromFormat(self::$isoDateTime, $sqlField);
-        }
-        // only date
-        $hasTime = false;
-
-        return DateTime::createFromFormat(self::$isoDate, $sqlField);
-    }
-
-    /**
-     * It converts a date (as string) into another format.<br>
-     * Example:
-     * <pre>
-     * $pdoOne->dateConvert('01/01/2019','human','sql'); // 2019-01-01
-     * </pre>
-     * <br><b>iso</b> depends on the database.
-     * Example: Y-m-d H:i:s<br>
-     * <b>human</b> is based in d/m/Y H:i:s but it could be changed (self::dateHumanFormat)<br>
-     * <b>sql</b> depends on the database<br>
-     * <b>class</b> is a DateTime() object<br>
-     *
-     * @param string      $sqlField     The date to convert
-     * @param string      $inputFormat  =['iso','human','sql','class','timestamp'][$i]
-     * @param string      $outputFormat =['iso','human','sql','class','timestamp'][$i]
-     * @param null|string $force        =[null,'time','ms','none'][$i] It forces if the result gets time or
-     *                                  microseconds<br>
-     *                                  null = no force the result (it is calculated automatically)<br>
-     *                                  time = returns with a precision of seconds<br>
-     *                                  ms = returns with a precision of microseconds<br>
-     *                                  none = it never returns any time<br>
-     *
-     * @return bool|DateTime
-     */
-    public static function dateConvert($sqlField, $inputFormat, $outputFormat, $force = null)
-    {
-        /** @var boolean $ms if true then the value has microseconds */
-        $ms = false;
-        /** @var boolean $time if true then the value has time */
-        $time = false;
-        switch ($inputFormat) {
-            case 'iso':
-                if (strpos($sqlField, '.') !== false) {
-                    $ms = true;
-                    $tmpDate = DateTime::createFromFormat(self::$dateTimeMicroFormat, $sqlField);
-                } elseif (strpos($sqlField, ':') !== false) {
-                    $time = true;
-                    $tmpDate = DateTime::createFromFormat(self::$dateTimeFormat, $sqlField);
-                } else {
-                    $tmpDate = DateTime::createFromFormat(self::$dateFormat, $sqlField);
-                    if ($tmpDate === false) {
-                        return false;
-                    }
-                    $tmpDate->setTime(0, 0, 0);
-                }
-                break;
-            case 'human':
-                if (strpos($sqlField, '.') !== false) {
-                    $ms = true;
-                    $tmpDate = DateTime::createFromFormat(self::$dateTimeMicroHumanFormat, $sqlField);
-                } elseif (strpos($sqlField, ':') !== false) {
-                    $time = true;
-                    $tmpDate = DateTime::createFromFormat(self::$dateTimeHumanFormat, $sqlField);
-                } else {
-                    $tmpDate = DateTime::createFromFormat(self::$dateHumanFormat, $sqlField);
-                    if ($tmpDate === false) {
-                        return false;
-                    }
-                    $tmpDate->setTime(0, 0, 0);
-                }
-                break;
-            case 'sql':
-                if (strpos($sqlField, '.') !== false) {
-                    $ms = true;
-                    $tmpDate = DateTime::createFromFormat(self::$isoDateTimeMs, $sqlField);
-                } elseif (strpos($sqlField, ':') !== false) {
-                    $time = true;
-                    $tmpDate = DateTime::createFromFormat(self::$isoDateTime, $sqlField);
-                } else {
-                    $tmpDate = DateTime::createFromFormat(self::$isoDate, $sqlField);
-                    $tmpDate->setTime(0, 0, 0);
-                }
-                break;
-            case 'class':
-                /** @var DateTime $tmpDate */ $tmpDate = $sqlField;
-                $time = $tmpDate->format('Gis') !== '000000';
-                break;
-            case 'timestamp':
-                $tmpDate = new DateTime();
-                $tmpDate->setTimestamp($sqlField);
-                $time = $tmpDate->format('Gis') !== '000000';
-                $ms = fmod($sqlField, 1) !== 0.0;
-                break;
-            default:
-                $tmpDate = false;
-                trigger_error('PdoOne: dateConvert type not defined');
-        }
-        if (!$tmpDate) {
-            return false;
-        }
-        if ($force !== null) {
-            if ($force === 'ms') {
-                $ms = true;
-            } elseif ($force === 'time') {
-                $time = true;
-                $ms = false;
-            } elseif ($force === 'none') {
-                $time = false;
-                $ms = false;
-            }
-        }
-        switch ($outputFormat) {
-            case 'iso':
-                if ($ms) {
-                    return $tmpDate->format(self::$dateTimeMicroFormat);
-                }
-                if ($time) {
-                    return $tmpDate->format(self::$dateTimeFormat);
-                }
-                return $tmpDate->format(self::$dateFormat);
-            case 'human':
-                if ($ms) {
-                    return $tmpDate->format(self::$dateTimeMicroHumanFormat);
-                }
-                if ($time) {
-                    return $tmpDate->format(self::$dateTimeHumanFormat);
-                }
-
-                return $tmpDate->format(self::$dateHumanFormat);
-            case 'sql':
-                if ($ms) {
-                    return $tmpDate->format(self::$isoDateInputTimeMs);
-                }
-                if ($time) {
-                    return $tmpDate->format(self::$isoDateInputTime);
-                }
-
-                return $tmpDate->format(self::$isoDateInput);
-            case 'class':
-                return $tmpDate;
-            case 'timestamp':
-                return $tmpDate->getTimestamp();
-        }
-        return false;
-    }
-
-    /**
-     * Convert date, from text -> mysql (using a format pre-established)
-     *
-     * @param string $textDate     Input date
-     * @param bool   $hasTime      If true then it works with date and time
-     *                             (instead of date)
-     *
-     * @return string
-     */
-    public static function dateText2Sql($textDate, $hasTime = true)
-    {
-        $tmpFormat
-            = (($hasTime) ? (strpos($textDate, '.') === false ? self::$dateTimeFormat : self::$dateTimeMicroFormat)
-            : self::$dateFormat);
-        $tmpDate = DateTime::createFromFormat($tmpFormat, $textDate);
-        if (!$hasTime && $tmpDate) {
-            $tmpDate->setTime(0, 0, 0);
-        }
-
-        return self::dateTimePHP2Sql($tmpDate); // it always returns a date with time. Mysql Ignores it.
-    }
-
-    /**
-     * Conver date from php -> mysql
-     * It always returns a time (00:00:00 if time is empty). it could returns
-     * microseconds 2010-01-01 00:00:00.00000
-     *
-     * @param DateTime $date
-     *
-     * @return string
-     */
-    public static function dateTimePHP2Sql($date)
-    {
-        // 31/01/2016 20:20:00 --> 2016-01-31 00:00
-        if ($date == null) {
-            return self::$dateEpoch;
-        }
-        if ($date->format('u') !== '000000') {
-            return $date->format(self::$isoDateTimeMs);
-        }
-
-        return $date->format(self::$isoDateTime);
-    }
-
-    /**
-     * Returns the current date(and time) in Text (human) format. Usually, it is d/m/Y H:i:s
-     *
-     * @param bool $hasTime
-     * @param bool $hasMicroseconds
-     *
-     * @return string
-     * @throws Exception
-     * @see PdoOne::$dateTimeFormat
-     */
-    public static function dateTextNow(
-        $hasTime = true,
-        $hasMicroseconds = false
-    ) {
-        $tmpDate = new DateTime();
-        if ($hasTime) {
-            return $tmpDate->format(($hasMicroseconds !== false) ? self::$dateTimeMicroHumanFormat
-                : self::$dateTimeHumanFormat);
-        }
-        return $tmpDate->format(self::$dateHumanFormat);
-    }
-
-    /**
-     * Returns the current (PHP server) date and time in the regular format. (Y-m-d\TH:i:s\Z in long format)
-     *
-     * @param bool $hasTime
-     * @param bool $hasMicroseconds
-     *
-     * @return string
-     * @throws Exception
-     * @see PdoOne::$dateTimeFormat
-     */
-    public static function dateNow(
-        $hasTime = true,
-        $hasMicroseconds = false
-    ) {
-        $tmpDate = new DateTime();
-        if ($hasTime) {
-            return $tmpDate->format(($hasMicroseconds !== false) ? self::$dateTimeMicroFormat : self::$dateTimeFormat);
-        }
-        return $tmpDate->format(self::$dateFormat);
-    }
-
-    /**
-     * Returns the current date(and time) in SQL/ISO format. It depends on the type of database.
-     *
-     * @param bool $hasTime
-     * @param bool $hasMicroseconds
-     *
-     * @return string
-     */
-    public static function dateSqlNow($hasTime = true, $hasMicroseconds = false)
-    {
-        $tmpDate = new DateTime();
-        if ($hasTime) {
-            return $tmpDate->format(($hasMicroseconds !== false) ? self::$isoDateTimeMs : self::$isoDateTime);
-        }
-
-        return $tmpDate->format(self::$isoDate);
-    }
-
-    public static function isCli()
-    {
-        return !http_response_code();
     }
 
     public static function newColFK($key, $refcol, $reftable, $extra = null, $name = null)
@@ -1619,6 +1293,78 @@ eot;
 
     //<editor-fold desc="transaction functions">
 
+
+    /**
+     * It starts a transaction. If fails then it returns false, otherwise true.
+     *
+     * @return bool
+     * @test     equals true,this()
+     * @posttest execution $this->pdoOne->commit();
+     * @example  examples/testdb.php 92,4
+     */
+    public function startTransaction()
+    {
+        if ($this->transactionOpen || !$this->isOpen) {
+            return false;
+        }
+        $this->transactionOpen = true;
+        $this->conn1->beginTransaction();
+
+        return true;
+    }
+
+    /**
+     * Commit and close a transaction.
+     *
+     * @param bool $throw if true and it fails then it throws an error.
+     *
+     * @return bool
+     * @throws Exception
+     * @test equals false,(false),'transaction is not open'
+     */
+    public function commit($throw = true)
+    {
+        if (!$this->transactionOpen && $throw) {
+            $this->throwError('Transaction not open to commit()', '');
+
+            return false;
+        }
+        if (!$this->isOpen) {
+            $this->throwError("It's not connected to the database", '');
+
+            return false;
+        }
+        $this->transactionOpen = false;
+
+        return @$this->conn1->commit();
+    }
+
+    /**
+     * Rollback and close a transaction
+     *
+     * @param bool $throw [optional] if true and it fails then it throws an error.
+     *
+     * @return bool
+     * @throws Exception
+     * @test equals false,(false),'transaction is not open'
+     */
+    public function rollback($throw = true)
+    {
+        if (!$this->transactionOpen && $throw) {
+            $this->throwError('Transaction not open  to rollback()', '');
+        }
+        if (!$this->isOpen) {
+            $this->throwError("It's not connected to the database", '');
+
+            return false;
+        }
+        $this->transactionOpen = false;
+
+        return @$this->conn1->rollback();
+    }
+
+    //</editor-fold>
+    
     /**
      * Internal Use: It runs a raw query
      *
@@ -1727,9 +1473,339 @@ eot;
     }
 
 
-    //</editor-fold>
 
     //<editor-fold desc="Date functions" defaultstate="collapsed" >
+
+    /**
+     * Convert date from unix timestamp -> ISO (database format).
+     * <p>Example: ::unixtime2Sql(1558656785); // returns 2019-05-24 00:13:05
+     *
+     * @param integer $dateNum
+     *
+     * @return string
+     */
+    public static function unixtime2Sql($dateNum)
+    {
+        // 31/01/2016 20:20:00 --> 2016-01-31 00:00
+        if ($dateNum == null) {
+            return self::$dateEpoch;
+        }
+
+        return date(self::$isoDateTimeMs, $dateNum);
+    }
+
+
+
+
+    /**
+     * Convert date, from mysql date -> text (using a format pre-established)
+     *
+     * @param string $sqlField
+     * @param bool   $hasTime if true then the date contains time.
+     *
+     * @return string Returns a text with the date formatted (human readable)
+     */
+    public static function dateSql2Text($sqlField, $hasTime = false)
+    {
+        $tmpDate = self::dateTimeSql2PHP($sqlField, $hasTime);
+        if ($tmpDate === null) {
+            return null;
+        }
+        if ($hasTime) {
+            return $tmpDate->format((strpos($sqlField, '.') !== false) ? self::$dateTimeMicroHumanFormat
+                : self::$dateTimeHumanFormat);
+        }
+
+        return $tmpDate->format(self::$dateHumanFormat);
+    }
+
+    /**
+     * Convert date, from mysql -> php
+     *
+     * @param string $sqlField
+     * @param bool   $hasTime
+     *
+     * @return bool|DateTime|null
+     */
+    public static function dateTimeSql2PHP($sqlField, &$hasTime = false)
+    {
+        // 3  2016-01-31 00:00:00 -> 01/01/2016 00:00:00
+        // mysql always returns the date/datetime/timestmamp in ansi format.
+        if ($sqlField === '' || $sqlField === null) {
+            if (self::$dateEpoch === null) {
+                return null;
+            }
+
+            return DateTime::createFromFormat(self::$isoDateTimeMs, self::$dateEpoch);
+        }
+
+        if (strpos($sqlField, '.')) {
+            // with date with time and microseconds
+            //2018-02-06 05:06:07.123
+            // Y-m-d H:i:s.v
+            $hasTime = true;
+            //$x = DateTime::createFromFormat("Y-m-d H:i:s.u", "2018-02-06 05:06:07.1234");
+            return DateTime::createFromFormat(self::$isoDateTimeMs, $sqlField);
+        }
+
+        if (strpos($sqlField, ':')) {
+            // date with time
+            $hasTime = true;
+            return DateTime::createFromFormat(self::$isoDateTime, $sqlField);
+        }
+        // only date
+        $hasTime = false;
+
+        return DateTime::createFromFormat(self::$isoDate, $sqlField);
+    }
+
+    /**
+     * It converts a date (as string) into another format.<br>
+     * Example:
+     * <pre>
+     * $pdoOne->dateConvert('01/01/2019','human','sql'); // 2019-01-01
+     * </pre>
+     * <br><b>iso</b> depends on the database.
+     * Example: Y-m-d H:i:s<br>
+     * <b>human</b> is based in d/m/Y H:i:s but it could be changed (self::dateHumanFormat)<br>
+     * <b>sql</b> depends on the database<br>
+     * <b>class</b> is a DateTime() object<br>
+     *
+     * @param string      $sqlField     The date to convert
+     * @param string      $inputFormat  =['iso','human','sql','class','timestamp'][$i]
+     * @param string      $outputFormat =['iso','human','sql','class','timestamp'][$i]
+     * @param null|string $force        =[null,'time','ms','none'][$i] It forces if the result gets time or
+     *                                  microseconds<br>
+     *                                  null = no force the result (it is calculated automatically)<br>
+     *                                  time = returns with a precision of seconds<br>
+     *                                  ms = returns with a precision of microseconds<br>
+     *                                  none = it never returns any time<br>
+     *
+     * @return bool|DateTime
+     */
+    public static function dateConvert($sqlField, $inputFormat, $outputFormat, $force = null)
+    {
+        /** @var boolean $ms if true then the value has microseconds */
+        $ms = false;
+        /** @var boolean $time if true then the value has time */
+        $time = false;
+        switch ($inputFormat) {
+            case 'iso':
+                if (strpos($sqlField, '.') !== false) {
+                    $ms = true;
+                    $tmpDate = DateTime::createFromFormat(self::$dateTimeMicroFormat, $sqlField);
+                } elseif (strpos($sqlField, ':') !== false) {
+                    $time = true;
+                    $tmpDate = DateTime::createFromFormat(self::$dateTimeFormat, $sqlField);
+                } else {
+                    $tmpDate = DateTime::createFromFormat(self::$dateFormat, $sqlField);
+                    if ($tmpDate === false) {
+                        return false;
+                    }
+                    $tmpDate->setTime(0, 0, 0);
+                }
+                break;
+            case 'human':
+                if (strpos($sqlField, '.') !== false) {
+                    $ms = true;
+                    $tmpDate = DateTime::createFromFormat(self::$dateTimeMicroHumanFormat, $sqlField);
+                } elseif (strpos($sqlField, ':') !== false) {
+                    $time = true;
+                    $tmpDate = DateTime::createFromFormat(self::$dateTimeHumanFormat, $sqlField);
+                } else {
+                    $tmpDate = DateTime::createFromFormat(self::$dateHumanFormat, $sqlField);
+                    if ($tmpDate === false) {
+                        return false;
+                    }
+                    $tmpDate->setTime(0, 0, 0);
+                }
+                break;
+            case 'sql':
+                if (strpos($sqlField, '.') !== false) {
+                    $ms = true;
+                    $tmpDate = DateTime::createFromFormat(self::$isoDateTimeMs, $sqlField);
+                } elseif (strpos($sqlField, ':') !== false) {
+                    $time = true;
+                    $tmpDate = DateTime::createFromFormat(self::$isoDateTime, $sqlField);
+                } else {
+                    $tmpDate = DateTime::createFromFormat(self::$isoDate, $sqlField);
+                    $tmpDate->setTime(0, 0, 0);
+                }
+                break;
+            case 'class':
+                /** @var DateTime $tmpDate */ $tmpDate = $sqlField;
+                $time = $tmpDate->format('Gis') !== '000000';
+                break;
+            case 'timestamp':
+                $tmpDate = new DateTime();
+                $tmpDate->setTimestamp($sqlField);
+                $time = $tmpDate->format('Gis') !== '000000';
+                $ms = fmod($sqlField, 1) !== 0.0;
+                break;
+            default:
+                $tmpDate = false;
+                trigger_error('PdoOne: dateConvert type not defined');
+        }
+        if (!$tmpDate) {
+            return false;
+        }
+        if ($force !== null) {
+            if ($force === 'ms') {
+                $ms = true;
+            } elseif ($force === 'time') {
+                $time = true;
+                $ms = false;
+            } elseif ($force === 'none') {
+                $time = false;
+                $ms = false;
+            }
+        }
+        switch ($outputFormat) {
+            case 'iso':
+                if ($ms) {
+                    return $tmpDate->format(self::$dateTimeMicroFormat);
+                }
+                if ($time) {
+                    return $tmpDate->format(self::$dateTimeFormat);
+                }
+                return $tmpDate->format(self::$dateFormat);
+            case 'human':
+                if ($ms) {
+                    return $tmpDate->format(self::$dateTimeMicroHumanFormat);
+                }
+                if ($time) {
+                    return $tmpDate->format(self::$dateTimeHumanFormat);
+                }
+
+                return $tmpDate->format(self::$dateHumanFormat);
+            case 'sql':
+                if ($ms) {
+                    return $tmpDate->format(self::$isoDateInputTimeMs);
+                }
+                if ($time) {
+                    return $tmpDate->format(self::$isoDateInputTime);
+                }
+
+                return $tmpDate->format(self::$isoDateInput);
+            case 'class':
+                return $tmpDate;
+            case 'timestamp':
+                return $tmpDate->getTimestamp();
+        }
+        return false;
+    }
+
+    /**
+     * Convert date, from text -> mysql (using a format pre-established)
+     *
+     * @param string $textDate     Input date
+     * @param bool   $hasTime      If true then it works with date and time
+     *                             (instead of date)
+     *
+     * @return string
+     */
+    public static function dateText2Sql($textDate, $hasTime = true)
+    {
+        $tmpFormat
+            = (($hasTime) ? (strpos($textDate, '.') === false ? self::$dateTimeFormat : self::$dateTimeMicroFormat)
+            : self::$dateFormat);
+        $tmpDate = DateTime::createFromFormat($tmpFormat, $textDate);
+        if (!$hasTime && $tmpDate) {
+            $tmpDate->setTime(0, 0, 0);
+        }
+
+        return self::dateTimePHP2Sql($tmpDate); // it always returns a date with time. Mysql Ignores it.
+    }
+
+    /**
+     * Conver date from php -> mysql
+     * It always returns a time (00:00:00 if time is empty). it could returns
+     * microseconds 2010-01-01 00:00:00.00000
+     *
+     * @param DateTime $date
+     *
+     * @return string
+     */
+    public static function dateTimePHP2Sql($date)
+    {
+        // 31/01/2016 20:20:00 --> 2016-01-31 00:00
+        if ($date == null) {
+            return self::$dateEpoch;
+        }
+        if ($date->format('u') !== '000000') {
+            return $date->format(self::$isoDateTimeMs);
+        }
+
+        return $date->format(self::$isoDateTime);
+    }
+
+    /**
+     * Returns the current date(and time) in Text (human) format. Usually, it is d/m/Y H:i:s
+     *
+     * @param bool $hasTime
+     * @param bool $hasMicroseconds
+     *
+     * @return string
+     * @throws Exception
+     * @see PdoOne::$dateTimeFormat
+     */
+    public static function dateTextNow(
+        $hasTime = true,
+        $hasMicroseconds = false
+    ) {
+        $tmpDate = new DateTime();
+        if ($hasTime) {
+            return $tmpDate->format(($hasMicroseconds !== false) ? self::$dateTimeMicroHumanFormat
+                : self::$dateTimeHumanFormat);
+        }
+        return $tmpDate->format(self::$dateHumanFormat);
+    }
+
+    /**
+     * Returns the current (PHP server) date and time in the regular format. (Y-m-d\TH:i:s\Z in long format)
+     *
+     * @param bool $hasTime
+     * @param bool $hasMicroseconds
+     *
+     * @return string
+     * @throws Exception
+     * @see PdoOne::$dateTimeFormat
+     */
+    public static function dateNow(
+        $hasTime = true,
+        $hasMicroseconds = false
+    ) {
+        $tmpDate = new DateTime();
+        if ($hasTime) {
+            return $tmpDate->format(($hasMicroseconds !== false) ? self::$dateTimeMicroFormat : self::$dateTimeFormat);
+        }
+        return $tmpDate->format(self::$dateFormat);
+    }
+
+    /**
+     * Returns the current date(and time) in SQL/ISO format. It depends on the type of database.
+     *
+     * @param bool $hasTime
+     * @param bool $hasMicroseconds
+     *
+     * @return string
+     */
+    public static function dateSqlNow($hasTime = true, $hasMicroseconds = false)
+    {
+        $tmpDate = new DateTime();
+        if ($hasTime) {
+            return $tmpDate->format(($hasMicroseconds !== false) ? self::$isoDateTimeMs : self::$isoDateTime);
+        }
+
+        return $tmpDate->format(self::$isoDate);
+    }
+
+    public static function isCli()
+    {
+        return !http_response_code();
+    }
+
+    //</editor-fold>
 
     /**
      * @param mixed $v Variable
@@ -2281,6 +2357,371 @@ eot;
     {
         return count($this->where) ? ' where ' . implode(' and ', $this->where) : '';
     }
+
+    //<editor-fold desc="Query Builder DQL functions" defaultstate="collapsed" >
+
+
+    /**
+     * Returns a list of objects from the current schema/db<br>
+     *
+     * @param string $type         =['table','function'][$i] The type of the
+     *                             object
+     * @param bool   $onlyName     If true then it only returns the name of the
+     *                             objects.
+     *
+     * @return bool|array
+     * @throws Exception
+     */
+    public function objectList($type = 'table', $onlyName = false)
+    {
+        $query = $this->service->objectList($type, $onlyName);
+        if ($onlyName) {
+            return $this->select($query)->toListSimple();
+        }
+
+        return $this->runRawQuery($query, [], true);
+    }
+
+    /**
+     * It returns an array of simple columns (not declarative). It uses the
+     * first column<br>
+     * <b>Example:</b><br>
+     * <pre>
+     * select('select id from table')->toListSimple() // ['1','2','3','4']
+     * </pre>
+     *
+     * @return array|bool
+     * @throws Exception
+     */
+    public function toListSimple()
+    {
+        $useCache = $this->useCache; // because builderReset cleans this value
+        $this->beginTry();
+        $rows = $this->runGen(true, PDO::FETCH_COLUMN, 'tolistsimple', false);
+        if ($this->endtry() === false) {
+            return false;
+        }
+        if ($this->uid) {
+            // we store the information of the cache.
+            $this->setCache($this->uid, $this->cacheFamily, $rows, $useCache);
+        }
+
+        return $rows;
+    }
+
+    /**
+     * It adds a select to the query builder.
+     * <br><b>Example</b>:<br>
+     * <pre>
+     * ->select("\*")->from('table') = <i>"select * from table"</i><br>
+     * ->select(['col1','col2'])->from('table') = <i>"select col1,col2 from
+     * table"</i><br>
+     * ->select('col1,col2')->from('table') = <i>"select col1,col2 from
+     * table"</i><br>
+     * ->select('select *')->from('table') = <i>"select * from table"</i><br>
+     * ->select('select * from table') = <i>"select * from table"</i><br>
+     * ->select('select * from table where id=1') = <i>"select * from table
+     * where id=1"</i><br>
+     * </pre>
+     *
+     * @param string|array $sql
+     *
+     * @return PdoOne
+     * @test InstanceOf PdoOne::class,this('select 1 from DUAL')
+     */
+    public function select($sql)
+    {
+        if (is_array($sql)) {
+            $this->select .= implode(', ', $sql);
+        } elseif ($this->select === '') {
+            $this->select = $sql;
+        } else {
+            $this->select .= ', ' . $sql;
+        }
+
+        return $this;
+    }
+
+
+    /**
+     * It adds a having to the query builder.
+     * <br><b>Example</b>:<br>
+     *      select('*')->from('table')->group('col')->having('field=2')
+     *      having( ['field'=>20] ) // associative array with automatic type
+     *      having( ['field'=>[20]] ) // associative array with type defined
+     *      having( ['field',20] ) // array automatic type
+     *      having(['field',[20]] ) // array type defined
+     *      having('field=20') // literal value
+     *      having('field=?',[20]) // automatic type
+     *      having('field',[20]) // automatic type (it's the same than
+     *      where('field=?',[20]) having('field=?', [20] ) // type(i,d,s,b)
+     *      defined having('field=?,field2=?', [20,'hello'] )
+     *
+     * @param string|array $sql
+     * @param array|mixed  $param
+     *
+     * @return PdoOne
+     * @see  http://php.net/manual/en/mysqli-stmt.bind-param.php for types
+     * @test InstanceOf
+     *       PdoOne::class,this('field1=?,field2=?',[20,'hello'])
+     */
+    public function having($sql, $param = self::NULL)
+    {
+        if ($sql === null) {
+            return $this;
+        }
+
+        return $this->where($sql, $param, true);
+    }
+
+    /**
+     * <b>Example:</b><br>
+     *      where( ['field'=>20] ) // associative array with automatic type
+     *      where( ['field'=>[20]] ) // associative array with type defined
+     *      where( ['field',20] ) // array automatic type
+     *      where (['field',[20]] ) // array type defined
+     *      where('field=20') // literal value
+     *      where('field=?',[20]) // automatic type
+     *      where('field',[20]) // automatic type (it's the same than
+     *      where('field=?',[20]) where('field=?', [20] ) // type(i,d,s,b)
+     *      defined where('field=?,field2=?', [20,'hello'] )
+     *      where('field=:field,field2=:field2',
+     *      ['field'=>'hello','field2'=>'world'] ) // associative array as value
+     *
+     * @param string|array $sql          Input SQL query or associative/indexed
+     *                                   array
+     * @param array|mixed  $param        Associative or indexed array with the
+     *                                   conditions.
+     * @param bool         $isHaving     if true then it is a HAVING sql commando
+     *                                   instead of a WHERE.
+     *
+     * @return PdoOne
+     * @see  http://php.net/manual/en/mysqli-stmt.bind-param.php for types
+     * @test InstanceOf
+     *       PdoOne::class,this('field1=?,field2=?',[20,'hello'])
+     */
+    public function where($sql, $param = self::NULL, $isHaving = false)
+    {
+        if ($sql === null) {
+            return $this;
+        }
+        $this->constructParam2($sql, $param, $isHaving ? 'having' : 'where');
+        return $this;
+    }
+
+    /**
+     * Returns true if the current query has a "having" or "where"
+     *
+     * @param bool $having <b>true</b> it return the number of where<br>
+     *                     <b>false</b> it returns the number of having
+     *
+     * @return bool
+     */
+    public function hasWhere($having = false)
+    {
+        if ($having) {
+            return count($this->having) > 0;
+        }
+
+        return count($this->where) > 0;
+    }
+
+    /**
+     * It adds an "limit" in a query. It depends on the type of database<br>
+     * <b>Example:</b><br>
+     * <pre>
+     *      ->select("")->limit("10,20")->toList();
+     * </pre>
+     *
+     * @param string $sql Input SQL query
+     *
+     * @return PdoOne
+     * @throws Exception
+     * @test InstanceOf PdoOne::class,this('1,10')
+     */
+    public function limit($sql)
+    {
+        if ($sql === null) {
+            return $this;
+        }
+        $this->service->limit($sql);
+
+        return $this;
+    }
+
+    /**
+     * Adds a distinct to the query. The value is ignored if the select() is
+     * written complete.<br>
+     * <pre>
+     *      ->select("*")->distinct() // works
+     *      ->select("select *")->distinct() // distinct is ignored.
+     *</pre>
+     *
+     * @param string $sql Input SQL query
+     *
+     * @return PdoOne
+     * @test InstanceOf PdoOne::class,this()
+     */
+    public function distinct($sql = 'distinct')
+    {
+        if ($sql === null) {
+            return $this;
+        }
+        $this->distinct = ($sql) ? $sql . ' ' : '';
+
+        return $this;
+    }
+
+    /**
+     * It returns an associative array where the first value is the key and the
+     * second is the value<br> If the second value does not exist then it uses
+     * the index as value (first value)<br>
+     * <b>Example:</b><br>
+     * <pre>
+     * select('select cod,name from table')->toListKeyValue() //
+     * ['cod1'=>'name1','cod2'=>'name2'] select('select cod,name,ext from
+     * table')->toListKeyValue('|') //
+     * ['cod1'=>'name1|ext1','cod2'=>'name2|ext2']
+     * </pre>
+     *
+     * @param string|null $extraValueSeparator     (optional) It allows to read a
+     *                                             third value and returns it
+     *                                             concatenated with the value.
+     *                                             Example '|'
+     *
+     * @return array|bool|null
+     * @throws Exception
+     */
+    public function toListKeyValue($extraValueSeparator = null)
+    {
+        $list = $this->toList(PDO::FETCH_NUM);
+        if (!is_array($list)) {
+            return null;
+        }
+        $result = [];
+        foreach ($list as $item) {
+            if ($extraValueSeparator === null) {
+                $result[$item[0]] = isset($item[1]) ? $item[1] : $item[0];
+            } else {
+                $result[$item[0]] = (isset($item[1]) ? $item[1] : $item[0]) . $extraValueSeparator . @$item[2];
+            }
+        }
+
+        return $result;
+    }
+
+    /**
+     * It returns an declarative array of rows.<br>
+     * If not data is found, then it returns an empty array<br>
+     * This method is an <b>end of the chain method</b>, so it clears the method stack<br>
+     * <b>Example</b>:<br>
+     * <pre>
+     * $this->select('select id,name from table')->toList() // [['id'=>'1','name'='john'],['id'=>'2','name'=>'anna']]
+     * $this->select('id,name')
+     *      ->from('table')
+     *      ->where('condition=?',[20])
+     *      ->toList();
+     * </pre>
+     *
+     * @param int $pdoMode (optional) By default is PDO::FETCH_ASSOC
+     *
+     * @return array|bool
+     * @throws Exception
+     */
+    public function toList($pdoMode = PDO::FETCH_ASSOC)
+    {
+        $useCache = $this->useCache; // because builderReset cleans this value
+        $this->beginTry();
+        $rows = $this->runGen(true, $pdoMode, 'tolist', false);
+        if ($this->endtry() === false) {
+            return false;
+        }
+        if ($this->uid) {
+            // we store the information of the cache.
+            $this->setCache($this->uid, $this->cacheFamily, $rows, $useCache);
+        }
+        return $rows;
+    }
+
+    /**
+     * It returns a PDOStatement.<br>
+     * <b>Note:</b> The result is not cached.
+     *
+     * @return PDOStatement
+     * @throws Exception
+     */
+    public function toResult()
+    {
+        return $this->runGen(false);
+    }
+
+    /**
+     * It returns the first row.  If there is not row then it returns false.<br>
+     * This method is an <b>end of the chain method</b>, so it clears the method stack<br>
+     * <b>Example</b>:<br>
+     * <pre>
+     *      $con->select('*')->from('table')->first(); // select * from table
+     *      (first value)
+     * </pre>
+     *
+     * @return array|null|false
+     * @throws Exception
+     */
+    public function first()
+    {
+        $useCache = $this->useCache; // because builderReset cleans this value
+        $uid = false;
+        if ($useCache !== false) {
+            $sql = $this->sqlGen();
+            $this->uid = hash($this->encryption->hashType,
+                $sql . PDO::FETCH_ASSOC . serialize($this->whereParamAssoc) . serialize($this->havingParamAssoc)
+                . 'firstscalar');
+            $rows = $this->cacheService->getCache($this->uid, $this->cacheFamily);
+            if ($rows !== false) {
+                $this->builderReset();
+
+                return $rows;
+            }
+        }
+        if ($this->useInternalCache) {
+            $sql = (!isset($sql)) ? $this->sqlGen() : $sql;
+            $allparam = array_merge($this->setParamAssoc, $this->whereParamAssoc, $this->havingParamAssoc);
+            $uid = hash($this->encryption->hashType, 'first' . $sql . serialize($allparam));
+            if (isset($this->internalCache[$uid])) {
+                // we have an internal cache, so we will return it.
+                $this->internalCacheCounter++;
+                $this->builderReset();
+                return $this->internalCache[$uid];
+            }
+        }
+        $this->beginTry();
+        /** @var PDOStatement $statement */
+        $statement = $this->runGen(false, PDO::FETCH_ASSOC, 'first', false);
+        if ($this->endtry() === false) {
+            return null;
+        }
+        $row = null;
+        if ($statement === false) {
+            $row = null;
+        } elseif (!$statement->columnCount()) {
+            $row = null;
+        } else {
+            $row = $statement->fetch(PDO::FETCH_ASSOC);
+            @$statement->closeCursor();
+            $statement = null;
+        }
+
+        if ($this->uid) {
+            // we store the information of the cache.
+            $this->setCache($this->uid, $this->cacheFamily, $row, $useCache);
+        }
+        if ($uid !== false) {
+            $this->internalCache[$uid] = $row;
+        }
+
+        return $row;
+    }    
+
     //</editor-fold>
 
     //<editor-fold desc="Query Builder functions" defaultstate="collapsed" >
@@ -2371,87 +2812,6 @@ eot;
         }
         $this->tableDependencyArray = [$tables, $after, $before];
         return $this->tableDependencyArray;
-    }
-
-    /**
-     * Returns a list of objects from the current schema/db<br>
-     *
-     * @param string $type         =['table','function'][$i] The type of the
-     *                             object
-     * @param bool   $onlyName     If true then it only returns the name of the
-     *                             objects.
-     *
-     * @return bool|array
-     * @throws Exception
-     */
-    public function objectList($type = 'table', $onlyName = false)
-    {
-        $query = $this->service->objectList($type, $onlyName);
-        if ($onlyName) {
-            return $this->select($query)->toListSimple();
-        }
-
-        return $this->runRawQuery($query, [], true);
-    }
-
-    /**
-     * It returns an array of simple columns (not declarative). It uses the
-     * first column<br>
-     * <b>Example:</b><br>
-     * <pre>
-     * select('select id from table')->toListSimple() // ['1','2','3','4']
-     * </pre>
-     *
-     * @return array|bool
-     * @throws Exception
-     */
-    public function toListSimple()
-    {
-        $useCache = $this->useCache; // because builderReset cleans this value
-        $this->beginTry();
-        $rows = $this->runGen(true, PDO::FETCH_COLUMN, 'tolistsimple', false);
-        if ($this->endtry() === false) {
-            return false;
-        }
-        if ($this->uid) {
-            // we store the information of the cache.
-            $this->setCache($this->uid, $this->cacheFamily, $rows, $useCache);
-        }
-
-        return $rows;
-    }
-
-    /**
-     * It adds a select to the query builder.
-     * <br><b>Example</b>:<br>
-     * <pre>
-     * ->select("\*")->from('table') = <i>"select * from table"</i><br>
-     * ->select(['col1','col2'])->from('table') = <i>"select col1,col2 from
-     * table"</i><br>
-     * ->select('col1,col2')->from('table') = <i>"select col1,col2 from
-     * table"</i><br>
-     * ->select('select *')->from('table') = <i>"select * from table"</i><br>
-     * ->select('select * from table') = <i>"select * from table"</i><br>
-     * ->select('select * from table where id=1') = <i>"select * from table
-     * where id=1"</i><br>
-     * </pre>
-     *
-     * @param string|array $sql
-     *
-     * @return PdoOne
-     * @test InstanceOf PdoOne::class,this('select 1 from DUAL')
-     */
-    public function select($sql)
-    {
-        if (is_array($sql)) {
-            $this->select .= implode(', ', $sql);
-        } elseif ($this->select === '') {
-            $this->select = $sql;
-        } else {
-            $this->select .= ', ' . $sql;
-        }
-
-        return $this;
     }
 
     private function typeDict($row, $default = true)
@@ -5497,75 +5857,6 @@ BOOTS;
     }
 
     /**
-     * It starts a transaction. If fails then it returns false, otherwise true.
-     *
-     * @return bool
-     * @test     equals true,this()
-     * @posttest execution $this->pdoOne->commit();
-     * @example  examples/testdb.php 92,4
-     */
-    public function startTransaction()
-    {
-        if ($this->transactionOpen || !$this->isOpen) {
-            return false;
-        }
-        $this->transactionOpen = true;
-        $this->conn1->beginTransaction();
-
-        return true;
-    }
-
-    /**
-     * Commit and close a transaction.
-     *
-     * @param bool $throw if true and it fails then it throws an error.
-     *
-     * @return bool
-     * @throws Exception
-     * @test equals false,(false),'transaction is not open'
-     */
-    public function commit($throw = true)
-    {
-        if (!$this->transactionOpen && $throw) {
-            $this->throwError('Transaction not open to commit()', '');
-
-            return false;
-        }
-        if (!$this->isOpen) {
-            $this->throwError("It's not connected to the database", '');
-
-            return false;
-        }
-        $this->transactionOpen = false;
-
-        return @$this->conn1->commit();
-    }
-
-    /**
-     * Rollback and close a transaction
-     *
-     * @param bool $throw [optional] if true and it fails then it throws an error.
-     *
-     * @return bool
-     * @throws Exception
-     * @test equals false,(false),'transaction is not open'
-     */
-    public function rollback($throw = true)
-    {
-        if (!$this->transactionOpen && $throw) {
-            $this->throwError('Transaction not open  to rollback()', '');
-        }
-        if (!$this->isOpen) {
-            $this->throwError("It's not connected to the database", '');
-
-            return false;
-        }
-        $this->transactionOpen = false;
-
-        return @$this->conn1->rollback();
-    }
-
-    /**
      * It generates a query for "count". It is a macro of select()
      * <br><b>Example</b>:<br>
      * <pre>
@@ -6020,284 +6311,6 @@ BOOTS;
         return $this;
     }
 
-    /**
-     * It adds a having to the query builder.
-     * <br><b>Example</b>:<br>
-     *      select('*')->from('table')->group('col')->having('field=2')
-     *      having( ['field'=>20] ) // associative array with automatic type
-     *      having( ['field'=>[20]] ) // associative array with type defined
-     *      having( ['field',20] ) // array automatic type
-     *      having(['field',[20]] ) // array type defined
-     *      having('field=20') // literal value
-     *      having('field=?',[20]) // automatic type
-     *      having('field',[20]) // automatic type (it's the same than
-     *      where('field=?',[20]) having('field=?', [20] ) // type(i,d,s,b)
-     *      defined having('field=?,field2=?', [20,'hello'] )
-     *
-     * @param string|array $sql
-     * @param array|mixed  $param
-     *
-     * @return PdoOne
-     * @see  http://php.net/manual/en/mysqli-stmt.bind-param.php for types
-     * @test InstanceOf
-     *       PdoOne::class,this('field1=?,field2=?',[20,'hello'])
-     */
-    public function having($sql, $param = self::NULL)
-    {
-        if ($sql === null) {
-            return $this;
-        }
-
-        return $this->where($sql, $param, true);
-    }
-
-    /**
-     * <b>Example:</b><br>
-     *      where( ['field'=>20] ) // associative array with automatic type
-     *      where( ['field'=>[20]] ) // associative array with type defined
-     *      where( ['field',20] ) // array automatic type
-     *      where (['field',[20]] ) // array type defined
-     *      where('field=20') // literal value
-     *      where('field=?',[20]) // automatic type
-     *      where('field',[20]) // automatic type (it's the same than
-     *      where('field=?',[20]) where('field=?', [20] ) // type(i,d,s,b)
-     *      defined where('field=?,field2=?', [20,'hello'] )
-     *      where('field=:field,field2=:field2',
-     *      ['field'=>'hello','field2'=>'world'] ) // associative array as value
-     *
-     * @param string|array $sql          Input SQL query or associative/indexed
-     *                                   array
-     * @param array|mixed  $param        Associative or indexed array with the
-     *                                   conditions.
-     * @param bool         $isHaving     if true then it is a HAVING sql commando
-     *                                   instead of a WHERE.
-     *
-     * @return PdoOne
-     * @see  http://php.net/manual/en/mysqli-stmt.bind-param.php for types
-     * @test InstanceOf
-     *       PdoOne::class,this('field1=?,field2=?',[20,'hello'])
-     */
-    public function where($sql, $param = self::NULL, $isHaving = false)
-    {
-        if ($sql === null) {
-            return $this;
-        }
-        $this->constructParam2($sql, $param, $isHaving ? 'having' : 'where');
-        return $this;
-    }
-
-    /**
-     * Returns true if the current query has a "having" or "where"
-     *
-     * @param bool $having <b>true</b> it return the number of where<br>
-     *                     <b>false</b> it returns the number of having
-     *
-     * @return bool
-     */
-    public function hasWhere($having = false)
-    {
-        if ($having) {
-            return count($this->having) > 0;
-        }
-
-        return count($this->where) > 0;
-    }
-
-    /**
-     * It adds an "limit" in a query. It depends on the type of database<br>
-     * <b>Example:</b><br>
-     * <pre>
-     *      ->select("")->limit("10,20")->toList();
-     * </pre>
-     *
-     * @param string $sql Input SQL query
-     *
-     * @return PdoOne
-     * @throws Exception
-     * @test InstanceOf PdoOne::class,this('1,10')
-     */
-    public function limit($sql)
-    {
-        if ($sql === null) {
-            return $this;
-        }
-        $this->service->limit($sql);
-
-        return $this;
-    }
-
-    /**
-     * Adds a distinct to the query. The value is ignored if the select() is
-     * written complete.<br>
-     * <pre>
-     *      ->select("*")->distinct() // works
-     *      ->select("select *")->distinct() // distinct is ignored.
-     *</pre>
-     *
-     * @param string $sql Input SQL query
-     *
-     * @return PdoOne
-     * @test InstanceOf PdoOne::class,this()
-     */
-    public function distinct($sql = 'distinct')
-    {
-        if ($sql === null) {
-            return $this;
-        }
-        $this->distinct = ($sql) ? $sql . ' ' : '';
-
-        return $this;
-    }
-
-    /**
-     * It returns an associative array where the first value is the key and the
-     * second is the value<br> If the second value does not exist then it uses
-     * the index as value (first value)<br>
-     * <b>Example:</b><br>
-     * <pre>
-     * select('select cod,name from table')->toListKeyValue() //
-     * ['cod1'=>'name1','cod2'=>'name2'] select('select cod,name,ext from
-     * table')->toListKeyValue('|') //
-     * ['cod1'=>'name1|ext1','cod2'=>'name2|ext2']
-     * </pre>
-     *
-     * @param string|null $extraValueSeparator     (optional) It allows to read a
-     *                                             third value and returns it
-     *                                             concatenated with the value.
-     *                                             Example '|'
-     *
-     * @return array|bool|null
-     * @throws Exception
-     */
-    public function toListKeyValue($extraValueSeparator = null)
-    {
-        $list = $this->toList(PDO::FETCH_NUM);
-        if (!is_array($list)) {
-            return null;
-        }
-        $result = [];
-        foreach ($list as $item) {
-            if ($extraValueSeparator === null) {
-                $result[$item[0]] = isset($item[1]) ? $item[1] : $item[0];
-            } else {
-                $result[$item[0]] = (isset($item[1]) ? $item[1] : $item[0]) . $extraValueSeparator . @$item[2];
-            }
-        }
-
-        return $result;
-    }
-
-    /**
-     * It returns an declarative array of rows.<br>
-     * If not data is found, then it returns an empty array<br>
-     * This method is an <b>end of the chain method</b>, so it clears the method stack<br>
-     * <b>Example</b>:<br>
-     * <pre>
-     * $this->select('select id,name from table')->toList() // [['id'=>'1','name'='john'],['id'=>'2','name'=>'anna']]
-     * $this->select('id,name')
-     *      ->from('table')
-     *      ->where('condition=?',[20])
-     *      ->toList();
-     * </pre>
-     *
-     * @param int $pdoMode (optional) By default is PDO::FETCH_ASSOC
-     *
-     * @return array|bool
-     * @throws Exception
-     */
-    public function toList($pdoMode = PDO::FETCH_ASSOC)
-    {
-        $useCache = $this->useCache; // because builderReset cleans this value
-        $this->beginTry();
-        $rows = $this->runGen(true, $pdoMode, 'tolist', false);
-        if ($this->endtry() === false) {
-            return false;
-        }
-        if ($this->uid) {
-            // we store the information of the cache.
-            $this->setCache($this->uid, $this->cacheFamily, $rows, $useCache);
-        }
-        return $rows;
-    }
-
-    /**
-     * It returns a PDOStatement.<br>
-     * <b>Note:</b> The result is not cached.
-     *
-     * @return PDOStatement
-     * @throws Exception
-     */
-    public function toResult()
-    {
-        return $this->runGen(false);
-    }
-
-    /**
-     * It returns the first row.  If there is not row then it returns false.<br>
-     * This method is an <b>end of the chain method</b>, so it clears the method stack<br>
-     * <b>Example</b>:<br>
-     * <pre>
-     *      $con->select('*')->from('table')->first(); // select * from table
-     *      (first value)
-     * </pre>
-     *
-     * @return array|null|false
-     * @throws Exception
-     */
-    public function first()
-    {
-        $useCache = $this->useCache; // because builderReset cleans this value
-        $uid = false;
-        if ($useCache !== false) {
-            $sql = $this->sqlGen();
-            $this->uid = hash($this->encryption->hashType,
-                $sql . PDO::FETCH_ASSOC . serialize($this->whereParamAssoc) . serialize($this->havingParamAssoc)
-                . 'firstscalar');
-            $rows = $this->cacheService->getCache($this->uid, $this->cacheFamily);
-            if ($rows !== false) {
-                $this->builderReset();
-
-                return $rows;
-            }
-        }
-        if ($this->useInternalCache) {
-            $sql = (!isset($sql)) ? $this->sqlGen() : $sql;
-            $allparam = array_merge($this->setParamAssoc, $this->whereParamAssoc, $this->havingParamAssoc);
-            $uid = hash($this->encryption->hashType, 'first' . $sql . serialize($allparam));
-            if (isset($this->internalCache[$uid])) {
-                // we have an internal cache, so we will return it.
-                $this->internalCacheCounter++;
-                $this->builderReset();
-                return $this->internalCache[$uid];
-            }
-        }
-        $this->beginTry();
-        /** @var PDOStatement $statement */
-        $statement = $this->runGen(false, PDO::FETCH_ASSOC, 'first', false);
-        if ($this->endtry() === false) {
-            return null;
-        }
-        $row = null;
-        if ($statement === false) {
-            $row = null;
-        } elseif (!$statement->columnCount()) {
-            $row = null;
-        } else {
-            $row = $statement->fetch(PDO::FETCH_ASSOC);
-            @$statement->closeCursor();
-            $statement = null;
-        }
-
-        if ($this->uid) {
-            // we store the information of the cache.
-            $this->setCache($this->uid, $this->cacheFamily, $row, $useCache);
-        }
-        if ($uid !== false) {
-            $this->internalCache[$uid] = $row;
-        }
-
-        return $row;
-    }
     //</editor-fold>
 
     //<editor-fold desc="Encryption functions" defaultstate="collapsed" >
@@ -6423,118 +6436,6 @@ BOOTS;
         return $row;
     }
 
-    /**
-     * It sets to use cache for the current pipelines. It is disabled at the end of the pipeline<br>
-     * It only works if we set the cacheservice<br>
-     * <b>Example</b><br>
-     * <pre>
-     * $this->setCacheService($instanceCache);
-     * $this->useCache()->select()..; // The cache never expires
-     * $this->useCache(60)->select()..; // The cache lasts 60 seconds.
-     * $this->useCache(60,'customers')
-     *        ->select()..; // cache associated with customers
-     *                      // it could be invalidated by invalidateCache()
-     * $this->useCache(60,['customers','invoices'])
-     *        ->select()..; // cache associated with customers
-     *                      // it could be invalidated by invalidateCache()
-     * $this->useCache(60,'*')->select('col')
-     *      ->from('table')->toList(); // '*' uses all the table assigned.
-     * </pre>
-     *
-     * @param null|bool|int $ttl        <b>null</b> then the cache never expires.<br>
-     *                                  <b>false</b> then we don't use cache.<br>
-     *                                  <b>int</b> then it is the duration of the cache (in seconds)
-     * @param string|array $family      [optional] It is the family or group of the cache. It could be used to
-     *                                  identify a group of cache to invalidate the whole group (for example
-     *                                  ,invalidate all cache from a specific table).<br>
-     *                                  <b>*</b> If "*" then it uses the tables assigned by from() and join()
-     *
-     * @return $this
-     * @see \eftec\PdoOne::invalidateCache             
-     */
-    public function useCache($ttl = null, $family = '')
-    {
-        if ($this->cacheService === null) {
-            $ttl = false;
-        }
-        $this->cacheFamily = $family;
-        $this->useCache = $ttl;
-
-        return $this;
-    }
-
-    /**
-     * Generate and run an update in the database.
-     * <br><b>Example</b>:<br>
-     * <pre>
-     *      update('table',['col1',10,'col2','hello world'],['wherecol',10]);
-     *      update('table',['col1','col2'],[10,'hello world'],['wherecol'],[10]);
-     *      $this->from("producttype")
-     *          ->set("name=?",['Captain-Crunch'])
-     *          ->where('idproducttype=?',[6])
-     *          ->update();
-     *      update('product_category set col1=10 where idproducttype=1')
-     * </pre>
-     *
-     * @param string            $tableName The name of the table or the whole
-     *                                     query.
-     * @param string[]          $tableDef
-     * @param string[]|int|null $values
-     * @param string[]          $tableDefWhere
-     * @param string[]|int|null $valueWhere
-     *
-     * @return mixed
-     * @throws Exception
-     */
-    public function update(
-        $tableName = null,
-        $tableDef = null,
-        $values = self::NULL,
-        $tableDefWhere = null,
-        $valueWhere = self::NULL
-    ) {
-        if ($tableName === null) {
-            // using builder. from()->set()->where()->update()
-            $tableName = $this->from;
-        }
-
-        if ($tableDef !== null) {
-            $this->constructParam2($tableDef, $values, 'set');
-        }
-
-
-        if ($tableDefWhere !== null) {
-            $this->constructParam2($tableDefWhere, $valueWhere, 'where');
-        }
-
-        $errorCause = '';
-
-        if (!$tableName) {
-            $errorCause = "you can't execute an empty update() without a from()";
-        }
-        if (count($this->set) === 0) {
-            $errorCause = "you can't execute an empty update() without a set()";
-        }
-        if ($errorCause) {
-            $this->throwError('Update:' . $errorCause, 'update');
-            return false;
-        }
-
-
-        $sql = 'update ' . $this->addDelimiter($tableName);
-        $sql .= $this->constructSet();
-        $sql .= $this->constructWhere();
-        $param = array_merge($this->setParamAssoc, $this->whereParamAssoc); // the order matters.
-
-        // $this->builderReset();
-        $this->beginTry();
-        $stmt = $this->runRawQuery($sql, $param, false);
-        $this->builderReset(true);
-        if ($this->endtry() === false) {
-            return false;
-        }
-        return $this->affected_rows($stmt);
-    }
 
     /**
      * @return string
@@ -6544,61 +6445,11 @@ BOOTS;
         return count($this->set) ? ' set ' . implode(',', $this->set) : '';
     }
     //</editor-fold>
-    //<editor-fold desc="Cache" defaultstate="collapsed" >
-
-    /**
-     * Returns the number of affected rows.
-     *
-     * @param PDOStatement|null|bool $stmt
-     *
-     * @return mixed
-     */
-    public function affected_rows($stmt = null)
-    {
-        if ($stmt instanceof PDOStatement && !$this->isOpen) {
-            return $stmt->rowCount();
-        }
-        return $this->affected_rows; // returns previous calculated information
-    }
-
-    /**
-     * It allows to insert a declarative array. It uses "s" (string) as
-     * filetype.
-     * <p>Example: ->insertObject('table',['field1'=>1,'field2'=>'aaa']);
-     *
-     * @param string       $tableName     The name of the table.
-     * @param array|object $object        associative array with the colums and
-     *                                    values. If the insert returns an identity then it changes the value
-     * @param array        $excludeColumn (optional) columns to exclude. Example
-     *                                    ['col1','col2']
-     *
-     * @return mixed
-     * @throws Exception
-     */
-    public function insertObject($tableName, &$object, $excludeColumn = [])
-    {
-        $objectCopy = (array)$object;
-        foreach ($excludeColumn as $ex) {
-            unset($objectCopy[$ex]);
-        }
-
-        $id = $this->insert($tableName, $objectCopy);
-        /** id could be 0,false or null (when it is not generated */
-        if ($id) {
-            $pks = $this->service->getDefTableKeys($tableName, true, 'PRIMARY KEY');
-            if ($pks > 0) {
-                // we update the object because it returned an identity.
-                $k = array_keys($pks)[0]; // first primary key
-                if (is_array($object)) {
-                    $object[$k] = $id;
-                } else {
-                    $object->$k = $id;
-                }
-            }
-        }
-        return $id;
-    }
-
+    
+    
+    
+    //<editor-fold desc="DML" defaultstate="collapsed" >
+    
     /**
      * Generates and execute an insert command.<br>
      * <b>Example:</b><br>
@@ -6613,7 +6464,7 @@ BOOTS;
      *      ->insert();
      *</pre>
      *
-     * @param string            $tableName
+     * @param null|string       $tableName
      * @param string[]|null     $tableDef
      * @param string[]|int|null $values
      *
@@ -6627,6 +6478,11 @@ BOOTS;
     ) {
         if ($tableName === null) {
             $tableName = $this->from;
+        } else {
+            $this->tables[]=$tableName;
+        }
+        if($this->useCache===true) {
+            $this->invalidateCache('',$this->cacheFamily);
         }
         if ($tableDef !== null) {
             $this->constructParam2($tableDef, $values, 'set');
@@ -6643,8 +6499,6 @@ BOOTS;
             $this->throwError('Insert:' . $errorCause, 'insert');
             return false;
         }
-
-
         //$sql = 'insert into ' . $this->addDelimiter($tableName) . '  (' . implode(',', $col) . ') values('
         //    . implode(',', $colT) . ')';
         $sql
@@ -6696,26 +6550,45 @@ BOOTS;
         }
 
         return $set;
-    }
+    }    
 
     /**
-     * Returns the last inserted identity.
+     * It allows to insert a declarative array. It uses "s" (string) as
+     * filetype.
+     * <p>Example: ->insertObject('table',['field1'=>1,'field2'=>'aaa']);
      *
-     * @param null|string $sequenceName [optional] the name of the sequence
+     * @param string       $tableName     The name of the table.
+     * @param array|object $object        associative array with the colums and
+     *                                    values. If the insert returns an identity then it changes the value
+     * @param array        $excludeColumn (optional) columns to exclude. Example
+     *                                    ['col1','col2']
      *
-     * @return mixed a number or 0 if it is not found
+     * @return mixed
+     * @throws Exception
      */
-    public function insert_id($sequenceName = null)
+    public function insertObject($tableName, &$object, $excludeColumn = [])
     {
-        if (!$this->isOpen) {
-            return -1;
+        $objectCopy = (array)$object;
+        foreach ($excludeColumn as $ex) {
+            unset($objectCopy[$ex]);
         }
 
-        return $this->conn1->lastInsertId($sequenceName);
+        $id = $this->insert($tableName, $objectCopy);
+        /** id could be 0,false or null (when it is not generated */
+        if ($id) {
+            $pks = $this->service->getDefTableKeys($tableName, true, 'PRIMARY KEY');
+            if ($pks > 0) {
+                // we update the object because it returned an identity.
+                $k = array_keys($pks)[0]; // first primary key
+                if (is_array($object)) {
+                    $object[$k] = $id;
+                } else {
+                    $object->$k = $id;
+                }
+            }
+        }
+        return $id;
     }
-
-    //</editor-fold>
-    //<editor-fold desc="Log functions" defaultstate="collapsed" >
 
     /**
      * Delete a row(s) if they exists.
@@ -6727,9 +6600,9 @@ BOOTS;
      *          ->delete() // running on a chain
      *      delete('table where condition=1');
      *
-     * @param string       $tableName
-     * @param string[]     $tableDefWhere
-     * @param string[]|int $valueWhere
+     * @param string|null     $tableName
+     * @param string[]|null   $tableDefWhere
+     * @param string[]|int    $valueWhere
      *
      * @return mixed
      * @throws Exception
@@ -6741,6 +6614,11 @@ BOOTS;
     ) {
         if ($tableName === null) {
             $tableName = $this->from;
+        } else {
+            $this->tables[]=$tableName;
+        }
+        if($this->useCache===true) {
+            $this->invalidateCache('',$this->cacheFamily);
         }
         // using builder. from()->set()->where()->update()
         $errorCause = '';
@@ -6770,12 +6648,127 @@ BOOTS;
         return $this->affected_rows($stmt);
     }
 
+
     /**
-     * @return IPdoOneCache
+     * Generate and run an update in the database.
+     * <br><b>Example</b>:<br>
+     * <pre>
+     *      update('table',['col1',10,'col2','hello world'],['wherecol',10]);
+     *      update('table',['col1','col2'],[10,'hello world'],['wherecol'],[10]);
+     *      $this->from("producttype")
+     *          ->set("name=?",['Captain-Crunch'])
+     *          ->where('idproducttype=?',[6])
+     *          ->update();
+     *      update('product_category set col1=10 where idproducttype=1')
+     * </pre>
+     *
+     * @param string|null       $tableName The name of the table or the whole
+     *                                     query.
+     * @param string[]|null     $tableDef
+     * @param string[]|int|null $values
+     * @param string[]|null     $tableDefWhere
+     * @param string[]|int|null $valueWhere
+     *
+     * @return mixed
+     * @throws Exception
      */
-    public function getCacheService()
+    public function update(
+        $tableName = null,
+        $tableDef = null,
+        $values = self::NULL,
+        $tableDefWhere = null,
+        $valueWhere = self::NULL
+    ) {
+        if ($tableName === null) {
+            // using builder. from()->set()->where()->update()
+            $tableName = $this->from;
+        } else {
+            $this->tables[]=$tableName;
+        }
+        if($this->useCache===true) {
+            $this->invalidateCache('',$this->cacheFamily);
+        }
+
+        if ($tableDef !== null) {
+            $this->constructParam2($tableDef, $values, 'set');
+        }
+
+
+        if ($tableDefWhere !== null) {
+            $this->constructParam2($tableDefWhere, $valueWhere, 'where');
+        }
+
+        $errorCause = '';
+
+        if (!$tableName) {
+            $errorCause = "you can't execute an empty update() without a from()";
+        }
+        if (count($this->set) === 0) {
+            $errorCause = "you can't execute an empty update() without a set()";
+        }
+        if ($errorCause) {
+            $this->throwError('Update:' . $errorCause, 'update');
+            return false;
+        }
+
+
+        $sql = 'update ' . $this->addDelimiter($tableName);
+        $sql .= $this->constructSet();
+        $sql .= $this->constructWhere();
+        $param = array_merge($this->setParamAssoc, $this->whereParamAssoc); // the order matters.
+
+        // $this->builderReset();
+        $this->beginTry();
+        $stmt = $this->runRawQuery($sql, $param, false);
+        $this->builderReset(true);
+        if ($this->endtry() === false) {
+            return false;
+        }
+        return $this->affected_rows($stmt);
+    }
+
+
+    //</editor-fold>
+    //<editor-fold desc="Cache" defaultstate="collapsed" >
+
+    /**
+     * It sets to use cache for the current pipelines. It is disabled at the end of the pipeline<br>
+     * It only works if we set the cacheservice<br>
+     * <b>Example</b><br>
+     * <pre>
+     * $this->setCacheService($instanceCache);
+     * $this->useCache()->select()..; // The cache never expires
+     * $this->useCache(60)->select()..; // The cache lasts 60 seconds.
+     * $this->useCache(60,'customers')
+     *        ->select()..; // cache associated with customers
+     *                      // it could be invalidated by invalidateCache()
+     * $this->useCache(60,['customers','invoices'])
+     *        ->select()..; // cache associated with customers
+     *                      // it could be invalidated by invalidateCache()
+     * $this->useCache(60,'*')->select('col')
+     *      ->from('table')->toList(); // '*' uses all the table assigned.
+     * </pre>
+     *
+     * @param null|bool|int $ttl        <b>null</b> then the cache never expires.<br>
+     *                                  <b>false</b> then we don't use cache.<br>
+     *                                  <b>int</b> then it is the duration of the cache (in seconds)
+     * @param string|array $family      [optional] It is the family or group of the cache. It could be used to
+     *                                  identify a group of cache to invalidate the whole group (for example
+     *                                  ,invalidate all cache from a specific table).<br>
+     *                                  <b>*</b> If "*" then it uses the tables assigned by from() and join()
+     *
+     * @return $this
+     * @see \eftec\PdoOne::invalidateCache
+     */
+    public function useCache($ttl = null, $family = '')
     {
-        return $this->cacheService;
+        if ($this->cacheService === null) {
+            $ttl = false;
+        }
+        $this->cacheFamily = $family;
+        $this->useCache = $ttl;
+
+        return $this;
     }
 
     /**
@@ -6808,7 +6801,7 @@ BOOTS;
     public function setCache($uid, $family = '', $data = null, $ttl = null) {
         if($family==='*') {
             $family=$this->tables;
-        } 
+        }
         $this->cacheService->setCache($uid,$family,$data,$ttl);
     }
 
@@ -6832,10 +6825,59 @@ BOOTS;
     public function invalidateCache($uid = '', $family = '')
     {
         if ($this->cacheService !== null) {
+            if($family==='*') {
+                $family=$this->tables;
+            }
             $this->cacheService->invalidateCache($uid, $family);
         }
         return $this;
     }
+    
+
+    //</editor-fold>
+    //<editor-fold desc="Log functions" defaultstate="collapsed" >
+
+
+    /**
+     * Returns the number of affected rows.
+     *
+     * @param PDOStatement|null|bool $stmt
+     *
+     * @return mixed
+     */
+    public function affected_rows($stmt = null)
+    {
+        if ($stmt instanceof PDOStatement && !$this->isOpen) {
+            return $stmt->rowCount();
+        }
+        return $this->affected_rows; // returns previous calculated information
+    }
+
+
+
+    /**
+     * Returns the last inserted identity.
+     *
+     * @param null|string $sequenceName [optional] the name of the sequence
+     *
+     * @return mixed a number or 0 if it is not found
+     */
+    public function insert_id($sequenceName = null)
+    {
+        if (!$this->isOpen) {
+            return -1;
+        }
+
+        return $this->conn1->lastInsertId($sequenceName);
+    }
+    /**
+     * @return IPdoOneCache
+     */
+    public function getCacheService()
+    {
+        return $this->cacheService;
+    }
+
 
     //</editor-fold>
     //<editor-fold desc="cli functions" defaultstate="collapsed" >

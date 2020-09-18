@@ -397,6 +397,7 @@ class PdoOne_mysql_Test extends TestCase
         sleep(2); // enough time to expire the cache.
         $rows = $this->pdoOne->select('select 123 field1 from dual')->useCache(1, 'dual')->toList(); // +1 cache
         self::assertEquals(1, $this->pdoOne->getCacheService()->cacheCounter); // 1= cache used 1 time
+        
     }
 
     function test_cache_family()

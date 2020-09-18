@@ -1595,7 +1595,10 @@ In a nutshell:
 
 
 
-
+* 2.6 2020-09-17
+  * the methods insert(),update(),delete() and insertObject() flushes the cache if it is called with useCache()
+  , example: $this->usecache('','customers')->insert(); // delete the group cache customers. 
+  
 * 2.5 2020-09-13   
   * update \_BasePdoOneRepo to 4.12  
   * new method setCache()  
