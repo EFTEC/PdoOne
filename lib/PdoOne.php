@@ -349,7 +349,7 @@ class PdoOne
             }
         }
         foreach ($defCurrent as $k => $dc) {
-            if (isset($defArray[$k]) && strtolower($defArray[$k]) != strtolower($dc['sql'])) {
+            if (isset($defArray[$k]) && strtolower($defArray[$k]) !== strtolower($dc['sql'])) {
                 $error[$k] = "$k " . $dc['sql'] . " , $k " . $defArray[$k] . " are different";
             }
         }
@@ -889,7 +889,7 @@ eot;
             if ($this->logLevel >= 2) {
                 $this->storeInfo("connecting to {$this->server} {$this->user}/*** {$this->db}");
             }
-            $cs = ($this->charset != '') ? ';charset=' . $this->charset : '';
+            $cs = (!$this->charset) ? ';charset=' . $this->charset : '';
             $this->service->connect($cs, false);
             if ($this->conn1 instanceof stdClass) {
                 $this->isOpen = true;
@@ -1710,9 +1710,11 @@ eot;
      */
     public static function dateText2Sql($textDate, $hasTime = true)
     {
-        $tmpFormat
-            = (($hasTime) ? (strpos($textDate, '.') === false ? self::$dateTimeFormat : self::$dateTimeMicroFormat)
-            : self::$dateFormat);
+        if (($hasTime)) {
+            $tmpFormat = strpos($textDate, '.') === false ? self::$dateTimeFormat : self::$dateTimeMicroFormat;
+        } else {
+            $tmpFormat = self::$dateFormat;
+        }
         $tmpDate = DateTime::createFromFormat($tmpFormat, $textDate);
         if (!$hasTime && $tmpDate) {
             $tmpDate->setTime(0, 0, 0);
@@ -2065,7 +2067,7 @@ eot;
                     if (isset($before[$table][$name])) {
                         foreach ($before[$table][$name] as $k => $v3) {
                             if ($v3[1]
-                                && $v3[0][0] != self::$prefixBase
+                                && $v3[0][0] !== self::$prefixBase
                             ) { // before is defined as [colremote,tableremote]
                                 $colName = self::$prefixBase . $v3[1];
                                 if (!$defaultNull) {
