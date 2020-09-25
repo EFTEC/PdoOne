@@ -51,7 +51,7 @@ class PdoOne_Mysql implements PdoOne_IExt
         return $charset;
     }
 
-    public function connect($cs)
+    public function connect($cs, $alterSession=false)
     {
         $this->parent->conn1
             = new PDO("{$this->parent->databaseType}:host={$this->parent->server};dbname={$this->parent->db}{$cs}",
@@ -73,7 +73,7 @@ class PdoOne_Mysql implements PdoOne_IExt
         return $this->parent->runMultipleRawQuery($sql, true);
     }
 
-    public function resetIdentity($tableName,$newValue=0) {
+    public function resetIdentity($tableName,$newValue=0,$column='') {
         $sql="ALTER TABLE " . $this->parent->addDelimiter($tableName) . " AUTO_INCREMENT = $newValue";
         return $this->parent->runRawQuery($sql, null, true);
     }

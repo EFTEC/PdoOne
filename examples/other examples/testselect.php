@@ -42,6 +42,11 @@ try {
     echo "<h2>Table creation error:</h2>";
     echo $dao->lastError()."-".$e->getMessage()."<br>";
 }
+echo "<hr>";
+var_dump($dao->select('*')->from('producttype_auto')->where(['name=:name'=>'Coca'])->toList());
+echo "<hr>";
+var_dump($dao->lastQuery);
+die(1);
 
 echo "<hr>toMeta:";
 $results = $dao->select("*")->from("producttype")
@@ -54,6 +59,7 @@ echo "</pre>";
 echo $dao->lastQuery;
 
 echo Collection::generateTable($results);
+
 
 
 try {

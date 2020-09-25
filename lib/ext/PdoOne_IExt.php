@@ -16,7 +16,7 @@ interface PdoOne_IExt
 {
     public function construct($charset);
 
-    public function connect($cs);
+    public function connect($cs, $alterSession);
 
     /**
      * It truncates a table
@@ -37,11 +37,12 @@ interface PdoOne_IExt
      *
      * @param string $tableName The name of the table
      * @param int    $newValue
+     * @param string $column [optional] The name of the column to reset.
      *
      * @return array|bool|null
      * @throws Exception
      */
-    public function resetIdentity($tableName,$newValue=0);
+    public function resetIdentity($tableName,$newValue=0,$column='');
 
     /**
      * It returns an associative array or a string with values of a table<br>

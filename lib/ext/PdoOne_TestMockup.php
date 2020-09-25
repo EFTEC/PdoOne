@@ -47,7 +47,7 @@ class PdoOne_TestMockup implements PdoOne_IExt
         return '';
     }
 
-    public function connect($cs)
+    public function connect($cs, $alterSession=false)
     {
         $this->parent->conn1 = new stdClass();
         $this->parent->user = '';
@@ -57,7 +57,7 @@ class PdoOne_TestMockup implements PdoOne_IExt
     public function truncate($tableName,$extra,$force) {
         return true;
     }
-    public function resetIdentity($tableName,$newValue=0) {
+    public function resetIdentity($tableName,$newValue=0,$column='') {
         return true;
     }
     public function getDefTableExtended($table,$onlyDescription=false) {

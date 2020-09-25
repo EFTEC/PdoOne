@@ -8,7 +8,7 @@ use repomysql\TableParentRepo;
 
 include "common.php";
 
-\repomysql\TestDb::base()->truncate(TableParentRepo::TABLE,'',true);
+TableParentRepo::setRecursive(['*'])::toList();
 
 die(1);
 

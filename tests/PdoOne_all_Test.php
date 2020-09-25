@@ -24,41 +24,47 @@ class PdoOne_mysql_Test extends TestCase
         $this->pdoOne->builderReset();
         self::assertEquals([
             ['name=:name and type<:type'],
-            [[':name', 'Coca-Cola', PDO::PARAM_STR,null], [':type', 987, PDO::PARAM_INT,null]]
+            [[':name', 'Coca-Cola', PDO::PARAM_STR, null], [':type', 987, PDO::PARAM_INT, null]]
         ], $this->pdoOne->constructParam2('name=:name and type<:type', [':name' => 'Coca-Cola', ':type' => 987],
             'where', true));
-        
-        $this->pdoOne->builderReset();
-        self::assertEquals([['name=? and type<?'], [[1, 'Coca-Cola', PDO::PARAM_STR,null], [2, 987, PDO::PARAM_INT,null]]],
-            $this->pdoOne->constructParam2('name=? and type<?', [ 'Coca-Cola',  987], 'where',
-                true));
-
-        $this->pdoOne->builderReset();
-        self::assertEquals([['name=:name', 'type=:type'], [[':name', 'Coca-Cola', PDO::PARAM_STR,null], [':type', 987, PDO::PARAM_INT,null]]],
-            $this->pdoOne->constructParam2(['name', 'type'], [':name' => 'Coca-Cola', ':type' => 987], 'where', true));
-
-
-        $this->pdoOne->builderReset();
-        self::assertEquals([['name=?', 'type<?'], [[1, 'Coca-Cola', PDO::PARAM_STR,null], [2, 987, PDO::PARAM_INT,null]]],
-            $this->pdoOne->constructParam2(['name=?' => 'Coca-Cola', 'type<?' => 987], null, 'where', true));
-
-        $this->pdoOne->builderReset();
-        self::assertEquals([['name=?', 'type<?'], [[1, 'Coca-Cola', PDO::PARAM_STR,null], [2, 987, PDO::PARAM_INT,null]]],
-            $this->pdoOne->constructParam2(['name=?', 'Coca-Cola', 'type<?', 987], null, 'where', true));
-
-        $this->pdoOne->builderReset();
-        self::assertEquals([['aa=bbb'], []],
-            $this->pdoOne->constructParam2('aa=bbb',PdoOne::NULL,'where', true));
-        
-
- 
 
         $this->pdoOne->builderReset();
         self::assertEquals([
-            ['name=?','type=?'],
-            [[1, 'Coca-Cola', PDO::PARAM_STR,null], [2, 987, PDO::PARAM_INT,null]]
-        ], $this->pdoOne->constructParam2(['name'=>'Coca-Cola','type'=>987],null,
-            'where', true));
+            ['name=? and type<?'],
+            [[1, 'Coca-Cola', PDO::PARAM_STR, null], [2, 987, PDO::PARAM_INT, null]]
+        ], $this->pdoOne->constructParam2('name=? and type<?', ['Coca-Cola', 987], 'where', true));
+
+        $this->pdoOne->builderReset();
+        self::assertEquals([
+            ['name=:name', 'type=:type'],
+            [[':name', 'Coca-Cola', PDO::PARAM_STR, null], [':type', 987, PDO::PARAM_INT, null]]
+        ], $this->pdoOne->constructParam2(['name', 'type'], [':name' => 'Coca-Cola', ':type' => 987], 'where', true));
+
+
+        $this->pdoOne->builderReset();
+        self::assertEquals([
+            ['name=?', 'type<?'],
+            [[1, 'Coca-Cola', PDO::PARAM_STR, null], [2, 987, PDO::PARAM_INT, null]]
+        ], $this->pdoOne->constructParam2(['name=?' => 'Coca-Cola', 'type<?' => 987], null, 'where', true));
+
+        $this->pdoOne->builderReset();
+        self::assertEquals([
+            ['name=?', 'type<?'],
+            [[1, 'Coca-Cola', PDO::PARAM_STR, null], [2, 987, PDO::PARAM_INT, null]]
+        ], $this->pdoOne->constructParam2(['name=?', 'Coca-Cola', 'type<?', 987], null, 'where', true));
+
+        $this->pdoOne->builderReset();
+        self::assertEquals([['aa=bbb'], []], $this->pdoOne->constructParam2('aa=bbb', PdoOne::NULL, 'where', true));
+
+
+        $this->pdoOne->builderReset();
+        self::assertEquals([
+            ['name=:name', 'type=:type'],
+            [
+                [':name', 'Coca-Cola', PDO::PARAM_STR, null],
+                [':type', 987, PDO::PARAM_INT, null]
+            ]
+        ], $this->pdoOne->constructParam2(['name' => 'Coca-Cola', 'type' => 987], null, 'where', true));
 
         $this->pdoOne->builderReset();
     }
@@ -70,51 +76,52 @@ class PdoOne_mysql_Test extends TestCase
 
     public function test_dml()
     {
-       
-        if($this->pdoOne->tableExist('tdummy')) {
+        if ($this->pdoOne->tableExist('tdummy')) {
             $this->pdoOne->dropTable('tdummy');
         }
         $this->pdoOne->createTable('tdummy', ['c1' => 'int', 'c2' => 'varchar(50)'], 'c1');
-        
-        self::assertNotEquals(false,$this->pdoOne->insert('tdummy',['c1','c2'],[1,'hello']));
-        self::assertNotEquals(false,$this->pdoOne->insert('tdummy',['c1','c2'],[2,'hello2']));
-        
+
+        self::assertNotEquals(false, $this->pdoOne->insert('tdummy', ['c1', 'c2'], [1, 'hello']));
+        self::assertNotEquals(false, $this->pdoOne->insert('tdummy', ['c1', 'c2'], [2, 'hello2']));
+
         var_dump($this->pdoOne->select('*')->from('tdummy')->first());
 
-        self::assertNotEquals(false,$this->pdoOne->update('tdummy',['c2'],['hellox'],['c1'],[1]));
-        self::assertNotEquals(false,$this->pdoOne->update('tdummy',['c2'],['hellox'],['c1'],[2]));
+        self::assertNotEquals(false, $this->pdoOne->update('tdummy', ['c2'], ['hellox'], ['c1'], [1]));
+        self::assertNotEquals(false, $this->pdoOne->update('tdummy', ['c2'], ['hellox'], ['c1'], [2]));
 
-        self::assertNotEquals(false,$this->pdoOne->delete('tdummy',['c1'],[2]));
-        self::assertEquals([['c1' => 1,'c2' => 'hellox']],$this->pdoOne->select('*')->from('tdummy')->toList());
+        self::assertNotEquals(false, $this->pdoOne->delete('tdummy', ['c1'], [2]));
+        self::assertEquals([['c1' => 1, 'c2' => 'hellox']], $this->pdoOne->select('*')->from('tdummy')->toList());
     }
 
     /**
      * @throws Exception
      */
-    public function test_raw_and_internal_cache() {
-        if($this->pdoOne->tableExist('tdummy')) {
+    public function test_raw_and_internal_cache()
+    {
+        if ($this->pdoOne->tableExist('tdummy')) {
             $this->pdoOne->dropTable('tdummy');
         }
         $this->pdoOne->createTable('tdummy', ['c1' => 'int', 'c2' => 'varchar(50)'], 'c1');
-        self::assertNotEquals(false,$this->pdoOne->runRawQuery(
-            'insert into tdummy(c1,c2) values (:c1 , :c2)'
-            ,[':c1'=>1,':c2'=>'hello'],true));
-        self::assertNotEquals(false
-            ,$this->pdoOne->runRawQuery('insert into tdummy(c1,c2) values (:c1 , :c2)',[':c1'=>2,':c2'=>'hello2'],true));
+        self::assertNotEquals(false,
+            $this->pdoOne->runRawQuery('insert into tdummy(c1,c2) values (:c1 , :c2)', [':c1' => 1, ':c2' => 'hello'],
+                true));
+        self::assertNotEquals(false,
+            $this->pdoOne->runRawQuery('insert into tdummy(c1,c2) values (:c1 , :c2)', [':c1' => 2, ':c2' => 'hello2'],
+                true));
 
-        self::assertEquals(['c1'=>1,'c2'=>'hello'], $this->pdoOne->select('*')->from('tdummy')->first());
-        
+        self::assertEquals(['c1' => 1, 'c2' => 'hello'], $this->pdoOne->select('*')->from('tdummy')->first());
+
         $this->pdoOne->setUseInternalCache(true);
         //$this->pdoOne->flushInternalCache(true);
-        self::assertEquals(['c1'=>1,'c2'=>'hello'], $this->pdoOne->select('*')->from('tdummy')->first());
-        self::assertEquals(['c1'=>1,'c2'=>'hello'], $this->pdoOne->select('*')->from('tdummy')->first());
-        self::assertEquals(['c1'=>1,'c2'=>'hello'], $this->pdoOne->select('*')->from('tdummy')->first());
+        self::assertEquals(['c1' => 1, 'c2' => 'hello'], $this->pdoOne->select('*')->from('tdummy')->first());
+        self::assertEquals(['c1' => 1, 'c2' => 'hello'], $this->pdoOne->select('*')->from('tdummy')->first());
+        self::assertEquals(['c1' => 1, 'c2' => 'hello'], $this->pdoOne->select('*')->from('tdummy')->first());
         self::assertEquals(2, $this->pdoOne->internalCacheCounter);
         $this->pdoOne->flushInternalCache();
 
         $this->pdoOne->setUseInternalCache(true);
         //$this->pdoOne->flushInternalCache(true);
-        $result=[['c1'=>1,'c2'=>'hello'],['c1'=>2,'c2'=>'hello2']];
+        $result = [['c1' => 1, 'c2' => 'hello'], ['c1' => 2, 'c2' => 'hello2']];
         self::assertEquals($result, $this->pdoOne->select('*')->from('tdummy')->toList());
         self::assertEquals($result, $this->pdoOne->select('*')->from('tdummy')->toList());
         self::assertEquals($result, $this->pdoOne->select('*')->from('tdummy')->toList());
@@ -124,10 +131,10 @@ class PdoOne_mysql_Test extends TestCase
         $this->pdoOne->flushInternalCache();
         $this->pdoOne->setUseInternalCache(true);
         //$this->pdoOne->flushInternalCache(true);
-        $result=[['c1'=>1,'c2'=>'hello'],['c1'=>2,'c2'=>'hello2']];
-        self::assertEquals($result, $this->pdoOne->select('*')->from('tdummy')->where(['c1>?'=>0])->toList());
-        self::assertEquals($result, $this->pdoOne->select('*')->from('tdummy')->where(['c1>?'=>0])->toList());
-        self::assertEquals($result, $this->pdoOne->select('*')->from('tdummy')->where(['c1>?'=>0])->toList());
+        $result = [['c1' => 1, 'c2' => 'hello'], ['c1' => 2, 'c2' => 'hello2']];
+        self::assertEquals($result, $this->pdoOne->select('*')->from('tdummy')->where(['c1>?' => 0])->toList());
+        self::assertEquals($result, $this->pdoOne->select('*')->from('tdummy')->where(['c1>?' => 0])->toList());
+        self::assertEquals($result, $this->pdoOne->select('*')->from('tdummy')->where(['c1>?' => 0])->toList());
         self::assertEquals(2, $this->pdoOne->internalCacheCounter);
         $this->pdoOne->setUseInternalCache(false);
     }
@@ -137,32 +144,30 @@ class PdoOne_mysql_Test extends TestCase
      */
     public function test_dml2()
     {
-
-        if($this->pdoOne->tableExist('tdummy')) {
+        if ($this->pdoOne->tableExist('tdummy')) {
             $this->pdoOne->dropTable('tdummy');
         }
         $this->pdoOne->createTable('tdummy', ['c1' => 'int', 'c2' => 'varchar(50)'], 'c1');
 
-        self::assertNotEquals(false,$this->pdoOne->set(['c1','c2'],[1,'hello'])->from('tdummy')->insert());
-        self::assertNotEquals(false
-            ,$this->pdoOne->insert('tdummy', ['c1' , 'c2'],
-            ['c1' => 2, 'c2' => 'hello2']));
+        self::assertNotEquals(false, $this->pdoOne->set(['c1', 'c2'], [1, 'hello'])->from('tdummy')->insert());
+        self::assertNotEquals(false, $this->pdoOne->insert('tdummy', ['c1', 'c2'], ['c1' => 2, 'c2' => 'hello2']));
 
 
-        self::assertEquals(['c1'=>1,'c2'=>'hello'],$this->pdoOne->select('*')->from('tdummy')->first());
+        self::assertEquals(['c1' => 1, 'c2' => 'hello'], $this->pdoOne->select('*')->from('tdummy')->first());
 
-        self::assertEquals([['c1'=>1,'count'=>1],['c1'=>2,'count'=>1]]
-            ,$this->pdoOne->select('c1,count(*) count')->from('tdummy')->group('c1')->having('count(*)>?',[0])->toList());
-        self::assertEquals('select c1,count(*) count from tdummy group by c1 having count(*)>?'
-            ,$this->pdoOne->lastQuery);
+        self::assertEquals([['c1' => 1, 'count' => 1], ['c1' => 2, 'count' => 1]],
+            $this->pdoOne->select('c1,count(*) count')->from('tdummy')->group('c1')->having('count(*)>?', [0])
+                ->toList());
+        self::assertEquals('select c1,count(*) count from tdummy group by c1 having count(*)>?',
+            $this->pdoOne->lastQuery);
 
-        self::assertNotEquals(false,$this->pdoOne->set(['c2'],['hellox1'])->where(['c1'],[1])->from('tdummy')->update());
-        self::assertNotEquals(false,$this->pdoOne->set(['c2'],['hellox2'])->where(['c1'],[2])->from('tdummy')->update());
+        self::assertNotEquals(false,
+            $this->pdoOne->set(['c2'], ['hellox1'])->where(['c1'], [1])->from('tdummy')->update());
+        self::assertNotEquals(false,
+            $this->pdoOne->set(['c2'], ['hellox2'])->where(['c1'], [2])->from('tdummy')->update());
 
-        self::assertNotEquals(false,$this->pdoOne->where(['c1'],[2])->from('tdummy')->delete());
-        self::assertEquals([['c1' => 1,'c2' => 'hellox1']],$this->pdoOne->select('*')->from('tdummy')->toList());
-
-
+        self::assertNotEquals(false, $this->pdoOne->where(['c1'], [2])->from('tdummy')->delete());
+        self::assertEquals([['c1' => 1, 'c2' => 'hellox1']], $this->pdoOne->select('*')->from('tdummy')->toList());
     }
 
 

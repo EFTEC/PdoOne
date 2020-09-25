@@ -9,17 +9,16 @@ namespace eftec\ext;
 use eftec\PdoOne;
 use Exception;
 use PDO;
-use PDOStatement;
 
 /**
- * Class PdoOne_Sqlsrv
+ * Class PdoOne_Oci
  *
  * @see           https://github.com/EFTEC/PdoOne
  * @author        Jorge Castro Castillo
  * @copyright (c) Jorge Castro C. MIT License  https://github.com/EFTEC/PdoOne
  * @package       eftec
  */
-class PdoOne_Sqlsrv implements PdoOne_IExt
+class PdoOne_Oci implements PdoOne_IExt
 {
 
     /** @var PdoOne */
@@ -37,26 +36,30 @@ class PdoOne_Sqlsrv implements PdoOne_IExt
 
     public function construct($charset)
     {
-        $this->parent->database_delimiter0 = '[';
-        $this->parent->database_delimiter1 = ']';
+        $this->parent->database_delimiter0 = '"';
+        $this->parent->database_delimiter1 = '"';
         $this->parent->database_identityName='IDENTITY';
-        PdoOne::$isoDate = 'Y-m-d';
-        PdoOne::$isoDateTime = 'Y-m-d H:i:s';
-        PdoOne::$isoDateTimeMs = 'Y-m-d H:i:s.u';
-        PdoOne::$isoDateInput = 'Ymd';
-        PdoOne::$isoDateInputTime = 'Ymd His';
-        PdoOne::$isoDateInputTimeMs = 'Ymd His.u';
+        PdoOne::$isoDate = 'dmy';
+        PdoOne::$isoDateTime = 'dmyHis';
+        PdoOne::$isoDateTimeMs = 'dmyHis,u';
+        PdoOne::$isoDateInput = 'dmy';
+        PdoOne::$isoDateInputTime = 'dmyHis';
+        PdoOne::$isoDateInputTimeMs = 'dmyHis,u';
         $this->parent->isOpen = false;
         return '';
     }
 
     public function connect($cs, $alterSession=false)
     {
-        $this->parent->conn1 = new PDO("{$this->parent->databaseType}:server={$this->parent->server};" .
-                                       "database={$this->parent->db}{$cs}", $this->parent->user, $this->parent->pwd);
+        // 'oci:dbname=localhost/XE', $user, $pass
+        $this->parent->conn1 = new PDO("oci:dbname={$this->parent->server}", $this->parent->user, $this->parent->pwd);
         $this->parent->user='';
         $this->parent->pwd='';
-        $this->parent->conn1->setAttribute( PDO::SQLSRV_ATTR_FETCHES_NUMERIC_TYPE,true);
+        $this->parent->conn1->setAttribute( PDO::ATTR_AUTOCOMMIT, true);
+        if($alterSession) {
+            $this->parent->conn1->exec("ALTER SESSION SET NLS_DATE_FORMAT='DD-MM-RR'");    
+        }
+        
 
     }
 
@@ -70,7 +73,7 @@ class PdoOne_Sqlsrv implements PdoOne_IExt
     }
     
     public function resetIdentity($tableName,$newValue=0,$column='') {
-        $sql="DBCC CHECKIDENT ('$tableName',RESEED, $newValue)";
+        $sql="ALTER TABLE $tableName MODIFY($column GENERATED AS IDENTITY (START WITH $newValue))";
         return $this->parent->runRawQuery($sql, null, true);
     }
 
@@ -78,10 +81,11 @@ class PdoOne_Sqlsrv implements PdoOne_IExt
      * @param string $table
      * @param false $onlyDescription
      *
-     * @return array|bool|mixed|PDOStatement|null
+     * @return array|bool|mixed|\PDOStatement|null
      * @throws Exception
      */
     public function getDefTableExtended($table,$onlyDescription=false) {
+        throw new \RuntimeException("no yet implemented");
         $query="SELECT objects.name as [table],'' as [engine],schemas.name as [schema]
                 ,'' as [collation],value description
                 FROM sys.objects
@@ -100,6 +104,7 @@ class PdoOne_Sqlsrv implements PdoOne_IExt
     public function getDefTable($table)
     {
         /** @var array $result =array(["name"=>'',"is_identity"=>0,"increment_value"=>0,"seed_value"=>0]) */
+        throw new \RuntimeException("no yet implemented");
         $findIdentity =
             $this->parent->select('name,is_identity,increment_value,seed_value')->from('sys.identity_columns')
                          ->where('OBJECT_NAME(object_id)=?', $table)->toList();
@@ -138,6 +143,7 @@ class PdoOne_Sqlsrv implements PdoOne_IExt
      */
     protected static function sqlsrv_getType($col)
     {
+        throw new \RuntimeException("no yet implemented");
         /** @var array $exclusion type of columns that don't use size */
         $exclusion = ['int', 'long', 'tinyint', 'year', 'bigint', 'bit', 'smallint', 'float', 'money'];
         if (in_array($col['DATA_TYPE'], $exclusion) !== false) {
@@ -164,6 +170,7 @@ class PdoOne_Sqlsrv implements PdoOne_IExt
      */
     public function getDefTableKeys($table, $returnSimple, $filter = null)
     {
+        throw new \RuntimeException("no yet implemented");
         $columns = [];
         /** @var array $result =array(["IndexName"=>'',"ColumnName"=>'',"is_unique"=>0,"is_primary_key"=>0,"TYPE"=>0]) */
 
@@ -205,6 +212,7 @@ class PdoOne_Sqlsrv implements PdoOne_IExt
      */
     public function getDefTableFK($table, $returnSimple, $filter = null, $assocArray =false)
     {
+        throw new \RuntimeException("no yet implemented");
         $columns = [];
         /** @var array $fkArr =array(["foreign_key_name"=>'',"referencing_table_name"=>'',"COLUMN_NAME"=>''
          * ,"referenced_table_name"=>'',"referenced_column_name"=>'',"referenced_schema_name"=>''
@@ -261,6 +269,7 @@ class PdoOne_Sqlsrv implements PdoOne_IExt
 
     function typeDict($row, $default = true)
     {
+        throw new \RuntimeException("no yet implemented");
         $type = @$row['sqlsrv:decl_type'];
         switch ($type) {
             case 'varchar':
@@ -305,6 +314,7 @@ class PdoOne_Sqlsrv implements PdoOne_IExt
 
     public function objectExist($type = 'table')
     {
+        throw new \RuntimeException("no yet implemented");
         switch ($type) {
             case 'table':
                 $query = "SELECT * FROM sys.objects where name=? and type_desc='USER_TABLE'";
@@ -322,6 +332,7 @@ class PdoOne_Sqlsrv implements PdoOne_IExt
 
     public function objectList($type = 'table', $onlyName = false)
     {
+        throw new \RuntimeException("no yet implemented");
         switch ($type) {
             case 'table':
                 $query = "SELECT * FROM sys.objects where type_desc='USER_TABLE'";
@@ -345,6 +356,7 @@ class PdoOne_Sqlsrv implements PdoOne_IExt
 
     public function columnTable($tableName)
     {
+        throw new \RuntimeException("no yet implemented");
         return "SELECT col.name colname
 							,st.name coltype
 							,col.max_length colsize
@@ -379,6 +391,7 @@ class PdoOne_Sqlsrv implements PdoOne_IExt
 
     public function createSequence($tableSequence = null, $method = 'snowflake')
     {
+        throw new \RuntimeException("no yet implemented");
         $sql = "CREATE SEQUENCE [{$tableSequence}]
 				    START WITH 1  
 				    INCREMENT BY 1
@@ -403,12 +416,14 @@ class PdoOne_Sqlsrv implements PdoOne_IExt
         return $sql;
     }
     public function getSequence($sequenceName) {
+        throw new \RuntimeException("no yet implemented");
         $sequenceName = ($sequenceName == '') ? $this->parent->tableSequence : $sequenceName;
         return "exec next_{$sequenceName} {$this->parent->nodeId}";
     }
 
     public function createTable($tableName, $definition, $primaryKey = null, $extra = '', $extraOutside = '')
     {
+        throw new \RuntimeException("no yet implemented");
         $extraOutside = ($extraOutside === '') ? 'ON [PRIMARY]' : $extraOutside;
         $sql = "set nocount on;
 				CREATE TABLE [{$tableName}] (";
@@ -466,6 +481,7 @@ class PdoOne_Sqlsrv implements PdoOne_IExt
 
     public function createFK($tableName, $foreignKey)
     {
+        throw new \RuntimeException("no yet implemented");
         $sql = '';
         foreach ($foreignKey as $key => $value) {
             $p0 = stripos($value . ' ', 'KEY ');
@@ -485,6 +501,7 @@ class PdoOne_Sqlsrv implements PdoOne_IExt
 
     public function limit($sql)
     {
+        throw new \RuntimeException("no yet implemented");
         if (!$this->parent->order) {
             $this->parent->throwError('limit without a sort', '');
         }
@@ -498,6 +515,7 @@ class PdoOne_Sqlsrv implements PdoOne_IExt
 
     public function getPK($query, $pk)
     {
+        throw new \RuntimeException("no yet implemented");
         try {
             $pkResult = [];
             if ($this->parent->isQuery($query)) {

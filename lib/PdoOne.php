@@ -2,15 +2,15 @@
 /** @noinspection PhpRedundantVariableDocTypeInspection */
 
 /**
- * @noinspection UnknownInspectionInspection
- * @noinspection OnlyWritesOnParameterInspection
- * @noinspection TypeUnsafeComparisonInspection
- * @noinspection NestedTernaryOperatorInspection
- * @noinspection DuplicatedCode
- * @noinspection SqlDialectInspection
- * @noinspection SqlWithoutWhere
- * @noinspection SqlResolve
- * @noinspection SqlNoDataSourceInspection
+ * @ noinspection UnknownInspectionInspection
+ * @ noinspection OnlyWritesOnParameterInspection
+ * @ noinspection TypeUnsafeComparisonInspection
+ * @ noinspection NestedTernaryOperatorInspection
+ * @ noinspection DuplicatedCode
+ * @ noinspection SqlDialectInspection
+ * @ noinspection SqlWithoutWhere
+ * @ noinspection SqlResolve
+ * @ noinspection SqlNoDataSourceInspection
  */
 
 namespace eftec;
@@ -19,6 +19,7 @@ use DateTime;
 use eftec\ext\PdoOne_IExt;
 use eftec\ext\PdoOne_Mysql;
 use eftec\ext\PdoOne_Sqlsrv;
+use eftec\ext\PdoOne_Oci;
 use eftec\ext\PdoOne_TestMockup;
 use Exception;
 use PDO;
@@ -34,11 +35,11 @@ use stdClass;
  * @package       eftec
  * @author        Jorge Castro Castillo
  * @copyright (c) Jorge Castro C. MIT License  https://github.com/EFTEC/PdoOne
- * @version       2.6
+ * @version       2.6.1
  */
 class PdoOne
 {
-    const VERSION = '2.6';
+    const VERSION = '2.6.1';
     /** @var int We need this value because null and false could be a valid value.  */
     const NULL = PHP_INT_MAX;
     public static $prefixBase = '_';
@@ -100,7 +101,7 @@ class PdoOne
     public $masks1 = [16, 13, 12, 11];
     /** @var PdoOneEncryption */
     public $encryption;
-    /** @var string=['mysql','sqlsrv','oracle'][$i] */
+    /** @var string=['mysql','sqlsrv','test','oci'][$i] */
     public $databaseType;
     public $database_delimiter0 = '`';
     public $database_delimiter1 = '`';
@@ -215,7 +216,7 @@ class PdoOne
     /**
      * PdoOne constructor.  It doesn't open the connection to the database.
      *
-     * @param string $database     =['mysql','sqlsrv','oracle','test'][$i]
+     * @param string $database     =['mysql','sqlsrv','oci','test'][$i]
      * @param string $server       server ip. Ex. 127.0.0.1 127.0.0.1:3306
      * @param string $user         Ex. root
      * @param string $pwd          Ex. 12345
@@ -257,6 +258,9 @@ class PdoOne
                 break;
             case 'sqlsrv':
                 $this->service = new PdoOne_Sqlsrv($this);
+                break;
+            case 'oci':
+                $this->service = new PdoOne_Oci($this);
                 break;
             case 'test':
                 $this->service = new PdoOne_TestMockup($this);
@@ -886,7 +890,7 @@ eot;
                 $this->storeInfo("connecting to {$this->server} {$this->user}/*** {$this->db}");
             }
             $cs = ($this->charset != '') ? ';charset=' . $this->charset : '';
-            $this->service->connect($cs);
+            $this->service->connect($cs, false);
             if ($this->conn1 instanceof stdClass) {
                 $this->isOpen = true;
                 return;
@@ -1487,7 +1491,7 @@ eot;
     public static function unixtime2Sql($dateNum)
     {
         // 31/01/2016 20:20:00 --> 2016-01-31 00:00
-        if ($dateNum == null) {
+        if ($dateNum === null) {
             return self::$dateEpoch;
         }
 
@@ -5179,7 +5183,7 @@ TEM1;
             }
 
             $web = str_replace('{{version}}', $this::VERSION, $web);
-            $valid = ['mysql', 'sqlsrv'];
+            $valid = ['mysql', 'sqlsrv','oci'];
 
             $web = str_replace(array('{{database}}', '{{server}}', '{{user}}', '{{pwd}}', '{{db}}', '{{input}}'),
                 array($this->runUtilCombo($valid, $database), $server, $user, $pwd, $db, $input), $web);
@@ -6052,17 +6056,22 @@ BOOTS;
 
     /**
      * <b>Example:</b><br>
-     *      where( ['field'=>20] ) // associative array with automatic type
-     *      where( ['field'=>[20]] ) // associative array with type defined
-     *      where( ['field',20] ) // indexed array automatic type
-     *      where (['field',[20]] ) // indexed array type defined
-     *      where('field=20') // literal value
-     *      where('field=?',[20]) // automatic type
-     *      where('field',[20]) // automatic type (it's the same than
-     *      where('field=?',[20]) where('field=?', [20] ) // type(i,d,s,b)
+     * <pre>
+     * where( ['field'=>20] ) // associative array (named)
+     * where( ['field=?'=>20] ) // associative array (numeric)
+     * where( ['field=:name'=>20] ) // associative array (named)
+     * where( ['field=:name and field2=:name'=>20] ) // IT DOESN'T WORK
+     * where( ['field'=>[20]] ) // associative array with type defined
+     * where( ['field',20] ) // indexed array automatic type
+     * where (['field',[20]] ) // indexed array type defined
+     * where('field=20') // literal value
+     * where('field=?',[20]) // automatic type
+     * where('field',[20]) // automatic type (it's the same than
+     * where('field=?',[20]) where('field=?', [20] ) // type(i,d,s,b)
      *      defined where('field=?,field2=?', [20,'hello'] )
-     *      where('field=:field,field2=:field2',
+     * where('field=:field,field2=:field2',
      *      ['field'=>'hello','field2'=>'world'] ) // associative array as value
+     * </pre>
      *
      * @param array|string     $where
      * @param string|array|int $params
@@ -6095,10 +6104,19 @@ BOOTS;
                 } else {
                     // named
                     foreach ($where as $k => $v) {
-                        if (strpos($k, ':') !== false && strpos($k, '?') !== false) {
-                            $paramName = ':' . $k;
-                            $named[] = $paramName;
+                        if (strpos($k, '?') === false) {
+                            if (strpos($k, ':') !== false) {
+                                // "aaa=:aaa"
+                                $parts=explode(':',$k,2);
+                                $paramName = ':' . $parts[1];
+                                $named[] = $paramName;
+                            } else {
+                                // "aaa"
+                                $paramName = ':' . $k;
+                                $named[] = $paramName;    
+                            }
                         } else {
+                            // "aa=?"
                             $paramName = $this->whereCounter;
                             $this->whereCounter++;
                             $named[] = '?';
