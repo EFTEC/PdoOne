@@ -4,13 +4,11 @@ use eftec\_BasePdoOneRepo;
 use eftec\PdoOne;
 use PHPUnit\Framework\TestCase;
 
-class PdoOne_mysql_Test extends TestCase
-{
+class PdoOne_mysql_Test extends TestCase {
     /** @var PdoOne */
     protected $pdoOne;
 
-    public function setUp()
-    {
+    public function setUp() {
         $this->pdoOne = new PdoOne("mysql", "127.0.0.1", "travis", "", "travisdb");
         $this->pdoOne->connect();
         $this->pdoOne->logLevel = 3;
@@ -19,8 +17,7 @@ class PdoOne_mysql_Test extends TestCase
     /**
      * @throws RuntimeException
      */
-    public function test_parameter()
-    {
+    public function test_parameter() {
         $this->pdoOne->builderReset();
         self::assertEquals([
             ['name=:name and type<:type'],
@@ -40,7 +37,6 @@ class PdoOne_mysql_Test extends TestCase
             [[':name', 'Coca-Cola', PDO::PARAM_STR, null], [':type', 987, PDO::PARAM_INT, null]]
         ], $this->pdoOne->constructParam2(['name', 'type'], [':name' => 'Coca-Cola', ':type' => 987], 'where', true));
 
-
         $this->pdoOne->builderReset();
         self::assertEquals([
             ['name=?', 'type<?'],
@@ -56,7 +52,6 @@ class PdoOne_mysql_Test extends TestCase
         $this->pdoOne->builderReset();
         self::assertEquals([['aa=bbb'], []], $this->pdoOne->constructParam2('aa=bbb', PdoOne::NULL, 'where', true));
 
-
         $this->pdoOne->builderReset();
         self::assertEquals([
             ['name=:name', 'type=:type'],
@@ -69,13 +64,11 @@ class PdoOne_mysql_Test extends TestCase
         $this->pdoOne->builderReset();
     }
 
-    public function test_Time()
-    {
+    public function test_Time() {
         self::assertNotEquals(null, PdoOne::dateNow());
     }
 
-    public function test_dml()
-    {
+    public function test_dml() {
         if ($this->pdoOne->tableExist('tdummy')) {
             $this->pdoOne->dropTable('tdummy');
         }
@@ -93,11 +86,91 @@ class PdoOne_mysql_Test extends TestCase
         self::assertEquals([['c1' => 1, 'c2' => 'hellox']], $this->pdoOne->select('*')->from('tdummy')->toList());
     }
 
+    public function test_f1() {
+        if ($this->pdoOne->tableExist('tdummy')) {
+            try {
+                $this->pdoOne->dropTable('tdummy');
+                $this->pdoOne->dropTable('tdummy2');
+            } catch (Exception $e) {
+            }
+        }
+        $this->pdoOne->createTable('tdummy', ['c1' => 'int', 'c2' => 'varchar(50)', 'c3' => 'int'], 'c1');
+        $this->pdoOne->createTable('tdummy2', ['c1' => 'int', 'c2' => 'varchar(50)', 'c3' => 'int'], 'c1');
+
+        self::assertNotEquals(false, $this->pdoOne->insert('tdummy2', ['c1', 'c2'], [1, 'DUMMY2.1']));
+        self::assertNotEquals(false, $this->pdoOne->insert('tdummy2', ['c1', 'c2'], [2, 'DUMMY2.2']));
+
+        self::assertNotEquals(false, $this->pdoOne->insert('tdummy', ['c1', 'c2', 'c3'], [1, 'DUMMY1.1', 1]));
+        self::assertNotEquals(false, $this->pdoOne->insert('tdummy', ['c1', 'c2', 'c3'], [2, 'DUMMY1.2', 2]));
+
+        $r = $this->pdoOne->select('tdummy.c1,tdummy.c2,tdummy.c3')
+            ->from('tdummy')
+            ->join('tdummy2 on tdummy.c3=tdummy2.c1')
+            ->toList();
+
+        self::assertEquals([
+            [
+                'c1' => 1,
+                'c2' => 'DUMMY1.1',
+                'c3' => 1
+            ],
+            [
+                'c1' => 2,
+                'c2' => 'DUMMY1.2',
+                'c3' => 2
+            ],
+        ], $r);
+
+        $result = [
+            [
+                'c1' => 1,
+                'c2' => 'DUMMY1.1',
+                'c3' => 1
+            ]
+        ];
+
+        $r = $this->pdoOne->select('tdummy.c1,tdummy.c2,tdummy.c3')
+            ->from('tdummy')
+            ->join('tdummy2 on tdummy.c3=tdummy2.c1')
+            ->where(['tdummy.c1' => 1])
+            ->toList();
+
+        self::assertEquals($result, $r);
+
+        $r = $this->pdoOne->select('tdummy.c1,tdummy.c2,tdummy.c3')
+            ->from('tdummy')
+            ->join('tdummy2 on tdummy.c3=tdummy2.c1')
+            ->where(['c1' => 1], PdoOne::NULL, false, 'tdummy')
+            ->toList();
+
+        self::assertEquals($result, $r);
+
+        $r = $this->pdoOne->select('tdummy.c1,tdummy.c2,tdummy.c3')
+            ->from('tdummy')
+            ->join('tdummy2 on tdummy.c3=tdummy2.c1')
+            ->where(['tdummy.c1' => 1], PdoOne::NULL, false, 'tdummy')
+            ->toList();
+
+        self::assertEquals($result, $r);
+
+        $r = $this->pdoOne->select('tdummy.c1,tdummy.c2,tdummy.c3')
+            ->from('tdummy')
+            ->join('tdummy2 on tdummy.c3=tdummy2.c1')
+            ->where(['tdummy.c1=:c1' => 1])
+            ->toList();
+
+        self::assertEquals($result, $r);
+
+        self::assertEquals("select tdummy.c1,tdummy.c2,tdummy.c3 from tdummy ".
+            "inner join tdummy2 on tdummy.c3=tdummy2.c1  where tdummy.c1=:c1"
+            ,$this->pdoOne->lastQuery);
+       
+    }
+
     /**
      * @throws Exception
      */
-    public function test_raw_and_internal_cache()
-    {
+    public function test_raw_and_internal_cache() {
         if ($this->pdoOne->tableExist('tdummy')) {
             $this->pdoOne->dropTable('tdummy');
         }
@@ -142,8 +215,7 @@ class PdoOne_mysql_Test extends TestCase
     /**
      * @throws Exception
      */
-    public function test_dml2()
-    {
+    public function test_dml2() {
         if ($this->pdoOne->tableExist('tdummy')) {
             $this->pdoOne->dropTable('tdummy');
         }
@@ -151,7 +223,6 @@ class PdoOne_mysql_Test extends TestCase
 
         self::assertNotEquals(false, $this->pdoOne->set(['c1', 'c2'], [1, 'hello'])->from('tdummy')->insert());
         self::assertNotEquals(false, $this->pdoOne->insert('tdummy', ['c1', 'c2'], ['c1' => 2, 'c2' => 'hello2']));
-
 
         self::assertEquals(['c1' => 1, 'c2' => 'hello'], $this->pdoOne->select('*')->from('tdummy')->first());
 
@@ -170,9 +241,7 @@ class PdoOne_mysql_Test extends TestCase
         self::assertEquals([['c1' => 1, 'c2' => 'hellox1']], $this->pdoOne->select('*')->from('tdummy')->toList());
     }
 
-
-    public function test_missingerr()
-    {
+    public function test_missingerr() {
         try {
             $this->pdoOne->select('*')->from('missintable')->toList();
         } catch (Exception $e) {
@@ -194,31 +263,26 @@ class PdoOne_mysql_Test extends TestCase
         }
     }
 
-    public function test_1()
-    {
+    public function test_1() {
         $this->pdoOne->render();
         $a1 = 1;
         self::assertEquals(1, $a1);
     }
 
-    public function test_2()
-    {
+    public function test_2() {
         $a1 = 1;
         $this->pdoOne->cliEngine();
         self::assertEquals(1, $a1);
     }
 
-    public function test_base()
-    {
+    public function test_base() {
         $array1 = ["a" => 1, "b" => 2, "c" => 3];
         $array2 = ["a", "b"];
         $array2As = ["a" => 222, "b" => 333];
         $array3 = ["a", "b", 'd'];
 
-
         self::assertEquals(["a" => 1, "b" => 2], _BasePdoOneRepo::intersectArrays($array1, $array2));
         self::assertEquals(["c" => 3], _BasePdoOneRepo::diffArrays($array1, $array2));
-
 
         self::assertEquals(["a" => 1, "b" => 2], _BasePdoOneRepo::intersectArrays($array1, $array2As, true));
         self::assertEquals(["c" => 3], _BasePdoOneRepo::diffArrays($array1, $array2As, true));
@@ -228,9 +292,7 @@ class PdoOne_mysql_Test extends TestCase
         self::assertEquals(["c" => 3], _BasePdoOneRepo::diffArrays($array1, $array3, false));
     }
 
-
-    public function test_3()
-    {
+    public function test_3() {
         $dt = new DateTime('18-07-2020');
         $cv = PdoOne::dateConvert('2020-07-18 00:00:00.000', 'sql', 'class');
         var_dump($cv);
@@ -241,8 +303,7 @@ class PdoOne_mysql_Test extends TestCase
         self::assertEquals('30/01/2020', PdoOne::dateConvert('2020-01-30', 'sql', 'human'));
     }
 
-    public function test_4()
-    {
+    public function test_4() {
         self::assertGreaterThan(0, count($this->pdoOne->tableSorted()));
     }
 }
