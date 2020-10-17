@@ -1,7 +1,6 @@
-<?php /** @noinspection PhpMissingParamTypeInspection */
-/** @noinspection PhpRedundantVariableDocTypeInspection */
-
-/**
+<?php /** @noinspection OnlyWritesOnParameterInspection
+ * @noinspection PhpMissingParamTypeInspection
+ * @noinspection PhpRedundantVariableDocTypeInspection
  * @ noinspection UnknownInspectionInspection
  * @ noinspection OnlyWritesOnParameterInspection
  * @ noinspection TypeUnsafeComparisonInspection
@@ -35,10 +34,10 @@ use stdClass;
  * @package       eftec
  * @author        Jorge Castro Castillo
  * @copyright (c) Jorge Castro C. MIT License  https://github.com/EFTEC/PdoOne
- * @version       2.6.2
+ * @version       2.6.3
  */
 class PdoOne {
-    const VERSION = '2.6.2';
+    const VERSION = '2.6.3';
     /** @var int We need this value because null and false could be a valid value. */
     const NULL = PHP_INT_MAX;
     public static $prefixBase = '_';
@@ -117,6 +116,7 @@ class PdoOne {
     public $isOpen = false;
     /** @var bool If true (default), then it throws an error if happens an error. If false, then the execution continues */
     public $throwOnError = true;
+    private $throwOnErrorB = true;
     /** @var  PDO */
     public $conn1;
     /** @var  bool */
@@ -291,18 +291,20 @@ class PdoOne {
     }
 
     /**
-     * @param              $txt
+     * It returns true if the text has parenthesis.
+     * 
+     * @param string       $txt
      * @param string|array $start
      * @param string|array $end
      *
      * @return bool
      */
     public static function hasParenthesis($txt, $start = '(', $end = ')') {
-        if ($txt == '') {
+        if (!$txt) {
             return false;
         }
         if (is_array($start)) {
-            if (count($start) != @count($end)) {
+            if (count($start) !== @count($end)) {
                 return false;
             }
             foreach ($start as $k => $v) {
@@ -365,7 +367,7 @@ class PdoOne {
             }
         }
         foreach ($defCurrentKey as $k => $dc) {
-            if (strtolower($defKeys[$k]) != strtolower($dc)) {
+            if (strtolower($defKeys[$k]) !== strtolower($dc)) {
                 $error[$k] = "key: $dc , {$defKeys[$k]} are different";
             }
         }
@@ -960,7 +962,7 @@ eot;
     }
 
     public function debugFile($txt, $level = 'INFO') {
-        if ($this->logFile == '') {
+        if (!$this->logFile) {
             return; // debug file is disabled.
         }
         $fz = @filesize($this->logFile);
@@ -1166,6 +1168,10 @@ eot;
 
         // the "where" has parameters.
         $stmt = $this->prepare($rawSql);
+        if($stmt===false) {
+            $this->throwError("Unable to prepare statement",$rawSql);
+            return false;
+        }
         $counter = 0;
         if ($this->isAssoc($param)) {
             $this->lastBindParam = $param;
@@ -1406,9 +1412,11 @@ eot;
             $stmt = $this->conn1->prepare($statement);
         } catch (Exception $ex) {
             $stmt = false;
-            $this->throwError('Failed to prepare', $ex->getMessage(), ['param' => $this->lastParam]);
+            if($this->errorText==='') {
+                $this->throwError('Failed to prepare', $ex->getMessage(), ['param' => $this->lastParam]);
+            }
         }
-        if ($stmt === false) {
+        if (($stmt === false) && $this->errorText === '') {
             $this->throwError('Unable to prepare query', $this->lastQuery, ['param' => $this->lastParam]);
         }
 
@@ -2156,6 +2164,8 @@ eot;
     private function beginTry() {
         $this->errorText = '';
         $this->isThrow = $this->genError; // this value is deleted when it trigger an error
+        $this->throwOnErrorB=$this->throwOnError;
+        $this->throwOnError=false;
     }
 
     /**
@@ -2213,7 +2223,7 @@ eot;
             return false;
         }
         $reval = true;
-        if ($allparam != null) {
+        if ($allparam) {
             foreach ($allparam as $k => $v) {
                 $reval = $reval && $stmt->bindParam($v[0], $allparam[$k][1], $v[2]);
             }
@@ -2674,6 +2684,7 @@ eot;
      * @throws Exception
      */
     private function endTry() {
+        $this->throwOnError=$this->throwOnErrorB;
         if ($this->errorText) {
             $this->throwError('endtry:' . $this->errorText, '', '', $this->isThrow);
             return false;
@@ -3535,7 +3546,8 @@ eot;
         }
         if ($pk) {
             // we never update the primary key.
-            $noUpdate = $noUpdate + $pk; // it adds and replaces duplicates, indexes are ignored.
+            /** @noinspection AdditionOperationOnArraysInspection */
+            $noUpdate += $pk; // it adds and replaces duplicates, indexes are ignored.
         }
 
         $relation2 = [];
@@ -5122,6 +5134,7 @@ BOOTS;
     private function runUtilCombo($array, $select) {
         $r = '';
         foreach ($array as $item) {
+            /** @noinspection TypeUnsafeComparisonInspection */
             $r .= "<option value='{$item}' " . (($select == $item) ? 'selected' : '') . " >{$item}</option>";
         }
 
@@ -5210,7 +5223,7 @@ BOOTS;
         $sql = $this->service->getSequence($sequenceName);
         $r = $this->runRawQuery($sql, null, true);
         if ($unpredictable) {
-            if (PHP_INT_SIZE == 4) {
+            if (PHP_INT_SIZE === 4) {
                 return $this->encryption->encryptSimple($r[0]['id']);
             }
 
@@ -5245,7 +5258,7 @@ BOOTS;
         usleep(1);
 
         if ($unpredictable) {
-            if (PHP_INT_SIZE == 4) {
+            if (PHP_INT_SIZE === 4) {
                 return '' . $this->encryption->encryptSimple($calc);
             }
 
@@ -5724,6 +5737,7 @@ BOOTS;
         return (stripos($sql, 'select ') === 0 || stripos($sql, 'show ') === 0);
     }
 
+    /** @noinspection TypeUnsafeComparisonInspection */
     public function filterKey($condition, $columns, $returnSimple) {
         if ($condition === null) {
             // no filter.
@@ -6400,7 +6414,6 @@ BOOTS;
             = /** @lang text */
             'insert into ' . $this->addDelimiter($tableName) . '  ' . $this->constructInsert();
         $param = $this->setParamAssoc;
-
         $this->beginTry();
         $this->runRawQuery($sql, $param);
         $this->builderReset(true);

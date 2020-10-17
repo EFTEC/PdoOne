@@ -35,6 +35,7 @@ include __DIR__ . '/dBug.php';
  * It tests the code generated in examples/repo
  *
  * Class PdoOne_mysql_gen_test
+ * @deprecated this test should be rebuilt
  */
 class PdoOne_mysql_gen_test extends TestCase
 {

@@ -166,6 +166,33 @@ class PdoOne_mysql_Test extends TestCase {
             ,$this->pdoOne->lastQuery);
        
     }
+    public function test_fail() {
+        $this->pdoOne->throwOnError=true;
+
+        if ($this->pdoOne->tableExist('tdummy')) {
+            try {
+                $this->pdoOne->dropTable('tdummy');
+                $this->pdoOne->dropTable('tdummy2');
+            } catch (Exception $e) {
+            }
+        }
+        $this->pdoOne->createTable('tdummy', ['c1' => 'int', 'c2' => 'varchar(50)', 'c3' => 'int'], 'c1');
+        
+        try {
+            $this->expectException($this->pdoOne->set(['x1' => 1, 'x2' => 2])->insert('WRONGTABLE'));    
+        } catch (Exception $e) {
+            // this error is expected. However, we should flush the fields.
+        }
+        self::assertNotFalse( $this->pdoOne->set(['c1' => 1, 'c2' => 2,'c3'=>3])->insert('tdummy'));
+        try {
+            $this->expectException($this->pdoOne->set(['x1' => 1, 'x2' => 2])->where(['x4'=>1])->update('WRONGTABLE'));
+        } catch (Exception $e) {
+            // this error is expected. However, we should flush the fields.
+        }
+        self::assertNotFalse( $this->pdoOne->set(['c2' => 2,'c3'=>3])->where(['c1'=>1])->update('tdummy'));
+        
+
+    }
 
     /**
      * @throws Exception
@@ -257,7 +284,7 @@ class PdoOne_mysql_Test extends TestCase {
         try {
             $this->pdoOne->select('*')->from('missintable')->setNoReset(true)->toList();
         } catch (Exception $e) {
-            self::assertContains('Error in prepare runGen', $this->pdoOne->errorText);
+            self::assertContains('Failed to prepare', $this->pdoOne->errorText);
             self::assertEquals('select * from missintable', $this->pdoOne->lastQuery);
             self::assertFalse($this->pdoOne->hasWhere());
         }

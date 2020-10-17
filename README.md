@@ -1593,6 +1593,9 @@ In a nutshell:
 * Every minor version means that it adds a new functionality i.e. 1.5 -> 1.6 (new methods)  
 * Every decimal version means that it patches/fixes/refactoring a previous functionality i.e. 1.5.0 -> 1.5.1 (fix)  
 
+* 2.6.3 2020-10-16
+  * Internal, Changed beginTry() and endTry(). Now, if an operation that uses beginTry() and endTry() fails,
+  then the error is throw in endTry().   
 * 2.6.2 2020-10-09
   * The default argument of _first (code generated) is Pdo::NULL instead of null because null is a valid value     
 * 2.6.1 2020-09-24

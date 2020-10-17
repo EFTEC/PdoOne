@@ -160,7 +160,6 @@ class PdoOne_Sqlsrv implements PdoOne_IExt
      * @param null $filter
      * @return array
      * @throws Exception
-     * todo: check
      */
     public function getDefTableKeys($table, $returnSimple, $filter = null)
     {
@@ -201,7 +200,6 @@ class PdoOne_Sqlsrv implements PdoOne_IExt
      * @param bool $assocArray
      * @return array
      * @throws Exception
-     * todo: missing checking
      */
     public function getDefTableFK($table, $returnSimple, $filter = null, $assocArray =false)
     {
