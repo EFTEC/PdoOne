@@ -183,6 +183,8 @@ class PdoOne {
 
     /** @var array parameters for the set. [paramvar,value,type,size] */
     private $setParamAssoc = [];
+
+
     /** @var array parameters for the where. [paramvar,value,type,size] */
     private $whereParamAssoc = [];
     /** @var array parameters for the having. [paramvar,value,type,size] */
@@ -991,7 +993,29 @@ eot;
 
         @fclose($fp);
     }
+    /**
+     * @return array
+     */
+    public function getSetParamAssoc()
+    {
+        return $this->setParamAssoc;
+    }
 
+    /**
+     * @return array
+     */
+    public function getWhereParamAssoc()
+    {
+        return $this->whereParamAssoc;
+    }
+
+    /**
+     * @return array
+     */
+    public function getHavingParamAssoc()
+    {
+        return $this->havingParamAssoc;
+    }
     /**
      * It reset the parameters used to Build Query.
      *

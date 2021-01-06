@@ -4,20 +4,43 @@ use eftec\_BasePdoOneRepo;
 use eftec\PdoOne;
 use PHPUnit\Framework\TestCase;
 
-class PdoOne_mysql_Test extends TestCase {
+class PdoOne_mysql_Test extends TestCase
+{
     /** @var PdoOne */
     protected $pdoOne;
 
-    public function setUp() {
+    public function setUp()
+    {
         $this->pdoOne = new PdoOne("mysql", "127.0.0.1", "travis", "", "travisdb");
         $this->pdoOne->connect();
         $this->pdoOne->logLevel = 3;
     }
 
+    public function test_gen()
+    {
+        $this->pdoOne->builderReset();
+        self::assertEquals('select * from table where a1=:a1 and a2=:a2', $this->pdoOne->select('*')
+            ->from('table')->where(['a1' => 123, 'a2' => 456])->sqlGen());
+        self::assertEquals([0 => [':a1', 123, 1, null], 1 => [':a2', 456, 1, null]], $this->pdoOne->getWhereParamAssoc());
+
+        $this->pdoOne->builderReset();
+        self::assertEquals('select * from table where fn(a3)=:a3 and a2=:a2', $this->pdoOne->select('*')
+            ->from('table')->where(['fn(a3)=:a3' => 1234, 'a2' => 456])->sqlGen());
+        self::assertEquals([0 => [':a3', 1234, 1, null], 1 => [':a2', 456, 1, null]], $this->pdoOne->getWhereParamAssoc());
+
+        $this->pdoOne->builderReset();
+        self::assertEquals('select * from table where a1=? and a2=?', $this->pdoOne->select('*')
+            ->from('table')->where(['a1', 123, 'a2', 456])->sqlGen());
+        self::assertEquals([0 => [1, 123, 1, null], 1 => [2, 456, 1, null]], $this->pdoOne->getWhereParamAssoc());
+
+    }
+
     /**
      * @throws RuntimeException
      */
-    public function test_parameter() {
+    public function test_parameter()
+    {
+
         $this->pdoOne->builderReset();
         self::assertEquals([
             ['name=:name and type<:type'],
@@ -64,11 +87,13 @@ class PdoOne_mysql_Test extends TestCase {
         $this->pdoOne->builderReset();
     }
 
-    public function test_Time() {
+    public function test_Time()
+    {
         self::assertNotEquals(null, PdoOne::dateNow());
     }
 
-    public function test_dml() {
+    public function test_dml()
+    {
         if ($this->pdoOne->tableExist('tdummy')) {
             $this->pdoOne->dropTable('tdummy');
         }
@@ -86,7 +111,8 @@ class PdoOne_mysql_Test extends TestCase {
         self::assertEquals([['c1' => 1, 'c2' => 'hellox']], $this->pdoOne->select('*')->from('tdummy')->toList());
     }
 
-    public function test_f1() {
+    public function test_f1()
+    {
         if ($this->pdoOne->tableExist('tdummy')) {
             try {
                 $this->pdoOne->dropTable('tdummy');
@@ -161,13 +187,15 @@ class PdoOne_mysql_Test extends TestCase {
 
         self::assertEquals($result, $r);
 
-        self::assertEquals("select tdummy.c1,tdummy.c2,tdummy.c3 from tdummy ".
+        self::assertEquals("select tdummy.c1,tdummy.c2,tdummy.c3 from tdummy " .
             "inner join tdummy2 on tdummy.c3=tdummy2.c1  where tdummy.c1=:c1"
-            ,$this->pdoOne->lastQuery);
-       
+            , $this->pdoOne->lastQuery);
+
     }
-    public function test_fail() {
-        $this->pdoOne->throwOnError=true;
+
+    public function test_fail()
+    {
+        $this->pdoOne->throwOnError = true;
 
         if ($this->pdoOne->tableExist('tdummy')) {
             try {
@@ -177,27 +205,28 @@ class PdoOne_mysql_Test extends TestCase {
             }
         }
         $this->pdoOne->createTable('tdummy', ['c1' => 'int', 'c2' => 'varchar(50)', 'c3' => 'int'], 'c1');
-        
+
         try {
-            $this->expectException($this->pdoOne->set(['x1' => 1, 'x2' => 2])->insert('WRONGTABLE'));    
+            $this->expectException($this->pdoOne->set(['x1' => 1, 'x2' => 2])->insert('WRONGTABLE'));
         } catch (Exception $e) {
             // this error is expected. However, we should flush the fields.
         }
-        self::assertNotFalse( $this->pdoOne->set(['c1' => 1, 'c2' => 2,'c3'=>3])->insert('tdummy'));
+        self::assertNotFalse($this->pdoOne->set(['c1' => 1, 'c2' => 2, 'c3' => 3])->insert('tdummy'));
         try {
-            $this->expectException($this->pdoOne->set(['x1' => 1, 'x2' => 2])->where(['x4'=>1])->update('WRONGTABLE'));
+            $this->expectException($this->pdoOne->set(['x1' => 1, 'x2' => 2])->where(['x4' => 1])->update('WRONGTABLE'));
         } catch (Exception $e) {
             // this error is expected. However, we should flush the fields.
         }
-        self::assertNotFalse( $this->pdoOne->set(['c2' => 2,'c3'=>3])->where(['c1'=>1])->update('tdummy'));
-        
+        self::assertNotFalse($this->pdoOne->set(['c2' => 2, 'c3' => 3])->where(['c1' => 1])->update('tdummy'));
+
 
     }
 
     /**
      * @throws Exception
      */
-    public function test_raw_and_internal_cache() {
+    public function test_raw_and_internal_cache()
+    {
         if ($this->pdoOne->tableExist('tdummy')) {
             $this->pdoOne->dropTable('tdummy');
         }
@@ -242,7 +271,8 @@ class PdoOne_mysql_Test extends TestCase {
     /**
      * @throws Exception
      */
-    public function test_dml2() {
+    public function test_dml2()
+    {
         if ($this->pdoOne->tableExist('tdummy')) {
             $this->pdoOne->dropTable('tdummy');
         }
@@ -268,7 +298,8 @@ class PdoOne_mysql_Test extends TestCase {
         self::assertEquals([['c1' => 1, 'c2' => 'hellox1']], $this->pdoOne->select('*')->from('tdummy')->toList());
     }
 
-    public function test_missingerr() {
+    public function test_missingerr()
+    {
         try {
             $this->pdoOne->select('*')->from('missintable')->toList();
         } catch (Exception $e) {
@@ -290,19 +321,22 @@ class PdoOne_mysql_Test extends TestCase {
         }
     }
 
-    public function test_1() {
+    public function test_1()
+    {
         $this->pdoOne->render();
         $a1 = 1;
         self::assertEquals(1, $a1);
     }
 
-    public function test_2() {
+    public function test_2()
+    {
         $a1 = 1;
         $this->pdoOne->cliEngine();
         self::assertEquals(1, $a1);
     }
 
-    public function test_base() {
+    public function test_base()
+    {
         $array1 = ["a" => 1, "b" => 2, "c" => 3];
         $array2 = ["a", "b"];
         $array2As = ["a" => 222, "b" => 333];
@@ -319,7 +353,8 @@ class PdoOne_mysql_Test extends TestCase {
         self::assertEquals(["c" => 3], _BasePdoOneRepo::diffArrays($array1, $array3, false));
     }
 
-    public function test_3() {
+    public function test_3()
+    {
         $dt = new DateTime('18-07-2020');
         $cv = PdoOne::dateConvert('2020-07-18 00:00:00.000', 'sql', 'class');
         var_dump($cv);
@@ -330,7 +365,8 @@ class PdoOne_mysql_Test extends TestCase {
         self::assertEquals('30/01/2020', PdoOne::dateConvert('2020-01-30', 'sql', 'human'));
     }
 
-    public function test_4() {
+    public function test_4()
+    {
         self::assertGreaterThan(0, count($this->pdoOne->tableSorted()));
     }
 }
