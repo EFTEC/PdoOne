@@ -1590,13 +1590,14 @@ PdoOne adds a bit of ovehead over PDO, however it is simple a wrapper to pdo.
 
 In a nutshell:
 
-* Every major version means that it breaks something. I.e. 1.0 -> 2.0  
+* Every major version means that it could break old code. I.e. 1.0 -> 2.0  
 * Every minor version means that it adds a new functionality i.e. 1.5 -> 1.6 (new methods)  
 * Every decimal version means that it patches/fixes/refactoring a previous functionality i.e. 1.5.0 -> 1.5.1 (fix)  
 
 * 2.7 2021-01-10
   * Many changes, compatibility with PHP 8.0
   * Fixed a bug with cache where it keeps the cache of previous runs.
+  * Note: $PdoOne->useCache considers = false (no cache) and everything else as use cache. Nulls are not allowed.
   * Note: Previous generated code must be rebuild it again.
 
 * 2.6.3 2020-10-16

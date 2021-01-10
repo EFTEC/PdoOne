@@ -160,7 +160,7 @@ class PdoOne {
     private $affected_rows = 0;
     private $select = '';
     /**
-     * @var null|bool|int $ttl If <b>null</b> then the cache never expires.<br>
+     * @var null|int $ttl      If <b>0</b> then the cache never expires.<br>
      *                         If <b>false</b> then we don't use cache.<br>
      *                         If <b>int</b> then it is the duration of the
      *     cache
