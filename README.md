@@ -1594,6 +1594,11 @@ In a nutshell:
 * Every minor version means that it adds a new functionality i.e. 1.5 -> 1.6 (new methods)  
 * Every decimal version means that it patches/fixes/refactoring a previous functionality i.e. 1.5.0 -> 1.5.1 (fix)  
 
+* 2.7 2021-01-10
+  * Many changes, compatibility with PHP 8.0
+  * Fixed a bug with cache where it keeps the cache of previous runs.
+  * Note: Previous generated code must be rebuild it again.
+
 * 2.6.3 2020-10-16
   * Internal, Changed beginTry() and endTry(). Now, if an operation that uses beginTry() and endTry() fails,
   then the error is throw in endTry().   
@@ -1655,6 +1660,7 @@ echo $this->internalCacheCounter;
 ```
   * The internal cache is tested with runRawQuery (if returns an array), toList(), meta() and first()   
   
+
 * 2.0.1 2020-08-12   
   * Fixed a bug with the generated code with linked relation manytoone and onetonone.
 * 2.0 2020-08-11

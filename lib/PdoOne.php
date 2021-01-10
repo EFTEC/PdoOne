@@ -1,4 +1,6 @@
-<?php /** @noinspection OnlyWritesOnParameterInspection
+<?php /** @noinspection PhpUnused */
+
+/** @noinspection OnlyWritesOnParameterInspection
  * @noinspection PhpMissingParamTypeInspection
  * @noinspection PhpRedundantVariableDocTypeInspection
  * @ noinspection UnknownInspectionInspection
@@ -34,10 +36,10 @@ use stdClass;
  * @package       eftec
  * @author        Jorge Castro Castillo
  * @copyright (c) Jorge Castro C. MIT License  https://github.com/EFTEC/PdoOne
- * @version       2.6.3
+ * @version       2.7
  */
 class PdoOne {
-    const VERSION = '2.6.3';
+    const VERSION = '2.7';
     /** @var int We need this value because null and false could be a valid value. */
     const NULL = PHP_INT_MAX;
     public static $prefixBase = '_';
@@ -813,7 +815,7 @@ eot;
         }
         switch ($output) {
             case 'csv':
-                $result = $this->runRawQuery($query, [], true);
+                $result = $this->runRawQuery($query, []);
                 if (!is_array($result)) {
                     return "No result or result error\n";
                 }
@@ -834,7 +836,7 @@ eot;
 
                 return $r;
             case 'json':
-                $result = $this->runRawQuery($query, [], true);
+                $result = $this->runRawQuery($query, []);
                 if (!is_array($result)) {
                     return "No result or result error\n";
                 }
@@ -843,7 +845,7 @@ eot;
             case 'selectcode':
                 return $this->generateCodeSelect($query);
             case 'arraycode':
-                return $this->generateCodeArray($input, $query, false, false, false);
+                return $this->generateCodeArray($input, $query, false, false);
             case 'createcode':
                 return $this->generateCodeCreate($input);
             case 'classcode':
@@ -1059,10 +1061,10 @@ eot;
      */
     public function storeInfo($txt) {
         if ($this->getMessages() === null) {
-            $this->debugFile($txt, 'INFO');
+            $this->debugFile($txt);
         } else {
             $this->getMessages()->addItem($this->db, $txt, 'info');
-            $this->debugFile($txt, 'INFO');
+            $this->debugFile($txt);
         }
     }
 
@@ -1593,7 +1595,7 @@ eot;
                     if ($tmpDate === false) {
                         return false;
                     }
-                    $tmpDate->setTime(0, 0, 0);
+                    $tmpDate->setTime(0, 0);
                 }
                 break;
             case 'human':
@@ -1608,7 +1610,7 @@ eot;
                     if ($tmpDate === false) {
                         return false;
                     }
-                    $tmpDate->setTime(0, 0, 0);
+                    $tmpDate->setTime(0, 0);
                 }
                 break;
             case 'sql':
@@ -1620,7 +1622,7 @@ eot;
                     $tmpDate = DateTime::createFromFormat(self::$isoDateTime, $sqlField);
                 } else {
                     $tmpDate = DateTime::createFromFormat(self::$isoDate, $sqlField);
-                    $tmpDate->setTime(0, 0, 0);
+                    $tmpDate->setTime(0, 0);
                 }
                 break;
             case 'class':
@@ -1703,7 +1705,7 @@ eot;
         }
         $tmpDate = DateTime::createFromFormat($tmpFormat, $textDate);
         if (!$hasTime && $tmpDate) {
-            $tmpDate->setTime(0, 0, 0);
+            $tmpDate->setTime(0, 0);
         }
 
         return self::dateTimePHP2Sql($tmpDate); // it always returns a date with time. Mysql Ignores it.
@@ -2037,7 +2039,7 @@ eot;
                 if ($defaultNull) {
                     $default = 'null';
                 } else {
-                    $default = $this->typeDict($row, true);
+                    $default = $this->typeDict($row);
                 }
                 $result .= "'" . $name . "'=>" . $default . ',' . $ln;
                 if ($recursive) {
@@ -2357,7 +2359,7 @@ eot;
             return $this->select($query)->toListSimple();
         }
 
-        return $this->runRawQuery($query, [], true);
+        return $this->runRawQuery($query, []);
     }
 
     /**
@@ -2378,7 +2380,7 @@ eot;
         if ($this->endtry() === false) {
             return false;
         }
-        if ($this->uid) {
+        if ($this->uid && $useCache!==false) {
             // we store the information of the cache.
             $this->setCache($this->uid, $this->cacheFamily, $rows, $useCache);
         }
@@ -2606,7 +2608,7 @@ eot;
         if ($this->endtry() === false) {
             return false;
         }
-        if ($this->uid) {
+        if ($this->uid && $useCache!==false) {
             // we store the information of the cache.
             $this->setCache($this->uid, $this->cacheFamily, $rows, $useCache);
         }
@@ -2679,7 +2681,7 @@ eot;
             $statement = null;
         }
 
-        if ($this->uid) {
+        if ($this->uid && $useCache!==false) {
             // we store the information of the cache.
             $this->setCache($this->uid, $this->cacheFamily, $row, $useCache);
         }
@@ -3317,7 +3319,7 @@ eot;
         }
         */
         try {
-            $deps = $this->tableDependency(true, false);
+            $deps = $this->tableDependency(true);
         } catch (Exception $e) {
             return 'Error: Unable read table dependencies ' . $e->getMessage();
         } //  ["city"]=> {["city_id"]=> "address"}
@@ -3782,7 +3784,7 @@ eot;
         $columnRemoves = []
     ) {
         $internalCache = $this->useInternalCache;
-        $this->setUseInternalCache(true);
+        $this->setUseInternalCache();
 
         if (is_array($folders)) {
             list($folder, $folderModel) = $folders;
@@ -4145,7 +4147,7 @@ eot;
         }
 
         try {
-            $deps = $this->tableDependency(true, false);
+            $deps = $this->tableDependency(true);
         } catch (Exception $e) {
             return 'Error: Unable read table dependencies ' . $e->getMessage();
         } //  ["city"]=> {["city_id"]=> "address"}
@@ -4482,7 +4484,7 @@ eot;
         }
 
         try {
-            $deps = $this->tableDependency(true, false);
+            $deps = $this->tableDependency(true);
         } catch (Exception $e) {
             return 'Error: Unable read table dependencies ' . $e->getMessage();
         } //  ["city"]=> {["city_id"]=> "address"}
@@ -5245,7 +5247,7 @@ BOOTS;
         $sequenceName = ''
     ) {
         $sql = $this->service->getSequence($sequenceName);
-        $r = $this->runRawQuery($sql, null, true);
+        $r = $this->runRawQuery($sql);
         if ($unpredictable) {
             if (PHP_INT_SIZE === 4) {
                 return $this->encryption->encryptSimple($r[0]['id']);
@@ -5351,7 +5353,7 @@ BOOTS;
      * @throws Exception
      */
     public function tableExist($tableName) {
-        return $this->objectExist($tableName, 'table');
+        return $this->objectExist($tableName);
     }
 
     /**
@@ -5367,7 +5369,7 @@ BOOTS;
     public function objectExist($objectName, $type = 'table') {
         $query = $this->service->objectExist($type);
 
-        $arr = $this->runRawQuery($query, [$objectName], true);
+        $arr = $this->runRawQuery($query, [$objectName]);
         return is_array($arr) && count($arr) > 0;
     }
 
@@ -5515,7 +5517,7 @@ BOOTS;
 						,count($columnName) count
 						 from $tableName";
 
-        return $this->runRawQuery($query, null, true);
+        return $this->runRawQuery($query);
     }
 
     /**
@@ -5529,7 +5531,7 @@ BOOTS;
     public function columnTable($tableName) {
         $query = $this->service->columnTable($tableName);
 
-        return $this->runRawQuery($query, null, true);
+        return $this->runRawQuery($query);
     }
 
     /**
@@ -5543,7 +5545,7 @@ BOOTS;
     public function foreignKeyTable($tableName) {
         $query = $this->service->foreignKeyTable($tableName);
 
-        return $this->runRawQuery($query, null, true);
+        return $this->runRawQuery($query);
     }
 
     /**
@@ -5574,7 +5576,7 @@ BOOTS;
     public function drop($objectName, $type, $extra = '') {
         $sql = "drop $type " . $this->addDelimiter($objectName) . " $extra";
 
-        return $this->runRawQuery($sql, null, true);
+        return $this->runRawQuery($sql);
     }
 
     /**
@@ -5962,7 +5964,7 @@ BOOTS;
             return $this;
         }
 
-        $this->constructParam2($sqlOrArray, $param, 'set', false);
+        $this->constructParam2($sqlOrArray, $param, 'set');
         return $this;
     }
 
@@ -6310,7 +6312,7 @@ BOOTS;
                 $row = null;
             }
         }
-        if ($this->uid) {
+        if ($this->uid && $useCache!==false) {
             // we store the information of the cache.
             $this->setCache($this->uid, $this->cacheFamily, $row, $useCache);
         }
@@ -6365,7 +6367,7 @@ BOOTS;
             $statement = null;
         }
 
-        if ($this->uid) {
+        if ($this->uid && $useCache!==false) {
             // we store the information of the cache.
             $this->setCache($this->uid, $this->cacheFamily, $row, $useCache);
         }
@@ -6560,7 +6562,7 @@ BOOTS;
         }
 
         if ($tableDefWhere !== null) {
-            $this->constructParam2($tableDefWhere, $valueWhere, 'where');
+            $this->constructParam2($tableDefWhere, $valueWhere);
         }
 
         $sql = 'delete from ' . $this->addDelimiter($tableName);
@@ -6622,7 +6624,7 @@ BOOTS;
         }
 
         if ($tableDefWhere !== null) {
-            $this->constructParam2($tableDefWhere, $valueWhere, 'where');
+            $this->constructParam2($tableDefWhere, $valueWhere);
         }
 
         $errorCause = '';
@@ -6686,7 +6688,7 @@ BOOTS;
      * @return $this
      * @see \eftec\PdoOne::invalidateCache
      */
-    public function useCache($ttl = null, $family = '') {
+    public function useCache($ttl = 0, $family = '') {
         if ($this->cacheService === null) {
             $ttl = false;
         }

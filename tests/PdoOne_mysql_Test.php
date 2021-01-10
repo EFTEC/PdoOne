@@ -1,4 +1,4 @@
-<?php
+<?php /** @noinspection PhpPossiblePolymorphicInvocationInspection */
 /** @noinspection SuspiciousAssignmentsInspection */
 
 /** @noinspection PhpUndefinedClassInspection */
@@ -33,7 +33,6 @@ class CacheServicesmysql implements IPdoOneCache
         
         if (isset($this->cacheData[$uid])) {
             $this->cacheCounter++;
-            echo "test:reading the cache $uid $family\n";
             return $this->cacheData[$uid];
         }
         return false;
@@ -476,6 +475,7 @@ class PdoOne_mysql_Test extends TestCase
             echo $e->getMessage() . '<br>';
         }
         self::assertEquals(true, $r, 'failed to create table');
+        $this->pdoOne->getCacheService()->cacheCounter = 0;
 
         self::assertGreaterThan(1, count($this->pdoOne->objectList('table')));
         // we add some values
