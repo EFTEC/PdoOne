@@ -261,10 +261,9 @@ $values=$pdoOne->runRawQuery($sql,[],true);
 We could also pass parameters
 
 ```php
-$values=$con->runRawQuery('select * from table where id=?',[20]',true); // with parameter
-$values=$con->runRawQuery('select * from table where id=:name',['name'=>20]',true); // with named parameter
-$values=$con->runRawQuery('select * from table,[]',true); // without parameter.
-$values=$con->runRawQuery('select * from table where id=?,[[1,20,PDO::PARAM_INT]]',true); // a full parameter.
+$values=$con->runRawQuery('select * from table where id=?',[20]); // with parameter
+$values=$con->runRawQuery('select * from table where id=:name',['name'=>20]); // with named parameter
+$values=$con->runRawQuery('select * from table',[]); // without parameter.
 ```
 
 ### 2. Running a native PDO statement
