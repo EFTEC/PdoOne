@@ -118,7 +118,6 @@ class PdoOne_Mysql implements PdoOne_IExt
 
             $result[$col['Field']] = $value;
         }
-        var_dump($result);
         return $result;
     }
 
