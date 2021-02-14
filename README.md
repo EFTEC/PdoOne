@@ -1,8 +1,6 @@
 # Database Access Object wrapper for PHP and PDO in a single class
 
-PdoOne. It's a simple wrapper for PHP's PDO library compatible with SQL Server (2008 R2 or higher), MySql (5.7 or higher) and Oracle (12.1 or higuer).
-
-
+PdoOne. It's a simple wrapper for PHP's PDO library compatible with SQL Server (2008 R2 or higher), MySQL (5.7 or higher) and Oracle (12.1 or higher).
 
 This library tries to work as fast as possible. Most of the operations are simple string/array managements and work in the bare metal of the PDO library.
 
@@ -53,28 +51,28 @@ ProductRepo // this class was generated with echo $pdoOne()->generateCodeClass([
 ## Table of Content
 
 - [Database Access Object wrapper for PHP and PDO in a single class](#database-access-object-wrapper-for-php-and-pdo-in-a-single-class)
-  * [Install (using composer)](#install--using-composer-)
-  * [Install (manually)](#install--manually-)
-  * [Usage](#usage)
-    + [Start a connection](#start-a-connection)
-    + [Run an unprepared query](#run-an-unprepared-query)
-    + [Run a prepared query](#run-a-prepared-query)
-    + [Run a prepared query with parameters.](#run-a-prepared-query-with-parameters)
-    + [Return data (first method)](#return-data--first-method-)
-    + [Return data (second method)](#return-data--second-method-)
-    + [Running a transaction](#running-a-transaction)
-      - [startTransaction()](#starttransaction--)
-      - [commit($throw=true)](#commit--throw-true-)
-      - [rollback($throw=true)](#rollback--throw-true-)
-    + [Fields](#fields)
-    + [throwOnError=true](#throwonerror-true)
-    + [isOpen=true](#isopen-true)
+  * [Table of Content](#table-of-content)
+  * [Examples](#examples)
+  * [Installation](#installation)
+    + [Install (using composer)](#install--using-composer-)
+    + [Install (manually)](#install--manually-)
+  * [How to create a Connection?](#how-to-create-a-connection-)
+  * [How to runs a SQL command?](#how-to-runs-a-sql-command-)
+    + [1. Running a raw query](#1-running-a-raw-query)
+    + [2. Running a native PDO statement](#2-running-a-native-pdo-statement)
+    + [3. Running using the query builder](#3-running-using-the-query-builder)
+    + [**4. Running using a ORM.**](#--4-running-using-a-orm--)
+  * [How to run a transaction?](#how-to-run-a-transaction-)
   * [Custom Queries](#custom-queries)
+    
     + [tableExist($tableName)](#tableexist--tablename-)
     + [statValue($tableName,$columnName)](#statvalue--tablename--columnname-)
     + [columnTable($tablename)](#columntable--tablename-)
     + [foreignKeyTable($tableName)](#foreignkeytable--tablename-)
-    + [createTable($tableName,$definition,$primaryKey=null,$extra='')](#createtable--tablename--definition--primarykey-null--extra----)
+    + [createTable($tableName,$definition,$primaryKey=null,$extra='',$extraOutside='')](#createtable--tablename--definition--primarykey-null--extra-----extraoutside----)
+    + [tableSorted($maxLoop = 5, $returnProblems = false, $debugTrace = false)](#tablesorted--maxloop---5---returnproblems---false---debugtrace---false-)
+    + [validateDefTable($pdoInstance,$tablename,$defTable,$defTableKey)](#validatedeftable--pdoinstance--tablename--deftable--deftablekey-)
+    + [foreignKeyTable](#foreignkeytable)
   * [Query Builder (DQL)](#query-builder--dql-)
     + [select($columns)](#select--columns-)
     + [count($sql,$arg='*')](#count--sql--arg-----)
@@ -85,33 +83,78 @@ ProductRepo // this class was generated with echo $pdoOne()->generateCodeClass([
     + [distinct($distinct='distinct')](#distinct--distinct--distinct--)
     + [from($tables)](#from--tables-)
     + [where($where,[$arrayParameters=array()])](#where--where---arrayparameters-array----)
+      - [Where() without parameters.](#where---without-parameters)
+      - [Where() with parameters defined by a indexed array.](#where---with-parameters-defined-by-a-indexed-array)
+      - [Where() using an associative array](#where---using-an-associative-array)
+      - [Where() using an associative array and named arguments](#where---using-an-associative-array-and-named-arguments)
+      - [Examples of where()](#examples-of-where--)
     + [order($order)](#order--order-)
     + [group($group)](#group--group-)
     + [having($having,[$arrayParameters])](#having--having---arrayparameters--)
-    + [runGen($returnArray=true)](#rungen--returnarray-true-)
-    + [toList($pdoMode)](#tolist--pdomode-)
-    + [toMeta()](#tometa--)
-    + [toListSimple()](#tolistsimple--)
-    + [toResult()](#toresult--)
-    + [firstScalar($colName=null)](#firstscalar--colname-null-)
-    + [first()](#first--)
-    + [last()](#last--)
-    + [sqlGen()](#sqlgen--)
-  * [Query Builder (DML), i.e. insert, update,delete](#query-builder--dml---ie-insert--update-delete)
+    + [End of the chain](#end-of-the-chain)
+      - [runGen($returnArray=true)](#rungen--returnarray-true-)
+      - [toList($pdoMode)](#tolist--pdomode-)
+      - [toMeta()](#tometa--)
+      - [toListSimple()](#tolistsimple--)
+      - [toListKeyValue()](#tolistkeyvalue--)
+      - [toResult()](#toresult--)
+      - [firstScalar($colName=null)](#firstscalar--colname-null-)
+      - [first()](#first--)
+      - [last()](#last--)
+      - [sqlGen()](#sqlgen--)
+  * [Query Builder (DML)](#query-builder--dml-)
     + [insert($table,$schema,[$values])](#insert--table--schema---values--)
     + [insertObject($table,[$declarativeArray],$excludeColumn=[])](#insertobject--table---declarativearray---excludecolumn----)
     + [update($$table,$schema,$values,[$schemaWhere],[$valuesWhere])](#update---table--schema--values---schemawhere----valueswhere--)
     + [delete([$table],[$schemaWhere],[$valuesWhere])](#delete---table----schemawhere----valueswhere--)
+  * [Cache](#cache)
+    + [How to configure it?](#how-to-configure-it-)
+    + [Example using apcu](#example-using-apcu)
   * [Sequence](#sequence)
     + [Creating a sequence](#creating-a-sequence)
-    + [Using the sequence](#using-the-sequence)
     + [Creating a sequence without a table.](#creating-a-sequence-without-a-table)
-    + [Benchmark (mysql, estimated)](#benchmark--mysql--estimated-)
+    + [Using the sequence](#using-the-sequence)
+  * [Fields](#fields)
+  * [How to debug and trace errors in the database?](#how-to-debug-and-trace-errors-in-the-database-)
+    + [Setting the log level](#setting-the-log-level)
+    + [Throwing errors](#throwing-errors)
+    + [Getting the last Query](#getting-the-last-query)
+    + [Generating a log file](#generating-a-log-file)
+  * [CLI](#cli)
+    + [Run as cli](#run-as-cli)
+    + [cli-classcode](#cli-classcode)
+    + [cli-selectcode](#cli-selectcode)
+    + [cli-arraycode](#cli-arraycode)
+    + [cli-json](#cli-json)
+    + [cli-csv](#cli-csv)
+    + [UI](#ui)
+    + [How to run the UI?](#how-to-run-the-ui-)
+  * [ORM](#orm)
+    - [What is an ORM?](#what-is-an-orm-)
+    + [Building and installing the ORM](#building-and-installing-the-orm)
+      - [Creating the repository class](#creating-the-repository-class)
+      - [Creating multiples repositories classes](#creating-multiples-repositories-classes)
+      - [Creating all repositories classes](#creating-all-repositories-classes)
+    + [Using the Repository class.](#using-the-repository-class)
+    + [DDL  Database Design Language](#ddl--database-design-language)
+    + [Nested Operators](#nested-operators)
+    + [DQL Database Query Language](#dql-database-query-language)
+    + [DML Database Model Language](#dml-database-model-language)
+    + [Validate the model](#validate-the-model)
+    + [Recursive](#recursive)
+      - [recursive()](#recursive--)
+      - [getRecursive()](#getrecursive--)
+      - [hasRecursive()](#hasrecursive--)
+  * [Benchmark (mysql, estimated)](#benchmark--mysql--estimated-)
+  * [OCI](#oci)
   * [Changelist](#changelist)
+
+
 
 ## Examples
 
-## Some example
+
+
 | [ExampleTicketPHP](https://github.com/jorgecc/ExampleTicketPHP) | [Example cupcakes](https://github.com/EFTEC/example.cupcakes) | [Example Search](https://github.com/EFTEC/example-search)    | [Example Different Method](https://github.com/escuelainformatica/example-pdoone) |
 | ------------------------------------------------------------ | ------------------------------------------------------------ | ------------------------------------------------------------ | ------------------------------------------------------------ |
 | <img src="https://camo.githubusercontent.com/3c938f71f46a90eb85bb104f0f396fcba62b8f4a/68747470733a2f2f74686570726163746963616c6465762e73332e616d617a6f6e6177732e636f6d2f692f3436696b7061376661717677726533797537706a2e6a7067" alt="example php bladeone" width="200"/> | <img src="https://github.com/EFTEC/example.cupcakes/raw/master/docs/result.jpg" alt="example php bladeone cupcakes" width="200"/> | <img src="https://github.com/EFTEC/example-search/raw/master/img/search_bootstrap.jpg" alt="example php bladeone search" width="200"/> | <img src='https://github.com/escuelainformatica/example-pdoone/raw/master/docs/database.jpg' width=200 /> |
@@ -120,13 +163,13 @@ More examples:
 
 [Example Mysql PHP and PDO using PDOOne](https://www.southprojects.com/Programming/mysql-php-pdo)
 
+## Installation
 
+This library requires PHP 5.6 and higher and it requires the extension PDO and the extension PDO-MYSQL (Mysql), PDO-SQLSRV (sql server) or PDO-OCI (Oracle)
 
-## Install (using composer)
+### Install (using composer)
 
->
-
-Add to composer.json the next requirement, then update composer.
+Edit  **composer.json** the next requirement, then update composer.
 
 ```json
   {
@@ -139,76 +182,115 @@ or install it via cli using
 
 > composer require eftec/PdoOne
 
-## Install (manually)
+### Install (manually)
 
-Just download the file lib/PdoOne.php and save it in a folder.
+Just download the folder lib from the library and put in your folder project.  Then you must include all the files included on it.
 
-## Usage
+## How to create a Connection?
 
-### Start a connection
+Create an instance of the class PdoOne as follow. Then, you can open the connection using the method connect() or open()
 
 ```php
+use eftec\PdoOne;
 // mysql
 $dao=new PdoOne("mysql","127.0.0.1","root","abc.123","sakila","");
+$conn->logLevel=3; // it is for debug purpose and it works to find problems.
 $dao->connect();
+
 // sql server 10.0.0.1\instance or (local)\instance or machinename\instance or machine (default instance)
 $dao=new PdoOne("sqlsrv","(local)\sqlexpress","sa","abc.123","sakila","");
+$conn->logLevel=3; // it is for debug purpose and it works to find problems.
 $dao->connect();
 
 // test (mockup)
 $dao=new PdoOne("test","anyy","any","any","any","");
 $dao->connect();
 
-
 // oci (oracle) ez-connect
 
 $cs='(DESCRIPTION =(ADDRESS = (PROTOCOL = TCP)(HOST = localhost)(PORT = 1521))(CONNECT_DATA =(SERVER = DEDICATED)(SERVICE_NAME = instancia1)))';
 $dao=new PdoOne("oci",$cs,"sa","abc.123"); // oracle uses the user as the schema
+$conn->logLevel=3; // it is for debug purpose and it works to find problems.
 $dao->connect();
 
 // oci (oracle) tsnnames (the environment variables TNS_ADMIN and PATH must be correctly configured), also tnsnames.ora must exists.
-
-
 $cs='instancia1';
 $dao=new PdoOne("oci",$cs,"sa","abc.123"); // oracle uses the user as the schema
+$conn->logLevel=3; // it is for debug purpose and it works to find problems.
 $dao->connect();
 
 ```
 
 where 
-* "mysql" is the mysql database. It also allows sqlsrv (for sql server)
-* 127.0.0.1 is the server where is the database.
-* root is the user   
-* abc.123 is the password of the user root.
-* sakila is the database used.
+
+> $dao=new PdoOne("mysql","127.0.0.1","root","abc.123","sakila","");
+
+* "**mysql**" is the mysql database. It also allows sqlsrv (for sql server) or "oci"
+* **127.0.0.1** is the server where is the database.
+* **root** is the user   
+* **abc.123** is the password of the user root.
+* **sakila** is the database used.
 * "" (optional) it could be a log file, such as c:\temp\log.txt
 
-### Run an unprepared query
+## How to runs a SQL command?
+
+### 1. Running a raw query
+
+With the method **RunRawQuery()**, we could execute a command directly to PDO with or without parameters. And it could returns a **PdoStatement** or an **array**. It is useful when we want speed.
+
+> **RunRawQuery($rawSql,$param,$returnArray)**
+>
+> string **$rawSql** The query to execute
+> array|null **$param** [type1,value1,type2,value2] or [name1=>value,name2=value2]
+> bool **$returnArray** if true then it returns an array. If false then it returns a PDOStatement
+
+By default, **RunRawQuery()** returns an object of the type **PdoStatement**
 
 ```php
-$sql='CREATE TABLE `product` (
-    `idproduct` INT NOT NULL AUTO_INCREMENT,
-    `name` VARCHAR(45) NULL,
-    PRIMARY KEY (`idproduct`));';
-$pdoOne->runRawQuery($sql);  
+$sql='select * from table where id=1';
+$pdoStatement=$pdoOne->runRawQuery($sql);  
 ```
 
-### Run a query using a Prepared Statement of PDO
+But we could change it to returns an array
+
+```php
+$sql='select * from table where id=1';
+$values=$pdoOne->runRawQuery($sql,[],true);  
+```
+
+We could also pass parameters
+
+```php
+$values=$con->runRawQuery('select * from table where id=?',[20]',true); // with parameter
+$values=$con->runRawQuery('select * from table where id=:name',['name'=>20]',true); // with named parameter
+$values=$con->runRawQuery('select * from table,[]',true); // without parameter.
+$values=$con->runRawQuery('select * from table where id=?,[[1,20,PDO::PARAM_INT]]',true); // a full parameter.
+```
+
+### 2. Running a native PDO statement
+
+With the method **runQuery()** we could execute an prepared statement in PDO. It is useful when we want to pass arguments to it.   **runQuery()** requires a PDO **PreparedStatement**.
+
+> This method is not recommended unless you are already working with PDO statements and you don't want to adapt all your code.
+
 ```php
 $sql="insert into `product`(name) values(?)";
 $stmt=$pdoOne->prepare($sql);
 $productName="Cocacola";
 $stmt->bind_param("s",$productName); // s stand for string. Also i =integer, d = double and b=blob
-$pdoOne->runQuery($stmt);
+$rows=$pdoOne->runQuery($stmt);
+$allRows=$rows->fetch_all(PDO::FETCH_ASSOC);
 ```
 
-> note: you could also insert using a procedural chain [insert($table,$schema,[$values])](#insert--table--schema---values--)
+### 3. Running using the query builder
 
-### Run a prepared query with parameters.
+You can use the query builder to build your command.
+
 ```php
 // native query
 $pdoOne->runRawQuery('insert into `product` (name) values(?)'
     ,array('cocacola'));
+
 // query builder
 $pdoOne->set(['name'=>'cocacola'])
     ->from('product')
@@ -216,109 +298,43 @@ $pdoOne->set(['name'=>'cocacola'])
 
 ```
 
+### **4. Running using a ORM.**
 
-
-### Return data (first method)
-It returns a PDOStatement.
-
-```php
-    $sql="select * from `product` order by name";
-    $stmt=$pdoOne->prepare($sql);
-    $pdoOne->runQuery($stmt);
-    $rows = $stmt->get_result();
-    while ($row = $rows->fetch_assoc()) {
-        var_dump($row);
-    }
-    
-```
-> This statement must be processed manually.
-
-### Return data (second method)
-It returns an associative array.
+This library also allows to create an ORM of your tables. If you are generated an ORM, then you can use the next code
 
 ```php
-    $sql="select * from `product` order by name";
-    $stmt=$pdoOne->prepare($sql);
-    $pdoOne->runQuery($stmt);
-    $rows = $stmt->get_result();
-    $allRows=$rows->fetch_all(PDO::FETCH_ASSOC);
-    var_dump($allRows);
+ProductRepo::toList(['category'=>'drink']);
 ```
 
-### Running a transaction
+Where **ProductRepo** is a service class generated by using the ORM.
+
+
+
+## How to run a transaction?
+
+There are 3 methods to runs a transaction:
+
+| Method             | Description                                                  |
+| ------------------ | ------------------------------------------------------------ |
+| startTransaction() | It starts a transaction. Depending on the database, it could be stacked  or not. |
+| commit()           | Commit (and closes) a transaction                            |
+| rollback()         | Rollback (and closes) a transaction                          |
+
+Example:
+
 ```php
 try {
     $sql="insert into `product`(name) values(?)";
     $pdoOne->startTransaction();
-    $stmt=$pdoOne->prepare($sql);
-    $productName="Fanta";
-    $stmt->bind_param("s",$productName); 
-    $pdoOne->runQuery($stmt);
+    $result=$pdoOne->runRawQuery($sql,['Fanta'=>$productName],false);
     $pdoOne->commit(); // transaction ok
 } catch (Exception $e) {
-    $pdoOne->rollback(false); // error, transaction cancelled.
+    $pdoOne->rollback(false); // error, transaction cancelled, the false means that it doesn't throw an exception if we want rollback.
 }
 ```
-#### startTransaction()
-It starts a transaction
-
-#### commit($throw=true)
-It commits a transaction. 
-* If $throw is true then it throws an exception if the transaction fails to commit.  Otherwise, it does not.
-
-#### rollback($throw=true)
-It rollbacks a transaction. 
-* If $throw is true then it throws an exception if the transaction fails to rollback.  If false, then it ignores if the rollback fail or if the transaction is not open.
-
-### Recursive array
-
-A recursive array is a array of  strings with values that it could be read or obtained or compared.  For example, to join a table conditionally.
-PdoOne does not use it directly but _BasePdoOneRepo uses it (_BasePdoOneRepo is a class used when we generate a repository service class automatically).
-
-> 
-
-Example
-
-```php
-$this->select('*')->from('table')->recursive(['table1','table1.table2']);
-// some operations that involves recursive
-if($this->hasRecursive('table1')) {
-    $this->innerJoin('table1 on table.c=table1.c');
-}
-if($this->hasRecursive('table1.table2')) {
-    $this->innerJoin('table1 on table1.c=table2.c');
-}
-$r=$this->toList(); // recursive is resetted.
-```
-
-#### recursive()
-It sets a recursive array.  
-
-> This value is resets each time a chain methods ends.   
-
-#### getRecursive()
-It gets the recursive array.   
-
-#### hasRecursive()
-It returns true if recursive has some needle.  
-
-If $this->recursive is ['*'] then it always returns true.
-
-```php
-$this->select('*')->from('table')->recursive(['*']);
-$this->hasRecursive('anything'); // it always returns true.
-```
 
 
 
-
-### Fields
-
-### throwOnError=true
-If true (default), then it throws an error if happens an error. If false, then the execution continues  
-
-### isOpen=true
-It is true if the database is connected otherwise,it's false.
 
 
 
@@ -631,7 +647,7 @@ $results = $pdoOne->select("*")
 
 The where could be expressed in different ways.
 
-#### 1) Where() without parameters.
+#### Where() without parameters.
 
 It is possible to write the where without parameters as follow:
 
@@ -639,7 +655,7 @@ It is possible to write the where without parameters as follow:
 $results = $pdoOne->select("*")->from('table')->where("p1=1 and p2>2.5 or p3 like '%aa%'");
 ```
 
-#### 2) Where() with parameters defined by a indexed array.
+#### Where() with parameters defined by a indexed array.
 
 ```php
 $aa='aa';
@@ -659,7 +675,7 @@ $results = $pdoOne->select("*")->from('table')->where("p1",[1]); // = where("p1=
 
 
 
-#### 3) Where() using an associative array
+#### Where() using an associative array
 
 It is a shorthand definition of a query using an associative array, where the key is the name of the column and the value is the value to compare
 
@@ -681,7 +697,7 @@ $results = $pdoOne->select("*")->from('table')->where(['p1'=>[1]
                                                        ,'p3'=>['aa']]);  
 ```
 
-#### 4) Where() using an associative array and named arguments
+#### Where() using an associative array and named arguments
 
 You could also use an associative array as argument and named parameters in the query
 
@@ -693,9 +709,7 @@ $results = $pdoOne->select("*")->from("table")
 
 > Generates the query: select * from table **where condition=?(Coca-Cola) and condition2=?(1)**        
 
-
-
-#### 5) Examples of where()
+#### Examples of where()
 
 > Generates the query: select * **from table** where p1=1
 
@@ -738,17 +752,6 @@ $results = $pdoOne->select("*")->from("table")
 
 
 
-#### Types of Parameters
-
-| ParameterName | Description                                                 | Example                                     |
-| ------------- | ----------------------------------------------------------- | ------------------------------------------- |
-| "i"           | Integer parameter (equals to PDO::PARAM_INT)                | ("i",200)                                   |
-| "s"           | String, Float and Date parameter (equals to PDO::PARAM_STR) | ("s","hello","s",20.5,"s","2020/01/01")     |
-| "b"           | Boolean parameter (equals to PDO::PARAM_BOL)                | ("b",false)                                 |
-| PDO::PARAM_*  | Parameter defined using the values of PDO                   | (PDO::PARAM_INT,200,PDO::PARAM_STR,"hello") |
-
-
-
 ### order($order)
 Generates a order command.
 ```php
@@ -768,7 +771,10 @@ $results = $pdoOne->select("*")
 > Generates the query: select * from table **group by p1**
 
 ### having($having,[$arrayParameters])
-Generates a group command.
+Generates a having command.
+
+> Note: it uses the same parameters than **where()**
+
 ```php
 $results = $pdoOne->select("*")
 ->from('table')
@@ -780,15 +786,17 @@ $results = $pdoOne->select("*")
 > Note: Having could be nested having()->having()  
 > Note: Having could be without parameters having('col>10') 
 
-### runGen($returnArray=true)
+### End of the chain
+
+#### runGen($returnArray=true)
 Run the query generate.
 
 >Note if returnArray is true then it returns an associative array.
 > if returnArray is false then it returns a mysqli_result  
 >Note: It resets the current parameters (such as current select, from, where,etc.)
 
-### toList($pdoMode)
-It's a macro of runGen. It returns an associative array or null.
+#### toList($pdoMode)
+It's a macro of **runGen()**. It returns an associative array or false if the operation fails.
 
 ```php
 $results = $pdoOne->select("*")
@@ -796,8 +804,8 @@ $results = $pdoOne->select("*")
 ->toList(); 
 ```
 
-### toMeta()
-It returns a metacode of each columns of the query.
+#### toMeta()
+It returns a **metacode** (definitions) of each columns of a query.
 
 ```php
 $results = $pdoOne->select("*")
@@ -858,7 +866,7 @@ array(3) {
 }
 ```
 
-### toListSimple()
+#### toListSimple()
 It's a macro of runGen. It returns an indexed array from the first column
 
 ```php
@@ -866,7 +874,7 @@ $results = $pdoOne->select("*")
 ->from('table')
 ->toListSimple(); // ['1','2','3','4']
 ```
-### toListKeyValue()
+#### toListKeyValue()
 It returns an associative array where the first value is the key and the second is the value.  
 If the second value does not exist then it uses the index as value (first value).  
 
@@ -877,7 +885,7 @@ $results = $pdoOne->select("cod,name")
 ```
 
 
-### toResult()
+#### toResult()
 It's a macro of runGen. It returns a mysqli_result or null.
 
 ```php
@@ -886,7 +894,7 @@ $results = $pdoOne->select("*")
 ->toResult(); //
 ```
 
-### firstScalar($colName=null)
+#### firstScalar($colName=null)
 
 It returns the first scalar (one value) of a query. 
 If $colName is null then it uses the first column.
@@ -895,7 +903,7 @@ If $colName is null then it uses the first column.
 $count=$this->pdoOne->count('from product_category')->firstScalar();
 ```
 
-### first()
+#### first()
 It's a macro of runGen. It returns the first row if any, if not then it returns false, as an associative array.
 
 ```php
@@ -904,7 +912,7 @@ $results = $pdoOne->select("*")
 ->first(); 
 ```
 
-### last()
+#### last()
 It's a macro of runGen. It returns the last row (if any, if not, it returns false) as an associative array.
 
 ```php
@@ -914,9 +922,9 @@ $results = $pdoOne->select("*")
 ```
 > Sometimes is more efficient to run order() and first() because last() reads all values.
 
-### sqlGen()
+#### sqlGen()
 
-It returns the sql command.
+It returns the sql command and string.
 ```php
 $sql = $pdoOne->select("*")
 ->from('table')
@@ -926,7 +934,7 @@ $results=$pdoOne->toList(); // executes the query
 ```
 > Note: it doesn't reset the query.
 
-## Query Builder (DML), i.e. insert, update,delete
+## Query Builder (DML)
 
 There are four ways to execute each command.
 
@@ -1090,9 +1098,9 @@ The library does not do any cache operation directly, instead it allows to cache
     * firstScalar()
     * last()
     
-### How it works
+### How to configure it?
 
-(1) We need to define a class that implements \eftec\IPdoOneCache
+1. We need to define a class that implements the interfface **\eftec\IPdoOneCache**
 
 ```php
 class CacheService implements \eftec\IPdoOneCache {
@@ -1124,7 +1132,7 @@ $cache=new CacheService();
     $cache=new CacheService();
     $$pdoOne->setCacheService($cache);
 ```
-(3) Use the cache as as follow, we must add the method useCache() in any part of the query.
+(3) Use the cache as as follow, we must add the method **useCache()** in any part of the query.
 
 ```php
     $pdoOne->select('select * from table')
@@ -1154,55 +1162,137 @@ $cache=new CacheService();
 
 ## Sequence
 
-Sequence is an alternative to AUTO_NUMERIC field.  It uses a table to generate an unique ID.  
-The sequence used is based on Twitter's Snowflake and it is generated based on 
-time (with microseconds), Node Id and a sequence.   This generates a LONG (int 64) value that it's unique
+Sequence is an alternative to AUTO_NUMERIC (identity) field.  It has two methods to create a sequence: **snowflake** and **sequence**.  It is an alternative to create a GUID mainly because it returns a number (a GUID usually is a string that it is more expensive to index and to store)
+
+The goal of the sequence is to create an unique number that it is never repeated.
+
+* **sequence**: It uses the functionality of the database to create and use a sequence. MySql doesn't not have sequences but they are emulated.  The main problem of the sequence is it returns a consecutive number, example: 1,2,3,4...  This number is predictable. For example, if you are the user number **20**, then you can guess another user = **19, 21**, etc.
+* **snowflakes**: It uses a table to generate an unique ID.   The sequence used is based on Twitter's Snowflake and it is generated based on 
+  time (with microseconds), **nodeId** and a unique sequence.   This generates a LONG (int 64) value that it's unique. Example: **10765432100123456789**. This number is partially predictable .
 
 ### Creating a sequence
 
-* **$dao->nodeId** set the node value (default is 1). If we want unique values amongst different clusters,
- then we could set the value
-of the node as unique. The limit is up to 1024 nodes.
+* **$dao->nodeId** set the node value (default is 1). If we want unique values amongst different clusters, then we could set the value of the node as unique. The limit is up to 1024 nodes.
 * **$dao->tableSequence** it sets the table (and function), the default value is snowflake.
 
-```
+```php
 $dao->nodeId=1; // optional
 $dao->tableSequence='snowflake'; // optional
-$dao->createSequence(); // it creates a table called snowflake and a function called next_snowflake()
+$dao->createSequence(); // it creates a table (and it could create a store procedure) called snowflake and a function called next_snowflake(). You could create it only once.
 ```
+
+### Creating a sequence without a table.
+
+It is possible to create a new sequence without any table. It is fast but it could have problems of collisions.
+
+> It ensures a collision free number only if we don't do more **than one operation per 0.0001 second** However,it also adds a pseudo random number (0-4095 based in time) so the chances of collision is **1/4095** (per two operations done every 0.0001 second). It is based on Twitter's Snowflake number. i.e.. **you are safe of collisions if you are doing less than 1 million of operations per second** (technically: 45 millions).
+
+* **$pdo->getSequencePHP([unpredictable=false])** Returns a sequence without using a table.
+  This sequence is more efficient than $dao->getSequence but it uses a random value to deals
+  with collisions.
+
+* If upredictable is true then it returns an unpredictable number (it flips some digits)
+
+```php
+$pdo->getSequencePHP() // string(19) "3639032938181434317" 
+```
+
+```php
+$dao->getSequencePHP(true) // string(19) "1739032938181434311" 
+```
+
+
 
 ### Using the sequence
 
 * **$dao->getSequence([unpredictable=false])** returns the last sequence. If the sequence fails to generate, then it returns -1.
  The function could fails if the function is called more than 4096 times every 1/1000th second.
 
-```
-$dao->getSequence() // string(19) "3639032938181434317" 
-```
-
-```
-$dao->getSequence(true) // returns a sequence by flipping some values.
+```php
+$pdo->getSequence() // string(19) "3639032938181434317" 
+$pdo->getSequencePHP() // string(19) "3639032938181434317" 
 ```
 
-### Creating a sequence without a table.
-
-* **$dao->getSequencePHP([unpredictable=false])** Returns a sequence without using a table.
-  This sequence is more efficient than $dao->getSequence but it uses a random value to deals
-  with collisions.
-  
-* If upredictable is true then it returns an unpredictable number (it flips some digits)
-
-```
-$dao->getSequencePHP() // string(19) "3639032938181434317" 
+```php
+$pdo->getSequence(true) // returns a sequence by flipping some values.
+$pdo->getSequencePHP(true) // string(19) "1739032938181434311" 
 ```
 
+## Fields
+
+| Field                 | Description                                                  | Example                            |
+| --------------------- | ------------------------------------------------------------ | ---------------------------------- |
+| $prefixBase           | If we need to add a prefix to every table                    | $this->prefixBase='example_';      |
+| $internalCacheCounter | The counter of hits of the internal cache.                   | $this->internalCacheCounter=;      |
+| $nodeId               | Used by sequence (snowflake). nodeId It is the identifier of the node. It  must be between 0..1023 | $this->nodeId=3;                   |
+| $tableSequence        | The name of the table sequence (snowflake)                   | $this->tableSequence="tableseq1";  |
+| $masks0               | If we want to generate an unpredictable number (used by sequence) | $this->masks0=[0,1,2,3,4];         |
+| $masks1               | If we want to generate an unpredictable number (used by sequence) | $this->masks1=[4,3,2,1,0];         |
+| $databaseType         | The current type of database. It is set via el constructor   | echo $this->databaseType;          |
+| $server               | The current server machine                                   | echo $this->server;                |
+| $user                 | The current user                                             | echo $this->user;                  |
+| $pwd                  | The current password                                         | echo $this->pwd;                   |
+| $db                   | The current database or schema (oracle ignores this value)   | echo $this->db;                    |
+| $charset              | To set the default charset. It must be set via constructor   | echo $this->charset;               |
+| $isOpen               | It is true if the database is connected otherwise,it's false | if($this->isOpen) { …};            |
+| $throwOnError         | If true (default), then it throws an error if happens an  error. If false, then the execution continues | $this->throwOnError=false;         |
+| $conn1                | The instance of PDO. You can set it or use it directly.      | $this->conn1->pdoStatement(..);    |
+| $transactionOpen      | True if the transaction is open                              | if($this->transactionOpen) { …};   |
+| $readonly             | if the database is in READ ONLY mode or not. If true then we  must avoid to write in the database | $this->readonly=true;              |
+| $logFile              | full filename of the log file. If it's empty then it doesn't  store a log file. The log file is limited to 1mb | $this->logFile="/folder/file.log"; |
+| $errorText            | It stores the last error. runGet and beginTry resets it      | echo $this->errorText;             |
+| $isThrow              | todo                                                         | $this->isThrow=;                   |
+| $logLevel             | It indicates the current level of log. 0 = no log (for production), 3= full log | $this->logLevel=3;                 |
+| $lastQuery            | Last query executed                                          | echo $this->lastQuery;             |
+| $lastParam            | The last parameters. It is an associative array              | echo $this->lastParam;             |
+
+
+
+## How to debug and trace errors in the database?
+
+### Setting the log level
+
+You can set the log level to 3. The log level works when the operation fails, the higher the log level, then it shows most information.
+
+```php
+$pdoOne->logLevel=3; // the highest for debug.
 ```
-$dao->getSequencePHP(true) // string(19) "1739032938181434311" 
+
+* 0=no debug for production (all message of error are generic)<br>
+* 1=it shows an error message<br>
+* 2=it shows the error messages and the last query
+* 3=it shows the error message, the last query and the last parameters (if any). It could be unsafe (it could show passwords)
+
+### Throwing errors
+
+By default, PdoOne throws PHP errors but we could avoid it by setting the field $throwOnError to false. 
+
+```php
+$pdoOne->throwOnError=false; // it could be used in production.
 ```
+
+
+
+### Getting the last Query
+
+```php
+var_dump($pdoOne->lastQuery); // it shows the last query
+var_dump($pdoOne->lastParam); // and it shows the last paremters.
+```
+
+### Generating a log file
+
+If empty then it will not generate a log file
+
+```php
+$pdoOne->logFile='/folder/log.log'; 
+```
+
+
 
 ## CLI 
 
-PdoOne has some features available only in CLI.  
+**PdoOne** has some features available only in CLI.  
 
 ![](examples/cli.jpg)
 
@@ -1437,7 +1527,35 @@ $dao->render();
 
 
 
-## Code generation.
+## ORM
+
+This library also allows to create and use it as an ORM. To use it as an ORM, you must create the classes.
+
+#### What is an ORM?
+
+Let's say the next example
+
+```php
+$result=$pdoOne->runRawQuery('select IdCustomer,Name from Customers where IdCustomer=?',1); 
+```
+
+You can also runs using the Query Builder
+
+```php
+$result=$pdoOne->select('IdCustomer,Name')->from('Customers')->where('IdCustomer=?',1)->toList();
+```
+
+What if you use the same table over and over.  You can generate a new class called **CustomerRepo** and calls the code as
+
+```php
+$result=CustomerRepo::where('IdCustomer=?',1)::toList();
+```
+
+While it is simple but it also hides part of the implementation.  It could hurts the performance but it adds more simplicity and consistency.
+
+
+
+### Building and installing the ORM
 
 There are several ways to generate a Repository code, it is possible to generate a code using the CLI, the GUI or using the next code:
 
@@ -1457,7 +1575,9 @@ class TableNameRepo extends _BasePdoOneRepo
 }
 ```
 
-### Creating the repository class
+#### Creating the repository class
+
+> This method is not recommended. Uses the method to create multiple classes.
 
 There are several ways to create a class, you could use the UI, the CLI or directly via code.
 
@@ -1481,10 +1601,6 @@ class CustomerRepo extends _BasePdoOneRepo
 }
 ```
 
-
-
-We could also specify the namespace
-
 ```php
 $class = $pdoOne->generateCodeClass('Customer','namespace\anothernamespace'); 
 ```
@@ -1503,6 +1619,66 @@ class CustomerRepo extends _BasePdoOneRepo
 }
 ```
 
+#### Creating multiples repositories classes
+
+In this example, we have two classes, messages and users
+
+```php
+// converts all datetime columns into a ISO date.
+$pdoOne->generateCodeClassConversions(['datetime'=>'datetime2']);
+
+$errors=$pdoOne->generateAllClasses(
+    ['messages'=>'MessageRepo','users'=>'UserRepo'] // the tables and their name of classes
+    ,'BaseClass' // a base class.
+    ,'namespace1\repo' // the namespaces that we will use
+    ,'/folder/repo' // the folders where we store our classes
+    ,false // [optional] if true the we also replace the Repo classes
+    ,[] // [optional] Here we could add a custom relation of conversion per column.
+    ,[] // [optional] Extra columns. We could add extra columns to our repo.
+    ,[] // [optional] Columns to exclude.    
+);
+var_dump($errors); // it shows any error or an empty array if success.
+```
+
+It will generate the next classes:
+
+```
+📁 folder
+   📁repo
+       📃AbstractMessageRepo.php  	[namespace1\repo\AbstractMessageRepo] NOT EDIT OR REFERENCE THIS FILE
+       📃MessageRepo.php			[namespace1\repo\MessageRepo] EDITABLE
+       📃AbstractUserRepo.php		[namespace1\repo\AbstractUserRepo] NOT EDIT OR REFERENCE THIS FILE
+       📃UserRepo.php  				[namespace1\repo\UserRepo]  EDITABLE
+       📃BaseClass.php 				[namespace1\repo\BaseClass] NOT EDIT OR REFERENCE THIS FILE      
+```
+
+* Abstract Classes are classes with all the definitions of the tables, indexes and such. They contain the whole definition of a class. 
+  * This class should be rebuild if the table changes. How? You must run the method **generateAllClasses**() again.
+* Repo Classes are classes that works as a placeholder of the Abstract class. These classes are safe for edit, so we could add our own methods and logic.
+  * Note: if you run **generateAllClasses**() again, then those classes are not touched unless we force it (argument **$forced**) or we delete those files.
+* Base Class is a unique class (per schema) where it contains the definition of all the tables and the relations between them.
+  * This class should be rebuild if the table changes. How? You must run the method **generateAllClasses**() again.
+
+#### Creating all repositories classes
+
+We could automate even further
+
+```php
+$allTablesTmp=$pdoOne->objectList('table',true); // we get all the tables from the current schema.
+$allTables=[];
+foreach($allTablesTmp as $table) {
+    $allTables[$table]=ucfirst($table).'Repo';
+}
+$errors=$pdoOne->generateAllClasses(
+	$allTables // tables=>repo class
+    ,'MiniChat' // a base class.
+    ,'eftec\minichat\repo' // the namespaces that we will use
+    ,'/folder/repo' // the folders where we store our classes
+);
+echo "Errors (empty if it is ok:)";
+var_dump($errors);
+```
+
 
 
 ### Using the Repository class.
@@ -1513,8 +1689,8 @@ You could do it by creating a function called **pdoOne()**
 
 ```php
 function pdoOne() {
-$pdo=new PdoOne('mysql','127.0.0.1','root','abc.123','sakila');
-$pdo->connect();
+	$pdo=new PdoOne('mysql','127.0.0.1','root','abc.123','sakila');
+	$pdo->connect();
 }
 ```
 
@@ -1530,10 +1706,21 @@ Or injecting the instance into the class using the static method **Class::setPdo
 ```php
 $pdo=new PdoOne('mysql','127.0.0.1','root','abc.123','sakila');
 $pdo->connect();
-TableNameRepo::setPdoOne($pdo);
+TableNameRepo::setPdoOne($pdo); // TableNameRepo is our class generated. You must inject it once per all schema.
+
 ```
 
 ### DDL  Database Design Language
+
+The next commands usually are executed alone (not in a chain of methods)
+
+| Method              | Description                                                  | Example                               |
+| ------------------- | ------------------------------------------------------------ | ------------------------------------- |
+| createTable()       | Creates the table and indexes using the definition inside the Repo | TablaParentRepo::createTable();       |
+| createForeignKeys() | Create all foreign keys of the table                         | TablaParentRepo::createForeignKeys(); |
+| dropTable()         | Drop the table                                               | TablaParentRepo::dropTable();         |
+| truncate()          | Truncate the table                                           | TablaParentRepo::truncate();          |
+| validTable()        | Validate if the table hasn't changed                         | $ok=TablaParentRepo::validTable();    |
 
 ```php
 TablaParentRepo::createTable();
@@ -1544,43 +1731,144 @@ TablaParentRepo::truncate();
 $ok=TablaParentRepo::validTable(); // it returns true if the table matches with the definition stored into the clas
 ```
 
-### DQL Database Query Language
+### Nested Operators
+
+The nested operators are methods that should be in between of our chain of methods.
+
+> ClassRepo::op()::where()::op() is ✅
+>
+> ClassRepo::op()::op()::where() will left the chain open ❌
+
+For example:
 
 ```php
-$data=TableNameRepo::toList(); // select * from tablerepo
-$data=TableNameRepo::first($pk); // select * from tablerepo where pk=$pk (it always returns 1 or zero values)
-$data=TableNameRepo::where('a1=?',[$value])::toList(); // select * from tablerepo where a1=$value 
-$data=TableNameRepo::where('a1=?',[$value])::first(); // it returns the first value (or false if not found)
-$data=TableNameRepo::exist($pk); // returns true if the object exists.
-$data=TableNameRepo::count($conditions); 
-$data=TableNameRepo::where('a1=?',[$value])::count();
+// select * 
+// 		from table 
+// 		inner join table2 on t1=t2 
+// 		where col=:arg
+// 		and col2=:arg2
+//		group by col
+// 		having col3=:arg3
+//		order by col
+//		limit 20,30
+$results=$pdo->select('*')
+    ->from('table')
+    ->innerjoin('table2 on t1=t2')
+    ->where('col=:arg and col2:=arg2',[20,30]) 
+    // it also works with ->where('col=:arg',20)->where('col2'=>30)
+    // it also works with ->where('col=?',20)->where('col2=?'=>30)
+    ->group('col')
+    ->having('col3=:arg3',400)
+    ->order('col')
+    ->limit('20,30')
+    ->toList(); // end of the chain
+
 ```
+
+
+
+| Method      | Description                       | Example                      |
+| ----------- | --------------------------------- | ---------------------------- |
+| where()     | It adds a where to the chain      | TablaParentRepo::where()     |
+| order()     | It adds a order by to the chain   | TablaParentRepo::order()     |
+| group()     | it adds a group by to the chain   | TablaParentRepo::group()     |
+| limit()     | It limits the results             | TablaParentRepo::limit()     |
+| innerjoin() | It adds a inner join to the query | TablaParentRepo::innerjoin() |
+| left()      | It adds a left join to the query  | TablaParentRepo::left()      |
+| right()     | It adds a right join to the query | TablaParentRepo::right()     |
+
+
+
+### DQL Database Query Language
+
+We have different methods to generate a DQL (query) command in our database.
+
+> If the operation fails, they return a FALSE and they could trigger an exception.
+>
+> The next methods should be at the end of the chain.  Examples:
+>
+> ClassRepo::op()::op()::toList() is ✅
+>
+> ClassRepo::op()::toList()::op() will trigger an exception ❌
+
+| Command  | Description                           | Example                                                      |
+| -------- | ------------------------------------- | ------------------------------------------------------------ |
+| toList() | Returns an array of elements          | $data=TableNameRepo::toList(); // select * from tablerepo<br />$data=TableNameRepo::where('a1=?',[$value])::toList(); // select * from tablerepo where a1=$value |
+| first()  | Returns a simple row                  | $data=TableNameRepo::first($pk); // select * from tablerepo where pk=$pk  (it always returns 1 or zero values)<br />$data=TableNameRepo::where('a1=?',[$value])::first(); // it returns the first value (or false if not found) |
+| exist()  | Returns true if a primary key exists  | $data=TableNameRepo::exist($pk); // returns true if the object exists. |
+| count()  | Returns the number of rows in a query | $data=TableNameRepo::count($conditions); <br />$data=TableNameRepo::where('a1=?',[$value])::count(); |
 
 ### DML Database Model Language
 
+The next methods allow to insert,update or delete values in the database.
+
+| Method     | Description                                                  | Example                                  |
+| ---------- | ------------------------------------------------------------ | ---------------------------------------- |
+| insert     | It inserts a value into the database. It could returns an identity | $identity=TablaParentRepo::insert($obj); |
+| update     | It updates a value into the database.                        | TablaParentRepo::update($obj);           |
+| delete     | It deletes a value from the database.                        | TablaParentRepo::delete($obj);           |
+| deletebyId | It deletes a value (using the primary key as condition) from the database. | TablaParentRepo::deleteById($pk);        |
+
+
+
 ```php
-// where obj is an associative array, where the keys are the name of the columns (case sensitive)
+// where obj is an associative array or an object, where the keys are the name of the columns (case sensitive)
 $identity=TablaParentRepo::insert($obj); 
 TablaParentRepo::update($obj);
 TablaParentRepo::delete($obj);
-TablaParentRepo::deleteById($obj);
+TablaParentRepo::deleteById(id);
 ```
 
-### Nested Operators
+
+
+### Validate the model
+
+It is possible to validate the model. The model is validated using the information of the database, using the type of the column, the length, if the value allows null and if it is identity (auto numeric).
 
 ```php
-TablaParentRepo
-    ::where() // where
-    ::order() // order by
-    ::group() // group by
-    ::limit() // limit
-    ::innerjoin() // inner join
-    ::left() // left join
-    ::right() // right join.
+$obj=['IdUser'=>1,'Name'='John Doe']; 
+UserRepo::validateModel($obj,false,['_messages']); // returns true if $obj is a valid User.
 ```
 
+### Recursive
 
+A recursive array is a array of  strings with values that it could be read or obtained or compared.  For example, to join a table conditionally.
+PdoOne does not use it directly but _BasePdoOneRepo uses it (_BasePdoOneRepo is a class used when we generate a repository service class automatically).
 
+Example
+
+```php
+$this->select('*')->from('table')->recursive(['table1','table1.table2']);
+// some operations that involves recursive
+if($this->hasRecursive('table1')) {
+    $this->innerJoin('table1 on table.c=table1.c');
+}
+if($this->hasRecursive('table1.table2')) {
+    $this->innerJoin('table1 on table1.c=table2.c');
+}
+$r=$this->toList(); // recursive is resetted.
+```
+
+#### recursive()
+
+It sets a recursive array.  
+
+> This value is resets each time a chain methods ends.   
+
+#### getRecursive()
+
+It gets the recursive array.   
+
+#### hasRecursive()
+
+It returns true if recursive has some needle.  
+
+If $this->recursive is ['*'] then it always returns true.
+
+```php
+$this->select('*')->from('table')->recursive(['*']);
+$this->hasRecursive('anything'); // it always returns true.
+```
 
 
 ## Benchmark (mysql, estimated)

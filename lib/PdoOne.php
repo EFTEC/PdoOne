@@ -43,6 +43,7 @@ class PdoOne
     const VERSION = '2.8';
     /** @var int We need this value because null and false could be a valid value. */
     const NULL = PHP_INT_MAX;
+    /** @var string Prefix of the tables */
     public static $prefixBase = '_';
     /** @var string|null Static date (when the date is empty) */
     public static $dateEpoch = '2000-01-01 00:00:00.00000';
@@ -104,13 +105,16 @@ class PdoOne
     public $encryption;
     /** @var string=['mysql','sqlsrv','test','oci'][$i] */
     public $databaseType;
+    /** @var string It is generated and set automatically by the type of database */
     public $database_delimiter0 = '`';
+    /** @var string It is generated and set automatically by the type of database */
     public $database_delimiter1 = '`';
+    /** @var string It is generated and set automatically by the type of database */
     public $database_identityName = 'identity';
     /** @var string server ip. Ex. 127.0.0.1 127.0.0.1:3306 */
     public $server;
     public $user;
-    //</editor-fold>
+
     public $pwd;
     /** @var string The name of the database/schema */
     public $db;
@@ -122,7 +126,7 @@ class PdoOne
     private $throwOnErrorB = true;
     /** @var  PDO */
     public $conn1;
-    /** @var  bool */
+    /** @var  bool True if the transaction is open */
     public $transactionOpen;
     /** @var bool if the database is in READ ONLY mode or not. If true then we must avoid to write in the database. */
     public $readonly = false;
@@ -148,6 +152,7 @@ class PdoOne
     /** @var array the tables used in the queries and added by the methods from() and join() */
     public $tables = [];
     private $useInternalCache = false;
+    //</editor-fold>
 
     //<editor-fold desc="query builder fields">
     /**
