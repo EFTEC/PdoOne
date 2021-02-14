@@ -34,6 +34,31 @@ class PdoOne_mysql_Test extends TestCase
         self::assertEquals([0 => [1, 123, 1, null], 1 => [2, 456, 1, null]], $this->pdoOne->getWhereParamAssoc());
 
     }
+    public function test_dateconvert() {
+
+
+        $ms=false;
+        $time=false;
+        $r=PdoOne::dateConvertInput('01/12/2020','human',$ms,$time);
+        self::assertEquals('2020-12-01 00:00:00',$r->format('Y-m-d H:i:s'));
+        $ms=false;
+        $time=false;
+        $r=PdoOne::dateConvertInput('2020-12-01','iso',$ms,$time);
+        self::assertEquals('2020-12-01 00:00:00',$r->format('Y-m-d H:i:s'));
+        $ms=false;
+        $time=false;
+        $r=PdoOne::dateConvertInput('2020-12-01','sql',$ms,$time);
+        self::assertEquals('2020-12-01 00:00:00',$r->format('Y-m-d H:i:s'));
+        $ms=false;
+        $time=false;
+        $r=PdoOne::dateConvertInput(50000,'timestamp',$ms,$time);
+        self::assertEquals('1970',$r->format('Y'));
+        $ms=false;
+        $time=false;
+        $now=new DateTime('now');
+        $r=PdoOne::dateConvertInput($now,'class',$ms,$time);
+        self::assertEquals($now->format('Y-m-d H:i:s'),$r->format('Y-m-d H:i:s'));
+    }
 
     /**
      * @throws RuntimeException
@@ -351,6 +376,9 @@ class PdoOne_mysql_Test extends TestCase
         self::assertEquals(["a" => 1, "b" => 2, "d" => null],
             _BasePdoOneRepo::intersectArrays($array1, $array3, false));
         self::assertEquals(["c" => 3], _BasePdoOneRepo::diffArrays($array1, $array3, false));
+
+
+
     }
 
     public function test_3()

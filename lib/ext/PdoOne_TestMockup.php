@@ -252,7 +252,7 @@ class PdoOne_TestMockup implements PdoOne_IExt
         }
     }
 
-    public function getPK($query, $pk)
+    public function getPK($query, $pk=null)
     {
         return 'primary_key';
     }

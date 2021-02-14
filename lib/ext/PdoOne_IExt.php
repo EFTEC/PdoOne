@@ -55,7 +55,7 @@ interface PdoOne_IExt
      * 
      * </pre>
      * 
-     * @param array $table The name of the table
+     * @param string $table The name of the table
      * @param bool $onlyDescription If true then it only returns a description
      *
      * @return array|string|null
@@ -75,7 +75,7 @@ interface PdoOne_IExt
 
     /**
      * Returns an associative array with the definition of keys of a table.<br>
-     * It includes primary key, key and unique keys
+     * It includes primary key, key and unique keys<br>
      *
      * @param string $table        The name of the table to analize.
      * @param bool   $returnSimple true= returns as a simple associative array<br>
@@ -84,7 +84,7 @@ interface PdoOne_IExt
      *                             ['key','refcol','reftable','extra']
      * @param null|string   $filter if not null then it only returns keys that matches the condition 
      *
-     * @return array
+     * @return array=["IndexName"=>'',"ColumnName"=>'',"is_unique"=>0,"is_primary_key"=>0,"TYPE"=>0]
      * @throws Exception
      */
     public function getDefTableKeys($table,$returnSimple,$filter=null);
@@ -213,12 +213,11 @@ interface PdoOne_IExt
 
     /**
      * It gets a primary key based in a query.<br>
-     * It only works in MYSQL.
      *
-     * @param string $query query or name of the table
+     * @param string $query query (only for MYSQL) or name of the table
      * @param string|array $pk Previous primary key (if the key is not found)
      *
      * @return array|mixed|string|false
      */
-    public function getPK($query, $pk);
+    public function getPK($query, $pk=null);
 }

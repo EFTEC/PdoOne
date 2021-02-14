@@ -1,6 +1,8 @@
 # Database Access Object wrapper for PHP and PDO in a single class
 
-PdoOne. It's a simple wrapper for PHP's PDO library.
+PdoOne. It's a simple wrapper for PHP's PDO library compatible with SQL Server (2008 R2 or higher), MySql (5.7 or higher) and Oracle (12.1 or higuer).
+
+
 
 This library tries to work as fast as possible. Most of the operations are simple string/array managements and work in the bare metal of the PDO library.
 
@@ -149,9 +151,28 @@ Just download the file lib/PdoOne.php and save it in a folder.
 // mysql
 $dao=new PdoOne("mysql","127.0.0.1","root","abc.123","sakila","");
 $dao->connect();
-// sql server
+// sql server 10.0.0.1\instance or (local)\instance or machinename\instance or machine (default instance)
 $dao=new PdoOne("sqlsrv","(local)\sqlexpress","sa","abc.123","sakila","");
 $dao->connect();
+
+// test (mockup)
+$dao=new PdoOne("test","anyy","any","any","any","");
+$dao->connect();
+
+
+// oci (oracle) ez-connect
+
+$cs='(DESCRIPTION =(ADDRESS = (PROTOCOL = TCP)(HOST = localhost)(PORT = 1521))(CONNECT_DATA =(SERVER = DEDICATED)(SERVICE_NAME = instancia1)))';
+$dao=new PdoOne("oci",$cs,"sa","abc.123"); // oracle uses the user as the schema
+$dao->connect();
+
+// oci (oracle) tsnnames (the environment variables TNS_ADMIN and PATH must be correctly configured), also tnsnames.ora must exists.
+
+
+$cs='instancia1';
+$dao=new PdoOne("oci",$cs,"sa","abc.123"); // oracle uses the user as the schema
+$dao->connect();
+
 ```
 
 where 
@@ -1472,7 +1493,7 @@ It will generate the next class
 
 ```php
 <?php
-namespace namespace\anothernamespace    
+namespace namespace\anothernamespace;    
 use eftec\PdoOne;
 use eftec\_BasePdoOneRepo;
 
@@ -1586,6 +1607,26 @@ TablaParentRepo
 
 PdoOne adds a bit of ovehead over PDO, however it is simple a wrapper to pdo.
 
+## OCI
+
+Pending for OCI (Oracle)
+
+- [x] getDefTableExtended
+- [ ] getDefTable
+- [ ] sqlsrv_getType
+- [x] getDefTableKeys (Partial!)
+- [ ] getDefTableFK
+- [ ] typeDict
+- [x] objectExist
+- [x] objectList
+- [ ] columnTable
+- [x] createSequence
+- [x] getSequence
+- [x] createTable
+- [ ] createFK
+- [x] limit
+- [x] getPK
+
 ## Changelist
 
 In a nutshell:
@@ -1594,17 +1635,21 @@ In a nutshell:
 * Every minor version means that it adds a new functionality i.e. 1.5 -> 1.6 (new methods)  
 * Every decimal version means that it patches/fixes/refactoring a previous functionality i.e. 1.5.0 -> 1.5.1 (fix)  
 
+* 2.8 2021-02-13
+  * Updated _BasePdoOneRepo to 4.13
+* 2.7.1 2021-01-21
+  * Oracle is still a WIP (OCI)
 * 2.7 2021-01-10
   * Many changes, compatibility with PHP 8.0
   * Fixed a bug with cache where it keeps the cache of previous runs.
   * Note: $PdoOne->useCache considers = false (no cache) and everything else as use cache. Nulls are not allowed.
-  * Note: Previous generated code must be rebuild it again.
+  * Note: Previous generated code must be rebuilt it again.
 
 * 2.6.3 2020-10-16
   * Internal, Changed beginTry() and endTry(). Now, if an operation that uses beginTry() and endTry() fails,
   then the error is throw in endTry().   
 * 2.6.2 2020-10-09
-  * The default argument of _first (code generated) is Pdo::NULL instead of null because null is a valid value     
+  * The default argument of _first (code generated) is PdoOne::NULL instead of null because null is a valid value     
 * 2.6.1 2020-09-24
   * update \_BasePdoOneRepo to 4.12.1   
   * Preliminary support to Oracle OCI (only raw operations)     
@@ -1660,7 +1705,7 @@ echo $this->internalCacheCounter;
 
 ```
   * The internal cache is tested with runRawQuery (if returns an array), toList(), meta() and first()   
-  
+
 
 * 2.0.1 2020-08-12   
   * Fixed a bug with the generated code with linked relation manytoone and onetonone.

@@ -79,7 +79,7 @@ class PdoOne_Mysql implements PdoOne_IExt
     }
 
     /**
-     * @param array $table
+     * @param string $table
      * @param bool $onlyDescription
      *
      * @return array|string|null
@@ -118,6 +118,7 @@ class PdoOne_Mysql implements PdoOne_IExt
 
             $result[$col['Field']] = $value;
         }
+        var_dump($result);
         return $result;
     }
 
@@ -404,7 +405,7 @@ class PdoOne_Mysql implements PdoOne_IExt
     }
 
 
-    public function getPK($query, $pk)
+    public function getPK($query, $pk=null)
     {
         try {
             $pkResult = [];

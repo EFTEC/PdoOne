@@ -494,7 +494,7 @@ class PdoOne_Sqlsrv implements PdoOne_IExt
         }
     }
 
-    public function getPK($query, $pk)
+    public function getPK($query, $pk=null)
     {
         try {
             $pkResult = [];
