@@ -1519,6 +1519,8 @@ abstract class _BasePdoOneRepo
                             $r = PdoOne::dateConvertInput($curCol, 'human', $bool, $time);
                         } elseif ($def['conversion'] === 'datetime') {
                             $r = PdoOne::dateConvertInput($curCol, 'class', $bool, $time);
+                        } elseif ($def['conversion'] === 'datetime4') {
+                            $r = PdoOne::dateConvertInput($curCol, 'sql', $bool, $time);
                         }
                         if ($r === false) {
                             return false;

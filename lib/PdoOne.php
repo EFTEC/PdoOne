@@ -3086,8 +3086,8 @@ abstract class Abstract{classname} extends {baseclass}
      * self::getDef('identity',true); // it returns the columns that are identities ['col1','col2']
      * </pre>
      * <b>PHP Types</b>: binary, date, datetime, decimal/float,int, string,time, timestamp<br>
-     * <b>PHP Conversions</b>: datetime3 (human string), datetime2 (iso), datetime (datetime class), timestamp (int)
-     *                        , bool, int, float<br>
+     * <b>PHP Conversions</b>:  datetime (datetime class), datetime2 (iso),datetime3 (human string)
+     *                         , datetime4 (sql no conversion!), timestamp (int), bool, int, float<br>
      * <b>Param Types</b>: PDO::PARAM_LOB, PDO::PARAM_STR, PDO::PARAM_INT<br>
      *
      * @param string|null $column =['phptype','conversion','type','size','null','identity','sql'][$i]
@@ -3605,6 +3605,10 @@ eot;
                     case 'datetime3':
                         $tmp2 = "isset(%s) and %s=PdoOne::dateConvert(%s, 'human', 'sql');";
                         break;
+                    case 'datetime4':
+                        $tmp2='';
+                        //$tmp2 = "isset(%s) and %s=PdoOne::dateConvert(%s, 'sql', 'sql');";
+                        break;
                     case 'datetime2':
                         $tmp2 = "isset(%s) and %s=PdoOne::dateConvert(%s, 'iso', 'sql');";
                         break;
@@ -3640,6 +3644,10 @@ eot;
                         break;
                     case 'datetime3':
                         $tmp = "%s=isset(%s) ? PdoOne::dateConvert(%s, 'sql', 'human') : null;";
+                        break;
+                    case 'datetime4':
+                        // sql->sql no conversion
+                        $tmp = '';
                         break;
                     case 'datetime2':
                         $tmp = "%s=isset(%s) ? PdoOne::dateConvert(%s, 'sql', 'iso') : null;";
@@ -5013,6 +5021,7 @@ eot;
      * <ul>
      * <li>encrypt (encrypt value. Encryption must be set)</li>
      * <li>decrypt (decrypt a value if can. Encryption must be set)</li>
+     * <li>datetime4 (sql string, no conversion). input (2020-12-30) --> db (2020-12-30) ---> output (30/12/2010)</li>
      * <li>datetime3 (human string). input (30/12/2010) --> db (2020-12-30) ---> output (30/12/2010)</li>
      * <li>datetime2 (iso format)</li>
      * <li>datetime (datetime class)</li>

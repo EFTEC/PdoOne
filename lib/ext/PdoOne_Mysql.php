@@ -40,10 +40,10 @@ class PdoOne_Mysql implements PdoOne_IExt
         $this->parent->database_delimiter1 = '`';
         $this->parent->database_identityName = 'auto_increment';
         $charset = ($charset == null) ? 'utf8' : $charset;
-        PdoOne::$isoDate = 'Y-m-d';
-        PdoOne::$isoDateTime = 'Y-m-d H:i:s';
-        PdoOne::$isoDateTimeMs = 'Y-m-d H:i:s.u';
-        PdoOne::$isoDateInput = 'Y-m-d';
+        PdoOne::$dateFormat = 'Y-m-d';
+        PdoOne::$dateTimeFormat = 'Y-m-d H:i:s';
+        PdoOne::$dateTimeMicroFormat = 'Y-m-d H:i:s.u';
+        PdoOne::$dateFo = 'Y-m-d';
         PdoOne::$isoDateInputTime = 'Y-m-d H:i:s';
         PdoOne::$isoDateInputTimeMs = 'Y-m-d H:i:s.u';        
         $this->parent->isOpen = false;
