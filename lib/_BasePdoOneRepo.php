@@ -23,13 +23,15 @@ use RuntimeException;
 /**
  * Class _BasePdoOneRepo
  *
- * @version       4.13 2021-02-13
+ * @version       4.14 2021-02-16
  * @package       eftec
  * @author        Jorge Castro Castillo
  * @copyright (c) Jorge Castro C. MIT License  https://github.com/EFTEC/PdoOne
  */
 abstract class _BasePdoOneRepo
 {
+    // it is used for compatibility.
+    const BINARYVERSION=3;
     /** @var PdoOne */
     public static $pdoOne;
     /** @var array $gQuery =[['columns'=>[],'joins'=>[],'where'=>[]] */
@@ -108,6 +110,9 @@ abstract class _BasePdoOneRepo
     {
         if (self::$pdoOne !== null) {
             return self::$pdoOne;
+        }
+        if(self::BINARYVERSION!==static::COMPILEDVERSION) {
+            throw new RuntimeException(self::class.' requires a new version');
         }
         if (function_exists('PdoOne')) {
             return PdoOne();

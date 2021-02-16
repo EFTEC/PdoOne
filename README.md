@@ -1946,9 +1946,12 @@ In a nutshell:
 * Every decimal version means that it patches/fixes/refactoring a previous functionality i.e. 1.5.0 -> 1.5.1 (fix)
 
 
-
+* 2.9 2021-02-16
+  * BasePdoOneRepo::getPdoOne() validates if the static class uses the right version.  It is only done once 
+    (when it creates the instance of pdoOne), so it must not affects the performance.
+  * **You should re-generate all ORM classes generated (if you are generated one)**  
 * **2.8** 2021-02-13
-  * Updated _BasePdoOneRepo to 4.13
+  * Updated _BasePdoOneRepo to 4.13. **You should re-generate all ORM classes generated (if you are generated one)** 
 * 2.7.1 2021-01-21
   * Oracle is still a WIP (OCI)
 * **2.7** 2021-01-10

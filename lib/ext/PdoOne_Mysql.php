@@ -43,7 +43,7 @@ class PdoOne_Mysql implements PdoOne_IExt
         PdoOne::$dateFormat = 'Y-m-d';
         PdoOne::$dateTimeFormat = 'Y-m-d H:i:s';
         PdoOne::$dateTimeMicroFormat = 'Y-m-d H:i:s.u';
-        PdoOne::$dateFo = 'Y-m-d';
+        PdoOne::$isoDateInput = 'Y-m-d';
         PdoOne::$isoDateInputTime = 'Y-m-d H:i:s';
         PdoOne::$isoDateInputTimeMs = 'Y-m-d H:i:s.u';        
         $this->parent->isOpen = false;

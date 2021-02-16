@@ -36,7 +36,7 @@ use stdClass;
  * @package       eftec
  * @author        Jorge Castro Castillo
  * @copyright (c) Jorge Castro C. MIT License  https://github.com/EFTEC/PdoOne
- * @version       2.8
+ * @version       2.9
  */
 class PdoOne
 {
@@ -3072,6 +3072,7 @@ use eftec\PdoOne;
 abstract class Abstract{classname} extends {baseclass}
 {
     const TABLE = '{table}';
+    const COMPILEDVERSION={compiled};
     const IDENTITY = {identity};
     const PK = {pk};
     const ME=__CLASS__;
@@ -3432,6 +3433,7 @@ eot;
             '{baseclass}',
             '{args}',
             '{table}',
+            '{compiled}',
             '{namespace}',
             '{modelnamespace}',
             '{classmodellist}',
@@ -3444,6 +3446,7 @@ eot;
             $baseClass, // {baseclass}
             implode(",", $fa),
             $tableName, // {table}
+            _BasePdoOneRepo::BINARYVERSION, // {compiled}
             ($namespace) ? "namespace $namespace;" : '', //{namespace}
             $modelUse ? "use $modelfullClass;" : '', // {modelnamespace}
             $modelUse ? "$modelClass::fromArrayMultiple( self::_toList(\$filter, \$filterValue));"

@@ -10,7 +10,7 @@ include "common.php";
 
 TableParentRepo::setRecursive(['*'])::toList();
 
-die(1);
+
 
 TableParentRepo::setRecursive([
     '_idchildFK',
