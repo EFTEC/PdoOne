@@ -36,11 +36,11 @@ use stdClass;
  * @package       eftec
  * @author        Jorge Castro Castillo
  * @copyright (c) Jorge Castro C. MIT License  https://github.com/EFTEC/PdoOne
- * @version       2.9
+ * @version       2.9.1
  */
 class PdoOne
 {
-    const VERSION = '2.8';
+    const VERSION = '2.9.1';
     /** @var int We need this value because null and false could be a valid value. */
     const NULL = PHP_INT_MAX;
     /** @var string Prefix of the tables */
@@ -1035,6 +1035,9 @@ eot;
             $fp = @fopen($this->logFile, 'wb');
         } else {
             $fp = @fopen($this->logFile, 'ab');
+        }
+        if(!$fp) {
+            return; // unable to open the log file.
         }
         if ($this->logLevel === 2) {
             $txtW .= ' param:' . json_encode($this->lastParam);

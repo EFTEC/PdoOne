@@ -1945,7 +1945,8 @@ In a nutshell:
 * Every minor version means that it adds a new functionality i.e. 1.5 -> 1.6 (new methods)
 * Every decimal version means that it patches/fixes/refactoring a previous functionality i.e. 1.5.0 -> 1.5.1 (fix)
 
-
+* 2.9.1 2021-02-16
+  * Fixed debugFile() when the file is unable to open.   
 * 2.9 2021-02-16
   * BasePdoOneRepo::getPdoOne() validates if the static class uses the right version.  It is only done once 
     (when it creates the instance of pdoOne), so it must not affects the performance.
