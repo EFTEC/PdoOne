@@ -36,11 +36,11 @@ use stdClass;
  * @package       eftec
  * @author        Jorge Castro Castillo
  * @copyright (c) Jorge Castro C. MIT License  https://github.com/EFTEC/PdoOne
- * @version       2.9.1
+ * @version       2.9.3
  */
 class PdoOne
 {
-    const VERSION = '2.9.1';
+    const VERSION = '2.9.3';
     /** @var int We need this value because null and false could be a valid value. */
     const NULL = PHP_INT_MAX;
     /** @var string Prefix of the tables */
@@ -76,9 +76,9 @@ class PdoOne
     /**
      * @var string ISO format for date
      */
-    public static $isoDate = '';
-    public static $isoDateTimeMs = '';
-    public static $isoDateTime = '';
+    public static $isoDate = 'Y-m-d';
+    public static $isoDateTimeMs = 'Y-m-d H:i:s.u';
+    public static $isoDateTime = 'Y-m-d H:i:s';
     public static $isoDateInput = '';
     public static $isoDateInputTimeMs = '';
     public static $isoDateInputTime = '';
@@ -1805,6 +1805,7 @@ eot;
         } else {
             $tmpFormat = self::$dateFormat;
         }
+
         $tmpDate = DateTime::createFromFormat($tmpFormat, $textDate);
         if (!$hasTime && $tmpDate) {
             $tmpDate->setTime(0, 0);
@@ -1892,6 +1893,7 @@ eot;
     {
         $tmpDate = new DateTime();
         if ($hasTime) {
+            var_dump(($hasMicroseconds !== false) ? self::$isoDateTimeMs : self::$isoDateTime);
             return $tmpDate->format(($hasMicroseconds !== false) ? self::$isoDateTimeMs : self::$isoDateTime);
         }
 
@@ -2393,7 +2395,7 @@ eot;
         if ($useCache !== false && $returnArray) {
             $this->uid
                 = hash($this->encryption->hashType,
-                $this->lastQuery . $extraMode . serialize($this->lastBindParam) . $extraIdCache);
+                $this->lastQuery . $extraMode . serialize($allparam) . $extraIdCache);
             $result = $this->cacheService->getCache($this->uid, $this->cacheFamily);
             if ($result !== false) {
                 // it's found in the cache.
@@ -5818,8 +5820,8 @@ BOOTS;
 
     /**
      * Create a table used for a sequence<br>
-     * The operation will fail if the table, sequence, function or procedure
-     * already exists.
+     * It also could create a function called next_name-of-the-table() <br>
+     * The operation will fail if the table, sequence, function or procedure already exists.
      *
      * @param string|null $tableSequence The table to use<br>
      *                                       If null then it uses the table
@@ -5837,7 +5839,7 @@ BOOTS;
     {
         $tableSequence = ($tableSequence === null) ? $this->tableSequence : $tableSequence;
         $sql = $this->service->createSequence($tableSequence, $method);
-        $this->runMultipleRawQuery($sql);
+        $this->runRawQuery($sql);
     }
 
     /**
@@ -6172,7 +6174,7 @@ BOOTS;
     /**
      * It sets a value into the query (insert or update)<br>
      * <b>Example:</b><br>
-     *      ->from("table")->set('field1=?,field2=?',[20,'hello'])->insert()<br>
+     *      ->from("table")->set('field1=?',20),set('field2=?','hello')->insert()<br>
      *      ->from("table")->set("type=?",[6])->where("i=1")->update()<br>
      *      set("type=?",6) // automatic<br>
      *
@@ -6267,8 +6269,6 @@ BOOTS;
 
                                 $paramName = ':' . str_replace('.', '_', $k);
                                 $named[] = $paramName;
-                                //var_dump($paramName);
-                                //var_dump($k);
                             }
                         } else {
                             // "aa=?"

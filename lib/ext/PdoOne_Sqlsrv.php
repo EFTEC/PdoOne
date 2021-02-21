@@ -380,7 +380,7 @@ class PdoOne_Sqlsrv implements PdoOne_IExt
         $sql = "CREATE SEQUENCE [{$tableSequence}]
 				    START WITH 1  
 				    INCREMENT BY 1
-			    ;";
+			    ";
         $sql .= "create PROCEDURE next_{$tableSequence}
 					@node int
 				AS

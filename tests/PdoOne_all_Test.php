@@ -126,6 +126,7 @@ class PdoOne_mysql_Test extends TestCase
 
         self::assertNotEquals(false, $this->pdoOne->insert('tdummy', ['c1', 'c2'], [1, 'hello']));
         self::assertNotEquals(false, $this->pdoOne->insert('tdummy', ['c1', 'c2'], [2, 'hello2']));
+        //self::assertNotEquals(false, $this->pdoOne->insert('tdummy', 'c1=?,c2=?', [3, 'hello2']));
 
         var_dump($this->pdoOne->select('*')->from('tdummy')->first());
 
@@ -293,6 +294,7 @@ class PdoOne_mysql_Test extends TestCase
         $this->pdoOne->setUseInternalCache(false);
     }
 
+
     /**
      * @throws Exception
      */
@@ -359,6 +361,8 @@ class PdoOne_mysql_Test extends TestCase
         $this->pdoOne->cliEngine();
         self::assertEquals(1, $a1);
     }
+
+
 
     public function test_base()
     {

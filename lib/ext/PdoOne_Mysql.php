@@ -301,9 +301,9 @@ class PdoOne_Mysql implements PdoOne_IExt
 					    REPLACE INTO {$tableSequence} (stub) VALUES ('a');
 					    SELECT LAST_INSERT_ID() INTO incr;    
 					RETURN (current_ms - epoch) << 22 | (node << 12) | (incr % 4096);
-					END;";
+					END";
         } else {
-            $sql = "CREATE FUNCTION `next_{$tableSequence}`(node integer) RETURNS BIGINT(20)
+            $sql = "CREATE DEFINER=CURRENT_USER FUNCTION `next_{$tableSequence}`(node integer) RETURNS BIGINT(20)
                     MODIFIES SQL DATA
                     NOT DETERMINISTIC
 					BEGIN
@@ -311,7 +311,7 @@ class PdoOne_Mysql implements PdoOne_IExt
 					    REPLACE INTO {$tableSequence} (stub) VALUES ('a');
 					    SELECT LAST_INSERT_ID() INTO incr;    
 					RETURN incr;
-					END;";
+					END";
         }
 
         return $sql;

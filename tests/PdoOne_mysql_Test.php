@@ -379,6 +379,10 @@ class PdoOne_mysql_Test extends TestCase
 
         $rows = $this->pdoOne->select('select 123 field1 from dual')->useCache()->toList();
         self::assertEquals([['field1' => 123]], $rows);
+
+
+
+
         self::assertEquals(1, $this->pdoOne->getCacheService()->cacheCounter); // 1= cache used 1 time
         $this->pdoOne->invalidateCache();
         $rows = $this->pdoOne->select('select 123 field1 from dual')->useCache()
@@ -571,6 +575,14 @@ class PdoOne_mysql_Test extends TestCase
 
         self::assertEquals(8, $this->pdoOne->getCacheService()->cacheCounter); // 3= cache used 1 time
 
+        self::assertEquals([['id_category'=>3]],
+            $this->pdoOne->select('id_category')->from('product_category')->where('id_category',3)->useCache()->toList());
+        self::assertEquals([['id_category'=>4]],
+            $this->pdoOne->select('id_category')->from('product_category')->where('id_category',4)->useCache()->toList());
+        self::assertEquals(['id_category'=>123],
+            $this->pdoOne->select('id_category')->from('product_category')->order('id_category desc')->useCache()->first());
+        self::assertEquals(['id_category'=>2],
+            $this->pdoOne->select('id_category')->from('product_category')->order('id_category')->useCache()->first());
     }
 
     public function test_quota()
