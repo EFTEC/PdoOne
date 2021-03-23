@@ -1,4 +1,4 @@
-<?php
+<?php /** @noinspection UnknownInspectionInspection */
 /** @noinspection TypeUnsafeComparisonInspection */
 
 /** @noinspection DuplicatedCode */
@@ -380,6 +380,7 @@ class PdoOne_Mysql implements PdoOne_IExt
         return $sql;
     }
 
+    /** @noinspection SqlResolve */
     public function createFK($tableName, $foreignKey)
     {
         $sql = '';
@@ -400,7 +401,7 @@ class PdoOne_Mysql implements PdoOne_IExt
 
     public function limit($sql)
     {
-        $this->parent->limit = ($sql) ? ' limit ' . $sql : '';
+        return ($sql) ? ' limit ' . $sql : '';
     }
 
 

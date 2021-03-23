@@ -206,6 +206,7 @@ interface PdoOne_IExt
      * </pre>
      *
      * @param $sql
+     * @return string
      *
      * @throws Exception
      */

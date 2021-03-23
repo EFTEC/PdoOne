@@ -12,6 +12,20 @@ include "common.php";
 
 new dBug(TableParentRepo::base()->runRawQuery('select * from tableparent',[],true));
 
+$random='';
+for($i=0;$i<10;$i++) {
+    $random.=chr(mt_rand(64,90));
+}
+
+$m=new TableParentModel();
+$m->fieldUnique=$random;
+$m->fieldKey="key1";
+$m->fieldVarchar='varchar';
+$m->fieldDateTime=new DateTime();
+
+
+//TableParentRepo::insert($m);
+
 
 $parent= (TableParentRepo::setRecursive(
     [
@@ -23,7 +37,7 @@ $parent= (TableParentRepo::setRecursive(
         ,'_TableParentExt'
     ]))::first(1);
 new dBug($parent);
-die(1);
+
 
 
 

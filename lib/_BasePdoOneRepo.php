@@ -9,8 +9,6 @@
  * @noinspection DisconnectedForeachInstructionInspection
  * @noinspection PhpUnused
  * @noinspection NullPointerExceptionInspection
- * @noinspection PhpUndefinedMethodInspection
- * @noinspection PhpUndefinedClassConstantInspection
  */
 
 namespace eftec;
@@ -23,7 +21,7 @@ use RuntimeException;
 /**
  * Class _BasePdoOneRepo
  *
- * @version       4.14 2021-02-16
+ * @version       4.15 2021-03-22
  * @package       eftec
  * @author        Jorge Castro Castillo
  * @copyright (c) Jorge Castro C. MIT License  https://github.com/EFTEC/PdoOne
@@ -31,9 +29,11 @@ use RuntimeException;
 abstract class _BasePdoOneRepo
 {
     // it is used for compatibility.
-    const BINARYVERSION=3;
+    const BINARYVERSION = 4;
     /** @var PdoOne */
     public static $pdoOne;
+    /** @var PdoOneQuery */
+    public static $pdoOneQuery;
     /** @var array $gQuery =[['columns'=>[],'joins'=>[],'where'=>[]] */
     public static $gQuery = [];
     public static $gQueryCounter = 0;
@@ -111,8 +111,8 @@ abstract class _BasePdoOneRepo
         if (self::$pdoOne !== null) {
             return self::$pdoOne;
         }
-        if(self::BINARYVERSION!==static::COMPILEDVERSION) {
-            throw new RuntimeException(self::class.' requires a new version');
+        if (self::BINARYVERSION !== static::COMPILEDVERSION) {
+            throw new RuntimeException(self::class . ' requires a new version');
         }
         if (function_exists('PdoOne')) {
             return PdoOne();
@@ -121,6 +121,16 @@ abstract class _BasePdoOneRepo
             return $GLOBALS['pdoOne'];
         }
         return null;
+    }
+
+    /**
+     * @return PdoOneQuery
+     */
+    protected static function getQuery() {
+        if(self::$pdoOneQuery===null) {
+            return new PdoOneQuery(self::getPdoOne());
+        }
+        return self::$pdoOneQuery;
     }
 
     /**
@@ -147,7 +157,7 @@ abstract class _BasePdoOneRepo
         self::$gQuery = [];
         self::$falseOnError = false;
         self::$lastException = '';
-        self::getPdoOne()->builderReset($forcedPdoOne);
+        self::getQuery()->builderReset($forcedPdoOne);
     }
 
     /**
@@ -184,11 +194,12 @@ abstract class _BasePdoOneRepo
             $local = static::NS . $initClass;
         }
         //$recursive=$local::getPdoOne()->getRecursive();
+        /** @noinspection PhpUndefinedMethodInspection */
         $relations = $local::getDefFK();
         foreach ($relations as $nameCol => $r) {
             $key = $r['key'];
             $recursiveComplete = ltrim($recursiveInit . '/' . $nameCol, '/');
-            if (self::getPdoOne()->hasRecursive($recursiveComplete)) {
+            if (self::getQuery()->hasRecursive($recursiveComplete)) {
                 $used = '';
             } else {
                 $used = '// ';
@@ -196,22 +207,22 @@ abstract class _BasePdoOneRepo
             switch ($key) {
                 case 'PARENT':
                     $class = static::RELATIONS[$r['reftable']];
-                    echo "// \$relation['".$recursiveComplete. "']; //".$local . '->' . $class . " ($key)<br>";
+                    echo "// \$relation['" . $recursiveComplete . "']; //" . $local . '->' . $class . " ($key)<br>";
                     break;
                 case 'MANYTOONE':
                 case 'ONETOONE':
                 case 'ONETOMANY':
                     $class = static::RELATIONS[$r['reftable']];
-                    echo $used."\$relation['".$recursiveComplete. "']; //".$local . '->' . $class . " ($key)<br>";
-                    if($used==='') {
-                        self::testRecursive($class,$recursiveComplete);
+                    echo $used . "\$relation['" . $recursiveComplete . "']; //" . $local . '->' . $class . " ($key)<br>";
+                    if ($used === '') {
+                        self::testRecursive($class, $recursiveComplete);
                     }
                     break;
                 case 'MANYTOMANY':
                     $class = static::RELATIONS[$r['table2']];
-                    echo $used."\$relation['".$recursiveComplete. "']; //".$local . '->' . $class . " ($key)<br>";
-                    if($used!=='') {
-                        self::testRecursive($class,$recursiveComplete);
+                    echo $used . "\$relation['" . $recursiveComplete . "']; //" . $local . '->' . $class . " ($key)<br>";
+                    if ($used !== '') {
+                        self::testRecursive($class, $recursiveComplete);
                     }
                     break;
             }
@@ -265,10 +276,10 @@ abstract class _BasePdoOneRepo
     public static function query($sql, $param = null)
     {
         try {
-            $pdoOne = self::getPdoOne();
-            if (self::$useCache && $pdoOne->getCacheService() !== null) {
+            $pdoOne = self::getQuery();
+            if (self::$useCache && $pdoOne->parent->getCacheService() !== null) {
                 self::$uid = $pdoOne->buildUniqueID([$sql, $param], 'query');
-                $getCache = $pdoOne->getCacheService()->getCache(self::$uid, static::TABLE);
+                $getCache = $pdoOne->parent->getCacheService()->getCache(self::$uid, static::TABLE);
                 if ($getCache !== false) {
                     self::reset();
                     return $getCache;
@@ -281,7 +292,7 @@ abstract class _BasePdoOneRepo
             }
             $rowc = self::getPdoOne()->runRawQuery($sql, $param);
             if ($rowc !== false && $usingCache) {
-                $pdoOne->getCacheService()->setCache(self::$uid, $recursiveClass, $rowc, self::$useCache);
+                $pdoOne->parent->getCacheService()->setCache(self::$uid, $recursiveClass, $rowc, self::$useCache);
                 self::reset();
             }
         } catch (Exception $exception) {
@@ -329,6 +340,8 @@ abstract class _BasePdoOneRepo
                 if (!in_array($className, $final, true)) {
                     $final[] = $className;
                 }
+
+                /** @noinspection PhpUndefinedMethodInspection */
                 $class::getRecursiveClass($final, $keyr);
                 if ($keyRels[$keyr]['key'] === 'MANYTOMANY') {
                     $className
@@ -337,6 +350,7 @@ abstract class _BasePdoOneRepo
                     if (!in_array($className, $final, true)) {
                         $final[] = $className;
                     }
+                    /** @noinspection PhpUndefinedMethodInspection */
                     $class::getRecursiveClass($final, $keyr);
                 }
             }
@@ -517,7 +531,7 @@ abstract class _BasePdoOneRepo
      */
     public static function useCache($ttl = null, $family = '')
     {
-        self::getPdoOne()->useCache($ttl, $family);
+        self::getQuery()->useCache($ttl, $family);
         self::$useCache = $ttl;
         return static::ME;
     }
@@ -570,7 +584,7 @@ abstract class _BasePdoOneRepo
      */
     public static function innerjoin($sql, $condition = '')
     {
-        self::getPdoOne()->innerjoin($sql, $condition);
+        self::getQuery()->innerjoin($sql, $condition);
         return static::ME;
     }
 
@@ -617,10 +631,10 @@ abstract class _BasePdoOneRepo
      */
     public static function count($where = null)
     {
-        $pdoOne = self::getPdoOne();
-        if (self::$useCache && $pdoOne->getCacheService() !== null) {
+        $pdoOne = self::getQuery();
+        if (self::$useCache && $pdoOne->parent->getCacheService() !== null) {
             self::$uid = $pdoOne->buildUniqueID([$where], static::TABLE . '::count');
-            $getCache = $pdoOne->getCacheService()->getCache(self::$uid, static::TABLE);
+            $getCache = $pdoOne->parent->getCacheService()->getCache(self::$uid, static::TABLE);
             if ($getCache !== false) {
                 self::reset();
                 return $getCache;
@@ -640,7 +654,7 @@ abstract class _BasePdoOneRepo
         $from = (isset(self::$gQuery[0]['joins'])) ? self::$gQuery[0]['joins'] : [];
         $rowc = self::getPdoOne()->count()->from($from)->where($where)->firstScalar();
         if ($rowc !== false && $usingCache) {
-            $pdoOne->getCacheService()->setCache(self::$uid, $recursiveClass, (int)$rowc, self::$useCache);
+            $pdoOne->parent->getCacheService()->setCache(self::$uid, $recursiveClass, (int)$rowc, self::$useCache);
             self::reset();
         }
         return $rowc;
@@ -679,7 +693,7 @@ abstract class _BasePdoOneRepo
                 // $nameColClean = trim($nameCol, PdoOne::$prefixBase);
                 $recursiveComplete = ltrim($recursiveInit . '/' . $nameCol, '/');
                 //echo "check recursive: $recursiveComplete<br>";
-                if (self::getPdoOne()->hasRecursive($recursiveComplete)) {
+                if (self::getQuery()->hasRecursive($recursiveComplete)) {
                     //echo "OK $type<br>";
                     // type='PARENT' is n
                     switch ($type) {
@@ -694,6 +708,7 @@ abstract class _BasePdoOneRepo
                             $refCol = ltrim($keyRel['refcol'], PdoOne::$prefixBase);
                             $newQuery['joins'] .= " left join {$keyRel['reftable']} as $tableRelAlias "
                                 . "on {$pt}{$col}=$tableRelAlias.$refCol \n"; // $recursiveInit$nameCol\n"; // adds a query to the current query
+                            /** @noinspection PhpUndefinedMethodInspection */
                             $class::generationRecursive($newQuery, $tableRelAlias . '.', $colRelAlias . '.',
                                 $recursiveComplete, false); // $recursiveInit . $nameCol
                             break;
@@ -708,6 +723,7 @@ abstract class _BasePdoOneRepo
 
                             $newQuery['joins'] .= " left join {$keyRel['reftable']} as $tableRelAlias "
                                 . "on {$pt}{$col}=$tableRelAlias.$refCol \n"; // $recursiveInit$nameCol\n"; // adds a query to the current query
+                            /** @noinspection PhpUndefinedMethodInspection */
                             $class::generationRecursive($newQuery, $tableRelAlias . '.', $colRelAlias . '.',
                                 $recursiveComplete, false); // $recursiveInit . $nameCol
                             break;
@@ -727,6 +743,7 @@ abstract class _BasePdoOneRepo
                             //self::$gQuery[]=$other;
                             $class = $ns
                                 . static::RELATIONS[$keyRel['reftable']]; // $ns . PdoOne::camelize($keyRel['reftable']) . $postfix;
+                            /** @noinspection PhpUndefinedMethodInspection */
                             $class::generationRecursive($other, '', '', $pColumn . $recursiveComplete,
                                 false); //$recursiveInit . $nameCol
                             self::$gQuery[] = $other;
@@ -750,6 +767,7 @@ abstract class _BasePdoOneRepo
                             $other['data'] = $keyRel;
                             $class = $ns
                                 . static::RELATIONS[$keyRel['reftable']]; // $ns . PdoOne::camelize($keyRel['reftable']) . $postfix;
+                            /** @noinspection PhpUndefinedMethodInspection */
                             $class::generationRecursive($other, '', '', $pColumn . $recursiveComplete,
                                 false); //$recursiveInit . $nameCol
                             // we reduce a level
@@ -786,6 +804,109 @@ abstract class _BasePdoOneRepo
         if ($new) {
             self::$gQuery[] = $newQuery;
         }
+    }
+
+    /**
+     * This method validates a model before it is inserted/updated into the database.
+     *
+     * @param object|array $model     It could be one model or multiple models.
+     * @param boolean      $multiple  if true then it validates multiples models at once.
+     * @param array        $recursive =self::factory()
+     * @return bool if true then the model is valid, otherwise its false.
+     */
+    public static function validateModel($model, $multiple = false, $recursive = [])
+    {
+        if ($multiple) {
+            if ($model === null || count($model) === 0) {
+                return true;
+            }
+            $array = $model;
+        } else {
+            $array[0] = $model;
+        }
+        $defs = static::getDef();
+        $fks = static::getDefFK();
+        foreach ($array as $mod) {
+            if (is_object($mod)) {
+                $mod = (array)$mod;
+            }
+            foreach ($defs as $col => $def) {
+                $curCol = array_key_exists($col, $mod) ? $mod[$col] : null;
+
+                // if null (or missing) and it is allowed = true
+                // if null (or missing) and not null and it is not identity = false (identities are generated)
+                if (($curCol === null) && !($def['null'] === false && $def['identity'] === false)) {
+                    return false;
+                }
+                switch ($def['phptype']) {
+                    case 'binary':
+                    case 'string':
+                        if (!is_string($curCol)) {
+                            // not a string
+                            return false;
+                        }
+                        break;
+                    case 'float':
+                        if (!is_float($curCol)) {
+                            return false;
+                        }
+                        break;
+                    case 'timestamp':
+                    case 'int':
+                        if (!is_int($curCol)) {
+                            return false;
+                        }
+                        break;
+                    case 'time':
+                    case 'datetime':
+                    case 'date':
+                        $bool = false;
+                        $time = false;
+                        $r = false;
+                        if ($def['conversion'] === 'datetime2') {
+                            $r = PdoOne::dateConvertInput($curCol, 'iso', $bool, $time);
+                        } elseif ($def['conversion'] === 'datetime3') {
+                            $r = PdoOne::dateConvertInput($curCol, 'human', $bool, $time);
+                        } elseif ($def['conversion'] === 'datetime') {
+                            $r = PdoOne::dateConvertInput($curCol, 'class', $bool, $time);
+                        } elseif ($def['conversion'] === 'datetime4') {
+                            $r = PdoOne::dateConvertInput($curCol, 'sql', $bool, $time);
+                        }
+                        if ($r === false) {
+                            return false;
+                        }
+                }
+            }
+            if (count($recursive) > 0) {
+                $ns = self::getNamespace();
+                foreach ($fks as $key => $fk) {
+                    if (array_key_exists($key, $mod) && self::getQuery()->hasRecursive($key, $recursive)) {
+                        $curFK = $fk['key'];
+                        $class = $ns . static::RELATIONS[$fk['reftable']];
+                        switch ($curFK) {
+                            case 'ONETOMANY':
+                            case 'MANYTOMANY':
+                                /** @noinspection PhpUndefinedMethodInspection */
+                            $r = $class::validateModel($mod[$key], true, $recursive);
+                                break;
+                            case 'MANYTOONE':
+                            case 'ONETOONE':
+                                /** @noinspection PhpUndefinedMethodInspection */
+                                $r = $class::validateModel($mod[$key], false, $recursive);
+                                break;
+                            default:
+                                $r = true;
+                        }
+                        if ($r === false) {
+                            return false;
+                        }
+                    }
+                }
+            }
+        }
+
+
+        return true;
     }
 
     protected static function _merge($entity, $transaction = true)
@@ -831,6 +952,18 @@ abstract class _BasePdoOneRepo
         }
     }
 
+    protected static function objectToArray($obj)
+    {
+        if (is_object($obj) || is_array($obj)) {
+            $ret = (array)$obj;
+            foreach ($ret as &$item) {
+                $item = self::objectToArray($item);
+            }
+            return $ret;
+        }
+        return $obj;
+    }
+
     /**
      * Update an registry
      *
@@ -847,21 +980,21 @@ abstract class _BasePdoOneRepo
             if (is_object($entity)) {
                 $entity = static::objectToArray($entity);
             }
-            $pdoOne = self::getPdoOne();
+            $pdoOne = self::getQuery();
             //$defTable = static::getDef('conversion');
             (static::ME)::convertInputVal($entity);
             self::invalidateCache();
             // only the fields that are defined are inserted
             $entityCopy = self::intersectArraysNotNull($entity, static::getDefName());
             $entityCopy = self::diffArrays($entityCopy, array_merge(static::getDefKey(), static::getDefNoUpdate())); // columns discarded
-            if ($pdoOne->transactionOpen === true) {
+            if ($pdoOne->parent->transactionOpen === true) {
                 // we disable transaction to avoid nested transactions.
                 // mysql does not allows nested transactions
                 // sql server allows nested transaction but afaik, it only counts the outer one.
                 $transaction = false;
             }
             if ($transaction) {
-                $pdoOne->startTransaction();
+                $pdoOne->parent->startTransaction();
             }
             $recursiveBack = $pdoOne->getRecursive();
             $r = $pdoOne->from(static::TABLE)->set($entityCopy)->where(static::intersectArrays($entity, static::PK))
@@ -889,6 +1022,7 @@ abstract class _BasePdoOneRepo
                     //self::_setRecursive([$def['refcol2']]);
                     self::_setRecursive([]);
 
+                    /** @noinspection PhpUndefinedMethodInspection */
                     $oldRows = ($classRef::where($refcol, $entity[$col1]))::_toList();
                     $oldRowsKeys = [];
                     foreach ($oldRows as $v) {
@@ -900,12 +1034,15 @@ abstract class _BasePdoOneRepo
                     foreach ($newRows as $item) {
                         if (in_array($item[$refpk], $insertKeys, false)) {
                             $item[$refcol] = $fatherPK;
+                            /** @noinspection PhpUndefinedMethodInspection */
                             $classRef::insert($item, false);
                         } elseif (!in_array($item[$refpk], $deleteKeys, false)) {
+                            /** @noinspection PhpUndefinedMethodInspection */
                             $classRef::update($item, false);
                         }
                     }
                     foreach ($deleteKeys as $key2) {
+                        /** @noinspection PhpUndefinedMethodInspection */
                         $classRef::deleteById($key2, false);
                     }
                 }
@@ -929,6 +1066,7 @@ abstract class _BasePdoOneRepo
                     }
                     //self::_setRecursive([$def['refcol2']]);
                     self::_setRecursive([]);
+                    /** @noinspection PhpUndefinedMethodInspection */
                     $oldRows = ($classRef::where($refcol, $entity[$col1]))::_toList();
                     $oldRowsKeys = [];
                     foreach ($oldRows as $v) {
@@ -940,14 +1078,18 @@ abstract class _BasePdoOneRepo
                     foreach ($newRows as $item) {
                         if (in_array($item[$col2], $insertKeys, false)) {
                             $pk2 = $item[$def['col2']];
+                            /** @noinspection PhpUndefinedMethodInspection */
                             if ($class2::exist($item) === false
                                 && self::getPdoOne()->hasRecursive($key, $recursiveBack)
                             ) {
+                                /** @noinspection PhpUndefinedMethodInspection */
                                 $pk2 = $class2::insert($item, false);
                             } else {
+                                /** @noinspection PhpUndefinedMethodInspection */
                                 $class2::update($item, false);
                             }
                             $relationalObjInsert = [$refcol => $entity[$def['col']], $refcol2 => $pk2];
+                            /** @noinspection PhpUndefinedMethodInspection */
                             $classRef::insert($relationalObjInsert, false);
                         }
                     }
@@ -955,10 +1097,12 @@ abstract class _BasePdoOneRepo
                     foreach ($newRows as $item) {
                         if (in_array($item[$col2], $deleteKeys)) {
                             $pk2 = $item[$def['col2']];
-                            if (self::getPdoOne()->hasRecursive($key, $recursiveBack)) {
+                            if ($pdoOne->hasRecursive($key, $recursiveBack)) {
+                                /** @noinspection PhpUndefinedMethodInspection */
                                 $class2::deleteById($item, $pk2);
                             }
                             $relationalObjDelete = [$refcol => $entity[$def['col']], $refcol2 => $pk2];
+                            /** @noinspection PhpUndefinedMethodInspection */
                             $classRef::deleteById($relationalObjDelete, false);
                         }
                     }
@@ -981,7 +1125,6 @@ abstract class _BasePdoOneRepo
             throw $exception;
         }
     }
-
 
     /**
      * It invalidates a family/group of cache<br>
@@ -1139,7 +1282,7 @@ abstract class _BasePdoOneRepo
     {
         $returnObject = false;
         try {
-            $pdoOne = self::getPdoOne();
+            $pdoOne = self::getQuery();
             //$defTable = static::getDef('conversion');
             //self::_convertInputValue($entity, $defTable);
 
@@ -1159,14 +1302,14 @@ abstract class _BasePdoOneRepo
                         ' and case of the fields', $entity);
                 return false;
             }
-            if ($pdoOne->transactionOpen === true) {
+            if ($pdoOne->parent->transactionOpen === true) {
                 // we disable transaction to avoid nested transactions.
                 // mysql does not allows nested transactions
                 // sql server allows nested transaction but afaik, it only counts the outer one.
                 $transaction = false;
             }
             if ($transaction) {
-                $pdoOne->startTransaction();
+                $pdoOne->parent->startTransaction();
             }
             $insert = $pdoOne->insertObject(static::TABLE, $entityCopy);
             $pks = static::IDENTITY;
@@ -1193,6 +1336,7 @@ abstract class _BasePdoOneRepo
                             $refCol = ltrim($def['refcol'], PdoOne::$prefixBase);
                             $item[$refCol]
                                 = $entityCopy[$def['col']]; // if the pk (of the original object) is identity.
+                            /** @noinspection PhpUndefinedMethodInspection */
                             $classRef::insert($item, false);
                         }
                     }
@@ -1201,8 +1345,10 @@ abstract class _BasePdoOneRepo
                             . static::RELATIONS[$def['table2']]; // $ns . PdoOne::camelize($def['table2']) . $postfix;
                         foreach ($entity[$key] as $item) {
                             $pk2 = $item[$def['col2']];
+                            /** @noinspection PhpUndefinedMethodInspection */
                             if ($pdoOne->hasRecursive($key, $recursiveBack) && $class2::exist($item) === false) {
                                 // we only update it if it has a recursive
+                                /** @noinspection PhpUndefinedMethodInspection */
                                 $pk2 = $class2::insert($item, false);
                             }
                             $classRel = $ns
@@ -1210,6 +1356,7 @@ abstract class _BasePdoOneRepo
                             $refCol = ltrim($def['refcol'], PdoOne::$prefixBase);
                             $refCol2 = ltrim($def['refcol2'], PdoOne::$prefixBase);
                             $relationalObj = [$refCol => $entityCopy[$def['col']], $refCol2 => $pk2];
+                            /** @noinspection PhpUndefinedMethodInspection */
                             $classRel::insert($relationalObj, false);
                         }
                     }
@@ -1240,19 +1387,6 @@ abstract class _BasePdoOneRepo
             }
             throw $exception;
         }
-    }
-
-
-    protected static function objectToArray($obj)
-    {
-        if (is_object($obj) || is_array($obj)) {
-            $ret = (array)$obj;
-            foreach ($ret as &$item) {
-                $item = self::objectToArray($item);
-            }
-            return $ret;
-        }
-        return $obj;
     }
 
     /**
@@ -1287,11 +1421,10 @@ abstract class _BasePdoOneRepo
         try {
             static::$gQuery = [];
             static::$gQueryCounter = 0;
-            /** @var PdoOne $pdoOne instance of PdoOne */
-            $pdoOne = self::getPdoOne();
-            if (self::$useCache && $pdoOne->getCacheService() !== null) {
+            $pdoOne = self::getQuery();
+            if (self::$useCache && $pdoOne->parent->getCacheService() !== null) {
                 self::$uid = $pdoOne->buildUniqueID([$filter, $filterValue], static::TABLE . '::' . $type);
-                $getCache = $pdoOne->getCacheService()->getCache(self::$uid, static::TABLE);
+                $getCache = $pdoOne->parent->getCacheService()->getCache(self::$uid, static::TABLE);
                 if ($getCache !== false) {
                     self::reset();
                     return $getCache;
@@ -1358,7 +1491,7 @@ abstract class _BasePdoOneRepo
                 self::convertSQLValueInit($rowc, true);
             }
             if ($rowc !== false && $usingCache) {
-                $pdoOne->getCacheService()->setCache(self::$uid, $recursiveClass, $rowc, self::$useCache);
+                $pdoOne->parent->getCacheService()->setCache(self::$uid, $recursiveClass, $rowc, self::$useCache);
             }
             self::reset();
             return $rowc;
@@ -1442,14 +1575,17 @@ abstract class _BasePdoOneRepo
                         // PARENT not because parent is a fk but is used for a one way relation.
                         case 'MANYTOONE':
                             $class = $ns . static::RELATIONS[$v['reftable']];
+                            /** @noinspection PhpUndefinedMethodInspection */
                             $class::convertSQLValueInit($row[$k], false);
                             break;
                         case 'ONETOMANY':
                             $class = $ns . static::RELATIONS[$v['reftable']];
+                            /** @noinspection PhpUndefinedMethodInspection */
                             $class::convertSQLValueInit($row[$k], true);
                             break;
                         case 'MANYTOMANY':
                             $class = $ns . static::RELATIONS[$v['table2']];
+                            /** @noinspection PhpUndefinedMethodInspection */
                             $class::convertSQLValueInit($row[$k], true);
                             break;
                     }
@@ -1459,107 +1595,6 @@ abstract class _BasePdoOneRepo
         if (!$list) {
             $rows = $rows[0];
         }
-    }
-
-    /**
-     * This method validates a model before it is inserted/updated into the database.
-     *
-     * @param object|array $model     It could be one model or multiple models.
-     * @param boolean      $multiple  if true then it validates multiples models at once.
-     * @param array        $recursive =self::factory()
-     * @return bool if true then the model is valid, otherwise its false.
-     */
-    public static function validateModel($model, $multiple = false, $recursive = [])
-    {
-        if ($multiple) {
-            if ($model === null || count($model) === 0) {
-                return true;
-            }
-            $array = $model;
-        } else {
-            $array[0] = $model;
-        }
-        $defs = static::getDef();
-        $fks = static::getDefFK();
-        foreach ($array as $mod) {
-            if (is_object($mod)) {
-                $mod = (array)$mod;
-            }
-            foreach ($defs as $col => $def) {
-                $curCol = array_key_exists($col, $mod) ? $mod[$col] : null;
-
-                // if null (or missing) and it is allowed = true
-                // if null (or missing) and not null and it is not identity = false (identities are generated)
-                if (($curCol === null) && !($def['null'] === false && $def['identity'] === false)) {
-                    return false;
-                }
-                switch ($def['phptype']) {
-                    case 'binary':
-                    case 'string':
-                        if (!is_string($curCol)) {
-                            // not a string
-                            return false;
-                        }
-                        break;
-                    case 'float':
-                        if (!is_float($curCol)) {
-                            return false;
-                        }
-                        break;
-                    case 'timestamp':
-                    case 'int':
-                        if (!is_int($curCol)) {
-                            return false;
-                        }
-                        break;
-                    case 'time':
-                    case 'datetime':
-                    case 'date':
-                        $bool = false;
-                        $time = false;
-                        $r = false;
-                        if ($def['conversion'] === 'datetime2') {
-                            $r = PdoOne::dateConvertInput($curCol, 'iso', $bool, $time);
-                        } elseif ($def['conversion'] === 'datetime3') {
-                            $r = PdoOne::dateConvertInput($curCol, 'human', $bool, $time);
-                        } elseif ($def['conversion'] === 'datetime') {
-                            $r = PdoOne::dateConvertInput($curCol, 'class', $bool, $time);
-                        } elseif ($def['conversion'] === 'datetime4') {
-                            $r = PdoOne::dateConvertInput($curCol, 'sql', $bool, $time);
-                        }
-                        if ($r === false) {
-                            return false;
-                        }
-                }
-            }
-            if (count($recursive) > 0) {
-                $ns = self::getNamespace();
-                foreach ($fks as $key => $fk) {
-                    if (array_key_exists($key, $mod) && self::getPdoOne()->hasRecursive($key, $recursive)) {
-                        $curFK = $fk['key'];
-                        $class = $ns . static::RELATIONS[$fk['reftable']];
-                        switch ($curFK) {
-                            case 'ONETOMANY':
-                            case 'MANYTOMANY':
-                                $r = $class::validateModel($mod[$key], true, $recursive);
-                                break;
-                            case 'MANYTOONE':
-                            case 'ONETOONE':
-                                $r = $class::validateModel($mod[$key], false, $recursive);
-                                break;
-                            default:
-                                $r=true;
-                        }
-                        if ($r === false) {
-                            return false;
-                        }
-                    }
-                }
-            }
-        }
-
-
-        return true;
     }
 
     /**
@@ -1602,15 +1637,15 @@ abstract class _BasePdoOneRepo
             }
             $entityCopy = self::intersectArraysNotNull($entity, $columns);
             self::invalidateCache();
-            $pdoOne = self::getPdoOne();
-            if ($pdoOne->transactionOpen === true) {
+            $pdoOne = self::getQuery();
+            if ($pdoOne->parent->transactionOpen === true) {
                 // we disable transaction to avoid nested transactions.
                 // mysql does not allows nested transactions
                 // sql server allows nested transaction but afaik, it only counts the outer one.
                 $transaction = false;
             }
             if ($transaction) {
-                $pdoOne->startTransaction();
+                $pdoOne->parent->startTransaction();
             }
             $defs = static::getDefFK();
             $ns = self::getNamespace();
@@ -1628,6 +1663,7 @@ abstract class _BasePdoOneRepo
                     //$refcol = ltrim($def['refcol'], PdoOne::$prefixBase); // it is how they are joined
                     //$refpk = $classRef::PK[0];
                     foreach ($newRows as $item) {
+                        /** @noinspection PhpUndefinedMethodInspection */
                         $classRef::deleteById($item, false);
                     }
                 }
@@ -1649,11 +1685,13 @@ abstract class _BasePdoOneRepo
                         $cols2[] = $item[$col2];
                     }
                     $relationalObjDelete = [$refcol => $entity[$col1]];
+                    /** @noinspection PhpUndefinedMethodInspection */
                     $classRef::delete($relationalObjDelete, false);
-                    if (self::getPdoOne()->hasRecursive($key, $recursiveBackup)) {
+                    if (self::getQuery()->hasRecursive($key, $recursiveBackup)) {
                         foreach ($cols2 as $c2) {
                             // $k = $v[$refcol2];
                             $object2Delete = [$col2 => $c2];
+                            /** @noinspection PhpUndefinedMethodInspection */
                             $class2::delete($object2Delete, false);
                         }
                     }
@@ -1726,7 +1764,7 @@ abstract class _BasePdoOneRepo
      *
      * @return self
      */
-    public function having($sql, $param = self::NULL)
+    public function having($sql, $param = PdoOne::NULL)
     {
         self::getPdoOne()->having($sql, $param);
         return static::ME;

@@ -1,4 +1,7 @@
-<?php /** @noinspection PhpUnusedParameterInspection */
+<?php /** @noinspection UnknownInspectionInspection */
+/** @noinspection SqlWithoutWhere */
+/** @noinspection SqlResolve */
+/** @noinspection PhpUnusedParameterInspection */
 /** @noinspection PhpUnreachableStatementInspection */
 /** @noinspection AccessModifierPresentedInspection */
 /** @noinspection TypeUnsafeComparisonInspection */
@@ -212,7 +215,7 @@ class PdoOne_Oci implements PdoOne_IExt
 
         $columns = [];
         /** @var array $result =array(["IndexName"=>'',"ColumnName"=>'',"is_unique"=>0,"is_primary_key"=>0,"TYPE"=>0]) */
-        $pks=$this->getPK($table,null);
+        $pks=$this->getPK($table);
         $result =
             $this->parent->select('SELECT ALL_indexes.INDEX_NAME "IndexName",all_ind_columns.COLUMN_NAME "ColumnName",
                         (CASE WHEN UNIQUENESS = \'UNIQUE\' THEN 1 ELSE 0 END) "is_unique",0 "is_primary_key",0 "TYPE"')
@@ -434,10 +437,9 @@ class PdoOne_Oci implements PdoOne_IExt
 
     public function createSequence($tableSequence = null, $method = 'snowflake')
     {
-        $sql = "CREATE SEQUENCE {$tableSequence}
+        return "CREATE SEQUENCE {$tableSequence}
 				    START WITH 1  
 				    INCREMENT BY 1";
-        return $sql;
     }
     public function getSequence($sequenceName) {
         $sequenceName = ($sequenceName == '') ? $this->parent->tableSequence : $sequenceName;
@@ -526,15 +528,15 @@ class PdoOne_Oci implements PdoOne_IExt
     public function limit($sql)
     {
         //throw new RuntimeException("no yet implemented");
-        if (!$this->parent->order) {
-            $this->parent->throwError('limit without a sort', '');
-        }
+        //if (!$this->parent->order) {
+        //    $this->parent->throwError('limit without a sort', '');
+        //}
         if (strpos($sql, ',')) {
             $arr = explode(',', $sql);
-            $this->parent->limit = " OFFSET {$arr[0]} ROWS FETCH NEXT {$arr[1]} ROWS ONLY";
-        } else {
-            $this->parent->limit = " OFFSET 0 ROWS FETCH NEXT $sql ROWS ONLY";
+            return " OFFSET {$arr[0]} ROWS FETCH NEXT {$arr[1]} ROWS ONLY";
         }
+
+        return " OFFSET 0 ROWS FETCH NEXT $sql ROWS ONLY";
     }
 
     public function getPK($query, $pk=null)

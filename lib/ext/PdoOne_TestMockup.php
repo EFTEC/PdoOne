@@ -1,4 +1,5 @@
-<?php
+<?php /** @noinspection UnknownInspectionInspection */
+/** @noinspection SqlResolve */
 /** @noinspection TypeUnsafeComparisonInspection */
 
 /** @noinspection DuplicatedCode */
@@ -241,15 +242,15 @@ class PdoOne_TestMockup implements PdoOne_IExt
 
     public function limit($sql)
     {
-        if (!$this->parent->order) {
-            $this->parent->throwError('limit without a sort', '');
-        }
+        //if (!$this->parent->order) {
+        //    $this->parent->throwError('limit without a sort', '');
+        //}
         if (strpos($sql, ',')) {
             $arr = explode(',', $sql);
-            $this->parent->limit = " OFFSET {$arr[0]} ROWS FETCH NEXT {$arr[1]} ROWS ONLY";
-        } else {
-            $this->parent->limit = " OFFSET 0 ROWS FETCH NEXT $sql ROWS ONLY";
+            return " OFFSET {$arr[0]} ROWS FETCH NEXT {$arr[1]} ROWS ONLY";
         }
+
+        return " OFFSET 0 ROWS FETCH NEXT $sql ROWS ONLY";
     }
 
     public function getPK($query, $pk=null)

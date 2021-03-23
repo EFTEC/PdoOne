@@ -1953,8 +1953,18 @@ In a nutshell:
 * Every minor version means that it adds a new functionality i.e. 1.5 -> 1.6 (new methods)
 * Every decimal version means that it patches/fixes/refactoring a previous functionality i.e. 1.5.0 -> 1.5.1 (fix)
 
+
+
+
+
+* 2.9.4 2021-03-22
+  * **ORM:** **_BasePdoOneRepo** is updated to BINARYVERSION=4. If you are using the ORM, then you should rebuild all ORM classes.
+  * **CORE:** Query chains creates a new instance of **PdoOneQuery** instead of a instance of **PdoOne**, so it is possible to define
+    multiples chains without interfering each others.
+  * **ORM:** Fixed a problem with the base class. Now the Base class contains the constant COMPILEDVERSION
+  * **ORM**: Fixed a problem with the model and the method toArray()
 * 2.9.3 2021-02-22
-  * fix a bug with useCache() when we use with where()   
+  * fix a bug with **useCache()** when we use with where()   
 * 2.9.2 2021-02-18
   * fixed a bug with createSequence()   
 * 2.9.1 2021-02-16
@@ -2031,7 +2041,6 @@ echo $this->internalCacheCounter;
 
 ```
 * The internal cache is tested with runRawQuery (if returns an array), toList(), meta() and first()
-
 
 * 2.0.1 2020-08-12
   * Fixed a bug with the generated code with linked relation manytoone and onetonone.
