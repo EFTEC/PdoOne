@@ -370,6 +370,9 @@ class PdoOne_Oci implements PdoOne_IExt
             case 'sequence':
                 $query = "select * from all_objects where object_name=? and owner=? and object_type='SEQUENCE'";
                 break;
+            case 'procedure':
+                $query = "select * from all_objects where object_name=? and owner=? and object_type='PROCEDURE'";
+                break;
             default:
                 $this->parent->throwError("objectExist: type [$type] not defined for {$this->parent->databaseType}", '');
                 return null;
@@ -572,4 +575,13 @@ class PdoOne_Oci implements PdoOne_IExt
         }
     }
 
+    public function callProcedure($procName, &$arguments = [], $outputColumns = [])
+    {
+        // TODO: Implement callProcedure() method.
+    }
+
+    public function createProcedure($procedureName, $arguments = [], $body = '', $extra = '')
+    {
+        // TODO: Implement createProcedure() method.
+    }
 }

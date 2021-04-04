@@ -115,6 +115,30 @@ class PdoOne_mysql_Test extends TestCase
         $this->pdoOne->setCacheService($cache);
     }
 
+    public function test_procedure() {
+        if(!$this->pdoOne->objectExist('tablelog')) {
+            self::assertEquals(true,
+                $this->pdoOne->createTable('tablelog'
+                    , ['id' => 'int not null AUTO_INCREMENT', 'name' => 'varchar(45)', 'description' => 'varchar(45)'],
+                    ['id' => 'PRIMARY KEY']));
+        }
+
+        if($this->pdoOne->objectExist('new_procedure','procedure')) {
+            $this->pdoOne->drop('new_procedure','procedure');
+        }
+        $this->pdoOne->createProcedure('new_procedure',
+            [
+                ['in','in_name','varchar(45)'],
+                ['out','in_description','varchar(45)']
+            ]
+            ,"  insert into tablelog(name,description) values(in_name,in_description);
+            set in_description='done!';"
+        );
+        $args=['in_name'=>'aa','in_description'=>'bbb'];
+        self::assertEquals(true,$this->pdoOne->callProcedure('new_procedure',$args,['in_description']));
+
+        self::assertEquals('done!',$args['in_description']);
+    }
 
     public function test_dep()
     {
@@ -484,7 +508,7 @@ class PdoOne_mysql_Test extends TestCase
         self::assertEquals(true, $r, 'failed to create table');
         $this->pdoOne->getCacheService()->cacheCounter = 0;
 
-        self::assertGreaterThan(1, count($this->pdoOne->objectList('table')));
+        self::assertGreaterThan(1, count($this->pdoOne->objectList()));
         // we add some values
         $this->pdoOne->set(['id_category' => 123, 'catname' => 'cheap'])->from('product_category')->insert();
         $this->pdoOne->insert('product_category', ['id_category', 'catname'],
@@ -614,7 +638,7 @@ class PdoOne_mysql_Test extends TestCase
         self::assertEquals(true, $r, 'failed to create table');
         $this->pdoOne->getCacheService()->cacheCounter = 0;
 
-        self::assertGreaterThan(1, count($this->pdoOne->objectList('table')));
+        self::assertGreaterThan(1, count($this->pdoOne->objectList()));
         // we add some values
         $this->pdoOne->set(['id_category' => 123, 'catname' => 'cheap'])->from('product_category')->insert();
         $this->pdoOne->insert('product_category', ['id_category', 'catname'],
@@ -684,6 +708,8 @@ class PdoOne_mysql_Test extends TestCase
         $r = $query1->toList();
         $query2=$this->pdoOne->select('*')->from('product_category')->where('catname=?',['cheap'])->order('id_category')->useCache(10);
         $r2 = $query2->toList();
+        $query3=$this->pdoOne->select('*')->from('product_category')->where('catname=?',['cheap4'])->order('id_category')->useCache(10);
+        $r3 = $query3->toList();
 
         //var_dump(var_export($r));
         self::assertEquals([
@@ -735,6 +761,13 @@ class PdoOne_mysql_Test extends TestCase
                     'catname' => 'cheap',
                 ],
         ], $r2);
+        self::assertEquals([
+            0 =>
+                [
+                    'id_category' => 4,
+                    'catname' => 'cheap4',
+                ],
+        ], $r3);
     }
 
 
@@ -847,6 +880,9 @@ class PdoOne_mysql_Test extends TestCase
             'sequence must be greater than 3639088446091303982');
     }
 
+    /** @noinspection PhpUnitTestsInspection
+     * @noinspection TypeUnsafeComparisonInspection
+     */
     public function test_sequence2()
     {
         self::assertLessThan(3639088446091303982, $this->pdoOne->getSequencePHP(false),
@@ -990,6 +1026,8 @@ class PdoOne_mysql_Test extends TestCase
 
     /**
      * @throws Exception
+     * @noinspection PhpUnitTestsInspection
+     * @noinspection TypeUnsafeComparisonInspection
      */
     public function test_setEncryption()
     {

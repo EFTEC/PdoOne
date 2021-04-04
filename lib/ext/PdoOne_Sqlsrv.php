@@ -311,8 +311,13 @@ class PdoOne_Sqlsrv implements PdoOne_IExt
                 $query = "SELECT * FROM sys.objects where name=? and type_desc='USER_TABLE'";
                 break;
             case 'function':
+                $query = "SELECT * FROM sys.objects where name=? and type_desc='SQL_SCALAR_FUNCTION'";
+                break;
             case 'sequence':
                 $query = "SELECT * FROM sys.objects where name=? and type_desc='SEQUENCE_OBJECT'";
+                break;
+            case 'procedure':
+                $query = "SELECT * FROM sys.objects where name=? and type_desc='SQL_STORED_PROCEDURE'";
                 break;
             default:
                 $this->parent->throwError("objectExist: type [$type] not defined for {$this->parent->databaseType}", '');
@@ -525,4 +530,13 @@ class PdoOne_Sqlsrv implements PdoOne_IExt
         }
     }
 
+    public function callProcedure($procName, &$arguments = [], $outputColumns = [])
+    {
+        // TODO: Implement callProcedure() method.
+    }
+
+    public function createProcedure($procedureName, $arguments = [], $body = '', $extra = '')
+    {
+        // TODO: Implement createProcedure() method.
+    }
 }

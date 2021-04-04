@@ -7,6 +7,7 @@
 namespace eftec\ext;
 
 use eftec\PdoOne;
+use Exception;
 use stdClass;
 
 /**
@@ -136,13 +137,23 @@ class PdoOne_TestMockup implements PdoOne_IExt
     public function objectExist($type = 'table')
     {
         switch ($type) {
-            case 'function':
-                $query
-                    = "SELECT * FROM INFORMATION_SCHEMA.ROUTINES where ROUTINE_SCHEMA='{$this->parent->db}' and ROUTINE_NAME=?";
-                break;
             case 'table':
                 $query
                     = "SELECT * FROM information_schema.tables where table_schema='{$this->parent->db}' and table_name=?";
+                break;
+            case 'function':
+                $query
+                    = "SELECT * FROM INFORMATION_SCHEMA.ROUTINES where 
+                                                ROUTINE_SCHEMA='{$this->parent->db}' 
+                                            and ROUTINE_NAME=?
+                                            and ROUTINE_TYPE='FUNCTION'";
+                break;
+            case 'procedure':
+                $query
+                    = "SELECT * FROM INFORMATION_SCHEMA.ROUTINES where 
+                                                ROUTINE_SCHEMA='{$this->parent->db}' 
+                                            and ROUTINE_NAME=?
+                                            and ROUTINE_TYPE='PROCEDURE'";
                 break;
             default:
                 $this->parent->throwError("objectExist: type [$type] not defined for {$this->parent->databaseType}",
@@ -258,4 +269,13 @@ class PdoOne_TestMockup implements PdoOne_IExt
         return 'primary_key';
     }
 
+    public function callProcedure($procName, &$arguments = [], $outputColumns = [])
+    {
+        // TODO: Implement callProcedure() method.
+    }
+
+    public function createProcedure($procedureName, $arguments = [], $body = '', $extra = '')
+    {
+        // TODO: Implement createProcedure() method.
+    }
 }

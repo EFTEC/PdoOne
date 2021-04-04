@@ -61,6 +61,42 @@ class PdoOne_Mysql implements PdoOne_IExt
         $this->parent->conn1->setAttribute(PDO::ATTR_EMULATE_PREPARES, false);
        
     }
+    public function callProcedure($procName, &$arguments=[], $outputColumns=[]) {
+        $keys=array_keys($arguments);
+        $outputFields='';
+        if(count($keys)>0) {
+            $argList = '';
+            foreach($arguments as $k=>$v) {
+                if(in_array($k,$outputColumns)) {
+                    $argList.="@$k,";
+                    $outputFields.="@$k as `$k`,";
+                    $stmt=$this->parent->prepare("set @$k=:$k");
+                    $stmt->bindParam($k, $v, $this->parent->getType($v));
+                    $stmt->execute();
+                } else {
+                    $argList.=":$k,";
+                }
+            }
+            $argList=trim($argList,','); // remove the trail comma
+            $outputFields=trim($outputFields,',');
+        } else {
+            $argList='';
+        }
+        $stmt=$this->parent->prepare("call $procName($argList)");
+        foreach($arguments as $k=>$v) {
+            if(!in_array($k,$outputColumns)) {
+                $stmt->bindParam($k, $arguments[$k], $this->parent->getType($arguments[$k]));
+            }
+        }
+        $stmt->execute();
+        if($outputFields!=='') {
+            $stmt=$this->parent->prepare("select $outputFields");
+            $stmt->execute();
+            $var=$stmt->fetch(PDO::FETCH_ASSOC);
+            $arguments=array_merge($arguments,$var);
+        }
+        $stmt=null;
+    }
     
     public function truncate($tableName,$extra,$force) {
         if(!$force) {
@@ -205,7 +241,17 @@ class PdoOne_Mysql implements PdoOne_IExt
                 break;
             case 'function':
                 $query
-                    = "SELECT * FROM INFORMATION_SCHEMA.ROUTINES where ROUTINE_SCHEMA='{$this->parent->db}' and ROUTINE_NAME=?";
+                    = "SELECT * FROM INFORMATION_SCHEMA.ROUTINES where 
+                                                ROUTINE_SCHEMA='{$this->parent->db}' 
+                                            and ROUTINE_NAME=?
+                                            and ROUTINE_TYPE='FUNCTION'";
+                break;
+            case 'procedure':
+                $query
+                    = "SELECT * FROM INFORMATION_SCHEMA.ROUTINES where 
+                                                ROUTINE_SCHEMA='{$this->parent->db}' 
+                                            and ROUTINE_NAME=?
+                                            and ROUTINE_TYPE='PROCEDURE'";
                 break;
             default:
                 $this->parent->throwError("objectExist: type [$type] not defined for {$this->parent->databaseType}",
@@ -314,6 +360,37 @@ class PdoOne_Mysql implements PdoOne_IExt
 					END";
         }
 
+        return $sql;
+    }
+
+    /**
+     * @param string $procedureName
+     * @param string|array $arguments
+     * @param string $body
+     * @param string $extra
+     * @return string
+     */
+    public function createProcedure($procedureName,$arguments='',$body='',$extra='')
+    {
+        if(is_array($arguments)) {
+            $sqlArgs = '';
+            foreach ($arguments as $k => $v) {
+                if (is_array($v)) {
+                    if (count($v) > 2) {
+                        $sqlArgs .= "{$v[0]} {$v[1]} {$v[2]},";
+                    } else {
+                        $sqlArgs .= "in {$v[1]} {$v[2]},";
+                    }
+                } else {
+                    $sqlArgs .= "in $k $v,";
+                }
+            }
+            $sqlArgs = trim($sqlArgs, ',');
+        } else {
+            $sqlArgs=$arguments;
+        }
+        $sql="CREATE PROCEDURE `$procedureName` ($sqlArgs) $extra\n";
+        $sql.="BEGIN\n$body\nEND";
         return $sql;
     }
 

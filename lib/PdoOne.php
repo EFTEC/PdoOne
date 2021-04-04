@@ -1,4 +1,18 @@
-<?php /** @noinspection UnnecessaryCastingInspection */
+<?php /** @noinspection StrStartsWithCanBeUsedInspection */
+/** @noinspection ShortListSyntaxCanBeUsedInspection */
+/** @noinspection PhpSwitchCanBeReplacedWithMatchExpressionInspection */
+/** @noinspection StrContainsCanBeUsedInspection */
+/** @noinspection AccessModifierPresentedInspection */
+/** @noinspection PhpStrFunctionsInspection */
+/** @noinspection JsonEncodingApiUsageInspection */
+/** @noinspection NullCoalescingOperatorCanBeUsedInspection */
+/** @noinspection PhpMissingFieldTypeInspection */
+/** @noinspection ReturnTypeCanBeDeclaredInspection */
+/** @noinspection PhpUnusedLocalVariableInspection */
+/** @noinspection PhpMissingReturnTypeInspection */
+/** @noinspection PhpArrayShapeAttributeCanBeAddedInspection */
+/** @noinspection PhpPureAttributeCanBeAddedInspection */
+/** @noinspection UnnecessaryCastingInspection */
 /** @noinspection PhpUnused */
 
 /** @noinspection OnlyWritesOnParameterInspection
@@ -20,8 +34,8 @@ namespace eftec;
 use DateTime;
 use eftec\ext\PdoOne_IExt;
 use eftec\ext\PdoOne_Mysql;
-use eftec\ext\PdoOne_Sqlsrv;
 use eftec\ext\PdoOne_Oci;
+use eftec\ext\PdoOne_Sqlsrv;
 use eftec\ext\PdoOne_TestMockup;
 use Exception;
 use PDO;
@@ -37,11 +51,11 @@ use stdClass;
  * @package       eftec
  * @author        Jorge Castro Castillo
  * @copyright (c) Jorge Castro C. MIT License  https://github.com/EFTEC/PdoOne
- * @version       2.9.4
+ * @version       2.10.0
  */
 class PdoOne
 {
-    const VERSION = '2.9.4';
+    const VERSION = '2.10.0';
     /** @var int We need this value because null and false could be a valid value. */
     const NULL = PHP_INT_MAX;
     /** @var string Prefix of the tables */
@@ -136,8 +150,8 @@ class PdoOne
     public $transactionOpen;
     /** @var bool if the database is in READ ONLY mode or not. If true then we must avoid to write in the database. */
     public $readonly = false;
-    /** @var string full filename of the log file. If it's empty then it doesn't store a log file. The log file is limited to 1mb */
-    public $logFile = '';
+    /** @var boolean if not false then it logs the file using the php log file */
+    public $logFile = false;
     /** @var string It stores the last error. runGet and beginTry resets it */
     public $errorText = '';
     public $isThrow = false;
@@ -152,7 +166,6 @@ class PdoOne
     /** @var string last query executed */
     public $lastQuery;
     public $lastParam = [];
-
 
 
     /** @var array the tables used in the queries and added by the methods from() and join() */
@@ -171,18 +184,10 @@ class PdoOne
 
     /** @var PdoOne_IExt */
     public $service;
-    /** @var string|array [optional] It is the family or group of the cache */
-    public $cacheFamily = '';
+
     /** @var IPdoOneCache The service of cache [optional] */
     public $cacheService;
-    /**
-     * @var null|int $ttl If <b>0</b> then the cache never expires.<br>
-     *                         If <b>false</b> then we don't use cache.<br>
-     *                         If <b>int</b> then it is the duration of the
-     *     cache
-     *                         (in seconds)
-     */
-    public $useCache = false;
+
     /** @var null|array it stores the values obtained by $this->tableDependency() */
     public $tableDependencyArrayCol;
     public $tableDependencyArray;
@@ -192,17 +197,17 @@ class PdoOne
     /**
      * PdoOne constructor.  It doesn't open the connection to the database.
      *
-     * @param string $database =['mysql','sqlsrv','oci','test'][$i]
-     * @param string $server server ip. Ex. 127.0.0.1 127.0.0.1:3306<br>
+     * @param string      $database =['mysql','sqlsrv','oci','test'][$i]
+     * @param string      $server   server ip. Ex. 127.0.0.1 127.0.0.1:3306<br>
      *                              In 'oci' it could be 'orcl' or 'localhost/orcl' (instance name) or <br>
      *                              (DESCRIPTION=(ADDRESS=(PROTOCOL=TCP)(HOST=localhost)(PORT=1521))<br>
      *                              (CONNECT_DATA=(SERVICE_NAME=ORCL)))
-     * @param string $user Ex. root.  In 'oci' the user is set in uppercase.
-     * @param string $pwd Ex. 12345
-     * @param string $db Ex. mybase. In 'oci' $db is set equals to $user
-     * @param string $logFile Optional  log file. Example c:\\temp\log.log
-     * @param string|null $charset Example utf8mb4
-     * @param int $nodeId It is the id of the node (server). It is used
+     * @param string      $user     Ex. root.  In 'oci' the user is set in uppercase.
+     * @param string      $pwd      Ex. 12345
+     * @param string      $db       Ex. mybase. In 'oci' $db is set equals to $user
+     * @param string      $logFile  Optional  log file. Example c:\\temp\log.log
+     * @param string|null $charset  Example utf8mb4
+     * @param int         $nodeId   It is the id of the node (server). It is used
      *                              for sequence. Form 0 to 1023
      *
      * @see PdoOne::connect()
@@ -279,7 +284,7 @@ class PdoOne
     /**
      * It returns true if the text has parenthesis.
      *
-     * @param string $txt
+     * @param string       $txt
      * @param string|array $start
      * @param string|array $end
      *
@@ -306,12 +311,522 @@ class PdoOne
     }
 
     /**
+     * Convert date from unix timestamp -> ISO (database format).
+     * <p>Example: ::unixtime2Sql(1558656785); // returns 2019-05-24 00:13:05
+     *
+     * @param integer $dateNum
+     *
+     * @return string
+     */
+    public static function unixtime2Sql($dateNum)
+    {
+        // 31/01/2016 20:20:00 --> 2016-01-31 00:00
+        if ($dateNum === null) {
+            return self::$dateEpoch;
+        }
+
+        return date(self::$isoDateTimeMs, $dateNum);
+    }
+
+    /**
+     * Convert date, from mysql date -> text (using a format pre-established)
+     *
+     * @param string $sqlField
+     * @param bool   $hasTime if true then the date contains time.
+     *
+     * @return string Returns a text with the date formatted (human readable)
+     */
+    public static function dateSql2Text($sqlField, $hasTime = false)
+    {
+        $tmpDate = self::dateTimeSql2PHP($sqlField, $hasTime);
+        if ($tmpDate === null) {
+            return null;
+        }
+        if ($hasTime) {
+            return $tmpDate->format((strpos($sqlField, '.') !== false) ? self::$dateTimeMicroHumanFormat
+                : self::$dateTimeHumanFormat);
+        }
+
+        return $tmpDate->format(self::$dateHumanFormat);
+    }
+
+    /**
+     * Convert date, from mysql -> php
+     *
+     * @param string $sqlField
+     * @param bool   $hasTime
+     *
+     * @return bool|DateTime|null
+     */
+    public static function dateTimeSql2PHP($sqlField, &$hasTime = false)
+    {
+        // 3  2016-01-31 00:00:00 -> 01/01/2016 00:00:00
+        // mysql always returns the date/datetime/timestmamp in ansi format.
+        if ($sqlField === '' || $sqlField === null) {
+            if (self::$dateEpoch === null) {
+                return null;
+            }
+
+            return DateTime::createFromFormat(self::$isoDateTimeMs, self::$dateEpoch);
+        }
+
+        if (strpos($sqlField, '.')) {
+            // with date with time and microseconds
+            //2018-02-06 05:06:07.123
+            // Y-m-d H:i:s.v
+            $hasTime = true;
+            //$x = DateTime::createFromFormat("Y-m-d H:i:s.u", "2018-02-06 05:06:07.1234");
+            return DateTime::createFromFormat(self::$isoDateTimeMs, $sqlField);
+        }
+
+        if (strpos($sqlField, ':')) {
+            // date with time
+            $hasTime = true;
+            return DateTime::createFromFormat(self::$isoDateTime, $sqlField);
+        }
+        // only date
+        $hasTime = false;
+
+        return DateTime::createFromFormat(self::$isoDate, $sqlField);
+    }
+
+    /**
+     * It converts a date (as string) into another format.<br>
+     * Example:
+     * <pre>
+     * $pdoOne->dateConvert('01/01/2019','human','sql'); // 2019-01-01
+     * </pre>
+     * <br><b>iso</b> depends on the database.
+     * Example: Y-m-d H:i:s<br>
+     * <b>human</b> is based in d/m/Y H:i:s but it could be changed (self::dateHumanFormat)<br>
+     * <b>sql</b> depends on the database<br>
+     * <b>class</b> is a DateTime() object<br>
+     *
+     * @param string      $sqlField     The date to convert
+     * @param string      $inputFormat  =['iso','human','sql','class','timestamp'][$i]
+     * @param string      $outputFormat =['iso','human','sql','class','timestamp'][$i]
+     * @param null|string $force        =[null,'time','ms','none'][$i] It forces if the result gets time or
+     *                                  microseconds<br>
+     *                                  null = no force the result (it is calculated automatically)<br>
+     *                                  time = returns with a precision of seconds<br>
+     *                                  ms = returns with a precision of microseconds<br>
+     *                                  none = it never returns any time<br>
+     *
+     * @return bool|DateTime
+     */
+    public static function dateConvert($sqlField, $inputFormat, $outputFormat, $force = null)
+    {
+        /** @var boolean $ms if true then the value has microseconds */
+        $ms = false;
+        /** @var boolean $time if true then the value has time */
+        $time = false;
+        $tmpDate = self::dateConvertInput($sqlField, $inputFormat, $ms, $time);
+        if (!$tmpDate) {
+            return false;
+        }
+        if ($force !== null) {
+            if ($force === 'ms') {
+                $ms = true;
+            } elseif ($force === 'time') {
+                $time = true;
+                $ms = false;
+            } elseif ($force === 'none') {
+                $time = false;
+                $ms = false;
+            }
+        }
+        switch ($outputFormat) {
+            case 'iso':
+                if ($ms) {
+                    return $tmpDate->format(self::$dateTimeMicroFormat);
+                }
+                if ($time) {
+                    return $tmpDate->format(self::$dateTimeFormat);
+                }
+                return $tmpDate->format(self::$dateFormat);
+            case 'human':
+                if ($ms) {
+                    return $tmpDate->format(self::$dateTimeMicroHumanFormat);
+                }
+                if ($time) {
+                    return $tmpDate->format(self::$dateTimeHumanFormat);
+                }
+
+                return $tmpDate->format(self::$dateHumanFormat);
+            case 'sql':
+                if ($ms) {
+                    return $tmpDate->format(self::$isoDateInputTimeMs);
+                }
+                if ($time) {
+                    return $tmpDate->format(self::$isoDateInputTime);
+                }
+
+                return $tmpDate->format(self::$isoDateInput);
+            case 'class':
+                return $tmpDate;
+            case 'timestamp':
+                return $tmpDate->getTimestamp();
+        }
+        return false;
+    }
+
+    /**
+     * It converts a date and time value (expressed in different means) into a DateTime object or false if the operation
+     * fails.<br>
+     * <b>Example:</b><br>
+     * <pre>
+     * $r=PdoOne::dateConvertInput('01/12/2020','human',$ms,$time); // it depends on the fields self::$date*HumanFormat
+     * $r=PdoOne::dateConvertInput('2020-12-01','iso',$ms,$time); // it depends on the fields self::$date*Format
+     * $r=PdoOne::dateConvertInput('2020-12-01','sql',$ms,$time); // it depends on the database
+     * $r=PdoOne::dateConvertInput(50000,'timestamp',$ms,$time); // a timestamp
+     * $r=PdoOne::dateConvertInput(new DateTime(),'class',$ms,$time); // a DateTime object (it keeps the same one)
+     * </pre>
+     *
+     * @param mixed   $inputValue  the input value.
+     * @param string  $inputFormat =['iso','human','sql','class','timestamp'][$i] The input format
+     * @param boolean $ms          [ref] It returns if it includes microseconds
+     * @param boolean $time        [ref] It returns if it includes time
+     * @return DateTime|false false if the operation fails
+     * @noinspection PhpUnhandledExceptionInspection
+     * @noinspection PhpDocMissingThrowsInspection
+     */
+    public static function dateConvertInput($inputValue, $inputFormat, &$ms, &$time)
+    {
+        switch ($inputFormat) {
+            case 'iso':
+                if (strpos($inputValue, '.') !== false) {
+                    $ms = true;
+                    $tmpDate = DateTime::createFromFormat(self::$dateTimeMicroFormat, $inputValue);
+                } elseif (strpos($inputValue, ':') !== false) {
+                    $time = true;
+                    $tmpDate = DateTime::createFromFormat(self::$dateTimeFormat, $inputValue);
+                } else {
+                    $tmpDate = DateTime::createFromFormat(self::$dateFormat, $inputValue);
+                    if ($tmpDate === false) {
+                        return false;
+                    }
+                    $tmpDate->setTime(0, 0);
+                }
+                break;
+            case 'human':
+                if (strpos($inputValue, '.') !== false) {
+                    $ms = true;
+                    $tmpDate = DateTime::createFromFormat(self::$dateTimeMicroHumanFormat, $inputValue);
+                } elseif (strpos($inputValue, ':') !== false) {
+                    $time = true;
+                    $tmpDate = DateTime::createFromFormat(self::$dateTimeHumanFormat, $inputValue);
+                } else {
+                    $tmpDate = DateTime::createFromFormat(self::$dateHumanFormat, $inputValue);
+
+                    if ($tmpDate === false) {
+                        return false;
+                    }
+                    $tmpDate->setTime(0, 0);
+                }
+                break;
+            case 'sql':
+                if (strpos($inputValue, '.') !== false) {
+                    $ms = true;
+                    $tmpDate = DateTime::createFromFormat(self::$isoDateTimeMs, $inputValue);
+                } elseif (strpos($inputValue, ':') !== false) {
+                    $time = true;
+                    $tmpDate = DateTime::createFromFormat(self::$isoDateTime, $inputValue);
+                } else {
+                    $tmpDate = DateTime::createFromFormat(self::$isoDate, $inputValue);
+                    $tmpDate->setTime(0, 0);
+                }
+                break;
+            case 'class':
+                if (is_array($inputValue)) {
+                    // sometimes we have a DateTime class but it is converted into an array. We fixed this problem.
+                    $inputValue = new DateTime($inputValue['date']);
+                }
+                /** @var DateTime $tmpDate */
+                $tmpDate = $inputValue;
+                $time = $tmpDate->format('Gis') !== '000000';
+                break;
+            case 'timestamp':
+                $tmpDate = new DateTime();
+                $tmpDate->setTimestamp($inputValue);
+                $time = $tmpDate->format('Gis') !== '000000';
+                $ms = fmod($inputValue, 1) !== 0.0;
+                break;
+            default:
+                $tmpDate = false;
+                trigger_error('PdoOne: dateConvert type not defined');
+        }
+        return $tmpDate;
+    }
+
+    /**
+     * Convert date, from text -> mysql (using a format pre-established)
+     *
+     * @param string $textDate     Input date
+     * @param bool   $hasTime      If true then it works with date and time
+     *                             (instead of date)
+     *
+     * @return string
+     */
+    public static function dateText2Sql($textDate, $hasTime = true)
+    {
+        if (($hasTime)) {
+            $tmpFormat = strpos($textDate, '.') === false ? self::$dateTimeFormat : self::$dateTimeMicroFormat;
+        } else {
+            $tmpFormat = self::$dateFormat;
+        }
+
+        $tmpDate = DateTime::createFromFormat($tmpFormat, $textDate);
+        if (!$hasTime && $tmpDate) {
+            $tmpDate->setTime(0, 0);
+        }
+
+        return self::dateTimePHP2Sql($tmpDate); // it always returns a date with time. Mysql Ignores it.
+    }
+
+    /**
+     * Conver date from php -> mysql
+     * It always returns a time (00:00:00 if time is empty). it could returns
+     * microseconds 2010-01-01 00:00:00.00000
+     *
+     * @param DateTime $date
+     *
+     * @return string
+     */
+    public static function dateTimePHP2Sql($date)
+    {
+        // 31/01/2016 20:20:00 --> 2016-01-31 00:00
+        if ($date == null) {
+            return self::$dateEpoch;
+        }
+        if ($date->format('u') !== '000000') {
+            return $date->format(self::$isoDateTimeMs);
+        }
+
+        return $date->format(self::$isoDateTime);
+    }
+
+    /**
+     * Returns the current date(and time) in Text (human) format. Usually, it is d/m/Y H:i:s
+     *
+     * @param bool $hasTime
+     * @param bool $hasMicroseconds
+     *
+     * @return string
+     * @throws Exception
+     * @see PdoOne::$dateTimeFormat
+     */
+    public static function dateTextNow(
+        $hasTime = true,
+        $hasMicroseconds = false
+    )
+    {
+        $tmpDate = new DateTime();
+        if ($hasTime) {
+            return $tmpDate->format(($hasMicroseconds !== false) ? self::$dateTimeMicroHumanFormat
+                : self::$dateTimeHumanFormat);
+        }
+        return $tmpDate->format(self::$dateHumanFormat);
+    }
+
+    /**
+     * Returns the current (PHP server) date and time in the regular format. (Y-m-d\TH:i:s\Z in long format)
+     *
+     * @param bool $hasTime
+     * @param bool $hasMicroseconds
+     *
+     * @return string
+     * @throws Exception
+     * @see PdoOne::$dateTimeFormat
+     */
+    public static function dateNow(
+        $hasTime = true,
+        $hasMicroseconds = false
+    )
+    {
+        $tmpDate = new DateTime();
+        if ($hasTime) {
+            return $tmpDate->format(($hasMicroseconds !== false) ? self::$dateTimeMicroFormat : self::$dateTimeFormat);
+        }
+        return $tmpDate->format(self::$dateFormat);
+    }
+
+    /**
+     * Returns the current date(and time) in SQL/ISO format. It depends on the type of database.
+     *
+     * @param bool $hasTime
+     * @param bool $hasMicroseconds
+     *
+     * @return string
+     */
+    public static function dateSqlNow($hasTime = true, $hasMicroseconds = false)
+    {
+        $tmpDate = new DateTime();
+        if ($hasTime) {
+            return $tmpDate->format(($hasMicroseconds !== false) ? self::$isoDateTimeMs : self::$isoDateTime);
+        }
+
+        return $tmpDate->format(self::$isoDate);
+    }
+
+    public static function isCli()
+    {
+        return !http_response_code();
+    }
+
+    /**
+     * @param string $str   The message to show
+     * @param string $color =['e','s','w','i',''][$i]
+     * @param bool   $lineCarriage
+     * @return string
+     */
+    public static function messageCli($str, $color='', $lineCarriage=true) {
+        switch ($color) {
+            case 'e': //error
+                $r= "\033[31m$str\033[0m";
+                break;
+            case 's': //success
+                $r= "\033[32m$str\033[0m";
+                break;
+            case 'w': //warning
+                $r= "\033[33m$str\033[0m";
+                break;
+            case 'g': //green
+                $r= "\033[32m$str\033[0m";
+                break;
+            case 'i': //info
+                $r= "\033[36m$str\033[0m";
+                break;
+            default:
+                $r= "\033[0m$str\033[0m";
+                break;
+        }
+        return $r.($lineCarriage?"\n":'');
+    }
+    public static function inputCli($description, $default, $alternatives = null)
+    {
+        $temp = '';
+        if ($alternatives !== null) {
+            $opts = implode(',', $alternatives);
+            $fail = true;
+            while ($fail) {
+                $temp = readline("$description ($opts): [$default] ");
+                $temp = (!$temp) ? $default : $temp;
+                if (in_array($temp, $alternatives, true)) {
+                    $fail = false;
+                } else {
+                    echo self::messageCli('The value is not correct','w');
+                }
+            }
+        } else {
+            $temp = readline("$description : [$default] ");
+            $temp = (!$temp) ? $default : $temp;
+        }
+        return $temp;
+    }
+
+    public static function replaceBetween(
+        $haystack,
+        $startNeedle,
+        $endNeedle,
+        $replaceText,
+        &$offset = 0,
+        $replaceTag = false
+    )
+    {
+        $ini = ($startNeedle === '') ? 0 : strpos($haystack, $startNeedle, $offset);
+        if ($ini === false) {
+            return false;
+        }
+        $p1 = ($endNeedle === '') ? strlen($haystack) : strpos($haystack, $endNeedle, $ini);
+        if ($p1 === false) {
+            return false;
+        }
+        if ($replaceTag) {
+            $len = $p1 + strlen($endNeedle) - $ini;
+            $offset = $ini + $len;
+            return substr_replace($haystack, $replaceText, $ini, $len);
+
+        }
+
+        $ini += strlen($startNeedle);
+        $len = $p1 - $ini;
+        $offset = $ini + $len;
+        return substr_replace($haystack, $replaceText, $ini, $len);
+    }
+
+    public static function between($haystack, $startNeedle, $endNeedle, &$offset = 0, $ignoreCase = false)
+    {
+        if ($startNeedle === '') {
+            $ini = 0;
+        } else {
+            $ini = ($ignoreCase) ? @stripos($haystack, $startNeedle, $offset)
+                : @strpos($haystack, $startNeedle, $offset);
+        }
+        if ($ini === false) {
+            return false;
+        }
+        $ini += strlen($startNeedle);
+        if ($endNeedle === '') {
+            $len = strlen($haystack);
+        } else {
+            $len = (($ignoreCase) ? stripos($haystack, $endNeedle, $ini) : strpos($haystack, $endNeedle, $ini));
+            if ($len === false) {
+                return false;
+            }
+            $len -= $ini;
+        }
+        $offset = $ini + $len;
+        return substr($haystack, $ini, $len);
+    }
+
+    public static function tableCase($txt)
+    {
+        if ($txt === null || $txt === '') {
+            return $txt;
+        }
+        if (strpos($txt, '_') !== false || strpos($txt, ' ') !== false) {
+            $txt = strtolower($txt);
+
+            $result = '';
+            $l = strlen($txt);
+            for ($i = 0; $i < $l; $i++) {
+                $c = $txt[$i];
+                if ($c === '_' || $c === ' ') {
+                    if ($i !== $l - 1) {
+                        $result .= strtoupper($txt[$i + 1]);
+                        $i++;
+                    } else {
+                        $result .= $c;
+                    }
+                } else {
+                    $result .= $c;
+                }
+            }
+
+            return self::singularTable(ucfirst($result));
+        }
+        // the text is simple.
+        return self::singularTable(ucfirst(strtolower($txt)));
+    }
+
+    public static function singularTable($tableName)
+    {
+        $l = strlen($tableName);
+        if (strpos($tableName, 'es') === $l - 2) {
+            $tableName = substr($tableName, 0, $l - 2);
+        } else if (strpos($tableName, 's') === $l - 1) {
+            $tableName = substr($tableName, 0, $l - 1);
+        }
+        return $tableName;
+    }
+
+    /**
      * It validates two definition of arrays.
      *
-     * @param string $table The name of the table to valdiate
-     * @param array $defArray The definition of the table to compare
-     * @param string|array $defKeys The primary key or definition of keys
-     * @param array $defFK The definition of the foreign keys
+     * @param string       $table    The name of the table to valdiate
+     * @param array        $defArray The definition of the table to compare
+     * @param string|array $defKeys  The primary key or definition of keys
+     * @param array        $defFK    The definition of the foreign keys
      *
      * @return array An array with all the errors or an empty array (if both
      *               matches)
@@ -398,8 +913,9 @@ class PdoOne
      * // ,'null'=>false,'identity'=>true,'sql'='int not null auto_increment'
      * </pre>
      *
-     * @param string $table The name of the table
-     * @param null $specialConversion An associative array to set special conversion of values with the key as the column.
+     * @param string $table             The name of the table
+     * @param null   $specialConversion An associative array to set special conversion of values with the key as the
+     *                                  column.
      *
      * @return array=[0]['phptype'=>null,'conversion'=>null,'type'=>null,'size'=>null,'null'=>null
      *              ,'identity'=>null,'sql'=null]
@@ -546,15 +1062,15 @@ class PdoOne
      * // ["IndexName"=>'',"ColumnName"=>'',"is_unique"=>0,"is_primary_key"=>0,"TYPE"=>'']
      * </pre>
      *
-     * @param string $table The name of the table to analize.
-     * @param bool $returnSimple true= returns as a simple associative
+     * @param string $table            The name of the table to analize.
+     * @param bool   $returnSimple     true= returns as a simple associative
      *                                 array<br> example:['id'=>'PRIMARY
      *                                 KEY','name'=>'FOREIGN KEY...']<br> false=
      *                                 returns as an associative array separated
      *                                 by parts<br>
      *                                 ['key','refcol','reftable','extra']<br>
      *
-     * @param null $filter
+     * @param null   $filter
      *
      * @return array=["IndexName"=>'',"ColumnName"=>'',"is_unique"=>0,"is_primary_key"=>0,"TYPE"=>0]
      * @throws Exception
@@ -565,15 +1081,15 @@ class PdoOne
     }
 
     /**
-     * @param string $table The name of the table to analize.
-     * @param bool $returnSimple true= returns as a simple associative
+     * @param string $table            The name of the table to analize.
+     * @param bool   $returnSimple     true= returns as a simple associative
      *                                 array<br> example:['id'=>'PRIMARY
      *                                 KEY','name'=>'FOREIGN KEY...']<br> false=
      *                                 returns as an associative array separated
      *                                 by parts<br>
      *                                 ['key','refcol','reftable','extra']
      *
-     * @param bool $assocArray
+     * @param bool   $assocArray
      *
      * @return array
      * @throws Exception
@@ -602,8 +1118,8 @@ class PdoOne
      * <li>description = the description of the table</li>
      * </ul>
      *
-     * @param string $table The name of the table
-     * @param bool $onlyDescription If true then it only returns a description
+     * @param string $table           The name of the table
+     * @param bool   $onlyDescription If true then it only returns a description
      *
      * @return array|string|null
      * @throws Exception
@@ -630,7 +1146,16 @@ class PdoOne
         $namespace = self::getParameterCli('namespace');
         $v = self::VERSION;
 
-        if ($database === '' || $server === '' || $user === '' || $pwd === '' || $input === '' || $output === '') {
+        if ($database === '' || $server === '' || $user === '' || $pwd==='' || $input === '' || $output === '') {
+            $databasem=self::messageCli($database===''?'*missing*':$database,$database===''?'e':'g',false);
+            $serverm=self::messageCli($server===''?'*missing*':$server,$server===''?'e':'g',false);
+            $userm=self::messageCli($user===''?'*missing*':$user,$user===''?'e':'g',false);
+            $pwdm=self::messageCli('***',$pwd===''?'e':'g',false);
+            $inputm=self::messageCli($input===''?'*missing*':$input,$input===''?'e':'g',false);
+            $outputm=self::messageCli($output===''?'*missing*':$output,$output===''?'e':'g',false);
+
+
+
             echo <<<eot
  _____    _       _____           
 |  _  | _| | ___ |     | ___  ___ 
@@ -638,21 +1163,21 @@ class PdoOne
 |__|   |___||___||_____||_|_||___|  $v
 
 Syntax:php PdoOne.php <args>
--database [$database]
+-database [$databasem]
     Example: (mysql/sqlsrv/oracle/test)
--server [$server]
+-server [$serverm]
     Example mysql: 127.0.0.1 , 127.0.0.1:3306
     Example sqlsrv: (local)\sqlexpress 127.0.0.1\sqlexpress
--user The username to access to the database [$user]
+-user The username to access to the database [$userm]
     Example: root, su
--pwd The password to access to the database [***]
+-pwd The password to access to the database [$pwdm]
     Example: abc.123
 -db The database/schema [$db]
     Example: sakila
--input The input value.[$input]
-    Example: "select * from table" = it runs a query
-    Example: "table" = it runs a table (it could generates a query automatically)
--output The result value. [$output]
+-input The input value.[$inputm]
+    Example: -input "select * from table" = it runs a query
+    Example: -input "table" = it runs a table (it could generates a query automatically)
+-output The result value. [$outputm]
     classcode: it returns php code with a CRUDL class
     selectcode: it shows a php code with a select
     arraycode: it shows a php code with the definition of an array Ex: ['idfield'=0,'name'=>'']
@@ -666,12 +1191,12 @@ eot;
             return;
         }
 
-        echo $this->run($database, $server, $user, $pwd, $db, $input, $output, $namespace);
+        echo self::messageCli($this->run($database, $server, $user, $pwd, $db, $input, $output, $namespace),'e');
     }
 
     /**
      * @param           $key
-     * @param string $default is the defalut value is the parameter is set
+     * @param string    $default  is the defalut value is the parameter is set
      *                            without value.
      *
      * @return string
@@ -759,7 +1284,11 @@ eot;
 
                 return $r;
             case 'json':
-                $result = $this->runRawQuery($query, []);
+                try {
+                    $result = $this->runRawQuery($query, []);
+                } catch(Exception $ex) {
+                    return self::messageCli($this->lastError(),'e');
+                }
                 if (!is_array($result)) {
                     return "No result or result error\n";
                 }
@@ -777,6 +1306,953 @@ eot;
                 return "Output $output not defined. Use csv/json/selectcode/arraycode/createcode/classcode";
         }
     }
+
+    /**
+     * Connects to the database.
+     *
+     * @param bool $failIfConnected     true=it throw an error if it's connected,
+     *                                  otherwise it does nothing
+     *
+     * @throws Exception
+     * @test exception this(false)
+     */
+    public function connect($failIfConnected = true)
+    {
+        if ($this->isOpen) {
+            if (!$failIfConnected) {
+                return;
+            } // it's already connected.
+            $this->throwError('Already connected', '');
+        }
+        try {
+            if ($this->logLevel >= 2) {
+                $this->storeInfo("connecting to {$this->server} {$this->user}/*** {$this->db}");
+            }
+            $cs = (!$this->charset) ? ';charset=' . $this->charset : '';
+            $this->service->connect($cs, false);
+            if ($this->conn1 instanceof stdClass) {
+                $this->isOpen = true;
+                return;
+            }
+            $this->conn1->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+            $this->conn1->setAttribute(PDO::ATTR_STRINGIFY_FETCHES, false);
+
+            //$this->conn1->setAttribute(PDO::ATTR_STRINGIFY_FETCHES, false); It is not required.
+
+            $this->isOpen = true;
+        } catch (Exception $ex) {
+            $this->isOpen = false;
+            $this->throwError("Failed to connect to {$this->databaseType}", $ex->getMessage(), '', true, $ex);
+        }
+    }
+
+    /**
+     * Write a log line for debug, clean the command chain then throw an error
+     * (if throwOnError==true)
+     *
+     * @param string                $txt        The message to show.
+     * @param string                $txtExtra   It's only used if $logLevel>=2. It
+     *                                          shows an extra message
+     * @param string|array          $extraParam It's only used if $logLevel>=3  It
+     *                                          shows parameters (if any)
+     *
+     * @param bool                  $throwError if true then it throw error (is enabled). Otherwise it store the error.
+     *
+     * @param null|RuntimeException $exception
+     *
+     * @see \eftec\PdoOne::$logLevel
+     */
+    public function throwError($txt, $txtExtra, $extraParam = '', $throwError = true, $exception = null)
+    {
+        if ($this->logLevel === 0) {
+            $txt = 'Error on database';
+        }
+        if ($this->logLevel >= 2) {
+            $txt .= "\n<br><b>extra:</b>[{$txtExtra}]";
+        }
+        if ($this->logLevel >= 2) {
+            $txt .= "\n<br><b>last query:</b>[{$this->lastQuery}]";
+        }
+        if ($this->logLevel >= 3) {
+            $txt .= "\n<br><b>database:</b>" . $this->server . ' - ' . $this->db;
+            if (is_array($extraParam)) {
+                foreach ($extraParam as $k => $v) {
+                    if (is_array($v) || is_object($v)) {
+                        $v = json_encode($v);
+                    }
+                    $txt .= "\n<br><b>$k</b>:$v";
+                }
+            } else {
+                $txt .= "\n<br><b>Params :</b>[" . $extraParam . "]\n<br>";
+            }
+            if ($exception !== null) {
+                $txt .= "\n<br><b>message :</b>[" . str_replace("\n", "\n<br>", $exception->getMessage()) . "]";
+                $txt .= "\n<br><b>trace :</b>[" . str_replace("\n", "\n<br>", $exception->getTraceAsString()) . "]";
+                $txt .= "\n<br><b>code :</b>[" . str_replace("\n", "\n<br>", $exception->getCode()) . "]\n<br>";
+            }
+        }
+        if ($this->getMessages() === null) {
+            $this->debugFile($txt, 'ERROR');
+        } else {
+            $this->getMessages()->addItem($this->db, $txt);
+            $this->debugFile($txt, 'ERROR');
+        }
+        $this->errorText = $txt;
+        if ($throwError && $this->throwOnError && $this->genError) {
+            throw new RuntimeException($txt);
+        }
+    }
+
+    /**
+     * Injects a Message Container.
+     *
+     * @return MessageList|null
+     * @test equals null,this(),'this is not a message container'
+     */
+    public function getMessages()
+    {
+        if (function_exists('messages')) {
+            return messages();
+        }
+
+        return null;
+    }
+
+    public function debugFile($txt, $level = 'INFO')
+    {
+        if (!$this->logFile) {
+            return; // debug file is disabled.
+        }
+        if (is_object($txt) || is_array($txt)) {
+            $txtW = print_r($txt, true);
+        } else {
+            $txtW = $txt;
+        }
+        if ($this->logLevel === 2) {
+            $txtW .= ' param:' . json_encode($this->lastParam);
+        }
+        error_log('[PdoOne]'. $level . "\t" . $txtW ,0);
+    }
+
+    /**
+     * Write a log line for debug, clean the command chain then throw an error
+     * (if throwOnError==true)
+     *
+     * @param $txt
+     *
+     * @throws Exception
+     */
+    public function storeInfo($txt)
+    {
+        if ($this->getMessages() === null) {
+            $this->debugFile($txt);
+        } else {
+            $this->getMessages()->addItem($this->db, $txt, 'info');
+            $this->debugFile($txt);
+        }
+    }
+
+    /**
+     * Returns the last error.
+     *
+     * @return string
+     */
+    public function lastError()
+    {
+        if (!$this->isOpen) {
+            return "It's not connected to the database";
+        }
+
+        return $this->conn1->errorInfo()[2];
+    }
+
+    /**
+     * It adds a delimiter to a text based in the type of database (` for mysql
+     * and [] for sql server)<br> Example:<br>
+     * $pdoOne->addDelimiter('hello world'); // `hello` world<br>
+     * $pdoOne->addDelimiter('hello.world'); // `hello`.`world`<br>
+     * $pdoOne->addDelimiter('hello=value); // `hello`=value<br>
+     *
+     * @param $txt
+     *
+     * @return mixed|string
+     */
+    public function addDelimiter($txt)
+    {
+        if (strpos($txt, $this->database_delimiter0) === false) {
+            $pos = $this->strposa($txt, [' ', '=']);
+            if ($pos === false) {
+                $quoted = $this->database_delimiter0 . $txt . $this->database_delimiter1;
+                $quoted = str_replace('.', $this->database_delimiter1 . '.' . $this->database_delimiter0, $quoted);
+            } else {
+                $arr = explode(substr($txt, $pos, 1), $txt, 2);
+                $quoted
+                    = $this->database_delimiter0 . $arr[0] . $this->database_delimiter1 . substr($txt, $pos, 1)
+                    . $arr[1];
+                $quoted = str_replace('.', $this->database_delimiter1 . '.' . $this->database_delimiter0, $quoted);
+            }
+
+            return $quoted;
+        }
+        // it has a delimiter, so we returned the same text.
+        return $txt;
+    }
+
+    private function strposa($haystack, $needles = [], $offset = 0)
+    {
+        $chr = [];
+        foreach ($needles as $needle) {
+            $res = strpos($haystack, $needle, $offset);
+            if ($res !== false) {
+                $chr[$needle] = $res;
+            }
+        }
+        if (empty($chr)) {
+            return false;
+        }
+
+        return min($chr);
+    }
+
+    //<editor-fold desc="transaction functions">
+
+    /**
+     * It runs a raw query
+     * <br><b>Example</b>:<br>
+     * <pre>
+     * $values=$con->runRawQuery('select * from table where id=?',[20]',true); // with parameter
+     * $values=$con->runRawQuery('select * from table where id=:name',['name'=>20]',true); // with named parameter
+     * $values=$con->runRawQuery('select * from table,[]',true); // without parameter.
+     ** $values=$con->runRawQuery('select * from table where id=?,[[1,20,PDO::PARAM_INT]]',true); // a full parameter.
+     * </pr>
+     *
+     * @param string     $rawSql      The query to execute
+     * @param array|null $param       [type1,value1,type2,value2] or [name1=>value,name2=value2]
+     * @param bool       $returnArray if true then it returns an array. If false then it returns a PDOStatement
+     * @param bool       $useCache    if true then it uses cache (if the service is available).
+     * @param null       $cacheFamily if use cache, then it is used to set the family or group of the cache.
+     * @return bool|PDOStatement|array an array of associative or a pdo statement. False is the operation fails
+     * @throws Exception
+     * @test equals [0=>[1=>1]],this('select 1',null,true)
+     */
+    public function runRawQuery($rawSql, $param = null, $returnArray = true, $useCache = false, $cacheFamily = null)
+    {
+        if (!$this->isOpen) {
+            $this->throwError("It's not connected to the database", '');
+
+            return false;
+        }
+        if (!$rawSql) {
+            $this->throwError("Query empty", '');
+            return false;
+        }
+        $writeCommand = self::queryCommand($rawSql, true) !== 'dql';
+
+        /** @var bool|string $uid it stores the unique identifier of the query */
+        $uid = false;
+
+        if ($this->readonly && $writeCommand) {
+            // we aren't checking SQL-DLC queries. Also, "insert into" is stopped but "  insert into" not.
+            $this->throwError('Database is in READ ONLY MODE', '');
+            return false;
+        }
+        if (!is_array($param) && $param !== null) {
+            $this->throwError('runRawQuery, param must be null or an array', '');
+            return false;
+        }
+        if ($this->useInternalCache && $returnArray === true && !$writeCommand) {
+            // if we use internal cache and we returns an array and it is not a write command
+            $uid = hash($this->encryption->hashType, $rawSql . serialize($param));
+            if (isset($this->internalCache[$uid])) {
+                // we have an internal cache, so we will return it.
+                $this->internalCacheCounter++;
+                return $this->internalCache[$uid];
+            }
+        }
+
+        $this->lastParam = $param;
+        $this->lastQuery = $rawSql;
+        if ($this->logLevel >= 2) {
+            $this->storeInfo($rawSql);
+        }
+        if ($param === null) {
+            $rows = $this->runRawQueryParamLess($rawSql, $returnArray);
+            if ($uid !== false && $returnArray) {
+                $this->internalCache[$uid] = $rows;
+            }
+            return $rows;
+        }
+
+        // the "where" has parameters.
+        $stmt = $this->prepare($rawSql);
+        if ($stmt === false) {
+            $this->throwError("Unable to prepare statement", $rawSql);
+            return false;
+        }
+        $counter = 0;
+        if ($this->isAssoc($param)) {
+            $this->lastBindParam = $param;
+            // [':name'=>value,':name2'=>value2];
+            foreach ($param as $k => $v) {
+                // note: the second field is & so we could not use $v
+                $stmt->bindParam($k, $param[$k], $this->getType($v));
+            }
+        } else {
+            // parameters numeric
+            $this->lastBindParam = [];
+            $f = reset($param);
+            if (is_array($f)) {
+                // arrays of arrays.
+                // [[name1,value1,type1,l1],[name2,value2,type2,l1]]
+                foreach ($param as $k => $v) {
+                    $this->lastBindParam[$counter] = $v[0];
+                    // note: the second field is & so we could not use $v
+                    $stmt->bindParam($v[0], $param[$k][1], $v[2], $v[3]);
+                }
+            } else {
+                // [value1,value2]
+                foreach ($param as $i => $iValue) {
+                    //$counter++;
+                    //$typeP = $this->stringToPdoParam($param[$i]);
+                    $this->lastBindParam[$i] = $param[$i];
+                    //$stmt->bindParam($counter, $param[$i + 1], $typeP);
+                    $stmt->bindParam($i + 1, $param[$i], $this->getType($param[$i]));
+                }
+            }
+        }
+        if ($useCache !== false && $returnArray) {
+            $this->uid = hash($this->encryption->hashType, $this->lastQuery . serialize($this->lastBindParam));
+            $result = $this->cacheService->getCache($this->uid, $cacheFamily);
+            if ($result !== false) {
+                // it's found in the cache.
+                if (is_array($result)) {
+                    $this->affected_rows = count($result);
+                } else {
+                    $this->affected_rows = 0;
+                }
+                if ($uid !== false) {
+                    $this->internalCache[$uid] = $result;
+                }
+                return $result;
+            }
+        } else {
+            $this->uid = null;
+        }
+        $this->runQuery($stmt);
+
+        if ($returnArray && $stmt instanceof PDOStatement) {
+            $rows = ($stmt->columnCount() > 0) ? $stmt->fetchAll(PDO::FETCH_ASSOC) : [];
+            $this->affected_rows = $stmt->rowCount();
+            $stmt = null;
+            if ($uid !== false) {
+                $this->internalCache[$uid] = $rows;
+            }
+            return $rows;
+        }
+
+        if ($stmt instanceof PDOStatement) {
+            $this->affected_rows = $stmt->rowCount();
+        } else {
+            $this->affected_rows = 0;
+        }
+
+        return $stmt;
+    }
+
+    /**
+     * It returns the sql command (in lower case) or the type (family) of sql command of a query<br>
+     * Example:<br>
+     * <pre>
+     * $this->queryCommand("select * from table") // returns "select"
+     * $this->queryCommand("select * from table",true) // returns "dql"
+     * </pre>
+     *
+     * @param string $sql
+     * @param false  $returnType if true then it returns DML (insert/updat/delete/etc) or DQL (select/show/display)
+     *
+     * @return string
+     *
+     */
+    public static function queryCommand($sql, $returnType = false)
+    {
+        if (!$sql) {
+            return $returnType ? 'dml' : 'dql';
+        }
+        $command = strtolower((explode(' ', trim($sql)))[0]);
+        if ($returnType) {
+            if ($command === 'select' || $command === 'show' || $command === 'display') {
+                return 'dql';
+            }
+            return 'dml';
+        }
+        return $command;
+    }
+
+    /**
+     * Internal Use: It runs a raw query
+     *
+     * @param string $rawSql
+     * @param bool   $returnArray
+     *
+     * @return array|bool|false|PDOStatement
+     * @throws Exception
+     * @see \eftec\PdoOne::runRawQuery
+     */
+    private function runRawQueryParamLess($rawSql, $returnArray)
+    {
+        // the "where" chain doesn't have parameters.
+        try {
+            $rows = $this->conn1->query($rawSql);
+            if ($rows === false) {
+                throw new RuntimeException('Unable to run raw runRawQueryParamLess', 9001);
+            }
+        } catch (Exception $ex) {
+            $rows = false;
+            $this->throwError('Exception in runRawQueryParamLess :', $rawSql, ['param' => $this->lastParam], true, $ex);
+        }
+
+        if ($returnArray && $rows instanceof PDOStatement) {
+            if ($rows->columnCount() > 0) {
+                $result = @$rows->fetchAll(PDO::FETCH_ASSOC);
+                $this->affected_rows = $rows->rowCount();
+
+                return $result;
+            }
+
+            $this->affected_rows = $rows->rowCount();
+
+            return true;
+        }
+
+        $this->affected_rows = $rows->rowCount();
+
+        return $rows;
+    }
+
+    //</editor-fold>
+
+    /**
+     * Prepare a query. It returns a mysqli statement.
+     *
+     * @param string $statement A SQL statement.
+     *
+     * @return PDOStatement returns the statement if correct otherwise null
+     * @throws Exception
+     */
+    public function prepare($statement)
+    {
+        if (!$this->isOpen) {
+            $this->throwError("It's not connected to the database", '');
+
+            return null;
+        }
+        $this->lastQuery = $statement;
+        if ($this->readonly) {
+            if (stripos($statement, 'insert ') === 0 || stripos($statement, 'update ') === 0
+                || stripos($statement, 'delete ') === 0
+            ) {
+                // we aren't checking SQL-DCL queries.
+                $this->throwError('Database is in READ ONLY MODE', '');
+            }
+        }
+        if ($this->logLevel >= 2) {
+            $this->storeInfo($statement);
+        }
+
+        try {
+            $stmt = $this->conn1->prepare($statement);
+        } catch (Exception $ex) {
+            $stmt = false;
+            if ($this->errorText === '') {
+                $this->throwError('Failed to prepare', $ex->getMessage(), ['param' => $this->lastParam]);
+            }
+        }
+        if (($stmt === false) && $this->errorText === '') {
+            $this->throwError('Unable to prepare query', $this->lastQuery, ['param' => $this->lastParam]);
+        }
+
+        return $stmt;
+    }
+
+    /**
+     * It returns true if the array is an associative array.  False
+     * otherwise.<br>
+     * <b>Example:</b><br>
+     * isAssoc(['a1'=>1,'a2'=>2]); // true<br/>
+     * isAssoc(['a1','a2']); // false<br/>
+     * isAssoc('aaa'); isAssoc(null); // false<br/>
+     *
+     * @param mixed $array
+     *
+     * @return bool
+     */
+    private function isAssoc($array)
+    {
+        if ($array === null) {
+            return false;
+        }
+        if (!is_array($array)) {
+            return false;
+        }
+
+        return (array_values($array) !== $array);
+    }
+
+    /**
+     * It returns the type of the PDO parameter based in the type of value of a variable
+     *
+     * @param mixed $v Variable
+     *
+     * @return int=[PDO::PARAM_STR,PDO::PARAM_INT,PDO::PARAM_BOOL][$i]
+     * @test equals PDO::PARAM_STR,(20.3)
+     * @test equals PDO::PARAM_STR,('hello')
+     */
+    public function getType(&$v)
+    {
+        switch (1) {
+            case (is_float($v)):
+            case ($v === null):
+                $vt = PDO::PARAM_STR;
+                break;
+            case (is_numeric($v)):
+                $vt = PDO::PARAM_INT;
+                break;
+            case (is_bool($v)):
+
+                $vt = PDO::PARAM_INT;
+                $v = ($v) ? 1 : 0;
+                break;
+            case (is_object($v) && $v instanceof DateTime):
+                $vt = PDO::PARAM_STR;
+                $v = self::dateTimePHP2Sql($v);
+                break;
+            default:
+                $vt = PDO::PARAM_STR;
+        }
+
+        return $vt;
+    }
+
+
+
+    //<editor-fold desc="Date functions" defaultstate="collapsed" >
+
+    /**
+     * Run a prepared statement.
+     * <br><b>Example</b>:<br>
+     *      $con->runQuery($con->prepare('select * from table'));
+     *
+     * @param PDOStatement $stmt          PDOStatement
+     * @param array|null   $namedArgument (optional)
+     *
+     * @param bool         $throwError    (default true) if false, then it won't throw an error but it will store the
+     *                                    error
+     *
+     * @return bool returns true if the operation is correct, otherwise false
+     * @throws Exception
+     * @test equals true,$this->pdoOne->runQuery($this->pdoOne->prepare('select
+     *     1 from dual'))
+     * @test equals
+     *     [1=>1],$this->pdoOne->select('1')->from('dual')->first(),'it
+     *       must runs'
+     */
+    public function runQuery($stmt, $namedArgument = null, $throwError = true)
+    {
+        if (!$this->isOpen) {
+            $this->throwError("It's not connected to the database", '', $throwError);
+            return null;
+        }
+        try {
+            //$namedArgument = ($namedArgument === null)
+            //    ? array_merge($this->setParamAssoc,$this->whereParamAssoc,$this->havingParamAssoc) : $namedArgument;
+            $r = $stmt->execute($namedArgument);
+        } catch (Exception $ex) {
+            $this->throwError($this->databaseType . ':Failed to run query', $this->lastQuery,
+                ['param' => $this->lastParam, 'error_last' => json_encode(error_get_last())], $throwError, $ex);
+            return false;
+        }
+        if ($r === false) {
+            $this->throwError('Exception query ', $this->lastQuery, ['param' => $this->lastParam], $throwError);
+            return false;
+        }
+
+        return true;
+    }
+
+    protected static function fixCsv($value)
+    {
+        if (is_numeric($value)) {
+            return $value;
+        }
+        $value = str_replace('"', '""', $value);
+
+        return '"' . $value . '"';
+    }
+
+    /**
+     * @param string $query
+     *
+     * @return string
+     * @throws Exception
+     */
+    public function generateCodeSelect($query)
+    {
+        $q = self::splitQuery($query);
+        $code = '/** @var array $result=array(' . $this->generateCodeArray($query, $query) . ') */' . "\n";
+
+        $code .= '$result=$pdo' . "\n";
+        foreach ($q as $k => $v) {
+            if ($v !== null) {
+                $k2 = str_replace(' by', '', $k); // order by -> order
+                foreach ($v as $vitem) {
+                    $code .= "\t->{$k2}(\"{$vitem}\")\n";
+                }
+            }
+        }
+        $code .= "\t->toList();\n";
+
+        return $code;
+    }
+
+    protected static function splitQuery($query)
+    {
+        $result = [];
+        $parts = [
+            'select',
+            'from',
+            'inner join',
+            'inner join',
+            'inner join',
+            'inner join',
+            'inner join',
+            'inner join',
+            'left join',
+            'left join',
+            'left join',
+            'left join',
+            'left join',
+            'left join',
+            'right join',
+            'right join',
+            'right join',
+            'right join',
+            'right join',
+            'right join',
+            'where',
+            'group by',
+            'having',
+            'order by',
+            'limit',
+            '*END*',
+        ];
+        $partsRealIndex = [
+            'select',
+            'from',
+            'innerjoin',
+            'innerjoin',
+            'innerjoin',
+            'innerjoin',
+            'innerjoin',
+            'innerjoin',
+            'left',
+            'left',
+            'left',
+            'left',
+            'left',
+            'left',
+            'right',
+            'right',
+            'right',
+            'right',
+            'right',
+            'right',
+            'where',
+            'group',
+            'having',
+            'order',
+            'limit',
+            '*END*',
+        ];
+        $query = str_replace(array("\r\n", "\n", "\t", '   ', '  '), ' ',
+            $query); // remove 3 or 2 space and put instead 1 space
+        $query = ' ' . trim($query, " \t\n\r\0\x0B;") . '*END*'; // we also trim the last ; (if any)
+        $pfin = 0;
+        foreach ($parts as $kp => $part) {
+            $ri = $partsRealIndex[$kp];
+            if ($part !== '*END*') {
+                //$result[$ri] = null;
+                $pini = stripos($query, $part, $pfin);
+                if ($pini !== false) {
+                    $pini += strlen($part);
+                    $found = false;
+                    $cp = count($parts);
+                    for ($i = $kp + 1; $i < $cp; $i++) {
+                        $pfin = stripos($query, $parts[$i], $pini);
+                        if ($pfin !== false) {
+                            $found = $pfin;
+                            break;
+                        }
+                    }
+                    if ($found !== false) {
+                        $pfin = $found;
+                        if (!isset($result[$ri])) {
+                            $result[$ri] = [];
+                        }
+                        $result[$ri][] = trim(substr($query, $pini, $pfin - $pini));
+                    }
+                }
+            }
+        }
+
+        return $result;
+    }
+
+    /**
+     * @param string      $table
+     * @param null|string $sql
+     * @param bool        $defaultNull
+     * @param bool        $inline
+     * @param bool        $recursive
+     * @param null|array  $classRelations [optional] The relation table=>classname
+     * @param array       $relation       [optional] An optional custom relation of columns
+     *
+     * @return string
+     * @throws Exception
+     */
+    public function generateCodeArray(
+        $table,
+        $sql = null,
+        $defaultNull = false,
+        $inline = true,
+        $recursive = false,
+        $classRelations = null,
+        $relation = []
+    )
+    {
+        if ($sql === null) {
+            $sql = 'select * from ' . $this->addDelimiter($table);
+        }
+        $query = new PdoOneQuery($this);
+        $r = $query->toMeta($sql);
+
+        $ln = ($inline) ? '' : "\n";
+        if ($recursive) {
+            /** @noinspection PhpUnusedLocalVariableInspection */
+            list($tables, $after, $before) = $this->tableDependency(true);
+        } else {
+            $tables = null;
+            $after = null;
+            $before = null;
+        }
+        $result = '[' . $ln;
+        $used = [];
+        $norepeat = [];
+        foreach ($r as $row) {
+            $name = $row['name'];
+            if (!in_array($name, $used, true)) {
+                if ($defaultNull) {
+                    $default = 'null';
+                } else {
+                    $default = $this->typeDict($row);
+                }
+                $result .= "'" . $name . "'=>" . $default . ',' . $ln;
+                if ($recursive) {
+                    if (isset($before[$table][$name])) {
+                        foreach ($before[$table][$name] as $k => $v3) {
+                            if ($v3[1]
+                                && $v3[0][0] !== self::$prefixBase
+                            ) { // before is defined as [colremote,tableremote]
+                                $colName = self::$prefixBase . $v3[1];
+                                if (!$defaultNull) {
+                                    $default = '(in_array($recursivePrefix.\'' . $colName . '\',$recursive,true))
+                            ? [] 
+                            : null';
+                                } else {
+                                    $default = 'null';
+                                }
+                                if (!in_array($colName, $norepeat)) {
+                                    if (isset($relation[$colName])) {
+                                        $key = $relation[$colName]['key'];
+
+                                        if ($key === 'PARENT') {
+                                            $default = 'null';
+                                        }
+                                        if ($key === 'ONETOONE' && !$defaultNull) {
+                                            if ($classRelations === null
+                                                || !isset($classRelations[$relation[$colName]['reftable']])
+                                            ) {
+                                                $className = self::camelize($relation[$colName]['reftable']) . 'Repo';
+                                            } else {
+                                                $className = $relation[$colName]['reftable'];
+                                            }
+                                            $default = '(in_array($recursivePrefix.\'' . $colName . '\',$recursive,true))
+                            ? ' . $className . '::factory(null,$recursivePrefix.\'' . $colName . '\') 
+                            : null';
+                                        }
+                                        $result .= "'" . $colName . "'=>" . $default . ', /* ' . $key . '! */' . $ln;
+                                        $norepeat[] = $colName;
+                                    } else {
+                                        $result .= "'" . $colName . "'=>" . $default . ', /* onetomany */' . $ln;
+                                        $norepeat[] = $colName;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    if (@$after[$table][$name]) {
+                        if (!$defaultNull) {
+                            if ($classRelations === null || !isset($classRelations[$after[$table][$name]])) {
+                                $className = self::camelize($after[$table][$name]) . 'Repo';
+                            } else {
+                                $className = $classRelations[$after[$table][$name]];
+                            }
+                            $default = '(in_array($recursivePrefix.\'' . self::$prefixBase . $name . '\',$recursive,true)) 
+                            ? ' . $className . '::factory(null,$recursivePrefix.\'' . self::$prefixBase . $name . '\') 
+                            : null';
+                        }
+                        if (!in_array($name, $norepeat)) {
+                            $namep = self::$prefixBase . $name;
+                            if (isset($relation[$namep])) {
+                                /*array(5) {
+                                    ["key"]=>
+                                    string(11) "FOREIGN KEY"
+                                    ["refcol"]=>
+                                    string(14) "idtablachildPK"
+                                    ["reftable"]=>
+                                    string(10) "TableChild"
+                                    ["extra"]=>
+                                    string(0) ""
+                                    ["name"]=>
+                                    string(26) "FK_TableParent_TableChild1"
+                                  }*/
+                                $key = $relation[$namep]['key'];
+                                if ($key !== 'PARENT') {
+                                    // $default = 'null';
+                                    $result .= "'" . $namep . "'=>" . $default . ', /* ' . $key . '!! */' . $ln;
+                                    $norepeat[] = $name;
+                                }
+                            } else {
+                                $result .= "'" . $namep . "'=>" . $default . ', /* manytoone */' . $ln;
+                                $norepeat[] = $name;
+                            }
+                        }
+                    }
+                }
+            }
+
+            $used[] = $name;
+        }
+        $result .= ']' . $ln;
+        $result = str_replace(",$ln]", "$ln]", $result);
+        return $result;
+    }
+
+    /**
+     * It returns an array with all the tables of the schema, also the foreign key and references  of each table<br>
+     * <b>Example:</b>
+     * <pre>
+     * $this->tableDependency();
+     * // ['table'=>['city','country'],
+     * //    'after'=>['city'=>['country'],'country=>[]],
+     * //    'before'=>['country'=>['city'],'city=>[]]
+     * //   ]
+     * $this->tableDependency(true);
+     * // ["tables" => ["city","country"]
+     * //    ,"after" => ["city" => ["countryfk" => "country"],"country" => []]
+     * //    ,"before" => ["city" => [],"country" => ["country_id" => "country_id","city"]]
+     * // ]
+     * </pre>
+     *
+     * @param bool $returnColumn   If true then in "after" and "before", it returns the name of the columns
+     * @param bool $forceLowerCase if true then the names of the tables are stored as lowercase
+     *
+     * @return array
+     * @throws Exception
+     */
+    public function tableDependency($returnColumn = false, $forceLowerCase = false)
+    {
+        if ($returnColumn) {
+            if ($this->tableDependencyArrayCol !== null) {
+                return $this->tableDependencyArrayCol;
+            }
+        } elseif ($this->tableDependencyArray !== null) {
+            return $this->tableDependencyArray;
+        }
+        $tables = $this->objectList('table', true);
+        $after = [];
+        $before = [];
+        foreach ($tables as $table) {
+            $before[$table] = [];
+        }
+        foreach ($tables as $table) {
+            $arr = $this->getDefTableFK($table, false);
+            $deps = [];
+            foreach ($arr as $k => $v) {
+                $v['reftable'] = ($forceLowerCase) ? strtolower($v['reftable']) : $v['reftable'];
+                $k = ($forceLowerCase) ? strtolower($k) : $k;
+                if ($returnColumn) {
+                    $deps[$k] = $v['reftable'];
+                    if (!isset($before[$v['reftable']][$v['refcol']])) {
+                        $before[$v['reftable']][$v['refcol']] = [];
+                    }
+                    $before[$v['reftable']][$v['refcol']][] = [$k, $table]; // remote column and remote table
+
+                } else {
+                    $deps[] = $v['reftable'];
+                    $before[$v['reftable']][] = $table;
+                }
+            }
+            $after[$table] = $deps; // ['city']=>['country','location']
+        }
+        if ($returnColumn) {
+            $this->tableDependencyArrayCol = [$tables, $after, $before];
+            return $this->tableDependencyArrayCol;
+        }
+        $this->tableDependencyArray = [$tables, $after, $before];
+        return $this->tableDependencyArray;
+    }
+
+    /**
+     * Returns a list of objects from the current schema/db<br>
+     *
+     * @param string $type         =['table','function'][$i] The type of the
+     *                             object
+     * @param bool   $onlyName     If true then it only returns the name of the
+     *                             objects.
+     *
+     * @return bool|array
+     * @throws Exception
+     */
+    public function objectList($type = 'table', $onlyName = false)
+    {
+        $query = $this->service->objectList($type, $onlyName);
+        if ($onlyName) {
+            return $this->select($query)->toListSimple();
+        }
+
+        return $this->runRawQuery($query, []);
+    }
+
+    /**
+     * @param $sql
+     * @return PdoOneQuery
+     */
+    public function select($sql)
+    {
+        $query = new PdoOneQuery($this);
+        return $query->select($sql);
+    }
+
+    private function typeDict($row, $default = true)
+    {
+        return $this->service->typeDict($row, $default);
+    }
+
+    public static function camelize($input, $separator = '_')
+    {
+        return str_replace($separator, '', ucwords($input, $separator));
+    }
+
     /**
      * @param string $tableName
      *
@@ -798,882 +2274,7 @@ eot;
         return $code;
     }
 
-    public function generateBaseClass($baseClassName, $namespace, $classes, $modelUse = false)
-    {
-        $r = <<<'eot'
-<?php
-/** @noinspection PhpIncompatibleReturnTypeInspection
- * @noinspection ReturnTypeCanBeDeclaredInspection
- * @noinspection DuplicatedCode
- * @noinspection PhpUnused
- * @noinspection PhpUndefinedMethodInspection
- * @noinspection PhpUnusedLocalVariableInspection
- * @noinspection PhpUnusedAliasInspection
- * @noinspection NullPointerExceptionInspection
- * @noinspection SenselessProxyMethodInspection
- * @noinspection PhpParameterByRefIsNotUsedAsReferenceInspection
- */
-{namespace}
-use eftec\PdoOne;
-use eftec\_BasePdoOneRepo;
-{exception}
-
-/**
- * Generated by PdoOne Version {version}. 
- * @copyright (c) Jorge Castro C. MIT License  https://github.com/EFTEC/PdoOne
- * Class {class}
- */
-class {class} extends _BasePdoOneRepo
-{
-    const type = '{type}';
-    const COMPILEDVERSION={compiled};
-    const NS = '{namespace2}';
-    
-    /** 
-     * @var bool if true then it uses objects (instead of array) in the 
-     * methods tolist(),first(),insert(),update() and delete() 
-     */
-    public static $useModel={modeluse};      
-    
-    
-    /** @var string[] it is used to set the relations betweeen table (key) and class (value) */
-    const RELATIONS = {relations};
-    /**
-     * With the name of the table, we get the class
-     * @param string $tableName
-     *
-     * @return string[]
-     */
-    protected function tabletoClass($tableName) {        
-        return static::RELATIONS[$tableName];           
-    }    
-}
-eot;
-        /*foreach($classes as $id=>$entity) {
-            foreach($entity as $k=>$class) {
-                $classes[$id][$k] = $namespace . '\\' . $class;
-            }
-        }
-        */
-        $namespace = trim($namespace, '\\');
-
-        return str_replace([
-            '{type}',
-            '{class}',
-            '{exception}',
-            '{namespace}',
-            '{namespace2}',
-            '{relations}',
-            '{modeluse}',
-            '{version}',
-            '{compiled}'
-        ], [
-            $this->databaseType,
-            $baseClassName,
-            ($namespace) ? 'use Exception;' : '', // {exception}
-            ($namespace) ? "namespace $namespace;" : '', // {namespace}
-            ($namespace) ? "$namespace\\\\" : '', // {namespace2}
-            $this::varExport($classes),
-            $modelUse ? 'true' : 'false', // {modeluse}
-            self::VERSION . ' Date generated ' . date('r'), // {version}
-            _BasePdoOneRepo::BINARYVERSION, // {compiled}
-        ], $r);
-    }
-
-    /**
-     * @param string $tableName
-     * @param string $namespace
-     * @param null $customRelation
-     * @param null $classRelations
-     * @param array $specialConversion
-     * @param null $defNoInsert
-     * @param null $defNoUpdate
-     * @param null $baseClass
-     * @param array $extraColumn
-     * @param array $columnRemove
-     *
-     * @return string|string[]
-     * @throws Exception
-     */
-    public function generateAbstractModelClass(
-        $tableName,
-        $namespace = '',
-        $customRelation = null,
-        $classRelations = null,
-        $specialConversion = [],
-        $defNoInsert = null,
-        $defNoUpdate = null,
-        $baseClass = null,
-        $extraColumn = [],
-        $columnRemove = []
-    )
-    {
-        $r = <<<'eot'
-<?php
-/** @noinspection PhpIncompatibleReturnTypeInspection
- * @noinspection ReturnTypeCanBeDeclaredInspection
- * @noinspection DuplicatedCode
- * @noinspection PhpUnused
- * @noinspection PhpUndefinedMethodInspection
- * @noinspection PhpUnusedLocalVariableInspection
- * @noinspection PhpUnusedAliasInspection
- * @noinspection NullPointerExceptionInspection
- * @noinspection SenselessProxyMethodInspection
- * @noinspection PhpParameterByRefIsNotUsedAsReferenceInspection
- */
-{namespace}
-use eftec\PdoOne;
-{exception}
-
-/**
- * Generated by PdoOne Version {version}. 
- * DO NOT EDIT THIS CODE. THIS CODE WILL SELF GENERATE.
- * @copyright (c) Jorge Castro C. MIT License  https://github.com/EFTEC/PdoOne
- * Class {classname}
- * <pre>
- * $code=$pdoOne->generateAbstractModelClass({args});
- * </pre>
- */
-abstract class Abstract{classname}
-{
-{fields}
-
-{fieldsrel}
-
-
-    /**
-     * Abstract{classname} constructor.
-     *
-     * @param array|null $array
-     */
-    public function __construct($array=null)
-    {
-        if($array===null) {
-            return;
-        }
-        foreach($array as $k=>$v) {
-            $this->{$k}=$v;
-        }
-    }
-
-    //<editor-fold desc="array conversion">
-    public static function fromArray($array) {
-        if($array===null) {
-            return null;
-        }
-        $obj=new {classname}();
-{fieldsfa}
-{fieldsrelfa}
-
-        return $obj;
-    }
-    
-    /**
-     * It converts the current object in an array
-     * 
-     * @return mixed
-     */
-    public function toArray() {
-        return static::objectToArray($this);
-    }
-    
-    /**
-     * It converts an array of arrays into an array of objects.
-     * 
-     * @param array|null $array
-     *
-     * @return array|null
-     */
-    public static function fromArrayMultiple($array) {
-        if($array===null) {
-            return null;
-        }
-        $objs=[];
-        foreach($array as $v) {
-            $objs[]=self::fromArray($v);
-        }
-        return $objs;
-    }
     //</editor-fold>
-    
-} // end class
-eot;
-        //$lastns = explode('\\', $namespace);
-        //$baseClass = ($baseClass === null) ? end($lastns) : $baseClass;
-
-        $fa = func_get_args();
-        foreach ($fa as $f => $k) {
-            if (is_array($k)) {
-                $fa[$f] = str_replace([' ', "\r\n", "\n"], ['', '', ''], var_export($k, true));
-            } else {
-                $fa[$f] = "'$k'";
-            }
-        }
-        if ($classRelations === null || !isset($classRelations[$tableName])) {
-            $className = self::camelize($tableName);
-        } else {
-            $className = $classRelations[$tableName];
-        }
-
-        $r = str_replace(array(
-            '{version}',
-            '{classname}',
-            '{exception}',
-            '{namespace}'
-        ), array(
-            self::VERSION . ' Date generated ' . date('r'), //{version}
-            $className, // {classname}
-            ($namespace) ? 'use Exception;' : '',
-            ($namespace) ? "namespace $namespace;" : ''
-        ), $r);
-        $pk = '??';
-        $pk = $this->service->getPK($tableName, $pk);
-        $pkFirst = (is_array($pk) && count($pk) > 0) ? $pk[0] : null;
-
-        try {
-            $relation = $this->getDefTableFK($tableName, false, true);
-        } catch (Exception $e) {
-            return 'Error: Unable read fk of table ' . $e->getMessage();
-        }
-
-        try {
-            $deps = $this->tableDependency(true);
-        } catch (Exception $e) {
-            return 'Error: Unable read table dependencies ' . $e->getMessage();
-        } //  ["city"]=> {["city_id"]=> "address"}
-        $after = @$deps[1][$tableName];
-        if ($after === null) {
-            $after = @$deps[1][strtolower($tableName)];
-        }
-        $before = @$deps[2][$tableName];
-        if ($before === null) {
-            $before = @$deps[2][strtolower($tableName)];
-        }
-        if (is_array($after) && is_array($before)) {
-            foreach ($before as $key => $rows) { // $value is [relcol,table]
-                foreach ($rows as $value) {
-                    $relation['' . self::$prefixBase . $value[1]] = [
-                        'key' => 'ONETOMANY',
-                        'col' => $key,
-                        'reftable' => $value[1],
-                        'refcol' => $value[0]
-                    ];
-                }
-            }
-        }
-        // converts relations to ONETOONE
-        foreach ($relation as $k => $rel) {
-            if ($rel['key'] === 'ONETOMANY') {
-                $pkref = null;
-                $pkref = $this->service->getPK($rel['reftable'], $pkref);
-                if ('' . self::$prefixBase . $pkref[0] === $rel['refcol'] && count($pkref) === 1) {
-                    $relation[$k]['key'] = 'ONETOONE';
-                    $relation[$k]['col'] = 'xxx1';
-                    $relation[$k]['refcol'] = ltrim($relation[$k]['refcol'], self::$prefixBase);
-                }
-            }
-            if ($rel['key'] === 'MANYTOONE') {
-                $pkref = null;
-                $pkref = $this->service->getPK($rel['reftable'], $pkref);
-
-                if ($pkref[0] === $rel['refcol'] && count($pkref) === 1
-                    && (strcasecmp($k, '' . self::$prefixBase . $pkFirst) === 0)
-                ) {
-                    // if they are linked by the pks and the pks are only 1.
-                    $relation[$k]['key'] = 'ONETOONE';
-                    $relation[$k]['col'] = 'xxx2';
-                    $relation[$k]['refcol'] = ltrim($relation[$k]['refcol'], self::$prefixBase);
-                }
-            }
-        }
-        if ($customRelation) {
-            foreach ($relation as $k => $rel) {
-                if (isset($customRelation[$k])) {
-                    // parent.
-                    if ($customRelation[$k] === 'PARENT') {
-                        $relation[$k]['key'] = 'PARENT';
-                    } elseif ($customRelation[$k] === 'MANYTOMANY') {
-                        // the table must has 2 primary keys.
-                        $pks = null;
-                        $pks = $this->service->getPK($relation[$k]['reftable'], $pks);
-                        /** @noinspection PhpParamsInspection */
-                        if ($pks !== false || count($pks) === 2) {
-                            $relation[$k]['key'] = 'MANYTOMANY';
-                            $refcol2 = ('' . self::$prefixBase . $pks[0] === $relation[$k]['refcol']) ? $pks[1]
-                                : $pks[0];
-
-                            try {
-                                $defsFK = $this->service->getDefTableFK($relation[$k]['reftable'], false);
-                            } catch (Exception $e) {
-                                return 'Error: Unable read table dependencies ' . $e->getMessage();
-                            }
-                            try {
-                                $keys2 = $this->service->getDefTableKeys($defsFK[$refcol2]['reftable'], true,
-                                    'PRIMARY KEY');
-                            } catch (Exception $e) {
-                                return 'Error: Unable read table dependencies' . $e->getMessage();
-                            }
-                            $relation[$k]['refcol2'] = '' . self::$prefixBase . $refcol2;
-                            if (is_array($keys2)) {
-                                $keys2 = array_keys($keys2);
-                                $relation[$k]['col2'] = $keys2[0];
-                            } else {
-                                $relation[$k]['col2'] = null;
-                            }
-                            $relation[$k]['table2'] = $defsFK[$refcol2]['reftable'];
-                        }
-                    }
-                    // manytomany
-                }
-            }
-        }
-        //die(1);
-
-        $gdf = $this->getDefTable($tableName, $specialConversion);
-
-        foreach ($columnRemove as $v) {
-            unset($gdf[$v]);
-        }
-
-        $fields = [];
-        $fieldsb = [];
-        foreach ($gdf as $varn => $field) {
-            switch ($field['phptype']) { //binary, date, datetime, decimal,int, string,time, timestamp 
-                case 'binary':
-                case 'date':
-                case 'datetime':
-                case 'decimal':
-                case 'float':
-                case 'int':
-                case 'string':
-                case 'time':
-                case 'timestamp':
-                    $fields[] = "\t/** @var " . $field['phptype'] . " \$$varn  */\n\tpublic \$$varn;";
-                    $fieldsb[] = "\t\t\$obj->$varn=isset(\$array['$varn']) ?  \$array['$varn'] : null;";
-                    break;
-            }
-        }
-        foreach ($extraColumn as $varn => $value) {
-            $fields[] = "\t/** @var mixed \$$varn extra column: $value */\n\tpublic \$$varn;";
-            $fieldsb[] = "\t\t\$obj->$varn=isset(\$array['$varn']) ?  \$array['$varn'] : null;";
-        }
-        $fieldsArr = implode("\n", $fields);
-        $fieldsbArr = implode("\n", $fieldsb);
-
-        $field2s = [];
-        $field2sb = [];
-        foreach ($relation as $varn => $field) {
-            //$varnclean = ltrim($varn, PdoOne::$prefixBase);
-            switch ($field['key']) {
-                case 'FOREIGN KEY':
-                    break;
-                case 'MANYTOONE':
-                    $class = $classRelations[$field['reftable']];
-                    $field2s[] = "\t/** @var $class \$$varn manytoone */
-    public \$$varn;";
-                    $field2sb[] = "\t\t\$obj->$varn=isset(\$array['$varn']) ? 
-            \$obj->$varn=$class::fromArray(\$array['$varn']) 
-            : null; // manytoone";
-                    $col = ltrim($varn, self::$prefixBase);
-                    $rcol = $field['refcol'];
-                    $field2sb[] = "\t\t(\$obj->$varn !== null) 
-            and \$obj->{$varn}->{$rcol}=&\$obj->$col; // linked manytoone";
-                    break;
-                case 'MANYTOMANY':
-                    $class = $classRelations[$field['reftable']];
-                    $field2s[] = "\t/** @var {$class}[] \$$varn manytomany */
-    public \$$varn;";
-                    $field2sb[] = "\t\t\$obj->$varn=isset(\$array['$varn']) ?  
-            \$obj->$varn=$class::fromArrayMultiple(\$array['$varn']) 
-            : null; // manytomany";
-                    break;
-                case 'ONETOMANY':
-                    $class = $classRelations[$field['reftable']];
-                    $field2s[] = "\t/** @var {$class}[] \$$varn onetomany */
-    public \$$varn;";
-                    $field2sb[] = "\t\t\$obj->$varn=isset(\$array['$varn']) ?  
-            \$obj->$varn=$class::fromArrayMultiple(\$array['$varn']) 
-            : null; // onetomany";
-                    break;
-                case 'ONETOONE':
-                    $class = $classRelations[$field['reftable']];
-                    $field2s[] = "\t/** @var $class \$$varn onetoone */
-    public \$$varn;";
-                    $field2sb[] = "\t\t\$obj->$varn=isset(\$array['$varn']) ?  
-            \$obj->$varn=$class::fromArray(\$array['$varn']) 
-            : null; // onetoone";
-
-                    $col = isset($field['col']) ? $field['col'] : $pkFirst;
-
-                    $rcol = $field['refcol'];
-
-                    $field2sb[] = "\t\t(\$obj->$varn !== null) 
-            and \$obj->{$varn}->{$rcol}=&\$obj->$col; // linked onetoone";
-                    break;
-            }
-        }
-
-        $fields2Arr = implode("\n", $field2s);
-        $fields2Arrb = implode("\n", $field2sb);
-
-        $r = str_replace(['{fields}', '{fieldsrel}', '{fieldsfa}', '{fieldsrelfa}'],
-            [$fieldsArr, $fields2Arr, $fieldsbArr, $fields2Arrb], $r);
-        //  return $r;
-        //  die(1);
-
-        if (@count($this->codeClassConversion) > 0) {
-            // we forced the conversion but only if it is not specified explicit
-            foreach ($gdf as $k => $colDef) {
-                $type = $colDef['type'];
-                if (isset($this->codeClassConversion[$type]) && $gdf[$k]['conversion'] === null) {
-                    $gdf[$k]['conversion'] = $this->codeClassConversion[$type];
-                }
-            }
-        }
-
-        // discard columns
-        $identities = $this->getDefIdentities($tableName);
-        if ($defNoInsert !== null) {
-            $noInsert = array_merge($identities, $defNoInsert);
-        } else {
-            $noInsert = $identities;
-        }
-        if ($defNoInsert !== null) {
-            $noUpdate = array_merge($identities, $defNoUpdate);
-        } else {
-            $noUpdate = $identities;
-        }
-
-        try {
-            $r = str_replace(array(
-                '{pk}',
-                '{def}',
-                '{defname}',
-                '{defkey}',
-                '{defnoinsert}',
-                '{defnoupdate}',
-                '{deffk}',
-                '{deffktype}',
-                '{array}',
-                '{array_null}'
-            ), array(
-                self::varExport($pk),
-                //str_replace(["\n\t\t        ", "\n\t\t    ],"], ['', '],'], PdoOne::varExport($gdf, "\t\t")), // {def}
-                self::varExport($gdf, "\t\t"),
-                self::varExport(array_keys($gdf), "\t\t"), // {defname}
-                self::varExport($this->getDefTableKeys($tableName), "\t\t"), // {defkey}
-                self::varExport($noInsert, "\t\t"), // {defnoinsert}
-                self::varExport($noUpdate, "\t\t"), // {defnoupdate}
-                self::varExport($this->getDefTableFK($tableName), "\t\t\t"), //{deffk}
-                self::varExport($relation, "\t\t"), //{deffktype}
-                str_replace("\n", "\n\t\t",
-                    rtrim($this->generateCodeArray($tableName, null, false, false, true, $classRelations, $relation),
-                        "\n")),
-                str_replace("\n", "\n\t\t",
-                    rtrim($this->generateCodeArray($tableName, null, true, false, true, $classRelations, $relation),
-                        "\n"))
-            ), $r);
-        } catch (Exception $e) {
-            return "Unable read definition of tables " . $e->getMessage();
-        }
-
-        return $r;
-    }
-
-    /**
-     * @param string $tableName
-     * @param string $namespace
-     * @param null $customRelation
-     * @param null $classRelations
-     * @param array $specialConversion
-     * @param null $defNoInsert
-     * @param null $defNoUpdate
-     * @param null $baseClass
-     *
-     * @return string|string[]
-     * @throws Exception
-     */
-    public function generateModelClass(
-        $tableName,
-        $namespace = '',
-        $customRelation = null,
-        $classRelations = null,
-        $specialConversion = [],
-        $defNoInsert = null,
-        $defNoUpdate = null,
-        $baseClass = null
-    )
-    {
-        $r = <<<'eot'
-<?php
-/** @noinspection PhpIncompatibleReturnTypeInspection
- * @noinspection ReturnTypeCanBeDeclaredInspection
- * @noinspection DuplicatedCode
- * @noinspection PhpUnused
- * @noinspection PhpUndefinedMethodInspection
- * @noinspection PhpUnusedLocalVariableInspection
- * @noinspection PhpUnusedAliasInspection
- * @noinspection NullPointerExceptionInspection
- * @noinspection SenselessProxyMethodInspection
- * @noinspection PhpParameterByRefIsNotUsedAsReferenceInspection
- */
-{namespace}
-use eftec\PdoOne;
-{exception}
-
-/**
- * Generated by PdoOne Version {version}. 
- * YOU COULD EDIT THIS CODE
- * @copyright (c) Jorge Castro C. MIT License  https://github.com/EFTEC/PdoOne
- * Class {classname}
- * <pre>
- * $code=$pdoOne->generateCodeClass({args});
- * </pre>
- */
-class {classname} extends Abstract{classname}
-{
-
-    
-} // end class
-eot;
-        //$lastns = explode('\\', $namespace);
-        //$baseClass = ($baseClass === null) ? end($lastns) : $baseClass;
-
-        $fa = func_get_args();
-        foreach ($fa as $f => $k) {
-            if (is_array($k)) {
-                $fa[$f] = str_replace([' ', "\r\n", "\n"], ['', '', ''], var_export($k, true));
-            } else {
-                $fa[$f] = "'$k'";
-            }
-        }
-        if ($classRelations === null || !isset($classRelations[$tableName])) {
-            $className = self::camelize($tableName);
-        } else {
-            $className = $classRelations[$tableName];
-        }
-
-        $r = str_replace(array(
-            '{version}',
-            '{classname}',
-            '{exception}',
-            '{namespace}'
-        ), array(
-            self::VERSION . ' Date generated ' . date('r'), //{version}
-            $className, // {classname}
-            ($namespace) ? 'use Exception;' : '',
-            ($namespace) ? "namespace $namespace;" : ''
-        ), $r);
-        $pk = '??';
-        $pk = $this->service->getPK($tableName, $pk);
-        $pkFirst = (is_array($pk) && count($pk) > 0) ? $pk[0] : null;
-
-        try {
-            $relation = $this->getDefTableFK($tableName, false, true);
-        } catch (Exception $e) {
-            return 'Error: Unable read fk of table ' . $e->getMessage();
-        }
-
-        try {
-            $deps = $this->tableDependency(true);
-        } catch (Exception $e) {
-            return 'Error: Unable read table dependencies ' . $e->getMessage();
-        } //  ["city"]=> {["city_id"]=> "address"}
-        $after = @$deps[1][$tableName];
-        if ($after === null) {
-            $after = @$deps[1][strtolower($tableName)];
-        }
-        $before = @$deps[2][$tableName];
-        if ($before === null) {
-            $before = @$deps[2][strtolower($tableName)];
-        }
-        if (is_array($after) && is_array($before)) {
-            foreach ($before as $key => $rows) { // $value is [relcol,table]
-                foreach ($rows as $value) {
-                    $relation['' . self::$prefixBase . $value[1]] = [
-                        'key' => 'ONETOMANY',
-                        'col' => $key,
-                        'reftable' => $value[1],
-                        'refcol' => $value[0]
-                    ];
-                }
-            }
-        }
-        // converts relations to ONETOONE
-        foreach ($relation as $k => $rel) {
-            if ($rel['key'] === 'ONETOMANY') {
-                $pkref = null;
-                $pkref = $this->service->getPK($rel['reftable'], $pkref);
-                if ('' . self::$prefixBase . $pkref[0] === $rel['refcol'] && count($pkref) === 1) {
-                    $relation[$k]['key'] = 'ONETOONE';
-                    $relation[$k]['col'] = 'xxx3';
-                    $relation[$k]['refcol'] = ltrim($relation[$k]['refcol'], self::$prefixBase);
-                }
-            }
-            if ($rel['key'] === 'MANYTOONE') {
-                $pkref = null;
-                $pkref = $this->service->getPK($rel['reftable'], $pkref);
-
-                if ($pkref[0] === $rel['refcol'] && count($pkref) === 1
-                    && (strcasecmp($k, '' . self::$prefixBase . $pkFirst) === 0)
-                ) {
-                    // if they are linked by the pks and the pks are only 1.
-                    $relation[$k]['key'] = 'ONETOONE';
-                    $relation[$k]['col'] = 'xxx4';
-                    $relation[$k]['refcol'] = ltrim($relation[$k]['refcol'], self::$prefixBase);
-                }
-            }
-        }
-        if ($customRelation) {
-            foreach ($relation as $k => $rel) {
-                if (isset($customRelation[$k])) {
-                    // parent.
-                    if ($customRelation[$k] === 'PARENT') {
-                        $relation[$k]['key'] = 'PARENT';
-                    } elseif ($customRelation[$k] === 'MANYTOMANY') {
-                        // the table must has 2 primary keys.
-                        $pks = null;
-                        $pks = $this->service->getPK($relation[$k]['reftable'], $pks);
-                        /** @noinspection PhpParamsInspection */
-                        if ($pks !== false || count($pks) === 2) {
-                            $relation[$k]['key'] = 'MANYTOMANY';
-                            $refcol2 = ('' . self::$prefixBase . $pks[0] === $relation[$k]['refcol']) ? $pks[1]
-                                : $pks[0];
-
-                            try {
-                                $defsFK = $this->service->getDefTableFK($relation[$k]['reftable'], false);
-                            } catch (Exception $e) {
-                                return 'Error: Unable read table dependencies ' . $e->getMessage();
-                            }
-                            try {
-                                $keys2 = $this->service->getDefTableKeys($defsFK[$refcol2]['reftable'], true,
-                                    'PRIMARY KEY');
-                            } catch (Exception $e) {
-                                return 'Error: Unable read table dependencies' . $e->getMessage();
-                            }
-                            $relation[$k]['refcol2'] = '' . self::$prefixBase . $refcol2;
-                            if (is_array($keys2)) {
-                                $keys2 = array_keys($keys2);
-                                $relation[$k]['col2'] = $keys2[0];
-                            } else {
-                                $relation[$k]['col2'] = null;
-                            }
-                            $relation[$k]['table2'] = $defsFK[$refcol2]['reftable'];
-                        }
-                    }
-                    // manytomany
-                }
-            }
-        }
-        //die(1);
-
-        $gdf = $this->getDefTable($tableName, $specialConversion);
-        $fields = [];
-        $fieldsb = [];
-        foreach ($gdf as $varn => $field) {
-            switch ($field['phptype']) { //binary, date, datetime, decimal,int, string,time, timestamp 
-                case 'binary':
-                case 'date':
-                case 'datetime':
-                case 'decimal':
-                case 'float':
-                case 'int':
-                case 'string':
-                case 'time':
-                case 'timestamp':
-                    $fields[] = "\t/** @var " . $field['phptype'] . " \$$varn  */\n\tpublic \$$varn;";
-                    $fieldsb[] = "\t\t\$obj->$varn=isset(\$array['$varn']) ?  \$array['$varn'] : null;";
-                    break;
-            }
-        }
-        $fieldsArr = implode("\n", $fields);
-        $fieldsbArr = implode("\n", $fieldsb);
-
-        $field2s = [];
-        $field2sb = [];
-        foreach ($relation as $varn => $field) {
-            //$varnclean = ltrim($varn, PdoOne::$prefixBase);
-            switch ($field['key']) {
-                case 'FOREIGN KEY':
-                    break;
-                case 'MANYTOONE':
-                    $class = $classRelations[$field['reftable']];
-                    $field2s[] = "\t/** @var $class \$$varn manytoone */
-    public \$$varn;";
-                    $field2sb[] = "\t\t\$obj->$varn=isset(\$array['$varn']) ? 
-            \$obj->$varn=$class::fromArray(\$array['$varn']) 
-            : null; // manytoone";
-                    break;
-                case 'MANYTOMANY':
-                    $class = $classRelations[$field['reftable']];
-                    $field2s[] = "\t/** @var {$class}[] \$$varn manytomany */
-    public \$$varn;";
-                    $field2sb[] = "\t\t\$obj->$varn=isset(\$array['$varn']) ?  
-            \$obj->$varn=$class::fromArrayMultiple(\$array['$varn']) 
-            : null; // manytomany";
-                    break;
-                case 'ONETOMANY':
-                    $class = $classRelations[$field['reftable']];
-                    $field2s[] = "\t/** @var {$class}[] \$$varn onetomany */
-    public \$$varn;";
-                    $field2sb[] = "\t\t\$obj->$varn=isset(\$array['$varn']) ?  
-            \$obj->$varn=$class::fromArrayMultiple(\$array['$varn']) 
-            : null; // onetomany";
-                    break;
-                case 'ONETOONE':
-                    $class = $classRelations[$field['reftable']];
-                    $field2s[] = "\t/** @var $class \$$varn onetoone */
-    public \$$varn;";
-                    $field2sb[] = "\t\t\$obj->$varn=isset(\$array['$varn']) ?  
-            \$obj->$varn=$class::fromArray(\$array['$varn']) 
-            : null; // onetoone";
-                    break;
-            }
-        }
-
-        $fields2Arr = implode("\n", $field2s);
-        $fields2Arrb = implode("\n", $field2sb);
-
-        $r = str_replace(['{fields}', '{fieldsrel}', '{fieldsfa}', '{fieldsrelfa}'],
-            [$fieldsArr, $fields2Arr, $fieldsbArr, $fields2Arrb], $r);
-        //  return $r;
-        //  die(1);
-
-        if (@count($this->codeClassConversion) > 0) {
-            // we forced the conversion but only if it is not specified explicit
-            foreach ($gdf as $k => $colDef) {
-                $type = $colDef['type'];
-                if (isset($this->codeClassConversion[$type]) && $gdf[$k]['conversion'] === null) {
-                    $gdf[$k]['conversion'] = $this->codeClassConversion[$type];
-                }
-            }
-        }
-
-        // discard columns
-        $identities = $this->getDefIdentities($tableName);
-        if ($defNoInsert !== null) {
-            $noInsert = array_merge($identities, $defNoInsert);
-        } else {
-            $noInsert = $identities;
-        }
-        if ($defNoInsert !== null) {
-            $noUpdate = array_merge($identities, $defNoUpdate);
-        } else {
-            $noUpdate = $identities;
-        }
-
-        try {
-            $r = str_replace(array(
-                '{pk}',
-                '{def}',
-                '{defname}',
-                '{defkey}',
-                '{defnoinsert}',
-                '{defnoupdate}',
-                '{deffk}',
-                '{deffktype}',
-                '{array}',
-                '{array_null}'
-            ), array(
-                self::varExport($pk),
-                //str_replace(["\n\t\t        ", "\n\t\t    ],"], ['', '],'], PdoOne::varExport($gdf, "\t\t")), // {def}
-                self::varExport($gdf, "\t\t"),
-                self::varExport(array_keys($gdf), "\t\t"), // {defname}
-                self::varExport($this->getDefTableKeys($tableName), "\t\t"), // {defkey}
-                self::varExport($noInsert, "\t\t"), // {defnoinsert}
-                self::varExport($noUpdate, "\t\t"), // {defnoupdate}
-                self::varExport($this->getDefTableFK($tableName), "\t\t\t"), //{deffk}
-                self::varExport($relation, "\t\t"), //{deffktype}
-                str_replace("\n", "\n\t\t",
-                    rtrim($this->generateCodeArray($tableName, null, false, false, true, $classRelations, $relation),
-                        "\n")),
-                str_replace("\n", "\n\t\t",
-                    rtrim($this->generateCodeArray($tableName, null, true, false, true, $classRelations, $relation),
-                        "\n"))
-            ), $r);
-        } catch (Exception $e) {
-            return "Unable read definition of tables " . $e->getMessage();
-        }
-
-        return $r;
-    }
-
-    public function generateCodeClassRepo(
-        $tableClassName,
-        $namespace = '',
-        $classRelations = [],
-        $modelfullClass = ''
-    )
-    {
-        $r = <<<'eot'
-<?php
-/** @noinspection PhpUnused
- * @noinspection ReturnTypeCanBeDeclaredInspection
- */
-{namespace}
-{modelnamespace}
-{exception}
-
-/**
- * Generated by PdoOne Version {version}. 
- * EDIT THIS CODE.
- * @copyright (c) Jorge Castro C. MIT License  https://github.com/EFTEC/PdoOne
- * Class {classname}
- * <pre>
- * $code=$pdoOne->generateCodeClassRepo({args});
- * </pre>
- */
-class {classname} extends Abstract{classname}
-{
-    const ME=__CLASS__; 
-    {modelclass}
-  
-    
-}
-eot;
-
-        $fa = func_get_args();
-        foreach ($fa as $f => $k) {
-            if (is_array($k)) {
-                $fa[$f] = str_replace([' ', "\r\n", "\n"], ['', '', ''], var_export($k, true));
-            } else {
-                $fa[$f] = "'$k'";
-            }
-        }
-
-        if ($modelfullClass) {
-            $arr = explode('\\', $modelfullClass);
-            $modelClass = end($arr);
-            $modelUse = true;
-        } else {
-            $modelClass = false;
-            $modelUse = false;
-        }
-
-        $r = str_replace(array(
-            '{version}',
-            '{classname}',
-            '{exception}',
-            '{args}',
-            '{table}',
-            '{namespace}',
-            '{modelnamespace}',
-            '{modelclass}',
-            '{modeluse}'
-        ), array(
-            self::VERSION . ' Date generated ' . date('r'), // {version}
-            $classRelations[$tableClassName], // {class}
-            ($namespace) ? 'use Exception;' : '',
-            "'" . implode("','", $fa) . "'", // {args}
-            $tableClassName, //{table}
-            ($namespace) ? "namespace $namespace;" : '', // {namespace}
-            $modelfullClass ? "use $modelfullClass;" : '', // {modelnamespace}
-            $modelClass ? "const MODEL= $modelClass::class;" : '', // {modelclass}
-            $modelUse ? 'true' : 'false' // {modeluse}
-        ), $r);
-        return $r;
-    }
-    
 
     public static function varExport($input, $indent = "\t")
     {
@@ -1717,31 +2318,31 @@ eot;
      *          ,'Repo');
      * </pre>
      *
-     * @param string|array $tableName The name of the table and the class.
+     * @param string|array  $tableName            The name of the table and the class.
      *                                            If the value is an array, then the key is the name of the table and
      *                                            the value is the name of the class
-     * @param string $namespace The Namespace of the generated class
-     * @param array|null $columnRelations An associative array to specific custom relations, such as PARENT<br>
+     * @param string        $namespace            The Namespace of the generated class
+     * @param array|null    $columnRelations      An associative array to specific custom relations, such as PARENT<br>
      *                                            The key is the name of the columns and the value is the type of
      *                                            relation<br>
-     * @param null|string[] $classRelations The postfix of the class. Usually it is Repo or Dao.
+     * @param null|string[] $classRelations       The postfix of the class. Usually it is Repo or Dao.
      *
-     * @param array $specialConversion An associative array to specify a custom conversion<br>
+     * @param array         $specialConversion    An associative array to specify a custom conversion<br>
      *                                            The key is the name of the columns and the value is the type of
      *                                            relation<br>
-     * @param string[]|null $defNoInsert An array with the name of the columns to not to insert. The identity
+     * @param string[]|null $defNoInsert          An array with the name of the columns to not to insert. The identity
      *                                            is added automatically to this list
-     * @param string[]|null $defNoUpdate An array with the name of the columns to not to update. The identity
+     * @param string[]|null $defNoUpdate          An array with the name of the columns to not to update. The identity
      *                                            is added automatically to this list
-     * @param string|null $baseClass The name of the base class. If no name then it uses the last namespace
-     * @param string $modelfullClass (default:'') The full class of the model (with the namespace). If
+     * @param string|null   $baseClass            The name of the base class. If no name then it uses the last namespace
+     * @param string        $modelfullClass       (default:'') The full class of the model (with the namespace). If
      *                                            empty, then it doesn't use a model
-     * @param array $extraCols An associative array with extra columns where they key is the name of
+     * @param array         $extraCols            An associative array with extra columns where they key is the name of
      *                                            the column and the value is the value to return (it is evaluated in
      *                                            the query). It is used by toList() and first(), it's also added to
      *                                            the model.
      *
-     * @param array $columnRemove
+     * @param array         $columnRemove
      *
      * @return string|string[]
      * @throws Exception
@@ -2331,7 +2932,7 @@ eot;
                         $tmp2 = "isset(%s) and %s=PdoOne::dateConvert(%s, 'human', 'sql');";
                         break;
                     case 'datetime4':
-                        $tmp2='';
+                        $tmp2 = '';
                         //$tmp2 = "isset(%s) and %s=PdoOne::dateConvert(%s, 'sql', 'sql');";
                         break;
                     case 'datetime2':
@@ -2516,132 +3117,6 @@ eot;
     }
 
     /**
-     * It returns an array with all the tables of the schema, also the foreign key and references  of each table<br>
-     * <b>Example:</b>
-     * <pre>
-     * $this->tableDependency();
-     * // ['table'=>['city','country'],
-     * //    'after'=>['city'=>['country'],'country=>[]],
-     * //    'before'=>['country'=>['city'],'city=>[]]
-     * //   ]
-     * $this->tableDependency(true);
-     * // ["tables" => ["city","country"]
-     * //    ,"after" => ["city" => ["countryfk" => "country"],"country" => []]
-     * //    ,"before" => ["city" => [],"country" => ["country_id" => "country_id","city"]]
-     * // ]
-     * </pre>
-     *
-     * @param bool $returnColumn If true then in "after" and "before", it returns the name of the columns
-     * @param bool $forceLowerCase if true then the names of the tables are stored as lowercase
-     *
-     * @return array
-     * @throws Exception
-     */
-    public function tableDependency($returnColumn = false, $forceLowerCase = false)
-    {
-        if ($returnColumn) {
-            if ($this->tableDependencyArrayCol !== null) {
-                return $this->tableDependencyArrayCol;
-            }
-        } elseif ($this->tableDependencyArray !== null) {
-            return $this->tableDependencyArray;
-        }
-        $tables = $this->objectList('table', true);
-        $after = [];
-        $before = [];
-        foreach ($tables as $table) {
-            $before[$table] = [];
-        }
-        foreach ($tables as $table) {
-            $arr = $this->getDefTableFK($table, false);
-            $deps = [];
-            foreach ($arr as $k => $v) {
-                $v['reftable'] = ($forceLowerCase) ? strtolower($v['reftable']) : $v['reftable'];
-                $k = ($forceLowerCase) ? strtolower($k) : $k;
-                if ($returnColumn) {
-                    $deps[$k] = $v['reftable'];
-                    if (!isset($before[$v['reftable']][$v['refcol']])) {
-                        $before[$v['reftable']][$v['refcol']] = [];
-                    }
-                    $before[$v['reftable']][$v['refcol']][] = [$k, $table]; // remote column and remote table
-
-                } else {
-                    $deps[] = $v['reftable'];
-                    $before[$v['reftable']][] = $table;
-                }
-            }
-            $after[$table] = $deps; // ['city']=>['country','location']
-        }
-        if ($returnColumn) {
-            $this->tableDependencyArrayCol = [$tables, $after, $before];
-            return $this->tableDependencyArrayCol;
-        }
-        $this->tableDependencyArray = [$tables, $after, $before];
-        return $this->tableDependencyArray;
-    }
-
-    private function typeDict($row, $default = true)
-    {
-        return $this->service->typeDict($row, $default);
-    }
-    /**
-     * Returns a list of objects from the current schema/db<br>
-     *
-     * @param string $type =['table','function'][$i] The type of the
-     *                             object
-     * @param bool $onlyName If true then it only returns the name of the
-     *                             objects.
-     *
-     * @return bool|array
-     * @throws Exception
-     */
-    public function objectList($type = 'table', $onlyName = false)
-    {
-        $query = $this->service->objectList($type, $onlyName);
-        if ($onlyName) {
-            return $this->select($query)->toListSimple();
-        }
-
-        return $this->runRawQuery($query, []);
-    }
-
-    /**
-     * @param $sql
-     * @return PdoOneQuery
-     */
-    public function select($sql) {
-        $query=new PdoOneQuery($this);
-        return $query->select($sql);
-    }
-
-    /**
-     * It sets a value into the query (insert or update)<br>
-     * <b>Example:</b><br>
-     *      ->from("table")->set('field1=?',20),set('field2=?','hello')->insert()<br>
-     *      ->from("table")->set("type=?",[6])->where("i=1")->update()<br>
-     *      set("type=?",6) // automatic<br>
-     *
-     * @param string|array $sqlOrArray
-     * @param array|mixed $param
-     *
-     *
-     * @return PdoOneQuery
-     * @test InstanceOf
-     *       PdoOne::class,this('field1=?,field2=?',[20,'hello'])
-     */
-    public function set($sqlOrArray, $param = PdoOne::NULL)
-    {
-        $query=new PdoOneQuery($this);
-        return $query->set($sqlOrArray,$param);
-    }
-
-
-
-    public static function camelize($input, $separator = '_')
-    {
-        return str_replace($separator, '', ucwords($input, $separator));
-    }
-    /**
      * It returns a field, column or table, the quotes defined by the current database type. It doesn't considers points
      * or space<br>
      * <pre>
@@ -2666,411 +3141,49 @@ eot;
         return $this->database_delimiter0 . $txt . $this->database_delimiter1;
     }
 
-
     /**
-     * Connects to the database.
+     * It returns a simple array with all the columns that has identities/sequence.
      *
-     * @param bool $failIfConnected true=it throw an error if it's connected,
-     *                                  otherwise it does nothing
+     * @param string $table
      *
-     * @throws Exception
-     * @test exception this(false)
-     */
-    public function connect($failIfConnected = true)
-    {
-        if ($this->isOpen) {
-            if (!$failIfConnected) {
-                return;
-            } // it's already connected.
-            $this->throwError('Already connected', '');
-        }
-        try {
-            if ($this->logLevel >= 2) {
-                $this->storeInfo("connecting to {$this->server} {$this->user}/*** {$this->db}");
-            }
-            $cs = (!$this->charset) ? ';charset=' . $this->charset : '';
-            $this->service->connect($cs, false);
-            if ($this->conn1 instanceof stdClass) {
-                $this->isOpen = true;
-                return;
-            }
-            $this->conn1->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-            $this->conn1->setAttribute(PDO::ATTR_STRINGIFY_FETCHES, false);
-
-            //$this->conn1->setAttribute(PDO::ATTR_STRINGIFY_FETCHES, false); It is not required.
-
-            $this->isOpen = true;
-        } catch (Exception $ex) {
-            $this->isOpen = false;
-            $this->throwError("Failed to connect to {$this->databaseType}", $ex->getMessage(), '', true, $ex);
-        }
-    }
-
-    /**
-     * Write a log line for debug, clean the command chain then throw an error
-     * (if throwOnError==true)
-     *
-     * @param string $txt The message to show.
-     * @param string $txtExtra It's only used if $logLevel>=2. It
-     *                                          shows an extra message
-     * @param string|array $extraParam It's only used if $logLevel>=3  It
-     *                                          shows parameters (if any)
-     *
-     * @param bool $throwError if true then it throw error (is enabled). Otherwise it store the error.
-     *
-     * @param null|RuntimeException $exception
-     *
-     * @see \eftec\PdoOne::$logLevel
-     */
-    public function throwError($txt, $txtExtra, $extraParam = '', $throwError = true, $exception = null)
-    {
-        if ($this->logLevel === 0) {
-            $txt = 'Error on database';
-        }
-        if ($this->logLevel >= 2) {
-            $txt .= "\n<br><b>extra:</b>[{$txtExtra}]";
-        }
-        if ($this->logLevel >= 2) {
-            $txt .= "\n<br><b>last query:</b>[{$this->lastQuery}]";
-        }
-        if ($this->logLevel >= 3) {
-            $txt .= "\n<br><b>database:</b>" . $this->server . ' - ' . $this->db;
-            if (is_array($extraParam)) {
-                foreach ($extraParam as $k => $v) {
-                    if (is_array($v) || is_object($v)) {
-                        $v = json_encode($v);
-                    }
-                    $txt .= "\n<br><b>$k</b>:$v";
-                }
-            } else {
-                $txt .= "\n<br><b>Params :</b>[" . $extraParam . "]\n<br>";
-            }
-            if ($exception !== null) {
-                $txt .= "\n<br><b>message :</b>[" . str_replace("\n", "\n<br>", $exception->getMessage()) . "]";
-                $txt .= "\n<br><b>trace :</b>[" . str_replace("\n", "\n<br>", $exception->getTraceAsString()) . "]";
-                $txt .= "\n<br><b>code :</b>[" . str_replace("\n", "\n<br>", $exception->getCode()) . "]\n<br>";
-            }
-        }
-        if ($this->getMessages() === null) {
-            $this->debugFile($txt, 'ERROR');
-        } else {
-            $this->getMessages()->addItem($this->db, $txt);
-            $this->debugFile($txt, 'ERROR');
-        }
-        $this->errorText = $txt;
-        if ($throwError && $this->throwOnError && $this->genError) {
-            throw new RuntimeException($txt);
-        }
-    }
-
-    /**
-     * Injects a Message Container.
-     *
-     * @return MessageList|null
-     * @test equals null,this(),'this is not a message container'
-     */
-    public function getMessages()
-    {
-        if (function_exists('messages')) {
-            return messages();
-        }
-
-        return null;
-    }
-
-    public function debugFile($txt, $level = 'INFO')
-    {
-        if (!$this->logFile) {
-            return; // debug file is disabled.
-        }
-        $fz = @filesize($this->logFile);
-
-        if (is_object($txt) || is_array($txt)) {
-            $txtW = print_r($txt, true);
-        } else {
-            $txtW = $txt;
-        }
-        if ($fz > 10000000) {
-            // mas de 10mb = reducirlo a cero.
-            $fp = @fopen($this->logFile, 'wb');
-        } else {
-            $fp = @fopen($this->logFile, 'ab');
-        }
-        if(!$fp) {
-            return; // unable to open the log file.
-        }
-        if ($this->logLevel === 2) {
-            $txtW .= ' param:' . json_encode($this->lastParam);
-        }
-
-        $txtW = str_replace(array("\r\n", "\n"), ' ', $txtW);
-        try {
-            $now = new DateTime();
-            @fwrite($fp, $now->format('c') . "\t" . $level . "\t" . $txtW . "\n");
-        } catch (Exception $e) {
-        }
-
-        @fclose($fp);
-    }
-
-
-
-    /**
-     * Write a log line for debug, clean the command chain then throw an error
-     * (if throwOnError==true)
-     *
-     * @param $txt
-     *
+     * @return array
      * @throws Exception
      */
-    public function storeInfo($txt)
+    public function getDefIdentities($table)
     {
-        if ($this->getMessages() === null) {
-            $this->debugFile($txt);
-        } else {
-            $this->getMessages()->addItem($this->db, $txt, 'info');
-            $this->debugFile($txt);
+        $r = $this->service->getDefTable($table);
+        $identities = [];
+        foreach ($r as $k => $v) {
+            if (stripos($v, $this->database_identityName) !== false) {
+                $identities[] = $k;
+            }
         }
+        return $identities;
     }
 
     /**
-     * Returns the last error.
+     * It sets a value into the query (insert or update)<br>
+     * <b>Example:</b><br>
+     *      ->from("table")->set('field1=?',20),set('field2=?','hello')->insert()<br>
+     *      ->from("table")->set("type=?",[6])->where("i=1")->update()<br>
+     *      set("type=?",6) // automatic<br>
      *
-     * @return string
+     * @param string|array $sqlOrArray
+     * @param array|mixed  $param
+     *
+     *
+     * @return PdoOneQuery
+     * @test InstanceOf
+     *       PdoOne::class,this('field1=?,field2=?',[20,'hello'])
      */
-    public function lastError()
+    public function set($sqlOrArray, $param = PdoOne::NULL)
     {
-        if (!$this->isOpen) {
-            return "It's not connected to the database";
-        }
-
-        return $this->conn1->errorInfo()[2];
+        $query = new PdoOneQuery($this);
+        return $query->set($sqlOrArray, $param);
     }
 
     /**
-     * It adds a delimiter to a text based in the type of database (` for mysql
-     * and [] for sql server)<br> Example:<br>
-     * $pdoOne->addDelimiter('hello world'); // `hello` world<br>
-     * $pdoOne->addDelimiter('hello.world'); // `hello`.`world`<br>
-     * $pdoOne->addDelimiter('hello=value); // `hello`=value<br>
-     *
-     * @param $txt
-     *
-     * @return mixed|string
-     */
-    public function addDelimiter($txt)
-    {
-        if (strpos($txt, $this->database_delimiter0) === false) {
-            $pos = $this->strposa($txt, [' ', '=']);
-            if ($pos === false) {
-                $quoted = $this->database_delimiter0 . $txt . $this->database_delimiter1;
-                $quoted = str_replace('.', $this->database_delimiter1 . '.' . $this->database_delimiter0, $quoted);
-            } else {
-                $arr = explode(substr($txt, $pos, 1), $txt, 2);
-                $quoted
-                    = $this->database_delimiter0 . $arr[0] . $this->database_delimiter1 . substr($txt, $pos, 1)
-                    . $arr[1];
-                $quoted = str_replace('.', $this->database_delimiter1 . '.' . $this->database_delimiter0, $quoted);
-            }
-
-            return $quoted;
-        }
-        // it has a delimiter, so we returned the same text.
-        return $txt;
-    }
-
-    private function strposa($haystack, $needles = [], $offset = 0)
-    {
-        $chr = [];
-        foreach ($needles as $needle) {
-            $res = strpos($haystack, $needle, $offset);
-            if ($res !== false) {
-                $chr[$needle] = $res;
-            }
-        }
-        if (empty($chr)) {
-            return false;
-        }
-
-        return min($chr);
-    }
-
-    /**
-     * It runs a raw query
-     * <br><b>Example</b>:<br>
-     * <pre>
-     * $values=$con->runRawQuery('select * from table where id=?',[20]',true); // with parameter
-     * $values=$con->runRawQuery('select * from table where id=:name',['name'=>20]',true); // with named parameter
-     * $values=$con->runRawQuery('select * from table,[]',true); // without parameter.
-     ** $values=$con->runRawQuery('select * from table where id=?,[[1,20,PDO::PARAM_INT]]',true); // a full parameter.
-     * </pr>
-     *
-     * @param string $rawSql The query to execute
-     * @param array|null $param [type1,value1,type2,value2] or [name1=>value,name2=value2]
-     * @param bool $returnArray if true then it returns an array. If false then it returns a PDOStatement
-     *
-     * @return bool|PDOStatement|array an array of associative or a pdo statement. False is the operation fails
-     * @throws Exception
-     * @test equals [0=>[1=>1]],this('select 1',null,true)
-     */
-    public function runRawQuery($rawSql, $param = null, $returnArray = true)
-    {
-        if (!$this->isOpen) {
-            $this->throwError("It's not connected to the database", '');
-
-            return false;
-        }
-        if (!$rawSql) {
-            $this->throwError("Query empty", '');
-            return false;
-        }
-        $writeCommand = self::queryCommand($rawSql, true) !== 'dql';
-
-        /** @var bool|string $uid it stores the unique identifier of the query */
-        $uid = false;
-
-        if ($this->readonly && $writeCommand) {
-            // we aren't checking SQL-DLC queries. Also, "insert into" is stopped but "  insert into" not.
-            $this->throwError('Database is in READ ONLY MODE', '');
-            return false;
-        }
-        if (!is_array($param) && $param !== null) {
-            $this->throwError('runRawQuery, param must be null or an array', '');
-            return false;
-        }
-        if ($this->useInternalCache && $returnArray === true && !$writeCommand) {
-            // if we use internal cache and we returns an array and it is not a write command
-            $uid = hash($this->encryption->hashType, $rawSql . serialize($param));
-            if (isset($this->internalCache[$uid])) {
-                // we have an internal cache, so we will return it.
-                $this->internalCacheCounter++;
-                return $this->internalCache[$uid];
-            }
-        }
-
-        $this->lastParam = $param;
-        $this->lastQuery = $rawSql;
-        if ($this->logLevel >= 2) {
-            $this->storeInfo($rawSql);
-        }
-        if ($param === null) {
-            $rows = $this->runRawQueryParamLess($rawSql, $returnArray);
-            if ($uid !== false && $returnArray) {
-                $this->internalCache[$uid] = $rows;
-            }
-            return $rows;
-        }
-
-        // the "where" has parameters.
-        $stmt = $this->prepare($rawSql);
-        if ($stmt === false) {
-            $this->throwError("Unable to prepare statement", $rawSql);
-            return false;
-        }
-        $counter = 0;
-        if ($this->isAssoc($param)) {
-            $this->lastBindParam = $param;
-            // [':name'=>value,':name2'=>value2];
-            foreach ($param as $k => $v) {
-                // note: the second field is & so we could not use $v
-                $stmt->bindParam($k, $param[$k], $this->getType($v));
-            }
-        } else {
-            // parameters numeric
-            $this->lastBindParam = [];
-            $f = reset($param);
-            if (is_array($f)) {
-                // arrays of arrays.
-                // [[name1,value1,type1,l1],[name2,value2,type2,l1]]
-                foreach ($param as $k => $v) {
-                    $this->lastBindParam[$counter] = $v[0];
-                    // note: the second field is & so we could not use $v
-                    $stmt->bindParam($v[0], $param[$k][1], $v[2], $v[3]);
-                }
-            } else {
-                // [value1,value2]
-                foreach ($param as $i => $iValue) {
-                    //$counter++;
-                    //$typeP = $this->stringToPdoParam($param[$i]);
-                    $this->lastBindParam[$i] = $param[$i];
-                    //$stmt->bindParam($counter, $param[$i + 1], $typeP);
-                    $stmt->bindParam($i + 1, $param[$i], $this->getType($param[$i]));
-                }
-            }
-        }
-
-        if ($this->useCache !== false && $returnArray) {
-            $this->uid = hash($this->encryption->hashType, $this->lastQuery . serialize($this->lastBindParam));
-            $result = $this->cacheService->getCache($this->uid, $this->cacheFamily);
-            if ($result !== false) {
-                // it's found in the cache.
-                if (is_array($result)) {
-                    $this->affected_rows = count($result);
-                } else {
-                    $this->affected_rows = 0;
-                }
-                if ($uid !== false) {
-                    $this->internalCache[$uid] = $result;
-                }
-                return $result;
-            }
-        } else {
-            $this->uid = null;
-        }
-        $this->runQuery($stmt);
-
-        if ($returnArray && $stmt instanceof PDOStatement) {
-            $rows = ($stmt->columnCount() > 0) ? $stmt->fetchAll(PDO::FETCH_ASSOC) : [];
-            $this->affected_rows = $stmt->rowCount();
-            $stmt = null;
-            if ($uid !== false) {
-                $this->internalCache[$uid] = $rows;
-            }
-            return $rows;
-        }
-
-        if ($stmt instanceof PDOStatement) {
-            $this->affected_rows = $stmt->rowCount();
-        } else {
-            $this->affected_rows = 0;
-        }
-
-        return $stmt;
-    }
-
-    /**
-     * It returns the command (in lower case) or the type of command of a query<br>
-     * Example:<br>
-     * <pre>
-     * $this->queryCommand("select * from table") // returns "select"
-     * $this->queryCommand("select * from table",true) // returns "dql"
-     * </pre>
-     *
-     * @param string $sql
-     * @param false $returnType if true then it returns DML (insert/updat/delete/etc) or DQL (select/show/display)
-     *
-     * @return string
-     *
-     */
-    public static function queryCommand($sql, $returnType = false)
-    {
-        if (!$sql) {
-            return $returnType ? 'dml' : 'dql';
-        }
-        $command = strtolower((explode(' ', trim($sql)))[0]);
-        if ($returnType) {
-            if ($command === 'select' || $command === 'show' || $command === 'display') {
-                return 'dql';
-            }
-            return 'dml';
-        }
-        return $command;
-    }
-
-    //<editor-fold desc="transaction functions">
-
-    /**
-     * It starts a transaction. If fails then it returns false, otherwise true.
+     * It starts a transaction. If the operation fails then it returns false.
      *
      * @return bool
      * @test     equals true,this()
@@ -3138,592 +3251,6 @@ eot;
         return @$this->conn1->rollback();
     }
 
-    //</editor-fold>
-
-    /**
-     * Internal Use: It runs a raw query
-     *
-     * @param string $rawSql
-     * @param bool $returnArray
-     *
-     * @return array|bool|false|PDOStatement
-     * @throws Exception
-     * @see \eftec\PdoOne::runRawQuery
-     */
-    private function runRawQueryParamLess($rawSql, $returnArray)
-    {
-        // the "where" chain doesn't have parameters.
-        try {
-            $rows = $this->conn1->query($rawSql);
-            if ($rows === false) {
-                throw new RuntimeException('Unable to run raw runRawQueryParamLess', 9001);
-            }
-        } catch (Exception $ex) {
-            $rows = false;
-            $this->throwError('Exception in runRawQueryParamLess :', $rawSql, ['param' => $this->lastParam], true, $ex);
-        }
-
-        if ($returnArray && $rows instanceof PDOStatement) {
-            if ($rows->columnCount() > 0) {
-                $result = @$rows->fetchAll(PDO::FETCH_ASSOC);
-                $this->affected_rows = $rows->rowCount();
-
-                return $result;
-            }
-
-            $this->affected_rows = $rows->rowCount();
-
-            return true;
-        }
-
-        $this->affected_rows = $rows->rowCount();
-
-        return $rows;
-    }
-
-    /**
-     * Prepare a query. It returns a mysqli statement.
-     *
-     * @param string $statement A SQL statement.
-     *
-     * @return PDOStatement returns the statement if correct otherwise null
-     * @throws Exception
-     */
-    public function prepare($statement)
-    {
-        if (!$this->isOpen) {
-            $this->throwError("It's not connected to the database", '');
-
-            return null;
-        }
-        $this->lastQuery = $statement;
-        if ($this->readonly) {
-            if (stripos($statement, 'insert ') === 0 || stripos($statement, 'update ') === 0
-                || stripos($statement, 'delete ') === 0
-            ) {
-                // we aren't checking SQL-DCL queries.
-                $this->throwError('Database is in READ ONLY MODE', '');
-            }
-        }
-        if ($this->logLevel >= 2) {
-            $this->storeInfo($statement);
-        }
-
-        try {
-            $stmt = $this->conn1->prepare($statement);
-        } catch (Exception $ex) {
-            $stmt = false;
-            if ($this->errorText === '') {
-                $this->throwError('Failed to prepare', $ex->getMessage(), ['param' => $this->lastParam]);
-            }
-        }
-        if (($stmt === false) && $this->errorText === '') {
-            $this->throwError('Unable to prepare query', $this->lastQuery, ['param' => $this->lastParam]);
-        }
-
-        return $stmt;
-    }
-
-    /**
-     * It returns true if the array is an associative array.  False
-     * otherwise.<br>
-     * <b>Example:</b><br>
-     * isAssoc(['a1'=>1,'a2'=>2]); // true<br/>
-     * isAssoc(['a1','a2']); // false<br/>
-     * isAssoc('aaa'); isAssoc(null); // false<br/>
-     *
-     * @param mixed $array
-     *
-     * @return bool
-     */
-    private function isAssoc($array)
-    {
-        if ($array === null) {
-            return false;
-        }
-        if (!is_array($array)) {
-            return false;
-        }
-
-        return (array_values($array) !== $array);
-    }
-
-
-
-    //<editor-fold desc="Date functions" defaultstate="collapsed" >
-
-    /**
-     * Convert date from unix timestamp -> ISO (database format).
-     * <p>Example: ::unixtime2Sql(1558656785); // returns 2019-05-24 00:13:05
-     *
-     * @param integer $dateNum
-     *
-     * @return string
-     */
-    public static function unixtime2Sql($dateNum)
-    {
-        // 31/01/2016 20:20:00 --> 2016-01-31 00:00
-        if ($dateNum === null) {
-            return self::$dateEpoch;
-        }
-
-        return date(self::$isoDateTimeMs, $dateNum);
-    }
-
-    /**
-     * Convert date, from mysql date -> text (using a format pre-established)
-     *
-     * @param string $sqlField
-     * @param bool $hasTime if true then the date contains time.
-     *
-     * @return string Returns a text with the date formatted (human readable)
-     */
-    public static function dateSql2Text($sqlField, $hasTime = false)
-    {
-        $tmpDate = self::dateTimeSql2PHP($sqlField, $hasTime);
-        if ($tmpDate === null) {
-            return null;
-        }
-        if ($hasTime) {
-            return $tmpDate->format((strpos($sqlField, '.') !== false) ? self::$dateTimeMicroHumanFormat
-                : self::$dateTimeHumanFormat);
-        }
-
-        return $tmpDate->format(self::$dateHumanFormat);
-    }
-
-    /**
-     * Convert date, from mysql -> php
-     *
-     * @param string $sqlField
-     * @param bool $hasTime
-     *
-     * @return bool|DateTime|null
-     */
-    public static function dateTimeSql2PHP($sqlField, &$hasTime = false)
-    {
-        // 3  2016-01-31 00:00:00 -> 01/01/2016 00:00:00
-        // mysql always returns the date/datetime/timestmamp in ansi format.
-        if ($sqlField === '' || $sqlField === null) {
-            if (self::$dateEpoch === null) {
-                return null;
-            }
-
-            return DateTime::createFromFormat(self::$isoDateTimeMs, self::$dateEpoch);
-        }
-
-        if (strpos($sqlField, '.')) {
-            // with date with time and microseconds
-            //2018-02-06 05:06:07.123
-            // Y-m-d H:i:s.v
-            $hasTime = true;
-            //$x = DateTime::createFromFormat("Y-m-d H:i:s.u", "2018-02-06 05:06:07.1234");
-            return DateTime::createFromFormat(self::$isoDateTimeMs, $sqlField);
-        }
-
-        if (strpos($sqlField, ':')) {
-            // date with time
-            $hasTime = true;
-            return DateTime::createFromFormat(self::$isoDateTime, $sqlField);
-        }
-        // only date
-        $hasTime = false;
-
-        return DateTime::createFromFormat(self::$isoDate, $sqlField);
-    }
-
-    /**
-     * It converts a date (as string) into another format.<br>
-     * Example:
-     * <pre>
-     * $pdoOne->dateConvert('01/01/2019','human','sql'); // 2019-01-01
-     * </pre>
-     * <br><b>iso</b> depends on the database.
-     * Example: Y-m-d H:i:s<br>
-     * <b>human</b> is based in d/m/Y H:i:s but it could be changed (self::dateHumanFormat)<br>
-     * <b>sql</b> depends on the database<br>
-     * <b>class</b> is a DateTime() object<br>
-     *
-     * @param string $sqlField The date to convert
-     * @param string $inputFormat =['iso','human','sql','class','timestamp'][$i]
-     * @param string $outputFormat =['iso','human','sql','class','timestamp'][$i]
-     * @param null|string $force =[null,'time','ms','none'][$i] It forces if the result gets time or
-     *                                  microseconds<br>
-     *                                  null = no force the result (it is calculated automatically)<br>
-     *                                  time = returns with a precision of seconds<br>
-     *                                  ms = returns with a precision of microseconds<br>
-     *                                  none = it never returns any time<br>
-     *
-     * @return bool|DateTime
-     */
-    public static function dateConvert($sqlField, $inputFormat, $outputFormat, $force = null)
-    {
-        /** @var boolean $ms if true then the value has microseconds */
-        $ms = false;
-        /** @var boolean $time if true then the value has time */
-        $time = false;
-        $tmpDate=self::dateConvertInput($sqlField,$inputFormat,$ms,$time);
-        if (!$tmpDate) {
-            return false;
-        }
-        if ($force !== null) {
-            if ($force === 'ms') {
-                $ms = true;
-            } elseif ($force === 'time') {
-                $time = true;
-                $ms = false;
-            } elseif ($force === 'none') {
-                $time = false;
-                $ms = false;
-            }
-        }
-        switch ($outputFormat) {
-            case 'iso':
-                if ($ms) {
-                    return $tmpDate->format(self::$dateTimeMicroFormat);
-                }
-                if ($time) {
-                    return $tmpDate->format(self::$dateTimeFormat);
-                }
-                return $tmpDate->format(self::$dateFormat);
-            case 'human':
-                if ($ms) {
-                    return $tmpDate->format(self::$dateTimeMicroHumanFormat);
-                }
-                if ($time) {
-                    return $tmpDate->format(self::$dateTimeHumanFormat);
-                }
-
-                return $tmpDate->format(self::$dateHumanFormat);
-            case 'sql':
-                if ($ms) {
-                    return $tmpDate->format(self::$isoDateInputTimeMs);
-                }
-                if ($time) {
-                    return $tmpDate->format(self::$isoDateInputTime);
-                }
-
-                return $tmpDate->format(self::$isoDateInput);
-            case 'class':
-                return $tmpDate;
-            case 'timestamp':
-                return $tmpDate->getTimestamp();
-        }
-        return false;
-    }
-
-    /**
-     * It converts a date and time value (expressed in different means) into a DateTime object or false if the operation
-     * fails.<br>
-     * <b>Example:</b><br>
-     * <pre>
-     * $r=PdoOne::dateConvertInput('01/12/2020','human',$ms,$time); // it depends on the fields self::$date*HumanFormat
-     * $r=PdoOne::dateConvertInput('2020-12-01','iso',$ms,$time); // it depends on the fields self::$date*Format
-     * $r=PdoOne::dateConvertInput('2020-12-01','sql',$ms,$time); // it depends on the database
-     * $r=PdoOne::dateConvertInput(50000,'timestamp',$ms,$time); // a timestamp
-     * $r=PdoOne::dateConvertInput(new DateTime(),'class',$ms,$time); // a DateTime object (it keeps the same one)
-     * </pre>
-     *
-     * @param mixed   $inputValue  the input value.
-     * @param string  $inputFormat =['iso','human','sql','class','timestamp'][$i] The input format
-     * @param boolean $ms          [ref] It returns if it includes microseconds
-     * @param boolean $time        [ref] It returns if it includes time
-     * @return DateTime|false false if the operation fails
-     * @noinspection PhpUnhandledExceptionInspection
-     * @noinspection PhpDocMissingThrowsInspection
-     */
-    public static function dateConvertInput($inputValue, $inputFormat, &$ms, &$time) {
-        switch ($inputFormat) {
-            case 'iso':
-                if (strpos($inputValue, '.') !== false) {
-                    $ms = true;
-                    $tmpDate = DateTime::createFromFormat(self::$dateTimeMicroFormat, $inputValue);
-                } elseif (strpos($inputValue, ':') !== false) {
-                    $time = true;
-                    $tmpDate = DateTime::createFromFormat(self::$dateTimeFormat, $inputValue);
-                } else {
-                    $tmpDate = DateTime::createFromFormat(self::$dateFormat, $inputValue);
-                    if ($tmpDate === false) {
-                        return false;
-                    }
-                    $tmpDate->setTime(0, 0);
-                }
-                break;
-            case 'human':
-                if (strpos($inputValue, '.') !== false) {
-                    $ms = true;
-                    $tmpDate = DateTime::createFromFormat(self::$dateTimeMicroHumanFormat, $inputValue);
-                } elseif (strpos($inputValue, ':') !== false) {
-                    $time = true;
-                    $tmpDate = DateTime::createFromFormat(self::$dateTimeHumanFormat, $inputValue);
-                } else {
-                    $tmpDate = DateTime::createFromFormat(self::$dateHumanFormat, $inputValue);
-
-                    if ($tmpDate === false) {
-                        return false;
-                    }
-                    $tmpDate->setTime(0, 0);
-                }
-                break;
-            case 'sql':
-                if (strpos($inputValue, '.') !== false) {
-                    $ms = true;
-                    $tmpDate = DateTime::createFromFormat(self::$isoDateTimeMs, $inputValue);
-                } elseif (strpos($inputValue, ':') !== false) {
-                    $time = true;
-                    $tmpDate = DateTime::createFromFormat(self::$isoDateTime, $inputValue);
-                } else {
-                    $tmpDate = DateTime::createFromFormat(self::$isoDate, $inputValue);
-                    $tmpDate->setTime(0, 0);
-                }
-                break;
-            case 'class':
-                if(is_array($inputValue)) {
-                    // sometimes we have a DateTime class but it is converted into an array. We fixed this problem.
-                    $inputValue=new DateTime($inputValue['date']);
-                }
-                /** @var DateTime $tmpDate */
-                $tmpDate = $inputValue;
-                $time = $tmpDate->format('Gis') !== '000000';
-                break;
-            case 'timestamp':
-                $tmpDate = new DateTime();
-                $tmpDate->setTimestamp($inputValue);
-                $time = $tmpDate->format('Gis') !== '000000';
-                $ms = fmod($inputValue, 1) !== 0.0;
-                break;
-            default:
-                $tmpDate = false;
-                trigger_error('PdoOne: dateConvert type not defined');
-        }
-        return $tmpDate;
-    }
-
-    /**
-     * Convert date, from text -> mysql (using a format pre-established)
-     *
-     * @param string $textDate Input date
-     * @param bool $hasTime If true then it works with date and time
-     *                             (instead of date)
-     *
-     * @return string
-     */
-    public static function dateText2Sql($textDate, $hasTime = true)
-    {
-        if (($hasTime)) {
-            $tmpFormat = strpos($textDate, '.') === false ? self::$dateTimeFormat : self::$dateTimeMicroFormat;
-        } else {
-            $tmpFormat = self::$dateFormat;
-        }
-
-        $tmpDate = DateTime::createFromFormat($tmpFormat, $textDate);
-        if (!$hasTime && $tmpDate) {
-            $tmpDate->setTime(0, 0);
-        }
-
-        return self::dateTimePHP2Sql($tmpDate); // it always returns a date with time. Mysql Ignores it.
-    }
-
-    /**
-     * Conver date from php -> mysql
-     * It always returns a time (00:00:00 if time is empty). it could returns
-     * microseconds 2010-01-01 00:00:00.00000
-     *
-     * @param DateTime $date
-     *
-     * @return string
-     */
-    public static function dateTimePHP2Sql($date)
-    {
-        // 31/01/2016 20:20:00 --> 2016-01-31 00:00
-        if ($date == null) {
-            return self::$dateEpoch;
-        }
-        if ($date->format('u') !== '000000') {
-            return $date->format(self::$isoDateTimeMs);
-        }
-
-        return $date->format(self::$isoDateTime);
-    }
-
-    /**
-     * Returns the current date(and time) in Text (human) format. Usually, it is d/m/Y H:i:s
-     *
-     * @param bool $hasTime
-     * @param bool $hasMicroseconds
-     *
-     * @return string
-     * @throws Exception
-     * @see PdoOne::$dateTimeFormat
-     */
-    public static function dateTextNow(
-        $hasTime = true,
-        $hasMicroseconds = false
-    )
-    {
-        $tmpDate = new DateTime();
-        if ($hasTime) {
-            return $tmpDate->format(($hasMicroseconds !== false) ? self::$dateTimeMicroHumanFormat
-                : self::$dateTimeHumanFormat);
-        }
-        return $tmpDate->format(self::$dateHumanFormat);
-    }
-
-    /**
-     * Returns the current (PHP server) date and time in the regular format. (Y-m-d\TH:i:s\Z in long format)
-     *
-     * @param bool $hasTime
-     * @param bool $hasMicroseconds
-     *
-     * @return string
-     * @throws Exception
-     * @see PdoOne::$dateTimeFormat
-     */
-    public static function dateNow(
-        $hasTime = true,
-        $hasMicroseconds = false
-    )
-    {
-        $tmpDate = new DateTime();
-        if ($hasTime) {
-            return $tmpDate->format(($hasMicroseconds !== false) ? self::$dateTimeMicroFormat : self::$dateTimeFormat);
-        }
-        return $tmpDate->format(self::$dateFormat);
-    }
-
-    /**
-     * Returns the current date(and time) in SQL/ISO format. It depends on the type of database.
-     *
-     * @param bool $hasTime
-     * @param bool $hasMicroseconds
-     *
-     * @return string
-     */
-    public static function dateSqlNow($hasTime = true, $hasMicroseconds = false)
-    {
-        $tmpDate = new DateTime();
-        if ($hasTime) {
-            return $tmpDate->format(($hasMicroseconds !== false) ? self::$isoDateTimeMs : self::$isoDateTime);
-        }
-
-        return $tmpDate->format(self::$isoDate);
-    }
-
-    public static function isCli()
-    {
-        return !http_response_code();
-    }
-
-    //</editor-fold>
-
-    /**
-     * @param mixed $v Variable
-     *
-     * @return int=[PDO::PARAM_STR,PDO::PARAM_INT,PDO::PARAM_BOOL][$i]
-     * @test equals PDO::PARAM_STR,(20.3)
-     * @test equals PDO::PARAM_STR,('hello')
-     */
-    public function getType(&$v)
-    {
-        switch (1) {
-            case (is_float($v)):
-            case ($v === null):
-                $vt = PDO::PARAM_STR;
-                break;
-            case (is_numeric($v)):
-                $vt = PDO::PARAM_INT;
-                break;
-            case (is_bool($v)):
-
-                $vt = PDO::PARAM_INT;
-                $v = ($v) ? 1 : 0;
-                break;
-            case (is_object($v) && $v instanceof DateTime):
-                $vt = PDO::PARAM_STR;
-                $v = self::dateTimePHP2Sql($v);
-                break;
-            default:
-                $vt = PDO::PARAM_STR;
-        }
-
-        return $vt;
-    }
-
-    /**
-     * Run a prepared statement.
-     * <br><b>Example</b>:<br>
-     *      $con->runQuery($con->prepare('select * from table'));
-     *
-     * @param PDOStatement $stmt PDOStatement
-     * @param array|null $namedArgument (optional)
-     *
-     * @param bool $throwError (default true) if false, then it won't throw an error but it will store the error
-     *
-     * @return bool returns true if the operation is correct, otherwise false
-     * @throws Exception
-     * @test equals true,$this->pdoOne->runQuery($this->pdoOne->prepare('select
-     *     1 from dual'))
-     * @test equals
-     *     [1=>1],$this->pdoOne->select('1')->from('dual')->first(),'it
-     *       must runs'
-     */
-    public function runQuery($stmt, $namedArgument = null, $throwError = true)
-    {
-        if (!$this->isOpen) {
-            $this->throwError("It's not connected to the database", '', $throwError);
-            return null;
-        }
-        try {
-            //$namedArgument = ($namedArgument === null) 
-            //    ? array_merge($this->setParamAssoc,$this->whereParamAssoc,$this->havingParamAssoc) : $namedArgument;
-            $r = $stmt->execute($namedArgument);
-        } catch (Exception $ex) {
-            $this->throwError($this->databaseType . ':Failed to run query', $this->lastQuery,
-                ['param' => $this->lastParam, 'error_last' => json_encode(error_get_last())], $throwError, $ex);
-            return false;
-        }
-        if ($r === false) {
-            $this->throwError('Exception query ', $this->lastQuery, ['param' => $this->lastParam], $throwError);
-            return false;
-        }
-
-        return true;
-    }
-
-    protected static function fixCsv($value)
-    {
-        if (is_numeric($value)) {
-            return $value;
-        }
-        $value = str_replace('"', '""', $value);
-
-        return '"' . $value . '"';
-    }
-
-    /**
-     * @param string $query
-     *
-     * @return string
-     * @throws Exception
-     */
-    public function generateCodeSelect($query)
-    {
-        $q = self::splitQuery($query);
-        $code = '/** @var array $result=array(' . $this->generateCodeArray($query, $query) . ') */' . "\n";
-
-        $code .= '$result=$pdo' . "\n";
-        foreach ($q as $k => $v) {
-            if ($v !== null) {
-                $k2 = str_replace(' by', '', $k); // order by -> order
-                foreach ($v as $vitem) {
-                    $code .= "\t->{$k2}(\"{$vitem}\")\n";
-                }
-            }
-        }
-        $code .= "\t->toList();\n";
-
-        return $code;
-    }
     /**
      * It sets conversions depending of the type of data. This method is used together with generateCodeClassAll().
      * <b>This value persists across calls</b><br>
@@ -3799,23 +3326,23 @@ eot;
      *          ['products'=>['extracol'=>'now()']);
      * </pre>
      *
-     * @param array $relations Where the key is the name of the table, and the value is an array with
+     * @param array        $relations       Where the key is the name of the table, and the value is an array with
      *                                      the name of the repository class and the name of the model class <br>
      *                                      If the value is not an array, then it doesn't build a model class<br>
      *                                      <b>Example:</b> ['products'=>'ProductRepo','types'=>'TypeRepo']<br>
      *                                      <b>Example:</b> ['products'=>['ProductRepo','ProductModel'] ]<br>
-     * @param string $baseClass The name of the base class.
-     * @param array|string $namespaces (default:'') The name of the namespace. Example 'eftec\repo'<br>
+     * @param string       $baseClass       The name of the base class.
+     * @param array|string $namespaces      (default:'') The name of the namespace. Example 'eftec\repo'<br>
      *                                      If we want to use a model class, then we need to set the namespace of the
      *                                      repository class and the namespace of the model class<br>
      *                                      ['c:/temp','c:/tempmodel'].
-     * @param array|string $folders (default:'') The name of the folder where the classes will be store.<br>
+     * @param array|string $folders         (default:'') The name of the folder where the classes will be store.<br>
      *                                      If we want to use a model class, then we need to set the folder of the
      *                                      repository class and the folder of the model class<br>
      *                                      ['eftec\repo','eftec\model'].
      *                                      Example: 'c:/folder'
-     * @param bool $force (default:false), if true then it will overwrite the repo files (if any).
-     * @param array $columnRelations (default:[]) An associative array with custom relations or
+     * @param bool         $force           (default:false), if true then it will overwrite the repo files (if any).
+     * @param array        $columnRelations (default:[]) An associative array with custom relations or
      *                                      conversion per table.<br>
      *                                      If we want to indicates a relation PARENT/MANYTOMANY, then we must use
      *                                      this array.<br>
@@ -3826,11 +3353,11 @@ eot;
      *                                      Example:['products'=>['col'=>['encrypt','decrypt']] // encrypt input and
      *                                      decrypt output<br>
      *                                      <b>Conversion allowed</b> (see generateCodeClassConversions)
-     * @param array $extraColumns An associative array with extra columns per table. It has the same form
+     * @param array        $extraColumns    An associative array with extra columns per table. It has the same form
      *                                      than $columnRelations. The columns are returned when we use toList() and
      *                                      first() and they are added to the model (if any) but they are not used in
      *                                      insert,update or delete<br>
-     * @param array $columnRemoves An associative array to skip in the generation with the key as the name of
+     * @param array        $columnRemoves   An associative array to skip in the generation with the key as the name of
      *                                      the table and value an array with columns to be removed.<br>
      *                                      Example:['products'=>['colnotread']]
      *
@@ -3968,20 +3495,6 @@ eot;
         $this->setUseInternalCache($internalCache);
         return $logs;
     }
-    /**
-     * Flush and disable the internal cache. By default, the internal cache is not used unless it is set.
-     *
-     * @param bool $useInternalCache if true then it enables the internal cache.
-     *
-     * @see \eftec\PdoOne::setUseInternalCache
-     */
-    public function flushInternalCache($useInternalCache = false)
-    {
-        $this->internalCacheCounter = 0;
-        $this->internalCache = [];
-        $this->useInternalCache = $useInternalCache;
-    }
-
 
     /**
      * If true then the library will use the internal cache that stores DQL commands.<br>
@@ -3996,261 +3509,906 @@ eot;
         $this->useInternalCache = $useInternalCache;
     }
 
-    protected static function splitQuery($query)
+    public function generateBaseClass($baseClassName, $namespace, $classes, $modelUse = false)
     {
-        $result = [];
-        $parts = [
-            'select',
-            'from',
-            'inner join',
-            'inner join',
-            'inner join',
-            'inner join',
-            'inner join',
-            'inner join',
-            'left join',
-            'left join',
-            'left join',
-            'left join',
-            'left join',
-            'left join',
-            'right join',
-            'right join',
-            'right join',
-            'right join',
-            'right join',
-            'right join',
-            'where',
-            'group by',
-            'having',
-            'order by',
-            'limit',
-            '*END*',
-        ];
-        $partsRealIndex = [
-            'select',
-            'from',
-            'innerjoin',
-            'innerjoin',
-            'innerjoin',
-            'innerjoin',
-            'innerjoin',
-            'innerjoin',
-            'left',
-            'left',
-            'left',
-            'left',
-            'left',
-            'left',
-            'right',
-            'right',
-            'right',
-            'right',
-            'right',
-            'right',
-            'where',
-            'group',
-            'having',
-            'order',
-            'limit',
-            '*END*',
-        ];
-        $query = str_replace(array("\r\n", "\n", "\t", '   ', '  '), ' ',
-            $query); // remove 3 or 2 space and put instead 1 space
-        $query = ' ' . trim($query, " \t\n\r\0\x0B;") . '*END*'; // we also trim the last ; (if any)
-        $pfin = 0;
-        foreach ($parts as $kp => $part) {
-            $ri = $partsRealIndex[$kp];
-            if ($part !== '*END*') {
-                //$result[$ri] = null;
-                $pini = stripos($query, $part, $pfin);
-                if ($pini !== false) {
-                    $pini += strlen($part);
-                    $found = false;
-                    $cp = count($parts);
-                    for ($i = $kp + 1; $i < $cp; $i++) {
-                        $pfin = stripos($query, $parts[$i], $pini);
-                        if ($pfin !== false) {
-                            $found = $pfin;
-                            break;
-                        }
-                    }
-                    if ($found !== false) {
-                        $pfin = $found;
-                        if (!isset($result[$ri])) {
-                            $result[$ri] = [];
-                        }
-                        $result[$ri][] = trim(substr($query, $pini, $pfin - $pini));
-                    }
-                }
+        $r = <<<'eot'
+<?php
+/** @noinspection PhpIncompatibleReturnTypeInspection
+ * @noinspection ReturnTypeCanBeDeclaredInspection
+ * @noinspection DuplicatedCode
+ * @noinspection PhpUnused
+ * @noinspection PhpUndefinedMethodInspection
+ * @noinspection PhpUnusedLocalVariableInspection
+ * @noinspection PhpUnusedAliasInspection
+ * @noinspection NullPointerExceptionInspection
+ * @noinspection SenselessProxyMethodInspection
+ * @noinspection PhpParameterByRefIsNotUsedAsReferenceInspection
+ */
+{namespace}
+use eftec\PdoOne;
+use eftec\_BasePdoOneRepo;
+{exception}
+
+/**
+ * Generated by PdoOne Version {version}. 
+ * @copyright (c) Jorge Castro C. MIT License  https://github.com/EFTEC/PdoOne
+ * Class {class}
+ */
+class {class} extends _BasePdoOneRepo
+{
+    const type = '{type}';
+    const COMPILEDVERSION={compiled};
+    const NS = '{namespace2}';
+    
+    /** 
+     * @var bool if true then it uses objects (instead of array) in the 
+     * methods tolist(),first(),insert(),update() and delete() 
+     */
+    public static $useModel={modeluse};      
+    
+    
+    /** @var string[] it is used to set the relations betweeen table (key) and class (value) */
+    const RELATIONS = {relations};
+    /**
+     * With the name of the table, we get the class
+     * @param string $tableName
+     *
+     * @return string[]
+     */
+    protected function tabletoClass($tableName) {        
+        return static::RELATIONS[$tableName];           
+    }    
+}
+eot;
+        /*foreach($classes as $id=>$entity) {
+            foreach($entity as $k=>$class) {
+                $classes[$id][$k] = $namespace . '\\' . $class;
             }
         }
+        */
+        $namespace = trim($namespace, '\\');
 
-        return $result;
+        return str_replace([
+            '{type}',
+            '{class}',
+            '{exception}',
+            '{namespace}',
+            '{namespace2}',
+            '{relations}',
+            '{modeluse}',
+            '{version}',
+            '{compiled}'
+        ], [
+            $this->databaseType,
+            $baseClassName,
+            ($namespace) ? 'use Exception;' : '', // {exception}
+            ($namespace) ? "namespace $namespace;" : '', // {namespace}
+            ($namespace) ? "$namespace\\\\" : '', // {namespace2}
+            $this::varExport($classes),
+            $modelUse ? 'true' : 'false', // {modeluse}
+            self::VERSION . ' Date generated ' . date('r'), // {version}
+            _BasePdoOneRepo::BINARYVERSION, // {compiled}
+        ], $r);
     }
+    //</editor-fold>
+
+    //<editor-fold desc="DML" defaultstate="collapsed" >
+
+
+    //</editor-fold>
+    //<editor-fold desc="Cache" defaultstate="collapsed" >
 
     /**
-     * @param string $table
-     * @param null|string $sql
-     * @param bool $defaultNull
-     * @param bool $inline
-     * @param bool $recursive
-     * @param null|array $classRelations [optional] The relation table=>classname
-     * @param array $relation [optional] An optional custom relation of columns
+     * @param string $tableName
+     * @param string $namespace
+     * @param null   $customRelation
+     * @param null   $classRelations
+     * @param array  $specialConversion
+     * @param null   $defNoInsert
+     * @param null   $defNoUpdate
+     * @param null   $baseClass
+     * @param array  $extraColumn
+     * @param array  $columnRemove
      *
-     * @return string
+     * @return string|string[]
      * @throws Exception
      */
-    public function generateCodeArray(
-        $table,
-        $sql = null,
-        $defaultNull = false,
-        $inline = true,
-        $recursive = false,
+    public function generateAbstractModelClass(
+        $tableName,
+        $namespace = '',
+        $customRelation = null,
         $classRelations = null,
-        $relation = []
+        $specialConversion = [],
+        $defNoInsert = null,
+        $defNoUpdate = null,
+        $baseClass = null,
+        $extraColumn = [],
+        $columnRemove = []
     )
     {
-        if ($sql === null) {
-            $sql = 'select * from ' . $this->addDelimiter($table);
-        }
-        $query=new PdoOneQuery($this);
-        $r = $query->toMeta($sql);
+        $r = <<<'eot'
+<?php
+/** @noinspection PhpIncompatibleReturnTypeInspection
+ * @noinspection ReturnTypeCanBeDeclaredInspection
+ * @noinspection DuplicatedCode
+ * @noinspection PhpUnused
+ * @noinspection PhpUndefinedMethodInspection
+ * @noinspection PhpUnusedLocalVariableInspection
+ * @noinspection PhpUnusedAliasInspection
+ * @noinspection NullPointerExceptionInspection
+ * @noinspection SenselessProxyMethodInspection
+ * @noinspection PhpParameterByRefIsNotUsedAsReferenceInspection
+ */
+{namespace}
+use eftec\PdoOne;
+{exception}
 
-        $ln = ($inline) ? '' : "\n";
-        if ($recursive) {
-            /** @noinspection PhpUnusedLocalVariableInspection */
-            list($tables, $after, $before) = $this->tableDependency(true);
-        } else {
-            $tables = null;
-            $after = null;
-            $before = null;
-        }
-        $result = '[' . $ln;
-        $used = [];
-        $norepeat = [];
-        foreach ($r as $row) {
-            $name = $row['name'];
-            if (!in_array($name, $used, true)) {
-                if ($defaultNull) {
-                    $default = 'null';
-                } else {
-                    $default = $this->typeDict($row);
-                }
-                $result .= "'" . $name . "'=>" . $default . ',' . $ln;
-                if ($recursive) {
-                    if (isset($before[$table][$name])) {
-                        foreach ($before[$table][$name] as $k => $v3) {
-                            if ($v3[1]
-                                && $v3[0][0] !== self::$prefixBase
-                            ) { // before is defined as [colremote,tableremote]
-                                $colName = self::$prefixBase . $v3[1];
-                                if (!$defaultNull) {
-                                    $default = '(in_array($recursivePrefix.\'' . $colName . '\',$recursive,true))
-                            ? [] 
-                            : null';
-                                } else {
-                                    $default = 'null';
-                                }
-                                if (!in_array($colName, $norepeat)) {
-                                    if (isset($relation[$colName])) {
-                                        $key = $relation[$colName]['key'];
+/**
+ * Generated by PdoOne Version {version}. 
+ * DO NOT EDIT THIS CODE. THIS CODE WILL SELF GENERATE.
+ * @copyright (c) Jorge Castro C. MIT License  https://github.com/EFTEC/PdoOne
+ * Class {classname}
+ * <pre>
+ * $code=$pdoOne->generateAbstractModelClass({args});
+ * </pre>
+ */
+abstract class Abstract{classname}
+{
+{fields}
 
-                                        if ($key === 'PARENT') {
-                                            $default = 'null';
-                                        }
-                                        if ($key === 'ONETOONE' && !$defaultNull) {
-                                            if ($classRelations === null
-                                                || !isset($classRelations[$relation[$colName]['reftable']])
-                                            ) {
-                                                $className = self::camelize($relation[$colName]['reftable']) . 'Repo';
-                                            } else {
-                                                $className = $relation[$colName]['reftable'];
-                                            }
-                                            $default = '(in_array($recursivePrefix.\'' . $colName . '\',$recursive,true))
-                            ? ' . $className . '::factory(null,$recursivePrefix.\'' . $colName . '\') 
-                            : null';
-                                        }
-                                        $result .= "'" . $colName . "'=>" . $default . ', /* ' . $key . '! */' . $ln;
-                                        $norepeat[] = $colName;
-                                    } else {
-                                        $result .= "'" . $colName . "'=>" . $default . ', /* onetomany */' . $ln;
-                                        $norepeat[] = $colName;
-                                    }
-                                }
-                            }
-                        }
-                    }
-                    if (@$after[$table][$name]) {
-                        if (!$defaultNull) {
-                            if ($classRelations === null || !isset($classRelations[$after[$table][$name]])) {
-                                $className = self::camelize($after[$table][$name]) . 'Repo';
-                            } else {
-                                $className = $classRelations[$after[$table][$name]];
-                            }
-                            $default = '(in_array($recursivePrefix.\'' . self::$prefixBase . $name . '\',$recursive,true)) 
-                            ? ' . $className . '::factory(null,$recursivePrefix.\'' . self::$prefixBase . $name . '\') 
-                            : null';
-                        }
-                        if (!in_array($name, $norepeat)) {
-                            $namep = self::$prefixBase . $name;
-                            if (isset($relation[$namep])) {
-                                /*array(5) {
-                                    ["key"]=>
-                                    string(11) "FOREIGN KEY"
-                                    ["refcol"]=>
-                                    string(14) "idtablachildPK"
-                                    ["reftable"]=>
-                                    string(10) "TableChild"
-                                    ["extra"]=>
-                                    string(0) ""
-                                    ["name"]=>
-                                    string(26) "FK_TableParent_TableChild1"
-                                  }*/
-                                $key = $relation[$namep]['key'];
-                                if ($key !== 'PARENT') {
-                                    // $default = 'null';
-                                    $result .= "'" . $namep . "'=>" . $default . ', /* ' . $key . '!! */' . $ln;
-                                    $norepeat[] = $name;
-                                }
-                            } else {
-                                $result .= "'" . $namep . "'=>" . $default . ', /* manytoone */' . $ln;
-                                $norepeat[] = $name;
-                            }
-                        }
-                    }
-                }
-            }
-
-            $used[] = $name;
-        }
-        $result .= ']' . $ln;
-        $result = str_replace(",$ln]", "$ln]", $result);
-        return $result;
-    }
+{fieldsrel}
 
 
     /**
-     * It returns a simple array with all the columns that has identities/sequence.
+     * Abstract{classname} constructor.
      *
-     * @param string $table
-     *
-     * @return array
-     * @throws Exception
+     * @param array|null $array
      */
-    public function getDefIdentities($table)
+    public function __construct($array=null)
     {
-        $r = $this->service->getDefTable($table);
-        $identities = [];
-        foreach ($r as $k => $v) {
-            if (stripos($v, $this->database_identityName) !== false) {
-                $identities[] = $k;
-            }
+        if($array===null) {
+            return;
         }
-        return $identities;
+        foreach($array as $k=>$v) {
+            $this->{$k}=$v;
+        }
+    }
+
+    //<editor-fold desc="array conversion">
+    public static function fromArray($array) {
+        if($array===null) {
+            return null;
+        }
+        $obj=new {classname}();
+{fieldsfa}
+{fieldsrelfa}
+
+        return $obj;
     }
     
+    /**
+     * It converts the current object in an array
+     * 
+     * @return mixed
+     */
+    public function toArray() {
+        return static::objectToArray($this);
+    }
+    
+    /**
+     * It converts an array of arrays into an array of objects.
+     * 
+     * @param array|null $array
+     *
+     * @return array|null
+     */
+    public static function fromArrayMultiple($array) {
+        if($array===null) {
+            return null;
+        }
+        $objs=[];
+        foreach($array as $v) {
+            $objs[]=self::fromArray($v);
+        }
+        return $objs;
+    }
+    //</editor-fold>
+    
+} // end class
+eot;
+        //$lastns = explode('\\', $namespace);
+        //$baseClass = ($baseClass === null) ? end($lastns) : $baseClass;
 
+        $fa = func_get_args();
+        foreach ($fa as $f => $k) {
+            if (is_array($k)) {
+                $fa[$f] = str_replace([' ', "\r\n", "\n"], ['', '', ''], var_export($k, true));
+            } else {
+                $fa[$f] = "'$k'";
+            }
+        }
+        if ($classRelations === null || !isset($classRelations[$tableName])) {
+            $className = self::camelize($tableName);
+        } else {
+            $className = $classRelations[$tableName];
+        }
+
+        $r = str_replace(array(
+            '{version}',
+            '{classname}',
+            '{exception}',
+            '{namespace}'
+        ), array(
+            self::VERSION . ' Date generated ' . date('r'), //{version}
+            $className, // {classname}
+            ($namespace) ? 'use Exception;' : '',
+            ($namespace) ? "namespace $namespace;" : ''
+        ), $r);
+        $pk = '??';
+        $pk = $this->service->getPK($tableName, $pk);
+        $pkFirst = (is_array($pk) && count($pk) > 0) ? $pk[0] : null;
+
+        try {
+            $relation = $this->getDefTableFK($tableName, false, true);
+        } catch (Exception $e) {
+            return 'Error: Unable read fk of table ' . $e->getMessage();
+        }
+
+        try {
+            $deps = $this->tableDependency(true);
+        } catch (Exception $e) {
+            return 'Error: Unable read table dependencies ' . $e->getMessage();
+        } //  ["city"]=> {["city_id"]=> "address"}
+        $after = @$deps[1][$tableName];
+        if ($after === null) {
+            $after = @$deps[1][strtolower($tableName)];
+        }
+        $before = @$deps[2][$tableName];
+        if ($before === null) {
+            $before = @$deps[2][strtolower($tableName)];
+        }
+        if (is_array($after) && is_array($before)) {
+            foreach ($before as $key => $rows) { // $value is [relcol,table]
+                foreach ($rows as $value) {
+                    $relation['' . self::$prefixBase . $value[1]] = [
+                        'key' => 'ONETOMANY',
+                        'col' => $key,
+                        'reftable' => $value[1],
+                        'refcol' => $value[0]
+                    ];
+                }
+            }
+        }
+        // converts relations to ONETOONE
+        foreach ($relation as $k => $rel) {
+            if ($rel['key'] === 'ONETOMANY') {
+                $pkref = null;
+                $pkref = $this->service->getPK($rel['reftable'], $pkref);
+                if ('' . self::$prefixBase . $pkref[0] === $rel['refcol'] && count($pkref) === 1) {
+                    $relation[$k]['key'] = 'ONETOONE';
+                    $relation[$k]['col'] = 'xxx1';
+                    $relation[$k]['refcol'] = ltrim($relation[$k]['refcol'], self::$prefixBase);
+                }
+            }
+            if ($rel['key'] === 'MANYTOONE') {
+                $pkref = null;
+                $pkref = $this->service->getPK($rel['reftable'], $pkref);
+
+                if ($pkref[0] === $rel['refcol'] && count($pkref) === 1
+                    && (strcasecmp($k, '' . self::$prefixBase . $pkFirst) === 0)
+                ) {
+                    // if they are linked by the pks and the pks are only 1.
+                    $relation[$k]['key'] = 'ONETOONE';
+                    $relation[$k]['col'] = 'xxx2';
+                    $relation[$k]['refcol'] = ltrim($relation[$k]['refcol'], self::$prefixBase);
+                }
+            }
+        }
+        if ($customRelation) {
+            foreach ($relation as $k => $rel) {
+                if (isset($customRelation[$k])) {
+                    // parent.
+                    if ($customRelation[$k] === 'PARENT') {
+                        $relation[$k]['key'] = 'PARENT';
+                    } elseif ($customRelation[$k] === 'MANYTOMANY') {
+                        // the table must has 2 primary keys.
+                        $pks = null;
+                        $pks = $this->service->getPK($relation[$k]['reftable'], $pks);
+                        /** @noinspection PhpParamsInspection */
+                        if ($pks !== false || count($pks) === 2) {
+                            $relation[$k]['key'] = 'MANYTOMANY';
+                            $refcol2 = ('' . self::$prefixBase . $pks[0] === $relation[$k]['refcol']) ? $pks[1]
+                                : $pks[0];
+
+                            try {
+                                $defsFK = $this->service->getDefTableFK($relation[$k]['reftable'], false);
+                            } catch (Exception $e) {
+                                return 'Error: Unable read table dependencies ' . $e->getMessage();
+                            }
+                            try {
+                                $keys2 = $this->service->getDefTableKeys($defsFK[$refcol2]['reftable'], true,
+                                    'PRIMARY KEY');
+                            } catch (Exception $e) {
+                                return 'Error: Unable read table dependencies' . $e->getMessage();
+                            }
+                            $relation[$k]['refcol2'] = '' . self::$prefixBase . $refcol2;
+                            if (is_array($keys2)) {
+                                $keys2 = array_keys($keys2);
+                                $relation[$k]['col2'] = $keys2[0];
+                            } else {
+                                $relation[$k]['col2'] = null;
+                            }
+                            $relation[$k]['table2'] = $defsFK[$refcol2]['reftable'];
+                        }
+                    }
+                    // manytomany
+                }
+            }
+        }
+        //die(1);
+
+        $gdf = $this->getDefTable($tableName, $specialConversion);
+
+        foreach ($columnRemove as $v) {
+            unset($gdf[$v]);
+        }
+
+        $fields = [];
+        $fieldsb = [];
+        foreach ($gdf as $varn => $field) {
+            switch ($field['phptype']) { //binary, date, datetime, decimal,int, string,time, timestamp
+                case 'binary':
+                case 'date':
+                case 'datetime':
+                case 'decimal':
+                case 'float':
+                case 'int':
+                case 'string':
+                case 'time':
+                case 'timestamp':
+                    $fields[] = "\t/** @var " . $field['phptype'] . " \$$varn  */\n\tpublic \$$varn;";
+                    $fieldsb[] = "\t\t\$obj->$varn=isset(\$array['$varn']) ?  \$array['$varn'] : null;";
+                    break;
+            }
+        }
+        foreach ($extraColumn as $varn => $value) {
+            $fields[] = "\t/** @var mixed \$$varn extra column: $value */\n\tpublic \$$varn;";
+            $fieldsb[] = "\t\t\$obj->$varn=isset(\$array['$varn']) ?  \$array['$varn'] : null;";
+        }
+        $fieldsArr = implode("\n", $fields);
+        $fieldsbArr = implode("\n", $fieldsb);
+
+        $field2s = [];
+        $field2sb = [];
+        foreach ($relation as $varn => $field) {
+            //$varnclean = ltrim($varn, PdoOne::$prefixBase);
+            switch ($field['key']) {
+                case 'FOREIGN KEY':
+                    break;
+                case 'MANYTOONE':
+                    $class = $classRelations[$field['reftable']];
+                    $field2s[] = "\t/** @var $class \$$varn manytoone */
+    public \$$varn;";
+                    $field2sb[] = "\t\t\$obj->$varn=isset(\$array['$varn']) ? 
+            \$obj->$varn=$class::fromArray(\$array['$varn']) 
+            : null; // manytoone";
+                    $col = ltrim($varn, self::$prefixBase);
+                    $rcol = $field['refcol'];
+                    $field2sb[] = "\t\t(\$obj->$varn !== null) 
+            and \$obj->{$varn}->{$rcol}=&\$obj->$col; // linked manytoone";
+                    break;
+                case 'MANYTOMANY':
+                    $class = $classRelations[$field['reftable']];
+                    $field2s[] = "\t/** @var {$class}[] \$$varn manytomany */
+    public \$$varn;";
+                    $field2sb[] = "\t\t\$obj->$varn=isset(\$array['$varn']) ?  
+            \$obj->$varn=$class::fromArrayMultiple(\$array['$varn']) 
+            : null; // manytomany";
+                    break;
+                case 'ONETOMANY':
+                    $class = $classRelations[$field['reftable']];
+                    $field2s[] = "\t/** @var {$class}[] \$$varn onetomany */
+    public \$$varn;";
+                    $field2sb[] = "\t\t\$obj->$varn=isset(\$array['$varn']) ?  
+            \$obj->$varn=$class::fromArrayMultiple(\$array['$varn']) 
+            : null; // onetomany";
+                    break;
+                case 'ONETOONE':
+                    $class = $classRelations[$field['reftable']];
+                    $field2s[] = "\t/** @var $class \$$varn onetoone */
+    public \$$varn;";
+                    $field2sb[] = "\t\t\$obj->$varn=isset(\$array['$varn']) ?  
+            \$obj->$varn=$class::fromArray(\$array['$varn']) 
+            : null; // onetoone";
+
+                    $col = isset($field['col']) ? $field['col'] : $pkFirst;
+
+                    $rcol = $field['refcol'];
+
+                    $field2sb[] = "\t\t(\$obj->$varn !== null) 
+            and \$obj->{$varn}->{$rcol}=&\$obj->$col; // linked onetoone";
+                    break;
+            }
+        }
+
+        $fields2Arr = implode("\n", $field2s);
+        $fields2Arrb = implode("\n", $field2sb);
+
+        $r = str_replace(['{fields}', '{fieldsrel}', '{fieldsfa}', '{fieldsrelfa}'],
+            [$fieldsArr, $fields2Arr, $fieldsbArr, $fields2Arrb], $r);
+        //  return $r;
+        //  die(1);
+
+        if (@count($this->codeClassConversion) > 0) {
+            // we forced the conversion but only if it is not specified explicit
+            foreach ($gdf as $k => $colDef) {
+                $type = $colDef['type'];
+                if (isset($this->codeClassConversion[$type]) && $gdf[$k]['conversion'] === null) {
+                    $gdf[$k]['conversion'] = $this->codeClassConversion[$type];
+                }
+            }
+        }
+
+        // discard columns
+        $identities = $this->getDefIdentities($tableName);
+        if ($defNoInsert !== null) {
+            $noInsert = array_merge($identities, $defNoInsert);
+        } else {
+            $noInsert = $identities;
+        }
+        if ($defNoInsert !== null) {
+            $noUpdate = array_merge($identities, $defNoUpdate);
+        } else {
+            $noUpdate = $identities;
+        }
+
+        try {
+            $r = str_replace(array(
+                '{pk}',
+                '{def}',
+                '{defname}',
+                '{defkey}',
+                '{defnoinsert}',
+                '{defnoupdate}',
+                '{deffk}',
+                '{deffktype}',
+                '{array}',
+                '{array_null}'
+            ), array(
+                self::varExport($pk),
+                //str_replace(["\n\t\t        ", "\n\t\t    ],"], ['', '],'], PdoOne::varExport($gdf, "\t\t")), // {def}
+                self::varExport($gdf, "\t\t"),
+                self::varExport(array_keys($gdf), "\t\t"), // {defname}
+                self::varExport($this->getDefTableKeys($tableName), "\t\t"), // {defkey}
+                self::varExport($noInsert, "\t\t"), // {defnoinsert}
+                self::varExport($noUpdate, "\t\t"), // {defnoupdate}
+                self::varExport($this->getDefTableFK($tableName), "\t\t\t"), //{deffk}
+                self::varExport($relation, "\t\t"), //{deffktype}
+                str_replace("\n", "\n\t\t",
+                    rtrim($this->generateCodeArray($tableName, null, false, false, true, $classRelations, $relation),
+                        "\n")),
+                str_replace("\n", "\n\t\t",
+                    rtrim($this->generateCodeArray($tableName, null, true, false, true, $classRelations, $relation),
+                        "\n"))
+            ), $r);
+        } catch (Exception $e) {
+            return "Unable read definition of tables " . $e->getMessage();
+        }
+
+        return $r;
+    }
+
+    /**
+     * @param string $tableName
+     * @param string $namespace
+     * @param null   $customRelation
+     * @param null   $classRelations
+     * @param array  $specialConversion
+     * @param null   $defNoInsert
+     * @param null   $defNoUpdate
+     * @param null   $baseClass
+     *
+     * @return string|string[]
+     * @throws Exception
+     */
+    public function generateModelClass(
+        $tableName,
+        $namespace = '',
+        $customRelation = null,
+        $classRelations = null,
+        $specialConversion = [],
+        $defNoInsert = null,
+        $defNoUpdate = null,
+        $baseClass = null
+    )
+    {
+        $r = <<<'eot'
+<?php
+/** @noinspection PhpIncompatibleReturnTypeInspection
+ * @noinspection ReturnTypeCanBeDeclaredInspection
+ * @noinspection DuplicatedCode
+ * @noinspection PhpUnused
+ * @noinspection PhpUndefinedMethodInspection
+ * @noinspection PhpUnusedLocalVariableInspection
+ * @noinspection PhpUnusedAliasInspection
+ * @noinspection NullPointerExceptionInspection
+ * @noinspection SenselessProxyMethodInspection
+ * @noinspection PhpParameterByRefIsNotUsedAsReferenceInspection
+ */
+{namespace}
+use eftec\PdoOne;
+{exception}
+
+/**
+ * Generated by PdoOne Version {version}. 
+ * YOU COULD EDIT THIS CODE
+ * @copyright (c) Jorge Castro C. MIT License  https://github.com/EFTEC/PdoOne
+ * Class {classname}
+ * <pre>
+ * $code=$pdoOne->generateCodeClass({args});
+ * </pre>
+ */
+class {classname} extends Abstract{classname}
+{
+
+    
+} // end class
+eot;
+        //$lastns = explode('\\', $namespace);
+        //$baseClass = ($baseClass === null) ? end($lastns) : $baseClass;
+
+        $fa = func_get_args();
+        foreach ($fa as $f => $k) {
+            if (is_array($k)) {
+                $fa[$f] = str_replace([' ', "\r\n", "\n"], ['', '', ''], var_export($k, true));
+            } else {
+                $fa[$f] = "'$k'";
+            }
+        }
+        if ($classRelations === null || !isset($classRelations[$tableName])) {
+            $className = self::camelize($tableName);
+        } else {
+            $className = $classRelations[$tableName];
+        }
+
+        $r = str_replace(array(
+            '{version}',
+            '{classname}',
+            '{exception}',
+            '{namespace}'
+        ), array(
+            self::VERSION . ' Date generated ' . date('r'), //{version}
+            $className, // {classname}
+            ($namespace) ? 'use Exception;' : '',
+            ($namespace) ? "namespace $namespace;" : ''
+        ), $r);
+        $pk = '??';
+        $pk = $this->service->getPK($tableName, $pk);
+        $pkFirst = (is_array($pk) && count($pk) > 0) ? $pk[0] : null;
+
+        try {
+            $relation = $this->getDefTableFK($tableName, false, true);
+        } catch (Exception $e) {
+            return 'Error: Unable read fk of table ' . $e->getMessage();
+        }
+
+        try {
+            $deps = $this->tableDependency(true);
+        } catch (Exception $e) {
+            return 'Error: Unable read table dependencies ' . $e->getMessage();
+        } //  ["city"]=> {["city_id"]=> "address"}
+        $after = @$deps[1][$tableName];
+        if ($after === null) {
+            $after = @$deps[1][strtolower($tableName)];
+        }
+        $before = @$deps[2][$tableName];
+        if ($before === null) {
+            $before = @$deps[2][strtolower($tableName)];
+        }
+        if (is_array($after) && is_array($before)) {
+            foreach ($before as $key => $rows) { // $value is [relcol,table]
+                foreach ($rows as $value) {
+                    $relation['' . self::$prefixBase . $value[1]] = [
+                        'key' => 'ONETOMANY',
+                        'col' => $key,
+                        'reftable' => $value[1],
+                        'refcol' => $value[0]
+                    ];
+                }
+            }
+        }
+        // converts relations to ONETOONE
+        foreach ($relation as $k => $rel) {
+            if ($rel['key'] === 'ONETOMANY') {
+                $pkref = null;
+                $pkref = $this->service->getPK($rel['reftable'], $pkref);
+                if ('' . self::$prefixBase . $pkref[0] === $rel['refcol'] && count($pkref) === 1) {
+                    $relation[$k]['key'] = 'ONETOONE';
+                    $relation[$k]['col'] = 'xxx3';
+                    $relation[$k]['refcol'] = ltrim($relation[$k]['refcol'], self::$prefixBase);
+                }
+            }
+            if ($rel['key'] === 'MANYTOONE') {
+                $pkref = null;
+                $pkref = $this->service->getPK($rel['reftable'], $pkref);
+
+                if ($pkref[0] === $rel['refcol'] && count($pkref) === 1
+                    && (strcasecmp($k, '' . self::$prefixBase . $pkFirst) === 0)
+                ) {
+                    // if they are linked by the pks and the pks are only 1.
+                    $relation[$k]['key'] = 'ONETOONE';
+                    $relation[$k]['col'] = 'xxx4';
+                    $relation[$k]['refcol'] = ltrim($relation[$k]['refcol'], self::$prefixBase);
+                }
+            }
+        }
+        if ($customRelation) {
+            foreach ($relation as $k => $rel) {
+                if (isset($customRelation[$k])) {
+                    // parent.
+                    if ($customRelation[$k] === 'PARENT') {
+                        $relation[$k]['key'] = 'PARENT';
+                    } elseif ($customRelation[$k] === 'MANYTOMANY') {
+                        // the table must has 2 primary keys.
+                        $pks = null;
+                        $pks = $this->service->getPK($relation[$k]['reftable'], $pks);
+                        /** @noinspection PhpParamsInspection */
+                        if ($pks !== false || count($pks) === 2) {
+                            $relation[$k]['key'] = 'MANYTOMANY';
+                            $refcol2 = ('' . self::$prefixBase . $pks[0] === $relation[$k]['refcol']) ? $pks[1]
+                                : $pks[0];
+
+                            try {
+                                $defsFK = $this->service->getDefTableFK($relation[$k]['reftable'], false);
+                            } catch (Exception $e) {
+                                return 'Error: Unable read table dependencies ' . $e->getMessage();
+                            }
+                            try {
+                                $keys2 = $this->service->getDefTableKeys($defsFK[$refcol2]['reftable'], true,
+                                    'PRIMARY KEY');
+                            } catch (Exception $e) {
+                                return 'Error: Unable read table dependencies' . $e->getMessage();
+                            }
+                            $relation[$k]['refcol2'] = '' . self::$prefixBase . $refcol2;
+                            if (is_array($keys2)) {
+                                $keys2 = array_keys($keys2);
+                                $relation[$k]['col2'] = $keys2[0];
+                            } else {
+                                $relation[$k]['col2'] = null;
+                            }
+                            $relation[$k]['table2'] = $defsFK[$refcol2]['reftable'];
+                        }
+                    }
+                    // manytomany
+                }
+            }
+        }
+        //die(1);
+
+        $gdf = $this->getDefTable($tableName, $specialConversion);
+        $fields = [];
+        $fieldsb = [];
+        foreach ($gdf as $varn => $field) {
+            switch ($field['phptype']) { //binary, date, datetime, decimal,int, string,time, timestamp
+                case 'binary':
+                case 'date':
+                case 'datetime':
+                case 'decimal':
+                case 'float':
+                case 'int':
+                case 'string':
+                case 'time':
+                case 'timestamp':
+                    $fields[] = "\t/** @var " . $field['phptype'] . " \$$varn  */\n\tpublic \$$varn;";
+                    $fieldsb[] = "\t\t\$obj->$varn=isset(\$array['$varn']) ?  \$array['$varn'] : null;";
+                    break;
+            }
+        }
+        $fieldsArr = implode("\n", $fields);
+        $fieldsbArr = implode("\n", $fieldsb);
+
+        $field2s = [];
+        $field2sb = [];
+        foreach ($relation as $varn => $field) {
+            //$varnclean = ltrim($varn, PdoOne::$prefixBase);
+            switch ($field['key']) {
+                case 'FOREIGN KEY':
+                    break;
+                case 'MANYTOONE':
+                    $class = $classRelations[$field['reftable']];
+                    $field2s[] = "\t/** @var $class \$$varn manytoone */
+    public \$$varn;";
+                    $field2sb[] = "\t\t\$obj->$varn=isset(\$array['$varn']) ? 
+            \$obj->$varn=$class::fromArray(\$array['$varn']) 
+            : null; // manytoone";
+                    break;
+                case 'MANYTOMANY':
+                    $class = $classRelations[$field['reftable']];
+                    $field2s[] = "\t/** @var {$class}[] \$$varn manytomany */
+    public \$$varn;";
+                    $field2sb[] = "\t\t\$obj->$varn=isset(\$array['$varn']) ?  
+            \$obj->$varn=$class::fromArrayMultiple(\$array['$varn']) 
+            : null; // manytomany";
+                    break;
+                case 'ONETOMANY':
+                    $class = $classRelations[$field['reftable']];
+                    $field2s[] = "\t/** @var {$class}[] \$$varn onetomany */
+    public \$$varn;";
+                    $field2sb[] = "\t\t\$obj->$varn=isset(\$array['$varn']) ?  
+            \$obj->$varn=$class::fromArrayMultiple(\$array['$varn']) 
+            : null; // onetomany";
+                    break;
+                case 'ONETOONE':
+                    $class = $classRelations[$field['reftable']];
+                    $field2s[] = "\t/** @var $class \$$varn onetoone */
+    public \$$varn;";
+                    $field2sb[] = "\t\t\$obj->$varn=isset(\$array['$varn']) ?  
+            \$obj->$varn=$class::fromArray(\$array['$varn']) 
+            : null; // onetoone";
+                    break;
+            }
+        }
+
+        $fields2Arr = implode("\n", $field2s);
+        $fields2Arrb = implode("\n", $field2sb);
+
+        $r = str_replace(['{fields}', '{fieldsrel}', '{fieldsfa}', '{fieldsrelfa}'],
+            [$fieldsArr, $fields2Arr, $fieldsbArr, $fields2Arrb], $r);
+        //  return $r;
+        //  die(1);
+
+        if (@count($this->codeClassConversion) > 0) {
+            // we forced the conversion but only if it is not specified explicit
+            foreach ($gdf as $k => $colDef) {
+                $type = $colDef['type'];
+                if (isset($this->codeClassConversion[$type]) && $gdf[$k]['conversion'] === null) {
+                    $gdf[$k]['conversion'] = $this->codeClassConversion[$type];
+                }
+            }
+        }
+
+        // discard columns
+        $identities = $this->getDefIdentities($tableName);
+        if ($defNoInsert !== null) {
+            $noInsert = array_merge($identities, $defNoInsert);
+        } else {
+            $noInsert = $identities;
+        }
+        if ($defNoInsert !== null) {
+            $noUpdate = array_merge($identities, $defNoUpdate);
+        } else {
+            $noUpdate = $identities;
+        }
+
+        try {
+            $r = str_replace(array(
+                '{pk}',
+                '{def}',
+                '{defname}',
+                '{defkey}',
+                '{defnoinsert}',
+                '{defnoupdate}',
+                '{deffk}',
+                '{deffktype}',
+                '{array}',
+                '{array_null}'
+            ), array(
+                self::varExport($pk),
+                //str_replace(["\n\t\t        ", "\n\t\t    ],"], ['', '],'], PdoOne::varExport($gdf, "\t\t")), // {def}
+                self::varExport($gdf, "\t\t"),
+                self::varExport(array_keys($gdf), "\t\t"), // {defname}
+                self::varExport($this->getDefTableKeys($tableName), "\t\t"), // {defkey}
+                self::varExport($noInsert, "\t\t"), // {defnoinsert}
+                self::varExport($noUpdate, "\t\t"), // {defnoupdate}
+                self::varExport($this->getDefTableFK($tableName), "\t\t\t"), //{deffk}
+                self::varExport($relation, "\t\t"), //{deffktype}
+                str_replace("\n", "\n\t\t",
+                    rtrim($this->generateCodeArray($tableName, null, false, false, true, $classRelations, $relation),
+                        "\n")),
+                str_replace("\n", "\n\t\t",
+                    rtrim($this->generateCodeArray($tableName, null, true, false, true, $classRelations, $relation),
+                        "\n"))
+            ), $r);
+        } catch (Exception $e) {
+            return "Unable read definition of tables " . $e->getMessage();
+        }
+
+        return $r;
+    }
+
+    public function generateCodeClassRepo(
+        $tableClassName,
+        $namespace = '',
+        $classRelations = [],
+        $modelfullClass = ''
+    )
+    {
+        $r = <<<'eot'
+<?php
+/** @noinspection PhpUnused
+ * @noinspection ReturnTypeCanBeDeclaredInspection
+ */
+{namespace}
+{modelnamespace}
+{exception}
+
+/**
+ * Generated by PdoOne Version {version}. 
+ * EDIT THIS CODE.
+ * @copyright (c) Jorge Castro C. MIT License  https://github.com/EFTEC/PdoOne
+ * Class {classname}
+ * <pre>
+ * $code=$pdoOne->generateCodeClassRepo({args});
+ * </pre>
+ */
+class {classname} extends Abstract{classname}
+{
+    const ME=__CLASS__; 
+    {modelclass}
+  
+    
+}
+eot;
+
+        $fa = func_get_args();
+        foreach ($fa as $f => $k) {
+            if (is_array($k)) {
+                $fa[$f] = str_replace([' ', "\r\n", "\n"], ['', '', ''], var_export($k, true));
+            } else {
+                $fa[$f] = "'$k'";
+            }
+        }
+
+        if ($modelfullClass) {
+            $arr = explode('\\', $modelfullClass);
+            $modelClass = end($arr);
+            $modelUse = true;
+        } else {
+            $modelClass = false;
+            $modelUse = false;
+        }
+
+        $r = str_replace(array(
+            '{version}',
+            '{classname}',
+            '{exception}',
+            '{args}',
+            '{table}',
+            '{namespace}',
+            '{modelnamespace}',
+            '{modelclass}',
+            '{modeluse}'
+        ), array(
+            self::VERSION . ' Date generated ' . date('r'), // {version}
+            $classRelations[$tableClassName], // {class}
+            ($namespace) ? 'use Exception;' : '',
+            "'" . implode("','", $fa) . "'", // {args}
+            $tableClassName, //{table}
+            ($namespace) ? "namespace $namespace;" : '', // {namespace}
+            $modelfullClass ? "use $modelfullClass;" : '', // {modelnamespace}
+            $modelClass ? "const MODEL= $modelClass::class;" : '', // {modelclass}
+            $modelUse ? 'true' : 'false' // {modeluse}
+        ), $r);
+        return $r;
+    }
+
+
+    //</editor-fold>
+    //<editor-fold desc="Log functions" defaultstate="collapsed" >
+
+    /**
+     * Flush and disable the internal cache. By default, the internal cache is not used unless it is set.
+     *
+     * @param bool $useInternalCache if true then it enables the internal cache.
+     *
+     * @see \eftec\PdoOne::setUseInternalCache
+     */
+    public function flushInternalCache($useInternalCache = false)
+    {
+        $this->internalCacheCounter = 0;
+        $this->internalCache = [];
+        $this->useInternalCache = $useInternalCache;
+    }
 
     /**
      * Begin a try block. It marks the erroText as empty and it store the value of genError
@@ -4262,38 +4420,16 @@ eot;
         $this->throwOnErrorB = $this->throwOnError;
         $this->throwOnError = false;
     }
-    //</editor-fold>
-
-    //<editor-fold desc="DML" defaultstate="collapsed" >
-
-
-    //</editor-fold>
-    //<editor-fold desc="Cache" defaultstate="collapsed" >
-
-
-
-    /**
-     * It sets the cache service (optional).
-     *
-     * @param IPdoOneCache $cacheService Instance of an object that implements IPdoOneCache
-     *
-     * @return $this
-     */
-    public function setCacheService($cacheService)
-    {
-        $this->cacheService = $cacheService;
-        return $this;
-    }
 
     /**
      * It stores a cache. This method is used internally by PdoOne.<br>
      *
-     * @param string $uid The unique id. It is generate by sha256 based in the query, parameters, type of query
-     *                                and method.
+     * @param string          $uid    The unique id. It is generate by sha256 based in the query, parameters, type of
+     *                                query and method.
      * @param string|string[] $family [optional] It is the family or group of the cache. It could be used to invalidate
      *                                the whole group. For example, to invalidate all the cache related with a table.
-     * @param mixed|null $data The data to store
-     * @param null|bool|int $ttl If null then the cache never expires.<br>
+     * @param mixed|null      $data   The data to store
+     * @param null|bool|int   $ttl    If null then the cache never expires.<br>
      *                                If false then we don't use cache.<br>
      *                                If int then it is the duration of the cache (in seconds)
      *
@@ -4307,14 +4443,18 @@ eot;
         $this->cacheService->setCache($uid, $family, $data, $ttl);
     }
 
+
+    //</editor-fold>
+    //<editor-fold desc="cli functions" defaultstate="collapsed" >
+
     /**
      * Invalidate a single cache or a list of cache based in a single uid or in
      * a family/group of cache.
      *
-     * @param string|string[] $uid The unique id. It is generate by sha256 (or by $hashtype)
+     * @param string|string[] $uid        The unique id. It is generate by sha256 (or by $hashtype)
      *                                    based in the query, parameters, type
      *                                    of query and method.
-     * @param string|string[] $family [optional] It is the family or group
+     * @param string|string[] $family     [optional] It is the family or group
      *                                    of
      *                                    the cache. It could be used to
      *                                    invalidate the whole group. For
@@ -4334,10 +4474,6 @@ eot;
         }
         return $this;
     }
-
-
-    //</editor-fold>
-    //<editor-fold desc="Log functions" defaultstate="collapsed" >
 
     /**
      * Returns the number of affected rows.
@@ -4378,16 +4514,25 @@ eot;
         return $this->cacheService;
     }
 
-
-    //</editor-fold>
-    //<editor-fold desc="cli functions" defaultstate="collapsed" >
+    /**
+     * It sets the cache service (optional).
+     *
+     * @param IPdoOneCache $cacheService Instance of an object that implements IPdoOneCache
+     *
+     * @return $this
+     */
+    public function setCacheService($cacheService)
+    {
+        $this->cacheService = $cacheService;
+        return $this;
+    }
 
     /**
-     * @param string|int $password <p>Use a integer if the method is
+     * @param string|int $password      <p>Use a integer if the method is
      *                                  INTEGER</p>
-     * @param string $salt <p>Salt is not used by SIMPLE or
+     * @param string     $salt          <p>Salt is not used by SIMPLE or
      *                                  INTEGER</p>
-     * @param string $encMethod <p>Example : AES-256-CTR See
+     * @param string     $encMethod     <p>Example : AES-256-CTR See
      *                                  http://php.net/manual/en/function.openssl-get-cipher-methods.php
      *                                  </p>
      *                                  <p>if SIMPLE then the encryption is
@@ -4740,12 +4885,11 @@ BOOTS;
         return $r;
     }
 
-
     /**
      * It drops a table. It ises the method $this->drop();
      *
      * @param string $tableName the name of the table to drop
-     * @param string $extra (optional) an extra value.
+     * @param string $extra     (optional) an extra value.
      *
      * @return array|bool|PDOStatement
      * @throws Exception
@@ -4758,29 +4902,28 @@ BOOTS;
     /**
      * It drops (DDL) an object
      *
-     * @param string $objectName The name of the object.
-     * @param string $type =['table','view','columns','function'][$i]
+     * @param string $objectName     The name of the object.
+     * @param string $type           =['table','view','columns','function','procedure'][$i]
      *                               The type of object to drop.
-     * @param string $extra (optional) An extra value added at the end
+     * @param string $extra          (optional) An extra value added at the end
      *                               of the query
      *
-     * @return array|bool|PDOStatement
+     * @return bool|int
      * @throws Exception
      */
     public function drop($objectName, $type, $extra = '')
     {
         $sql = "drop $type " . $this->addDelimiter($objectName) . " $extra";
-
-        return $this->runRawQuery($sql);
+        return $this->conn1->exec($sql) !== false;
     }
 
     /**
      * It truncates (DDL)  a table
      *
      * @param string $tableName
-     * @param string $extra (optional) An extra value added at the end of the
+     * @param string $extra     (optional) An extra value added at the end of the
      *                          query
-     * @param bool $forced If true then it forces the truncate (it is useful when the table has a foreign key)
+     * @param bool   $forced    If true then it forces the truncate (it is useful when the table has a foreign key)
      *
      * @return array|bool
      * @throws Exception
@@ -4791,10 +4934,30 @@ BOOTS;
     }
 
     /**
+     * It calls a store procedure.
+     *
+     * @param string $procName      The name of the store procedure.
+     * @param array  $arguments     An associative array with the name of the argument and it's value
+     * @param array  $outputColumns [optional] the name of the columns that must be returned.
+     * @return boolean returns true if success, otherwise false. You can find the error message at $this->errorText
+     * @throws Exception
+     */
+    public function callProcedure($procName, &$arguments = [], $outputColumns = [])
+    {
+        try {
+            $this->service->callProcedure($procName, $arguments, $outputColumns);
+            return true;
+        } catch (Exception $ex) {
+            $this->errorText=$ex->getMessage();
+            return false;
+        }
+    }
+
+    /**
      * It resets the identity of a table (if any)
      *
      * @param string $tableName The name of the table
-     * @param int $newValue
+     * @param int    $newValue
      *
      * @return array|bool|null
      * @throws Exception
@@ -4809,11 +4972,11 @@ BOOTS;
      * It also could create a function called next_name-of-the-table() <br>
      * The operation will fail if the table, sequence, function or procedure already exists.
      *
-     * @param string|null $tableSequence The table to use<br>
+     * @param string|null $tableSequence     The table to use<br>
      *                                       If null then it uses the table
      *                                       defined in
      *                                       $pdoOne->tableSequence.
-     * @param string $method =['snowflake','sequence'][$i]
+     * @param string      $method            =['snowflake','sequence'][$i]
      *                                       snowflake=it generates a value
      *                                       based on snowflake<br> sequence= it generates a regular sequence
      *                                       number
@@ -4825,7 +4988,86 @@ BOOTS;
     {
         $tableSequence = ($tableSequence === null) ? $this->tableSequence : $tableSequence;
         $sql = $this->service->createSequence($tableSequence, $method);
-        $this->runRawQuery($sql);
+        $this->conn1->exec($sql);
+    }
+
+    /**
+     * It creates a store procedure<br>
+     * <b>Example:</b><br>
+     * <pre>
+     * // arg1 and arg2 are "in" arguments:
+     * $this->createProcedure('proc1','in arg1 int,in arg2 varchar(50)','//body here');
+     * // arg1 and arg2 are "in" arguments:
+     * $this->createProcedure('proc1',['arg1'=>'int','arg2'=>'varchar(50)'],'//body here');
+     * // arg1 is "in", arg2 is "out":
+     * $this->createProcedure('proc1',
+     *                      [
+     *                          ['in','arg1','int'],
+     *                          ['out','arg2','varchar(50)']
+     *                      ],'//body here');
+     * // arg1 is "in", arg2 is "in":
+     * $this->createProcedure('proc1',
+     *                      [
+     *                          ['arg1','int'],
+     *                          ['arg2','varchar(50)']
+     *                      ],'//body here');
+     * </pre>
+     *
+     * @param string       $procedureName The name of the store procedure
+     * @param array|string $arguments     The arguments. It could be an associative array, a string or an multiple array
+     * @param string       $body          The body of the store procedure
+     * @param string       $extra
+     * @return false|int
+     * @throws Exception
+     */
+    public function createProcedure($procedureName, $arguments = [], $body = '', $extra = '')
+    {
+        $sql = $this->service->createProcedure($procedureName, $arguments, $body, $extra);
+        return $this->conn1->exec($sql);
+    }
+
+    /**
+     * Create a table<br>
+     * <b>Example:</b><br>
+     * <pre>
+     * createTable('products',['id'=>'int not null','name'=>'varchar(50) not
+     * null'],'id');
+     * </pre>
+     *
+     * @param string            $tableName        The name of the new table. This
+     *                                            method will fail if the table
+     *                                            exists.
+     * @param array             $definition       An associative array with the
+     *                                            definition of the
+     *                                            columns.<br>
+     *                                            Example ['id'=>'integer not
+     *                                            null','name'=>'varchar(50)
+     *                                            not
+     *                                            null']
+     * @param string|null|array $primaryKey       The column's name that is primary key.<br>
+     *                                            If the value is an associative array then it generates all keys
+     * @param string            $extra            An extra operation inside of
+     *                                            the definition of the table.
+     * @param string            $extraOutside     An extra operation outside of
+     *                                            the definition of the
+     *                                            table.<br> It replaces the
+     *                                            default values outside of the
+     *                                            table
+     *
+     * @return array|bool|PDOStatement
+     * @throws Exception
+     */
+    public function createTable(
+        $tableName,
+        $definition,
+        $primaryKey = null,
+        $extra = '',
+        $extraOutside = ''
+    )
+    {
+        $sql = $this->service->createTable($tableName, $definition, $primaryKey, $extra, $extraOutside);
+
+        return $this->runMultipleRawQuery($sql);
     }
 
     /**
@@ -4836,9 +5078,9 @@ BOOTS;
      * $this->runMultipleRawQuery(["insert into() values(1)","insert into() values(2)"]);
      * </pre>
      *
-     * @param string|array $listSql SQL multiples queries separated
+     * @param string|array $listSql             SQL multiples queries separated
      *                                          by ";" or an array
-     * @param bool $continueOnError if true then it continues on
+     * @param bool         $continueOnError     if true then it continues on
      *                                          error.
      *
      * @return bool
@@ -4871,17 +5113,17 @@ BOOTS;
                 if ($this->logLevel >= 2) {
                     $this->storeInfo($rawSql);
                 }
-                $msgError='';
+                $msgError = '';
                 try {
                     $r = $this->conn1->query($rawSql);
-                } catch(Exception $ex) {
-                    $r=false;
-                    $msgError=$ex->getMessage();
+                } catch (Exception $ex) {
+                    $r = false;
+                    $msgError = $ex->getMessage();
                 }
                 if ($r === false) {
                     $ok = false;
                     if (!$continueOnError) {
-                        $this->throwError('Unable to run raw query', $this->lastQuery,$msgError);
+                        $this->throwError('Unable to run raw query', $this->lastQuery, $msgError);
                     }
                 } else {
                     $counter += $r->rowCount();
@@ -4894,50 +5136,6 @@ BOOTS;
     }
 
     /**
-     * Create a table<br>
-     * <b>Example:</b><br>
-     * <pre>
-     * createTable('products',['id'=>'int not null','name'=>'varchar(50) not
-     * null'],'id');
-     * </pre>
-     *
-     * @param string $tableName The name of the new table. This
-     *                                            method will fail if the table
-     *                                            exists.
-     * @param array $definition An associative array with the
-     *                                            definition of the
-     *                                            columns.<br>
-     *                                            Example ['id'=>'integer not
-     *                                            null','name'=>'varchar(50)
-     *                                            not
-     *                                            null']
-     * @param string|null|array $primaryKey The column's name that is primary key.<br>
-     *                                            If the value is an associative array then it generates all keys
-     * @param string $extra An extra operation inside of
-     *                                            the definition of the table.
-     * @param string $extraOutside An extra operation outside of
-     *                                            the definition of the
-     *                                            table.<br> It replaces the
-     *                                            default values outside of the
-     *                                            table
-     *
-     * @return array|bool|PDOStatement
-     * @throws Exception
-     */
-    public function createTable(
-        $tableName,
-        $definition,
-        $primaryKey = null,
-        $extra = '',
-        $extraOutside = ''
-    )
-    {
-        $sql = $this->service->createTable($tableName, $definition, $primaryKey, $extra, $extraOutside);
-
-        return $this->runMultipleRawQuery($sql);
-    }
-
-    /**
      * It adds foreign keys to a table<br>
      * <b>Example:<b><br>
      * <pre>
@@ -4945,8 +5143,8 @@ BOOTS;
      * $this->createFK('table',['col'=>"FOREIGN KEY REFERENCES[tableref]([colref])"]); // sqlsrv
      * </pre>
      *
-     * @param string $tableName The name of the table.
-     * @param array $definition Associative array with the definition (SQL) of the foreign keys.
+     * @param string $tableName  The name of the table.
+     * @param array  $definition Associative array with the definition (SQL) of the foreign keys.
      *
      * @return bool
      * @throws Exception
@@ -5015,8 +5213,9 @@ BOOTS;
         @$this->conn1 = null;
     }
 
-    public function getPK($table,$pkDefault=null) {
-        return $this->service->getPK($table,$pkDefault);
+    public function getPK($table, $pkDefault = null)
+    {
+        return $this->service->getPK($table, $pkDefault);
     }
 
     /**
@@ -5031,9 +5230,9 @@ BOOTS;
      * @see \eftec\PdoOne::getSequencePHP It's the same but it uses less
      *      resources but lacks of a sequence.
      *
-     * @param bool $asFloat
-     * @param bool $unpredictable
-     * @param string $sequenceName (optional) the name of the sequence. If
+     * @param bool   $asFloat          It returns the value as a float.
+     * @param bool   $unpredictable    It returns the value as an unpredictable value. It flips some digits.
+     * @param string $sequenceName     (optional) the name of the sequence. If
      *                                 not then it uses $this->tableSequence
      *
      * @return string . Example string(19) "3639032938181434317"
@@ -5164,7 +5363,7 @@ BOOTS;
      * Currently only works with table
      *
      * @param string $objectName
-     * @param string $type =['table','function','sequence'][$i] The type of the object
+     * @param string $type =['table','function','sequence','procedure'][$i] The type of the object
      *
      * @return bool
      * @throws Exception
@@ -5173,8 +5372,8 @@ BOOTS;
     {
         $query = $this->service->objectExist($type);
 
-        if($this->databaseType==='oci') {
-            $arr = $this->runRawQuery($query, [$objectName,$this->db]);
+        if ($this->databaseType === 'oci') {
+            $arr = $this->runRawQuery($query, [$objectName, $this->db]);
         } else {
             $arr = $this->runRawQuery($query, [$objectName]);
         }
@@ -5188,11 +5387,11 @@ BOOTS;
      * <b>Note:</b>: This operation is not foolproof because the tables could
      * have circular reference.
      *
-     * @param int $maxLoop The number of tests. If the sort is
+     * @param int  $maxLoop            The number of tests. If the sort is
      *                                 correct, then it ends as fast as it can.
-     * @param bool $returnProblems [false] if true then it returns all the
+     * @param bool $returnProblems     [false] if true then it returns all the
      *                                 tables with problem
-     * @param bool $debugTrace [false] if true then it shows the
+     * @param bool $debugTrace         [false] if true then it shows the
      *                                 operations done.
      *
      * @return array List of table.
@@ -5219,18 +5418,20 @@ BOOTS;
         return $tableSorted;
     }
 
+    /** @noinspection TypeUnsafeComparisonInspection */
+
     /**
      * Resort the tableSorted list based in dependencies.
      *
-     * @param array $tables An associative array with the name of the
+     * @param array $tables            An associative array with the name of the
      *                                 tables
-     * @param array $tableSorted (ref) An associative array with the name
+     * @param array $tableSorted       (ref) An associative array with the name
      *                                 of the tables
-     * @param array $after $after[city]=[country,..]
-     * @param array $before $before[city]=[address]
-     * @param array $tableProblems (ref) an associative array whtn the name
+     * @param array $after             $after[city]=[country,..]
+     * @param array $before            $before[city]=[address]
+     * @param array $tableProblems     (ref) an associative array whtn the name
      *                                 of the tables with problem.
-     * @param bool $debugTrace If true then it shows a debug per
+     * @param bool  $debugTrace        If true then it shows a debug per
      *                                 operation.
      *
      * @return bool true if the sort is finished and there is nothing wrong.
@@ -5309,11 +5510,15 @@ BOOTS;
         return $nothingWrong;
     }
 
+
+    //</editor-fold>
+    //<editor-fold desc="chain calls">
+
     /**
      * It returns the statistics (minimum,maximum,average,sum and count) of a
      * column of a table
      *
-     * @param string $tableName Name of the table
+     * @param string $tableName  Name of the table
      * @param string $columnName The column name to analyze.
      *
      * @return array|bool Returns an array of the type
@@ -5376,7 +5581,6 @@ BOOTS;
         return (stripos($sql, 'select ') === 0 || stripos($sql, 'show ') === 0);
     }
 
-    /** @noinspection TypeUnsafeComparisonInspection */
     public function filterKey($condition, $columns, $returnSimple)
     {
         if ($condition === null) {
@@ -5397,9 +5601,6 @@ BOOTS;
         return $result;
     }
 
-
-    //</editor-fold>
-    //<editor-fold desc="chain calls">
     /**
      * Generates and execute an insert command.<br>
      * <b>Example:</b><br>
@@ -5414,8 +5615,8 @@ BOOTS;
      *      ->insert();
      *</pre>
      *
-     * @param null|string $tableName
-     * @param string[]|null $tableDef
+     * @param null|string       $tableName
+     * @param string[]|null     $tableDef
      * @param string[]|int|null $values
      *
      * @return mixed Returns the identity (if any) or false if the operation fails.
@@ -5425,28 +5626,31 @@ BOOTS;
         $tableName = null,
         $tableDef = null,
         $values = PdoOne::NULL
-    ) {
-        $query=new PdoOneQuery($this);
-        return $query->insert($tableName,$tableDef,$values);
+    )
+    {
+        $query = new PdoOneQuery($this);
+        return $query->insert($tableName, $tableDef, $values);
     }
+
     /**
      * It returns an array with the metadata of each columns (i.e. name, type,
      * size, etc.) or false if error.
      *
-     * @param null|string $sql If null then it uses the generation of query
+     * @param null|string $sql     If null then it uses the generation of query
      *                             (if any).<br> if string then get the
      *                             statement of the query
      *
-     * @param array $args
+     * @param array       $args
      *
      * @return array|bool
      * @throws Exception
      */
     public function toMeta($sql = null, $args = [])
     {
-        $query=new PdoOneQuery($this);
-        return $query->toMeta($sql,$args);
+        $query = new PdoOneQuery($this);
+        return $query->toMeta($sql, $args);
     }
+
     /**
      * If false then it wont generate an error.<br>
      * If true (default), then on error, it behave normally<br>
@@ -5460,9 +5664,10 @@ BOOTS;
      */
     public function genError($error = false)
     {
-        $query=new PdoOneQuery($this);
+        $query = new PdoOneQuery($this);
         return $query->genError($error);
     }
+
     /**
      * It generates a query for "min". It is a macro of select()
      * <br><b>Example</b>:<br>
@@ -5480,9 +5685,10 @@ BOOTS;
      */
     public function min($sql = '', $arg = '')
     {
-        $query=new PdoOneQuery($this);
+        $query = new PdoOneQuery($this);
         return $query->_aggFn('min', $sql, $arg);
     }
+
     /**
      * It generates a query for "count". It is a macro of select()
      * <br><b>Example</b>:<br>
@@ -5497,15 +5703,16 @@ BOOTS;
      * </pre>
      *
      * @param string|null $sql [optional]
-     * @param string $arg [optional]
+     * @param string      $arg [optional]
      *
      * @return PdoOneQuery
      */
     public function count($sql = '', $arg = '*')
     {
-        $query=new PdoOneQuery($this);
+        $query = new PdoOneQuery($this);
         return $query->_aggFn('count', $sql, $arg);
     }
+
     /**
      * It generates a query for "sum". It is a macro of select()
      * <br><b>Example</b>:<br>
@@ -5516,15 +5723,15 @@ BOOTS;
      * ->sum('','col')->from('table')->firstScalar() // select sum(col) from
      * table<br>
      *
-     * @param string $sql [optional] it could be the name of column or part
+     * @param string $sql     [optional] it could be the name of column or part
      *                        of the query ("from table..")
-     * @param string $arg [optiona] it could be the name of the column
+     * @param string $arg     [optiona] it could be the name of the column
      *
      * @return PdoOneQuery
      */
     public function sum($sql = '', $arg = '')
     {
-        $query=new PdoOneQuery($this);
+        $query = new PdoOneQuery($this);
         return $query->_aggFn('sum', $sql, $arg);
     }
 
@@ -5545,7 +5752,7 @@ BOOTS;
      */
     public function max($sql = '', $arg = '')
     {
-        $query=new PdoOneQuery($this);
+        $query = new PdoOneQuery($this);
         return $query->_aggFn('max', $sql, $arg);
     }
 
@@ -5566,9 +5773,10 @@ BOOTS;
      */
     public function avg($sql = '', $arg = '')
     {
-        $query=new PdoOneQuery($this);
+        $query = new PdoOneQuery($this);
         return $query->_aggFn('avg', $sql, $arg);
     }
+
     /**
      * Adds a from for a query. It could be used by select,insert,update and
      * delete.<br>
@@ -5587,18 +5795,19 @@ BOOTS;
      */
     public function from($sql)
     {
-        $query=new PdoOneQuery($this);
+        $query = new PdoOneQuery($this);
         return $query->from($sql);
     }
+
     /**
      * It allows to insert a declarative array. It uses "s" (string) as
      * filetype.
      * <p>Example: ->insertObject('table',['field1'=>1,'field2'=>'aaa']);
      *
-     * @param string $tableName The name of the table.
-     * @param array|object $object associative array with the colums and
+     * @param string       $tableName     The name of the table.
+     * @param array|object $object        associative array with the colums and
      *                                    values. If the insert returns an identity then it changes the value
-     * @param array $excludeColumn (optional) columns to exclude. Example
+     * @param array        $excludeColumn (optional) columns to exclude. Example
      *                                    ['col1','col2']
      *
      * @return mixed
@@ -5606,9 +5815,10 @@ BOOTS;
      */
     public function insertObject($tableName, &$object, $excludeColumn = [])
     {
-        $query=new PdoOneQuery($this);
+        $query = new PdoOneQuery($this);
         return $query->insertObject($tableName, $object, $excludeColumn);
     }
+
     /**
      * Delete a row(s) if they exists.
      * Example:
@@ -5619,9 +5829,9 @@ BOOTS;
      *          ->delete() // running on a chain
      *      delete('table where condition=1');
      *
-     * @param string|null $tableName
+     * @param string|null   $tableName
      * @param string[]|null $tableDefWhere
-     * @param string[]|int $valueWhere
+     * @param string[]|int  $valueWhere
      *
      * @return mixed
      * @throws Exception
@@ -5632,9 +5842,10 @@ BOOTS;
         $valueWhere = PdoOne::NULL
     )
     {
-        $query=new PdoOneQuery($this);
+        $query = new PdoOneQuery($this);
         return $query->delete($tableName, $tableDefWhere, $valueWhere);
     }
+
     /**
      * Generate and run an update in the database.
      * <br><b>Example</b>:<br>
@@ -5648,11 +5859,11 @@ BOOTS;
      *      update('product_category set col1=10 where idproducttype=1')
      * </pre>
      *
-     * @param string|null $tableName The name of the table or the whole
+     * @param string|null       $tableName The name of the table or the whole
      *                                     query.
-     * @param string[]|null $tableDef
+     * @param string[]|null     $tableDef
      * @param string[]|int|null $values
-     * @param string[]|null $tableDefWhere
+     * @param string[]|null     $tableDefWhere
      * @param string[]|int|null $valueWhere
      *
      * @return mixed
@@ -5666,9 +5877,10 @@ BOOTS;
         $valueWhere = PdoOne::NULL
     )
     {
-        $query=new PdoOneQuery($this);
-        return $query->update($tableName, $tableDef, $values,$tableDefWhere,$valueWhere);
+        $query = new PdoOneQuery($this);
+        return $query->update($tableName, $tableDef, $values, $tableDefWhere, $valueWhere);
     }
+
     /**
      * Adds a right join to the pipeline. It is possible to chain more than one
      * join<br>
@@ -5684,9 +5896,10 @@ BOOTS;
      */
     public function right($sql)
     {
-        $query=new PdoOneQuery($this);
+        $query = new PdoOneQuery($this);
         return $query->right($sql);
     }
+
     /**
      * Adds a left join to the pipeline. It is possible to chain more than one
      * join<br>
@@ -5704,9 +5917,10 @@ BOOTS;
      */
     public function left($sql)
     {
-        $query=new PdoOneQuery($this);
+        $query = new PdoOneQuery($this);
         return $query->left($sql);
     }
+
     /**
      * <b>Example:</b><br>
      *      where( ['field'=>20] ) // associative array with automatic type
@@ -5721,14 +5935,14 @@ BOOTS;
      *      where('field=:field,field2=:field2',
      *      ['field'=>'hello','field2'=>'world'] ) // associative array as value
      *
-     * @param string|array $sql Input SQL query or associative/indexed
+     * @param string|array $sql          Input SQL query or associative/indexed
      *                                   array
-     * @param array|mixed $param Associative or indexed array with the
+     * @param array|mixed  $param        Associative or indexed array with the
      *                                   conditions.
-     * @param bool $isHaving if true then it is a HAVING sql commando
+     * @param bool         $isHaving     if true then it is a HAVING sql commando
      *                                   instead of a WHERE.
      *
-     * @param null|string $tablePrefix
+     * @param null|string  $tablePrefix
      *
      * @return PdoOneQuery
      * @see  http://php.net/manual/en/mysqli-stmt.bind-param.php for types
@@ -5737,9 +5951,10 @@ BOOTS;
      */
     public function where($sql, $param = PdoOne::NULL, $isHaving = false, $tablePrefix = null)
     {
-        $query=new PdoOneQuery($this);
+        $query = new PdoOneQuery($this);
         return $query->where($sql, $param, $isHaving, $tablePrefix);
     }
+
     /**
      * It adds a having to the query builder.
      * <br><b>Example</b>:<br>
@@ -5755,7 +5970,7 @@ BOOTS;
      *      defined having('field=?,field2=?', [20,'hello'] )
      *
      * @param string|array $sql
-     * @param array|mixed $param
+     * @param array|mixed  $param
      *
      * @return PdoOneQuery
      * @see  http://php.net/manual/en/mysqli-stmt.bind-param.php for types
@@ -5764,9 +5979,10 @@ BOOTS;
      */
     public function having($sql, $param = PdoOne::NULL)
     {
-        $query=new PdoOneQuery($this);
+        $query = new PdoOneQuery($this);
         return $query->having($sql, $param);
     }
+
     /**
      * It generates an inner join<br>
      * <b>Example:</b><br>
@@ -5783,9 +5999,10 @@ BOOTS;
      */
     public function join($sql, $condition = '')
     {
-        $query=new PdoOneQuery($this);
+        $query = new PdoOneQuery($this);
         return $query->join($sql, $condition);
     }
+
     /**
      * It groups by a condition.<br>
      * <b>Example:</b><br>
@@ -5798,9 +6015,10 @@ BOOTS;
      */
     public function group($sql)
     {
-        $query=new PdoOneQuery($this);
+        $query = new PdoOneQuery($this);
         return $query->group($sql);
     }
+
     /**
      * It adds an "order by" in a query.<br>
      * <b>Example:</b><br>
@@ -5816,9 +6034,13 @@ BOOTS;
      */
     public function order($sql)
     {
-        $query=new PdoOneQuery($this);
+        $query = new PdoOneQuery($this);
         return $query->order($sql);
     }
+
+    //</editor-fold>
+    //<editor-fold desc="cli utils">
+
     /**
      * It adds an "limit" in a query. It depends on the type of database<br>
      * <b>Example:</b><br>
@@ -5834,9 +6056,10 @@ BOOTS;
      */
     public function limit($sql)
     {
-        $query=new PdoOneQuery($this);
+        $query = new PdoOneQuery($this);
         return $query->limit($sql);
     }
+
     /**
      * Adds a distinct to the query. The value is ignored if the select() is
      * written complete.<br>
@@ -5852,9 +6075,10 @@ BOOTS;
      */
     public function distinct($sql = 'distinct')
     {
-        $query=new PdoOneQuery($this);
+        $query = new PdoOneQuery($this);
         return $query->distinct($sql);
     }
+
     /**
      * It sets a recursive array.<br>
      * <b>example:</b>:<br>
@@ -5868,9 +6092,10 @@ BOOTS;
      */
     public function recursive($rec)
     {
-        $query=new PdoOneQuery($this);
+        $query = new PdoOneQuery($this);
         return $query->recursive($rec);
     }
+
     /**
      * It gets the recursive array.
      *
@@ -5878,19 +6103,62 @@ BOOTS;
      */
     public function getRecursive()
     {
-        $query=new PdoOneQuery($this);
+        $query = new PdoOneQuery($this);
         return $query->getRecursive();
     }
 
+    /**
+     * It sets to use cache for the current pipelines. It is disabled at the end of the pipeline<br>
+     * It only works if we set the cacheservice<br>
+     * <b>Example</b><br>
+     * <pre>
+     * $this->setCacheService($instanceCache);
+     * $this->useCache()->select()..; // The cache never expires
+     * $this->useCache(60)->select()..; // The cache lasts 60 seconds.
+     * $this->useCache(60,'customers')
+     *        ->select()..; // cache associated with customers
+     *                      // it could be invalidated by invalidateCache()
+     * $this->useCache(60,['customers','invoices'])
+     *        ->select()..; // cache associated with customers
+     *                      // it could be invalidated by invalidateCache()
+     * $this->useCache(60,'*')->select('col')
+     *      ->from('table')->toList(); // '*' uses all the table assigned.
+     * </pre>
+     *
+     * @param null|bool|int $ttl        <b>null</b> then the cache never expires.<br>
+     *                                  <b>false</b> then we don't use cache.<br>
+     *                                  <b>int</b> then it is the duration of the cache (in seconds)
+     * @param string|array  $family     [optional] It is the family or group of the cache. It could be used to
+     *                                  identify a group of cache to invalidate the whole group (for example
+     *                                  ,invalidate all cache from a specific table).<br>
+     *                                  <b>*</b> If "*" then it uses the tables assigned by from() and join()
+     *
+     * @return PdoOneQuery
+     */
+    public function useCache($ttl = 0, $family = '')
+    {
+
+        $query = new PdoOneQuery($this);
+        return $query->useCache($ttl, $family);
+    }
     //</editor-fold>
+
 }
 
-// this code only runs on CLI
-if (!defined('PHPUNIT_COMPOSER_INSTALL') && !defined('__PHPUNIT_PHAR__') && PdoOne::isCli()
-    && basename(strtolower(@$_SERVER['SCRIPT_NAME'])) !== 'pdoone'
+// this code only runs on CLI but only if PdoOne is called directly and via command line.
+if (!defined('PHPUNIT_COMPOSER_INSTALL') && !defined('__PHPUNIT_PHAR__')
+    && isset($_SERVER['PHP_SELF']) && basename($_SERVER['PHP_SELF']) === 'PdoOne.php'
+    && PdoOne::isCli()
 ) {
     // we also excluded it if it is called by phpunit.
     include 'PdoOneEncryption.php';
+    include 'IPdoOneCache.php';
+    include 'PdoOneQuery.php';
+    include 'ext/PdoOne_IExt.php';
+    include 'ext/PdoOne_TestMockup.php';
+    include 'ext/PdoOne_Mysql.php';
+    include 'ext/PdoOne_Sqlsrv.php';
+    include 'ext/PdoOne_Oci.php';
     $pdo = new PdoOne('test', '127.0.0.1', 'root', 'root', 'db'); // mockup database connection
     /** @noinspection PhpUnhandledExceptionInspection */
     $pdo->cliEngine();
