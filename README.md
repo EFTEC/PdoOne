@@ -1957,7 +1957,7 @@ In a nutshell:
 
 
 * 2.10 2021-04-04
-  * 
+  * Some CLI cleanups.
 * 2.9.4 2021-03-22
   * **ORM:** **_BasePdoOneRepo** is updated to BINARYVERSION=4. If you are using the ORM, then you should rebuild all ORM classes.
   * **CORE:** Query chains creates a new instance of **PdoOneQuery** instead of a instance of **PdoOne**, so it is possible to define
