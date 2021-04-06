@@ -1,4 +1,12 @@
-<?php
+<?php /** @noinspection StrContainsCanBeUsedInspection */
+/** @noinspection JsonEncodingApiUsageInspection */
+/** @noinspection PhpStrFunctionsInspection */
+/** @noinspection PhpSwitchCanBeReplacedWithMatchExpressionInspection */
+/** @noinspection NullCoalescingOperatorCanBeUsedInspection */
+/** @noinspection AccessModifierPresentedInspection */
+/** @noinspection PhpMissingFieldTypeInspection */
+/** @noinspection PhpMissingReturnTypeInspection */
+/** @noinspection PhpPureAttributeCanBeAddedInspection */
 
 /**
  * @noinspection PhpMissingParamTypeInspection
@@ -323,7 +331,7 @@ abstract class _BasePdoOneRepo
      */
     public static function getRecursiveClass(&$final = null, $prefix = '')
     {
-        $recs = self::getPdoOne()->getRecursive();
+        $recs = self::$pdoOneQuery->getRecursive();
         $keyRels = static::getDefFK(false);
         $ns = self::getNamespace();
         if ($final === null) {
@@ -749,7 +757,7 @@ abstract class _BasePdoOneRepo
                             self::$gQuery[] = $other;
                             break;
                         case 'MANYTOMANY':
-                            $rec = self::getPdoOne()->getRecursive();
+                            $rec = self::$pdoOneQuery->getRecursive();
                             // automatically we add recursive.
                             $rec[] = $recursiveComplete . $keyRel['refcol2']; // $recursiveInit . $nameCol
                             self::getPdoOne()->recursive($rec);
@@ -1264,7 +1272,7 @@ abstract class _BasePdoOneRepo
      */
     protected static function _setRecursive($recursive)
     {
-        self::getPdoOne()->recursive($recursive);
+        self::$pdoOneQuery= self::getPdoOne()->recursive($recursive);
         return static::ME;
     }
 
@@ -1292,7 +1300,7 @@ abstract class _BasePdoOneRepo
             }
             (static::ME)::convertInputVal($entity);
             self::invalidateCache();
-            $recursiveBack = $pdoOne->getRecursive();  // recursive is deleted by insertObject
+            $recursiveBack = self::$pdoOneQuery->getRecursive();  // recursive is deleted by insertObject
             // only the fields that are defined are inserted
             $entityCopy = self::intersectArraysNotNull($entity, static::getDefName());
             $entityCopy = self::diffArrays($entityCopy, static::getDefNoInsert()); // discard some columns
@@ -1649,7 +1657,7 @@ abstract class _BasePdoOneRepo
             }
             $defs = static::getDefFK();
             $ns = self::getNamespace();
-            $recursiveBackup = self::getRecursive();
+            $recursiveBackup = self::$pdoOneQuery->getRecursive();
             foreach ($defs as $key => $def) { // ['/tablaparentxcategory']=['key'=>...]
                 if ($def['key'] === 'ONETOMANY' && $pdoOne->hasRecursive($key, $recursiveBackup)) {
                     if (!isset($entity[$key]) || !is_array($entity[$key])) {
@@ -1721,7 +1729,7 @@ abstract class _BasePdoOneRepo
 
     public static function getRecursive()
     {
-        return self::getPdoOne()->getRecursive();
+        return self::$pdoOneQuery->getRecursive();
     }
 
     /**
@@ -1766,7 +1774,7 @@ abstract class _BasePdoOneRepo
      */
     public function having($sql, $param = PdoOne::NULL)
     {
-        self::getPdoOne()->having($sql, $param);
+        self::$pdoOneQuery=self::getPdoOne()->having($sql, $param);
         return static::ME;
     }
 }

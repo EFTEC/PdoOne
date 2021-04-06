@@ -8,8 +8,16 @@ use repomysql\TableParentRepo;
 
 include "common.php";
 
-TableParentRepo::setRecursive(['*'])::toList();
+$result=TableParentRepo::where('fieldkey',['key1'])::toList(); // ::setRecursive(['*'])
+new dBug($result);
+echo "<br><br>";
+$result=TableParentRepo::where('fieldkey',['key1'])::first(); // ::setRecursive(['*'])
+new dBug($result);
+echo "<br><br>";
 
+$result=TableParentRepo::toList(); // ::setRecursive(['*'])
+new dBug($result);
+echo "<br><br>";
 
 
 TableParentRepo::setRecursive([

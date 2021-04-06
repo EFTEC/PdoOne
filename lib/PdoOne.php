@@ -1,21 +1,21 @@
-<?php /** @noinspection StrStartsWithCanBeUsedInspection */
-/** @noinspection ShortListSyntaxCanBeUsedInspection */
-/** @noinspection PhpSwitchCanBeReplacedWithMatchExpressionInspection */
-/** @noinspection StrContainsCanBeUsedInspection */
-/** @noinspection AccessModifierPresentedInspection */
-/** @noinspection PhpStrFunctionsInspection */
-/** @noinspection JsonEncodingApiUsageInspection */
-/** @noinspection NullCoalescingOperatorCanBeUsedInspection */
-/** @noinspection PhpMissingFieldTypeInspection */
-/** @noinspection ReturnTypeCanBeDeclaredInspection */
-/** @noinspection PhpUnusedLocalVariableInspection */
-/** @noinspection PhpMissingReturnTypeInspection */
-/** @noinspection PhpArrayShapeAttributeCanBeAddedInspection */
-/** @noinspection PhpPureAttributeCanBeAddedInspection */
-/** @noinspection UnnecessaryCastingInspection */
-/** @noinspection PhpUnused */
-
-/** @noinspection OnlyWritesOnParameterInspection
+<?php
+/** @noinspection StrStartsWithCanBeUsedInspection
+ * @noinspection ShortListSyntaxCanBeUsedInspection 
+ * @noinspection PhpSwitchCanBeReplacedWithMatchExpressionInspection 
+ * @noinspection StrContainsCanBeUsedInspection 
+ * @noinspection AccessModifierPresentedInspection 
+ * @noinspection PhpStrFunctionsInspection 
+ * @noinspection JsonEncodingApiUsageInspection 
+ * @noinspection NullCoalescingOperatorCanBeUsedInspection 
+ * @noinspection PhpMissingFieldTypeInspection 
+ * @noinspection ReturnTypeCanBeDeclaredInspection 
+ * @noinspection PhpUnusedLocalVariableInspection 
+ * @noinspection PhpMissingReturnTypeInspection 
+ * @noinspection PhpArrayShapeAttributeCanBeAddedInspection 
+ * @noinspection PhpPureAttributeCanBeAddedInspection 
+ * @noinspection UnnecessaryCastingInspection 
+ * @noinspection PhpUnused
+ * @noinspection OnlyWritesOnParameterInspection
  * @noinspection PhpMissingParamTypeInspection
  * @noinspection PhpRedundantVariableDocTypeInspection
  * @ noinspection UnknownInspectionInspection
@@ -51,11 +51,11 @@ use stdClass;
  * @package       eftec
  * @author        Jorge Castro Castillo
  * @copyright (c) Jorge Castro C. MIT License  https://github.com/EFTEC/PdoOne
- * @version       2.10.0
+ * @version       2.10.1
  */
 class PdoOne
 {
-    const VERSION = '2.10.0';
+    const VERSION = '2.10.1';
     /** @var int We need this value because null and false could be a valid value. */
     const NULL = PHP_INT_MAX;
     /** @var string Prefix of the tables */
@@ -737,7 +737,8 @@ class PdoOne
         if ($ini === false) {
             return false;
         }
-        $p1 = ($endNeedle === '') ? strlen($haystack) : strpos($haystack, $endNeedle, $ini);
+        $ini2 = $ini+ strlen($startNeedle); // exactly the position inside to where we want the value
+        $p1 = ($endNeedle === '') ? strlen($haystack) : strpos($haystack, $endNeedle, $ini2);
         if ($p1 === false) {
             return false;
         }
@@ -747,11 +748,9 @@ class PdoOne
             return substr_replace($haystack, $replaceText, $ini, $len);
 
         }
-
-        $ini += strlen($startNeedle);
-        $len = $p1 - $ini;
-        $offset = $ini + $len;
-        return substr_replace($haystack, $replaceText, $ini, $len);
+        $len = $p1 - $ini2;
+        $offset = $ini2 + $len;
+        return substr_replace($haystack, $replaceText, $ini2, $len);
     }
 
     public static function between($haystack, $startNeedle, $endNeedle, &$offset = 0, $ignoreCase = false)
@@ -2363,7 +2362,14 @@ eot;
     {
         $r = <<<'eot'
 <?php
-/** @noinspection UnknownInspectionInspection
+/** @noinspection PhpUnusedParameterInspection
+ * @noinspection NullCoalescingOperatorCanBeUsedInspection 
+ * @noinspection PhpPureAttributeCanBeAddedInspection 
+ * @noinspection PhpArrayShapeAttributeCanBeAddedInspection 
+ * @noinspection PhpMissingParamTypeInspection 
+ * @noinspection AccessModifierPresentedInspection 
+ * @noinspection PhpMissingReturnTypeInspection 
+ * @noinspection UnknownInspectionInspection
  * @noinspection PhpIncompatibleReturnTypeInspection
  * @noinspection ReturnTypeCanBeDeclaredInspection
  * @noinspection DuplicatedCode
@@ -2511,7 +2517,7 @@ abstract class Abstract{classname} extends {baseclass}
      */
     public static function where($sql, $param = PdoOne::NULL)
     {
-        self::getPdoOne()->where($sql, $param,false,{classname}::TABLE);
+        static::$pdoOneQuery= self::getPdoOne()->where($sql, $param,false,{classname}::TABLE);
         return {classname}::class;
     }
 
@@ -2586,7 +2592,7 @@ abstract class Abstract{classname} extends {baseclass}
 
     public static function limit($sql)
     {
-        self::getPdoOne()->limit($sql);
+        static::$pdoOneQuery=self::getPdoOne()->limit($sql);
         return {classname}::class;
     }
 
@@ -3513,6 +3519,11 @@ eot;
     {
         $r = <<<'eot'
 <?php
+/** @noinspection PhpMissingParamTypeInspection */
+/** @noinspection PhpMissingReturnTypeInspection */
+/** @noinspection PhpMissingFieldTypeInspection */
+/** @noinspection UnknownInspectionInspection */
+/** @noinspection AccessModifierPresentedInspection */
 /** @noinspection PhpIncompatibleReturnTypeInspection
  * @noinspection ReturnTypeCanBeDeclaredInspection
  * @noinspection DuplicatedCode
@@ -4325,7 +4336,10 @@ eot;
     {
         $r = <<<'eot'
 <?php
-/** @noinspection PhpUnused
+/** @noinspection AccessModifierPresentedInspection
+ * @noinspection PhpUnusedAliasInspection
+ * @noinspection UnknownInspectionInspection
+ * @noinspection PhpUnused
  * @noinspection ReturnTypeCanBeDeclaredInspection
  */
 {namespace}

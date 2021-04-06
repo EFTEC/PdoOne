@@ -1955,7 +1955,8 @@ In a nutshell:
 
 
 
-
+* 2.10.1 2021-04-05
+  * Fixed the generation of the ORM in the use of where(), limit() and dependencies()     
 * 2.10 2021-04-04
   * Some CLI cleanups.
 * 2.9.4 2021-03-22
