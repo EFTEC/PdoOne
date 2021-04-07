@@ -132,16 +132,6 @@ abstract class _BasePdoOneRepo
     }
 
     /**
-     * @return PdoOneQuery
-     */
-    protected static function getQuery() {
-        if(self::$pdoOneQuery===null) {
-            return new PdoOneQuery(self::getPdoOne());
-        }
-        return self::$pdoOneQuery;
-    }
-
-    /**
      * It sets the field self::$pdoOne
      *
      * @param $pdoOne
@@ -166,6 +156,17 @@ abstract class _BasePdoOneRepo
         self::$falseOnError = false;
         self::$lastException = '';
         self::getQuery()->builderReset($forcedPdoOne);
+    }
+
+    /**
+     * @return PdoOneQuery
+     */
+    protected static function getQuery()
+    {
+        if (self::$pdoOneQuery === null) {
+            return new PdoOneQuery(self::getPdoOne());
+        }
+        return self::$pdoOneQuery;
     }
 
     /**
@@ -895,7 +896,7 @@ abstract class _BasePdoOneRepo
                             case 'ONETOMANY':
                             case 'MANYTOMANY':
                                 /** @noinspection PhpUndefinedMethodInspection */
-                            $r = $class::validateModel($mod[$key], true, $recursive);
+                                $r = $class::validateModel($mod[$key], true, $recursive);
                                 break;
                             case 'MANYTOONE':
                             case 'ONETOONE':
@@ -915,6 +916,16 @@ abstract class _BasePdoOneRepo
 
 
         return true;
+    }
+
+    /**
+     * It gets the recursivity of the current query
+     *
+     * @return array
+     */
+    protected static function getRecursive()
+    {
+        return self::getQuery()->getRecursive();
     }
 
     protected static function _merge($entity, $transaction = true)
@@ -1239,7 +1250,7 @@ abstract class _BasePdoOneRepo
     }
 
     /**
-     * It sets the recursivity to read/insert/update the information.<br>
+     * It sets the recursivity of the current query to read/insert/update the information.<br>
      * The fields recursives are marked with the prefix '/'.  For example 'customer' is a single field (column), while
      * '/customer' is a relation. Usually, a relation has both fields and relation.
      * - If the relation is manytoone, then the query is joined with the table indicated in the relation. Example:<br>
@@ -1272,7 +1283,7 @@ abstract class _BasePdoOneRepo
      */
     protected static function _setRecursive($recursive)
     {
-        self::$pdoOneQuery= self::getPdoOne()->recursive($recursive);
+        self::getQuery()->recursive($recursive);
         return static::ME;
     }
 
@@ -1727,11 +1738,6 @@ abstract class _BasePdoOneRepo
         }
     }
 
-    public static function getRecursive()
-    {
-        return self::$pdoOneQuery->getRecursive();
-    }
-
     /**
      * It gets the first value of a query<br>
      * <b>Example:</b><br>
@@ -1774,7 +1780,7 @@ abstract class _BasePdoOneRepo
      */
     public function having($sql, $param = PdoOne::NULL)
     {
-        self::$pdoOneQuery=self::getPdoOne()->having($sql, $param);
+        self::$pdoOneQuery = self::getPdoOne()->having($sql, $param);
         return static::ME;
     }
 }
