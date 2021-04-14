@@ -1953,7 +1953,8 @@ In a nutshell:
 * Every minor version means that it adds a new functionality i.e. 1.5 -> 1.6 (new methods)
 * Every decimal version means that it patches/fixes/refactoring a previous functionality i.e. 1.5.0 -> 1.5.1 (fix)
 
-
+* 2.10.3 2021-04-14
+  * BasePdoOne fixed method getRecursive()     
 * 2.10.2 2021-04-06
   * Fixed
 * 2.10.1 2021-04-05

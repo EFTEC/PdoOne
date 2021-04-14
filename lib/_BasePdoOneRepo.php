@@ -164,7 +164,7 @@ abstract class _BasePdoOneRepo
     protected static function getQuery()
     {
         if (self::$pdoOneQuery === null) {
-            return new PdoOneQuery(self::getPdoOne());
+            self::$pdoOneQuery=new PdoOneQuery(self::getPdoOne());
         }
         return self::$pdoOneQuery;
     }
