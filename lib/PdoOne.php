@@ -51,11 +51,11 @@ use stdClass;
  * @package       eftec
  * @author        Jorge Castro Castillo
  * @copyright (c) Jorge Castro C. MIT License  https://github.com/EFTEC/PdoOne
- * @version       2.10.3
+ * @version       2.11
  */
 class PdoOne
 {
-    const VERSION = '2.10.3';
+    const VERSION = '2.11';
     /** @var int We need this value because null and false could be a valid value. */
     const NULL = PHP_INT_MAX;
     /** @var string Prefix of the tables */
@@ -870,7 +870,7 @@ class PdoOne
         }
         foreach ($defCurrentKey as $k => $dc) {
             if (strtolower($defKeys[$k]) !== strtolower($dc)) {
-                $error[$k] = "key: $dc , {$defKeys[$k]} are different";
+                $error[$k] = "key: $dc , $defKeys[$k] are different";
             }
         }
         // fk
@@ -887,7 +887,7 @@ class PdoOne
         }
         foreach ($defCurrentFK as $k => $dc) {
             if (strtolower($defFK[$k]) !== strtolower($dc)) {
-                $error[$k] = "fk: $dc , {$defFK[$k]} are different";
+                $error[$k] = "fk: $dc , $defFK[$k] are different";
             }
         }
 
@@ -1325,7 +1325,7 @@ eot;
         }
         try {
             if ($this->logLevel >= 2) {
-                $this->storeInfo("connecting to {$this->server} {$this->user}/*** {$this->db}");
+                $this->storeInfo("connecting to $this->server $this->user/*** $this->db");
             }
             $cs = (!$this->charset) ? ';charset=' . $this->charset : '';
             $this->service->connect($cs, false);
@@ -1341,7 +1341,7 @@ eot;
             $this->isOpen = true;
         } catch (Exception $ex) {
             $this->isOpen = false;
-            $this->throwError("Failed to connect to {$this->databaseType}", $ex->getMessage(), '', true, $ex);
+            $this->throwError("Failed to connect to $this->databaseType", $ex->getMessage(), '', true, $ex);
         }
     }
 
@@ -1367,10 +1367,10 @@ eot;
             $txt = 'Error on database';
         }
         if ($this->logLevel >= 2) {
-            $txt .= "\n<br><b>extra:</b>[{$txtExtra}]";
+            $txt .= "\n<br><b>extra:</b>[$txtExtra]";
         }
         if ($this->logLevel >= 2) {
-            $txt .= "\n<br><b>last query:</b>[{$this->lastQuery}]";
+            $txt .= "\n<br><b>last query:</b>[$this->lastQuery]";
         }
         if ($this->logLevel >= 3) {
             $txt .= "\n<br><b>database:</b>" . $this->server . ' - ' . $this->db;
@@ -1390,12 +1390,10 @@ eot;
                 $txt .= "\n<br><b>code :</b>[" . str_replace("\n", "\n<br>", $exception->getCode()) . "]\n<br>";
             }
         }
-        if ($this->getMessages() === null) {
-            $this->debugFile($txt, 'ERROR');
-        } else {
+        if ($this->getMessages() !== null) {
             $this->getMessages()->addItem($this->db, $txt);
-            $this->debugFile($txt, 'ERROR');
         }
+        $this->debugFile($txt, 'ERROR');
         $this->errorText = $txt;
         if ($throwError && $this->throwOnError && $this->genError) {
             throw new RuntimeException($txt);
@@ -1443,12 +1441,10 @@ eot;
      */
     public function storeInfo($txt)
     {
-        if ($this->getMessages() === null) {
-            $this->debugFile($txt);
-        } else {
+        if ($this->getMessages() !== null) {
             $this->getMessages()->addItem($this->db, $txt, 'info');
-            $this->debugFile($txt);
         }
+        $this->debugFile($txt);
     }
 
     /**
@@ -1482,21 +1478,19 @@ eot;
             $pos = $this->strposa($txt, [' ', '=']);
             if ($pos === false) {
                 $quoted = $this->database_delimiter0 . $txt . $this->database_delimiter1;
-                $quoted = str_replace('.', $this->database_delimiter1 . '.' . $this->database_delimiter0, $quoted);
             } else {
                 $arr = explode(substr($txt, $pos, 1), $txt, 2);
                 $quoted
                     = $this->database_delimiter0 . $arr[0] . $this->database_delimiter1 . substr($txt, $pos, 1)
                     . $arr[1];
-                $quoted = str_replace('.', $this->database_delimiter1 . '.' . $this->database_delimiter0, $quoted);
             }
-
-            return $quoted;
+            return str_replace('.', $this->database_delimiter1 . '.' . $this->database_delimiter0, $quoted);
         }
         // it has a delimiter, so we returned the same text.
         return $txt;
     }
 
+    /** @noinspection PhpSameParameterValueInspection */
     private function strposa($haystack, $needles = [], $offset = 0)
     {
         $chr = [];
@@ -1606,14 +1600,14 @@ eot;
                 foreach ($param as $k => $v) {
                     $this->lastBindParam[$counter] = $v[0];
                     // note: the second field is & so we could not use $v
-                    $stmt->bindParam($v[0], $param[$k][1], $v[2], $v[3]);
+                    $stmt->bindParam($v[0], $v[1], $v[2], $v[3]);
                 }
             } else {
                 // [value1,value2]
                 foreach ($param as $i => $iValue) {
                     //$counter++;
                     //$typeP = $this->stringToPdoParam($param[$i]);
-                    $this->lastBindParam[$i] = $param[$i];
+                    $this->lastBindParam[$i] = $iValue;
                     //$stmt->bindParam($counter, $param[$i + 1], $typeP);
                     $stmt->bindParam($i + 1, $param[$i], $this->getType($param[$i]));
                 }
@@ -1693,7 +1687,7 @@ eot;
      * @param string $rawSql
      * @param bool   $returnArray
      *
-     * @return array|bool|false|PDOStatement
+     * @return array|bool|PDOStatement
      * @throws Exception
      * @see \eftec\PdoOne::runRawQuery
      */
@@ -1904,7 +1898,7 @@ eot;
             if ($v !== null) {
                 $k2 = str_replace(' by', '', $k); // order by -> order
                 foreach ($v as $vitem) {
-                    $code .= "\t->{$k2}(\"{$vitem}\")\n";
+                    $code .= "\t->$k2(\"$vitem\")\n";
                 }
             }
         }
@@ -2089,11 +2083,10 @@ eot;
                             : null';
                                         }
                                         $result .= "'" . $colName . "'=>" . $default . ', /* ' . $key . '! */' . $ln;
-                                        $norepeat[] = $colName;
                                     } else {
                                         $result .= "'" . $colName . "'=>" . $default . ', /* onetomany */' . $ln;
-                                        $norepeat[] = $colName;
                                     }
+                                    $norepeat[] = $colName;
                                 }
                             }
                         }
@@ -2142,8 +2135,7 @@ eot;
             $used[] = $name;
         }
         $result .= ']' . $ln;
-        $result = str_replace(",$ln]", "$ln]", $result);
-        return $result;
+        return str_replace(",$ln]", "$ln]", $result);
     }
 
     /**
@@ -2242,6 +2234,7 @@ eot;
         return $query->select($sql);
     }
 
+    /** @noinspection PhpSameParameterValueInspection */
     private function typeDict($row, $default = true)
     {
         return $this->service->typeDict($row, $default);
@@ -2857,8 +2850,9 @@ eot;
                     } elseif ($columnRelations[$k] === 'MANYTOMANY') {
                         // the table must has 2 primary keys.
                         $pks = null;
-                        $pks = $this->service->getPK($relation[$k]['reftable'], $pks);
+                        $pks = $this->service->getPK($rel['reftable'], $pks);
                         /** @noinspection PhpParamsInspection */
+                        /** @noinspection PhpArrayIsAlwaysEmptyInspection */
                         if ($pks !== false || count($pks) === 2) {
                             $relation[$k]['key'] = 'MANYTOMANY';
                             $refcol2 = (self::$prefixBase . $pks[0] === $relation[$k]['refcol']) ? $pks[1] : $pks[0];
@@ -3429,7 +3423,7 @@ eot;
         }
 
         if ($result === false) {
-            $logs[] = "Unable to save Base Class file '{$folder}{$baseClass}.php'";
+            $logs[] = "Unable to save Base Class file '$folder$baseClass.php'";
         }
         // CODE CLASSES, MODELS *******************************
         foreach ($relationsRepo as $tableName => $className) {
@@ -3445,12 +3439,12 @@ eot;
 
                 $classCode1 = $this->generateCodeClass($tableName, $namespace, $custom, $relationsRepo, [], null, null,
                     $baseClass, $modelname, $extraCols, $columnRem);
-                $result = @file_put_contents($folder . "Abstract{$className}.php", $classCode1);
+                $result = @file_put_contents($folder . "Abstract$className.php", $classCode1);
             } catch (Exception $e) {
                 $result = false;
             }
             if ($result === false) {
-                $logs[] = "Unable to save Repo Abstract Class file '{$folder}Abstract{$className}.php' "
+                $logs[] = "Unable to save Repo Abstract Class file '{$folder}Abstract$className.php' "
                     . json_encode(error_get_last());
             }
             // creating model
@@ -3495,7 +3489,7 @@ eot;
                 $result = false;
             }
             if ($result === false) {
-                $logs[] = "Unable to save Repo Class file '{$folder}{$className}.php' " . json_encode(error_get_last());
+                $logs[] = "Unable to save Repo Class file '$folder$className.php' " . json_encode(error_get_last());
             }
         }
         $this->setUseInternalCache($internalCache);
@@ -3824,8 +3818,9 @@ eot;
                     } elseif ($customRelation[$k] === 'MANYTOMANY') {
                         // the table must has 2 primary keys.
                         $pks = null;
-                        $pks = $this->service->getPK($relation[$k]['reftable'], $pks);
+                        $pks = $this->service->getPK($rel['reftable'], $pks);
                         /** @noinspection PhpParamsInspection */
+                        /** @noinspection PhpArrayIsAlwaysEmptyInspection */
                         if ($pks !== false || count($pks) === 2) {
                             $relation[$k]['key'] = 'MANYTOMANY';
                             $refcol2 = ('' . self::$prefixBase . $pks[0] === $relation[$k]['refcol']) ? $pks[1]
@@ -3906,11 +3901,11 @@ eot;
                     $col = ltrim($varn, self::$prefixBase);
                     $rcol = $field['refcol'];
                     $field2sb[] = "\t\t(\$obj->$varn !== null) 
-            and \$obj->{$varn}->{$rcol}=&\$obj->$col; // linked manytoone";
+            and \$obj->$varn->$rcol=&\$obj->$col; // linked manytoone";
                     break;
                 case 'MANYTOMANY':
                     $class = $classRelations[$field['reftable']];
-                    $field2s[] = "\t/** @var {$class}[] \$$varn manytomany */
+                    $field2s[] = "\t/** @var $class[] \$$varn manytomany */
     public \$$varn;";
                     $field2sb[] = "\t\t\$obj->$varn=isset(\$array['$varn']) ?  
             \$obj->$varn=$class::fromArrayMultiple(\$array['$varn']) 
@@ -3918,7 +3913,7 @@ eot;
                     break;
                 case 'ONETOMANY':
                     $class = $classRelations[$field['reftable']];
-                    $field2s[] = "\t/** @var {$class}[] \$$varn onetomany */
+                    $field2s[] = "\t/** @var $class[] \$$varn onetomany */
     public \$$varn;";
                     $field2sb[] = "\t\t\$obj->$varn=isset(\$array['$varn']) ?  
             \$obj->$varn=$class::fromArrayMultiple(\$array['$varn']) 
@@ -3937,7 +3932,7 @@ eot;
                     $rcol = $field['refcol'];
 
                     $field2sb[] = "\t\t(\$obj->$varn !== null) 
-            and \$obj->{$varn}->{$rcol}=&\$obj->$col; // linked onetoone";
+            and \$obj->$varn->$rcol=&\$obj->$col; // linked onetoone";
                     break;
             }
         }
@@ -3954,7 +3949,7 @@ eot;
             // we forced the conversion but only if it is not specified explicit
             foreach ($gdf as $k => $colDef) {
                 $type = $colDef['type'];
-                if (isset($this->codeClassConversion[$type]) && $gdf[$k]['conversion'] === null) {
+                if (isset($this->codeClassConversion[$type]) && $colDef['conversion'] === null) {
                     $gdf[$k]['conversion'] = $this->codeClassConversion[$type];
                 }
             }
@@ -4161,9 +4156,9 @@ eot;
                         $relation[$k]['key'] = 'PARENT';
                     } elseif ($customRelation[$k] === 'MANYTOMANY') {
                         // the table must has 2 primary keys.
-                        $pks = null;
-                        $pks = $this->service->getPK($relation[$k]['reftable'], $pks);
+                        $pks = $this->service->getPK($rel['reftable']);
                         /** @noinspection PhpParamsInspection */
+                        /** @noinspection PhpArrayIsAlwaysEmptyInspection */
                         if ($pks !== false || count($pks) === 2) {
                             $relation[$k]['key'] = 'MANYTOMANY';
                             $refcol2 = ('' . self::$prefixBase . $pks[0] === $relation[$k]['refcol']) ? $pks[1]
@@ -4235,7 +4230,7 @@ eot;
                     break;
                 case 'MANYTOMANY':
                     $class = $classRelations[$field['reftable']];
-                    $field2s[] = "\t/** @var {$class}[] \$$varn manytomany */
+                    $field2s[] = "\t/** @var $class[] \$$varn manytomany */
     public \$$varn;";
                     $field2sb[] = "\t\t\$obj->$varn=isset(\$array['$varn']) ?  
             \$obj->$varn=$class::fromArrayMultiple(\$array['$varn']) 
@@ -4243,7 +4238,7 @@ eot;
                     break;
                 case 'ONETOMANY':
                     $class = $classRelations[$field['reftable']];
-                    $field2s[] = "\t/** @var {$class}[] \$$varn onetomany */
+                    $field2s[] = "\t/** @var $class[] \$$varn onetomany */
     public \$$varn;";
                     $field2sb[] = "\t\t\$obj->$varn=isset(\$array['$varn']) ?  
             \$obj->$varn=$class::fromArrayMultiple(\$array['$varn']) 
@@ -4272,7 +4267,7 @@ eot;
             // we forced the conversion but only if it is not specified explicit
             foreach ($gdf as $k => $colDef) {
                 $type = $colDef['type'];
-                if (isset($this->codeClassConversion[$type]) && $gdf[$k]['conversion'] === null) {
+                if (isset($this->codeClassConversion[$type]) && $colDef['conversion'] === null) {
                     $gdf[$k]['conversion'] = $this->codeClassConversion[$type];
                 }
             }
@@ -4382,7 +4377,7 @@ eot;
             $modelUse = false;
         }
 
-        $r = str_replace(array(
+        return str_replace(array(
             '{version}',
             '{classname}',
             '{exception}',
@@ -4403,7 +4398,6 @@ eot;
             $modelClass ? "const MODEL= $modelClass::class;" : '', // {modelclass}
             $modelUse ? 'true' : 'false' // {modeluse}
         ), $r);
-        return $r;
     }
 
 
@@ -4494,7 +4488,7 @@ eot;
      *
      * @param PDOStatement|null|bool $stmt
      *
-     * @return mixed
+     * @return int
      */
     public function affected_rows($stmt = null)
     {
@@ -4509,7 +4503,7 @@ eot;
      *
      * @param null|string $sequenceName [optional] the name of the sequence
      *
-     * @return mixed a number or 0 if it is not found
+     * @return int|string a number or 0 if it is not found
      */
     public function insert_id($sequenceName = null)
     {
@@ -4574,7 +4568,7 @@ eot;
      *
      * @param $data
      *
-     * @return bool|string
+     * @return int|string|null
      * @see \eftec\PdoOneEncryption::encrypt
      */
 
@@ -4607,6 +4601,7 @@ eot;
             ob_clean();
         }
 
+        /** @noinspection PhpIfWithCommonPartsInspection */
         if (!$this->logLevel) {
             $web = <<<'LOGS'
 <!DOCTYPE html>
@@ -4616,7 +4611,7 @@ eot;
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <title>PdoOne Login Screen</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <link rel="shortcut icon" href="http://raw.githubusercontent.com/EFTEC/AutoLoadOne/master/doc/favicon.ico">
+    <link rel="shortcut icon" href="https://raw.githubusercontent.com/EFTEC/AutoLoadOne/master/doc/favicon.ico">
 LOGS;
             $web .= $this->bootstrapcss();
             $web .= <<<'LOGS'
@@ -4676,7 +4671,7 @@ LOGS;
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <title>PdoOne {{version}}</title>
 
-    <link rel="shortcut icon" href="http://raw.githubusercontent.com/EFTEC/AutoLoadOne/master/doc/favicon.ico">
+    <link rel="shortcut icon" href="https://raw.githubusercontent.com/EFTEC/AutoLoadOne/master/doc/favicon.ico">
     <meta name="viewport" content="width=device-width, initial-scale=1">
 TEM1;
             $web .= $this->bootstrapcss();
@@ -4893,7 +4888,7 @@ BOOTS;
         $r = '';
         foreach ($array as $item) {
             /** @noinspection TypeUnsafeComparisonInspection */
-            $r .= "<option value='{$item}' " . (($select == $item) ? 'selected' : '') . " >{$item}</option>";
+            $r .= "<option value='$item' " . (($select == $item) ? 'selected' : '') . " >$item</option>";
         }
 
         return $r;
@@ -4905,7 +4900,7 @@ BOOTS;
      * @param string $tableName the name of the table to drop
      * @param string $extra     (optional) an extra value.
      *
-     * @return array|bool|PDOStatement
+     * @return bool
      * @throws Exception
      */
     public function dropTable($tableName, $extra = '')
@@ -4922,7 +4917,7 @@ BOOTS;
      * @param string $extra          (optional) An extra value added at the end
      *                               of the query
      *
-     * @return bool|int
+     * @return bool
      * @throws Exception
      */
     public function drop($objectName, $type, $extra = '')
@@ -5068,7 +5063,7 @@ BOOTS;
      *                                            default values outside of the
      *                                            table
      *
-     * @return array|bool|PDOStatement
+     * @return bool
      * @throws Exception
      */
     public function createTable(
@@ -5284,14 +5279,14 @@ BOOTS;
      *
      * @param bool $unpredictable
      *
-     * @return float
+     * @return string
      * @see \eftec\PdoOne::getSequence
      */
     public function getSequencePHP($unpredictable = false)
     {
         $ms = microtime(true);
         //$ms=1000;
-        $timestamp = (double)round($ms * 1000);
+        $timestamp = round($ms * 1000);
         $rand = (fmod($ms, 1) * 1000000) % 4096; // 4096= 2^12 It is the millionth of seconds
         $calc = (($timestamp - 1459440000000) << 22) + ($this->nodeId << 12) + $rand;
         usleep(1);
@@ -5318,7 +5313,7 @@ BOOTS;
      *
      * @param $number
      *
-     * @return mixed
+     * @return array|string|string[]
      */
     public function getUnpredictable($number)
     {
@@ -5514,10 +5509,8 @@ BOOTS;
                     for ($i = count($tableSorted) - 1; $i >= $pInitial; $i--) {
                         $tableSorted[$i + 1] = $tableSorted[$i];
                     }
-                    $tableSorted[$pInitial] = $table;
-                } else {
-                    $tableSorted[$pInitial] = $table;
                 }
+                $tableSorted[$pInitial] = $table;
             }
         }
 

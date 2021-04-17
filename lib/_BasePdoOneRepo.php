@@ -1,4 +1,5 @@
-<?php /** @noinspection StrContainsCanBeUsedInspection */
+<?php /** @noinspection PhpPropertyOnlyWrittenInspection */
+/** @noinspection StrContainsCanBeUsedInspection */
 /** @noinspection JsonEncodingApiUsageInspection */
 /** @noinspection PhpStrFunctionsInspection */
 /** @noinspection PhpSwitchCanBeReplacedWithMatchExpressionInspection */
@@ -29,7 +30,7 @@ use RuntimeException;
 /**
  * Class _BasePdoOneRepo
  *
- * @version       4.15 2021-03-22
+ * @version       4.16 2021-04-17
  * @package       eftec
  * @author        Jorge Castro Castillo
  * @copyright (c) Jorge Castro C. MIT License  https://github.com/EFTEC/PdoOne
@@ -81,7 +82,7 @@ abstract class _BasePdoOneRepo
      *
      * @param null $extra
      *
-     * @return array|bool|PDOStatement
+     * @return bool
      * @throws Exception
      */
     public static function createTable($extra = null)
@@ -89,15 +90,14 @@ abstract class _BasePdoOneRepo
         try {
             if (!self::getPdoOne()->tableExist(static::TABLE)) {
                 return self::getPdoOne()
-                    ->createTable(static::TABLE, $definition = static::getDef('sql'), static::getDefKey(), $extra);
+                    ->createTable(static::TABLE, static::getDef('sql'), static::getDefKey(), $extra);
             }
         } catch (Exception $exception) {
+            self::reset();
             if (self::$falseOnError) {
-                self::reset();
                 self::$lastException = $exception->getMessage();
                 return false;
             }
-            self::reset();
             throw $exception;
         }
         self::reset();
@@ -256,12 +256,11 @@ abstract class _BasePdoOneRepo
                 self::getPdoOne()->runRawQuery($sql, []);
             }
         } catch (Exception $exception) {
+            self::reset();
             if (self::$falseOnError) {
-                self::reset();
                 self::$lastException = $exception->getMessage();
                 return false;
             }
-            self::reset();
             throw $exception;
         }
         self::reset();
@@ -305,12 +304,11 @@ abstract class _BasePdoOneRepo
                 self::reset();
             }
         } catch (Exception $exception) {
+            self::reset();
             if (self::$falseOnError) {
-                self::reset();
                 self::$lastException = $exception->getMessage();
                 return false;
             }
-            self::reset();
             throw $exception;
         }
         self::reset();
@@ -387,7 +385,7 @@ abstract class _BasePdoOneRepo
     /**
      * It creates a foreign keys<br>
      *
-     * @return array|bool|PDOStatement
+     * @return bool
      * @throws Exception
      */
     public static function createFk()
@@ -415,12 +413,11 @@ abstract class _BasePdoOneRepo
             return self::getPdoOne()
                 ->validateDefTable(static::TABLE, static::getDef('sql'), static::getDefKey(), static::getDefFk(true));
         } catch (Exception $exception) {
+            self::reset();
             if (self::$falseOnError) {
-                self::reset();
                 self::$lastException = $exception->getMessage();
                 return ['exception' => $exception->getMessage()];
             }
-            self::reset();
             throw $exception;
         }
     }
@@ -430,7 +427,7 @@ abstract class _BasePdoOneRepo
      *
      * @param bool $force If true then it forces the truncate (it is useful when the table has a foreign key)
      *
-     * @return array|bool|PDOStatement
+     * @return array|bool
      * @throws Exception
      */
     public static function truncate($force = false)
@@ -471,7 +468,7 @@ abstract class _BasePdoOneRepo
     /**
      * It drops the table (structure and values)
      *
-     * @return array|bool|PDOStatement
+     * @return bool
      * @throws Exception
      */
     public static function dropTable()
@@ -481,12 +478,11 @@ abstract class _BasePdoOneRepo
                 return self::getPdoOne()->dropTable(static::TABLE);
             }
         } catch (Exception $exception) {
+            self::reset();
             if (self::$falseOnError) {
-                self::reset();
                 self::$lastException = $exception->getMessage();
                 return false;
             }
-            self::reset();
             throw $exception;
         }
         self::reset();
@@ -550,7 +546,7 @@ abstract class _BasePdoOneRepo
      *
      * @param int $numPage Number of page. It starts with 1.
      *
-     * @return mixed
+     * @return _BasePdoOneRepo
      * @throws Exception
      */
     public static function page($numPage)
@@ -716,7 +712,7 @@ abstract class _BasePdoOneRepo
                                 . static::RELATIONS[$keyRel['reftable']]; // $ns . PdoOne::camelize($keyRel['reftable']) . $postfix;
                             $refCol = ltrim($keyRel['refcol'], PdoOne::$prefixBase);
                             $newQuery['joins'] .= " left join {$keyRel['reftable']} as $tableRelAlias "
-                                . "on {$pt}{$col}=$tableRelAlias.$refCol \n"; // $recursiveInit$nameCol\n"; // adds a query to the current query
+                                . "on $pt$col=$tableRelAlias.$refCol \n"; // $recursiveInit$nameCol\n"; // adds a query to the current query
                             /** @noinspection PhpUndefinedMethodInspection */
                             $class::generationRecursive($newQuery, $tableRelAlias . '.', $colRelAlias . '.',
                                 $recursiveComplete, false); // $recursiveInit . $nameCol
@@ -731,7 +727,7 @@ abstract class _BasePdoOneRepo
                             $refCol = $keyRel['refcol']; // ltrim($keyRel['refcol'], PdoOne::$prefixBase);
 
                             $newQuery['joins'] .= " left join {$keyRel['reftable']} as $tableRelAlias "
-                                . "on {$pt}{$col}=$tableRelAlias.$refCol \n"; // $recursiveInit$nameCol\n"; // adds a query to the current query
+                                . "on $pt$col=$tableRelAlias.$refCol \n"; // $recursiveInit$nameCol\n"; // adds a query to the current query
                             /** @noinspection PhpUndefinedMethodInspection */
                             $class::generationRecursive($newQuery, $tableRelAlias . '.', $colRelAlias . '.',
                                 $recursiveComplete, false); // $recursiveInit . $nameCol
@@ -961,12 +957,11 @@ abstract class _BasePdoOneRepo
             self::reset();
             return ($r === '1');
         } catch (Exception $exception) {
+            self::reset();
             if (self::$falseOnError) {
-                self::reset();
                 self::$lastException = $exception->getMessage();
                 return false;
             }
-            self::reset();
             throw $exception;
         }
     }
@@ -1135,12 +1130,11 @@ abstract class _BasePdoOneRepo
             if ($transaction) {
                 self::getPdoOne()->rollback();
             }
+            self::reset();
             if (self::$falseOnError) {
-                self::reset();
                 self::$lastException = $exception->getMessage();
                 return false;
             }
-            self::reset();
             throw $exception;
         }
     }
@@ -1392,15 +1386,14 @@ abstract class _BasePdoOneRepo
             if ($transaction) {
                 self::getPdoOne()->rollback();
             }
+            self::reset();
             if (self::$falseOnError) {
-                self::reset();
                 self::$lastException = $exception->getMessage();
                 if ($returnObject !== false) {
                     $entity = $returnObject;
                 }
                 return false;
             }
-            self::reset();
             if ($returnObject !== false) {
                 $entity = $returnObject;
             }
@@ -1515,12 +1508,11 @@ abstract class _BasePdoOneRepo
             self::reset();
             return $rowc;
         } catch (Exception $exception) {
+            self::reset();
             if (self::$falseOnError) {
-                self::reset();
                 self::$lastException = $exception->getMessage();
                 return false;
             }
-            self::reset();
             throw $exception;
         }
     }
@@ -1728,12 +1720,11 @@ abstract class _BasePdoOneRepo
             if ($transaction) {
                 self::getPdoOne()->rollback();
             }
+            self::reset();
             if (self::$falseOnError) {
-                self::reset();
                 self::$lastException = $exception->getMessage();
                 return false;
             }
-            self::reset();
             throw $exception;
         }
     }
