@@ -51,17 +51,18 @@ use stdClass;
  * @package       eftec
  * @author        Jorge Castro Castillo
  * @copyright (c) Jorge Castro C. MIT License  https://github.com/EFTEC/PdoOne
- * @version       2.11
+ * @version       2.11.1
  */
 class PdoOne
 {
-    const VERSION = '2.11';
+    const VERSION = '2.11.1';
     /** @var int We need this value because null and false could be a valid value. */
     const NULL = PHP_INT_MAX;
+    protected $phpstart="<?php\n";
     /** @var string Prefix of the tables */
     public static $prefixBase = '_';
     /** @var string|null Static date (when the date is empty) */
-    public static $dateEpoch = '2000-01-01 00:00:00.00000';
+    public static $dateEpoch = '2000-01-01 00:00:00.00000'; // we don't need to set the epoch to 1970.
     /**
      * Text date format
      *
@@ -2353,8 +2354,7 @@ eot;
         $columnRemove = []
     )
     {
-        $r = <<<'eot'
-<?php
+        $r = $this->phpstart.<<<'eot'
 /** @noinspection PhpUnusedParameterInspection
  * @noinspection NullCoalescingOperatorCanBeUsedInspection 
  * @noinspection PhpPureAttributeCanBeAddedInspection 
@@ -2728,7 +2728,10 @@ eot;
             $modelUse = false;
         }
 
-        $baseClass = ($baseClass === null) ? end($lastns) : $baseClass;
+        if ($baseClass === null) {
+            $tmp3 = end($lastns);
+            $baseClass=$tmp3===false?'':$tmp3;
+        }
 
         $fa = func_get_args();
         foreach ($fa as $f => $k) {
@@ -3511,8 +3514,7 @@ eot;
 
     public function generateBaseClass($baseClassName, $namespace, $classes, $modelUse = false)
     {
-        $r = <<<'eot'
-<?php
+        $r = $this->phpstart.<<<'eot'
 /** @noinspection PhpMissingParamTypeInspection */
 /** @noinspection PhpMissingReturnTypeInspection */
 /** @noinspection PhpMissingFieldTypeInspection */
@@ -3617,6 +3619,7 @@ eot;
      *
      * @return string|string[]
      * @throws Exception
+     * @noinspection PhpUnnecessaryCurlyVarSyntaxInspection
      */
     public function generateAbstractModelClass(
         $tableName,
@@ -3631,8 +3634,7 @@ eot;
         $columnRemove = []
     )
     {
-        $r = <<<'eot'
-<?php
+        $r = $this->phpstart.<<<'eot'
 /** @noinspection PhpIncompatibleReturnTypeInspection
  * @noinspection ReturnTypeCanBeDeclaredInspection
  * @noinspection DuplicatedCode
@@ -3905,7 +3907,7 @@ eot;
                     break;
                 case 'MANYTOMANY':
                     $class = $classRelations[$field['reftable']];
-                    $field2s[] = "\t/** @var $class[] \$$varn manytomany */
+                    $field2s[] = "\t/** @var {$class}[] \$$varn manytomany */
     public \$$varn;";
                     $field2sb[] = "\t\t\$obj->$varn=isset(\$array['$varn']) ?  
             \$obj->$varn=$class::fromArrayMultiple(\$array['$varn']) 
@@ -3913,7 +3915,7 @@ eot;
                     break;
                 case 'ONETOMANY':
                     $class = $classRelations[$field['reftable']];
-                    $field2s[] = "\t/** @var $class[] \$$varn onetomany */
+                    $field2s[] = "\t/** @var {$class}[] \$$varn onetomany */
     public \$$varn;";
                     $field2sb[] = "\t\t\$obj->$varn=isset(\$array['$varn']) ?  
             \$obj->$varn=$class::fromArrayMultiple(\$array['$varn']) 
@@ -4016,6 +4018,7 @@ eot;
      *
      * @return string|string[]
      * @throws Exception
+     * @noinspection PhpUnnecessaryCurlyVarSyntaxInspection
      */
     public function generateModelClass(
         $tableName,
@@ -4028,8 +4031,7 @@ eot;
         $baseClass = null
     )
     {
-        $r = <<<'eot'
-<?php
+        $r = $this->phpstart.<<<'eot'
 /** @noinspection PhpIncompatibleReturnTypeInspection
  * @noinspection ReturnTypeCanBeDeclaredInspection
  * @noinspection DuplicatedCode
@@ -4230,7 +4232,7 @@ eot;
                     break;
                 case 'MANYTOMANY':
                     $class = $classRelations[$field['reftable']];
-                    $field2s[] = "\t/** @var $class[] \$$varn manytomany */
+                    $field2s[] = "\t/** @var {$class}[] \$$varn manytomany */
     public \$$varn;";
                     $field2sb[] = "\t\t\$obj->$varn=isset(\$array['$varn']) ?  
             \$obj->$varn=$class::fromArrayMultiple(\$array['$varn']) 
@@ -4238,7 +4240,7 @@ eot;
                     break;
                 case 'ONETOMANY':
                     $class = $classRelations[$field['reftable']];
-                    $field2s[] = "\t/** @var $class[] \$$varn onetomany */
+                    $field2s[] = "\t/** @var {$class}[] \$$varn onetomany */
     public \$$varn;";
                     $field2sb[] = "\t\t\$obj->$varn=isset(\$array['$varn']) ?  
             \$obj->$varn=$class::fromArrayMultiple(\$array['$varn']) 
@@ -4260,9 +4262,6 @@ eot;
 
         $r = str_replace(['{fields}', '{fieldsrel}', '{fieldsfa}', '{fieldsrelfa}'],
             [$fieldsArr, $fields2Arr, $fieldsbArr, $fields2Arrb], $r);
-        //  return $r;
-        //  die(1);
-
         if (@count($this->codeClassConversion) > 0) {
             // we forced the conversion but only if it is not specified explicit
             foreach ($gdf as $k => $colDef) {
@@ -4329,8 +4328,7 @@ eot;
         $modelfullClass = ''
     )
     {
-        $r = <<<'eot'
-<?php
+        $r = $this->phpstart.<<<'eot'
 /** @noinspection AccessModifierPresentedInspection
  * @noinspection PhpUnusedAliasInspection
  * @noinspection UnknownInspectionInspection

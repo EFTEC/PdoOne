@@ -45,7 +45,7 @@ class PdoOne_Mysql implements PdoOne_IExt
         PdoOne::$dateTimeMicroFormat = 'Y-m-d H:i:s.u';
         PdoOne::$isoDateInput = 'Y-m-d';
         PdoOne::$isoDateInputTime = 'Y-m-d H:i:s';
-        PdoOne::$isoDateInputTimeMs = 'Y-m-d H:i:s.u';        
+        PdoOne::$isoDateInputTimeMs = 'Y-m-d H:i:s.u';
         $this->parent->isOpen = false;
 
         return $charset;
@@ -59,7 +59,7 @@ class PdoOne_Mysql implements PdoOne_IExt
         $this->parent->user = '';
         $this->parent->pwd = '';
         $this->parent->conn1->setAttribute(PDO::ATTR_EMULATE_PREPARES, false);
-       
+
     }
     public function callProcedure($procName, &$arguments=[], $outputColumns=[]) {
         $keys=array_keys($arguments);
@@ -97,7 +97,7 @@ class PdoOne_Mysql implements PdoOne_IExt
         }
         $stmt=null;
     }
-    
+
     public function truncate($tableName,$extra,$force) {
         if(!$force) {
             $sql = 'truncate table ' . $this->parent->addDelimiter($tableName) . " $extra";
@@ -208,6 +208,9 @@ class PdoOne_Mysql implements PdoOne_IExt
         switch ($type) {
             case 'VAR_STRING':
             case 'BLOB':
+            case 'TINY_BLOB':
+            case 'MEDIUM_BLOB':
+            case 'LONG_BLOB':
             case 'STRING':
             case 'GEOMETRY':
             case 'TIMESTAMP':
@@ -219,6 +222,7 @@ class PdoOne_Mysql implements PdoOne_IExt
             case 'LONG':
             case 'LONGLONG':
             case 'SHORT':
+            case 'INT24':
             case 'TINY':
             case 'YEAR':
                 return ($default) ? '0' : 'int';
@@ -319,9 +323,9 @@ class PdoOne_Mysql implements PdoOne_IExt
             'id'   => 'bigint(20) unsigned NOT NULL AUTO_INCREMENT',
             'stub' => "char(1) NOT NULL DEFAULT ''",
         ], [
-                'id'   => 'PRIMARY KEY',
-                'stub' => 'UNIQUE KEY'
-            ], '', 'ENGINE=MyISAM AUTO_INCREMENT=1 DEFAULT CHARSET=utf8');
+            'id'   => 'PRIMARY KEY',
+            'stub' => 'UNIQUE KEY'
+        ], '', 'ENGINE=MyISAM AUTO_INCREMENT=1 DEFAULT CHARSET=utf8');
         if (!$ok) {
             $this->parent->throwError("Unable to create table $tableSequence", '');
             return '';

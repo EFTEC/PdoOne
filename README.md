@@ -1953,10 +1953,15 @@ In a nutshell:
 * Every minor version means that it adds a new functionality i.e. 1.5 -> 1.6 (new methods)
 * Every decimal version means that it patches/fixes/refactoring a previous functionality i.e. 1.5.0 -> 1.5.1 (fix)
 
+
+* 2.11.1 2021-04-17
+  * [fix] Mysql extension now knows the type int24 (plus other types of variables).
+  * [fix] Regresion, some removed { } caused a bug when they are followed by []  
+  * [code] 
 * 2.11 2021-04-17
   * [code] Lots of cleanups. Removed unneeding { }. Merged common code in branches.
 * 2.10.3 2021-04-14
-  * [fix] BasePdoOne fixed method getRecursive(), it generated a new query and now it reuses a query (if any).
+  * [fix] BasePdoOne fixed method getRecursive(), it generated a new query, and now it reuses a query (if any).
   * It also returns the query
 * 2.10.2 2021-04-06
   * Fixed
