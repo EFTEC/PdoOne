@@ -143,7 +143,6 @@ class PdoOneQuery
     )
     {
         $this->parent->errorText = '';
-        $allparam = '';
         $uid = false;
         $sql = $this->sqlGen();
         $isSelect = PdoOne::queryCommand($sql, true) === 'dql';
@@ -164,7 +163,7 @@ class PdoOneQuery
             /** @var PDOStatement|bool $stmt */
             $stmt = $this->parent->prepare($sql);
         } catch (Exception $e) {
-            $this->throwErrorChain('Error in prepare runGen', $extraIdCache, ['values' => $allparam], $throwError, $e);
+            $this->throwErrorChain('Error in prepare runGen', $throwError, $e);
             $this->builderReset();
             return false;
         }
@@ -175,24 +174,16 @@ class PdoOneQuery
         $reval = true;
         if ($allparam) {
             try {
-                foreach ($allparam as $k => &$v) {
+                foreach ($allparam as &$v) {
                     $reval = $reval && $stmt->bindParam($v[0], $v[1], $v[2]);
                 }
             } catch (Exception $ex) {
-                if (is_object($v[1])) {
-                    $this->throwErrorChain("Error in bind. Parameter error."
-                        , "Parameter $v[0] ($k) is an object of the class " . get_class($v[1])
-                        , ['values' => $allparam], $throwError);
-                    $this->builderReset();
-                    return false;
-                }
-                $this->throwErrorChain("Error in bind. Parameter error.", "Parameter $v[0] ($k)"
-                    , ['values' => $allparam], $throwError);
+                $this->throwErrorChain("Error in bind. Parameter error.", $throwError,$ex);
                 $this->builderReset();
                 return false;
             }
             if (!$reval) {
-                $this->throwErrorChain('Error in bind', $extraIdCache, ['values' => $allparam], $throwError);
+                $this->throwErrorChain('Error in bind', $throwError);
                 $this->builderReset();
                 return false;
             }
@@ -310,6 +301,7 @@ class PdoOneQuery
         $this->setParamAssoc = [];
         $this->havingParamAssoc = [];
 
+
         $this->whereCounter = 1;
         //$this->whereParamValue = [];
         $this->set = [];
@@ -327,59 +319,33 @@ class PdoOneQuery
      * (if throwOnError==true)
      *
      * @param string                $txt        The message to show.
-     * @param string                $txtExtra   It's only used if $logLevel>=2. It
-     *                                          shows an extra message
-     * @param string|array          $extraParam It's only used if $logLevel>=3  It
-     *                                          shows parameters (if any)
-     *
      * @param bool                  $throwError if true then it throw error (is enabled). Otherwise it store the error.
-     *
-     * @param null|RuntimeException $exception
+     * @param null|RuntimeException $exception  If we already has an exception, then we could use to throw it.
      *
      * @see \eftec\PdoOne::$logLevel
      */
-    public function throwErrorChain($txt, $txtExtra, $extraParam = '', $throwError = true, $exception = null)
+    public function throwErrorChain($txt, $throwError = true, $exception = null)
     {
         if ($this->parent->logLevel === 0) {
             $txt = 'Error on database';
         }
-        /*if ($this->parent->logLevel >= 2) {
-            $txt .= "\n<br><b>extra:</b>[$txtExtra]";
-        }
-        if ($this->parent->logLevel >= 2) {
-            $txt .= "\n<br><b>last query:</b>[{$this->parent->lastQuery}]";
-        }*/
-        /*if ($this->parent->logLevel >= 3) {
-            $txt .= "\n<br><b>database:</b>" . $this->parent->server . ' - ' . $this->parent->db;
-            if (is_array($extraParam)) {
-                foreach ($extraParam as $k => $v) {
-                    if (is_array($v) || is_object($v)) {
-                        $v = json_encode($v);
-                    }
-                    $txt .= "\n<br><b>$k</b>:$v";
-                }
-            } else {
-                $txt .= "\n<br><b>Params :</b>[" . $extraParam . "]\n<br>";
-            }
-            if ($exception !== null) {
-                $txt .= "\n<br><b>message :</b>[" . str_replace("\n", "\n<br>", $exception->getMessage()) . "]";
-                $txt .= "\n<br><b>trace :</b>[" . str_replace("\n", "\n<br>", $exception->getTraceAsString()) . "]";
-                $txt .= "\n<br><b>code :</b>[" . str_replace("\n", "\n<br>", $exception->getCode()) . "]\n<br>";
-            }
-        }*/
         if ($this->parent->getMessages() !== null) {
             $this->parent->getMessages()->addItem($this->parent->db, $txt);
         }
         $this->parent->debugFile($txt, 'ERROR');
         $this->parent->errorText = $txt;
-
         if ($throwError && $this->parent->throwOnError && $this->parent->genError) {
-            throw new RuntimeException($txt);
+            if($exception!==null) {
+                throw $exception;
+            } else {
+                throw new RuntimeException($txt);
+            }
         }
         $this->builderReset(true); // it resets the chain if any.
     }
     /**
-     * Begin a try block. It marks the erroText as empty and it store the value of genError
+     * Begin a try block. It marks the errorText as empty and it store the value of genError<br>
+     * It also avoids to throw any error.
      */
     public function beginTry()
     {
@@ -399,9 +365,10 @@ class PdoOneQuery
      */
     private function endTry()
     {
+
         $this->parent->throwOnError = $this->throwOnErrorB;
         if ($this->parent->errorText) {
-            $this->throwErrorChain('endtry:' . $this->parent->errorText, '', '', $this->parent->isThrow);
+            $this->throwErrorChain('endtry:' . $this->parent->errorText, $this->parent->isThrow);
             if($this->parent->customError) {
                 restore_exception_handler();
             }
@@ -784,10 +751,7 @@ class PdoOneQuery
                 }
             }
         }
-        //echo "<br>where:";
-
         $i = -1;
-
         foreach ($queryEnd as $k => $v) {
             $i++;
 
@@ -1331,7 +1295,7 @@ class PdoOneQuery
             return $this;
         }
         if (count($this->where)) {
-            $this->throwErrorChain('method set() must be before where()', 'set');
+            $this->throwErrorChain('method set() must be before where()');
             return $this;
         }
 
@@ -1529,7 +1493,7 @@ class PdoOneQuery
             $errorCause = "you can't execute an empty insert() without a set()";
         }
         if ($errorCause) {
-            $this->throwErrorChain('Insert:' . $errorCause, 'insert');
+            $this->throwErrorChain('Insert:' . $errorCause);
             return false;
         }
         //$sql = 'insert into ' . $this->parent->addDelimiter($tableName) . '  (' . implode(',', $col) . ') values('
@@ -1544,7 +1508,6 @@ class PdoOneQuery
         if ($this->endtry() === false) {
             return false;
         }
-
         return $this->parent->insert_id();
     }
 
@@ -1621,11 +1584,10 @@ class PdoOneQuery
             $errorCause = "you can't execute an empty delete() without a from()";
         }
         if ($errorCause) {
-            $this->throwErrorChain('Delete:' . $errorCause, '');
+            $this->throwErrorChain('Delete:' . $errorCause);
             $this->parent->endTry();
             return false;
         }
-
         if ($tableDefWhere !== null) {
             $this->constructParam2($tableDefWhere, $valueWhere);
         }
@@ -1706,7 +1668,7 @@ class PdoOneQuery
             $errorCause = "you can't execute an empty update() without a set()";
         }
         if ($errorCause) {
-            $this->throwErrorChain('Update:' . $errorCause, 'update');
+            $this->throwErrorChain('Update:' . $errorCause);
             return false;
         }
 

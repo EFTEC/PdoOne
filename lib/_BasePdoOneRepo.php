@@ -25,12 +25,12 @@ namespace eftec;
 
 use Exception;
 use PDOStatement;
-use RuntimeException;
+
 
 /**
  * Class _BasePdoOneRepo
  *
- * @version       4.16 2021-04-17
+ * @version       5.0 2021-04-18
  * @package       eftec
  * @author        Jorge Castro Castillo
  * @copyright (c) Jorge Castro C. MIT License  https://github.com/EFTEC/PdoOne
@@ -38,7 +38,7 @@ use RuntimeException;
 abstract class _BasePdoOneRepo
 {
     // it is used for compatibility.
-    const BINARYVERSION = 4;
+    const BINARYVERSION = 5;
     /** @var PdoOne */
     public static $pdoOne;
     /** @var PdoOneQuery */
@@ -120,15 +120,17 @@ abstract class _BasePdoOneRepo
             return self::$pdoOne;
         }
         if (self::BINARYVERSION !== static::COMPILEDVERSION) {
-            throw new RuntimeException(self::class . ' requires a new version');
+            $p=new PdoOne('test','no database','','');
+            $p->throwError('Repository classes requires a new version. Please update PdoOne and rebuild'
+                ,self::class);
         }
         if (function_exists('PdoOne')) {
-            return PdoOne();
+            self::$pdoOne= PdoOne();
         }
         if (isset($GLOBALS['pdoOne']) && $GLOBALS['pdoOne'] instanceof PdoOne) {
-            return $GLOBALS['pdoOne'];
+            self::$pdoOne=$GLOBALS['pdoOne'];
         }
-        return null;
+        return self::$pdoOne;
     }
 
     /**
@@ -182,7 +184,9 @@ abstract class _BasePdoOneRepo
     public static function base()
     {
         if (self::getPdoOne() === null) {
-            throw new RuntimeException('PdoOne not set');
+            self::getPdoOne()
+                ->throwError('PdoOne not set'
+                    ,self::class);
         }
         self::reset(true);
         return self::getPdoOne();
@@ -697,10 +701,7 @@ abstract class _BasePdoOneRepo
             if ($type !== 'FOREIGN KEY') {
                 // $nameColClean = trim($nameCol, PdoOne::$prefixBase);
                 $recursiveComplete = ltrim($recursiveInit . '/' . $nameCol, '/');
-                //echo "check recursive: $recursiveComplete<br>";
                 if (self::getQuery()->hasRecursive($recursiveComplete)) {
-                    //echo "OK $type<br>";
-                    // type='PARENT' is n
                     switch ($type) {
                         case 'MANYTOONE':
                             static::$gQueryCounter++;
@@ -779,21 +780,7 @@ abstract class _BasePdoOneRepo
                             //$columns = $other['columns'];
                             $columnFinal = [];
                             $findme = ltrim($keyRel['refcol2'], PdoOne::$prefixBase);
-                            //echo "findme $findme<br>";
-                            //if($pTable==='') {
                             $columnFinal[] = $findme . ' as ' . self::getPdoOne()->addQuote($pColumn . $findme);
-                            /*} else {
-                                echo "<hr>ptable:$pTable manytoone";
-                                echo $findme."<br>";
-                                // convert /somefk.column -> column
-                                // convert /anything.column -> (deleted)
-                                foreach ($columns as $vc) {
-                                    //$findme = $keyRel['refcol2'] . '.';
-                                    if (strpos($vc, $findme) !== false) {
-                                        $columnFinal[] = str_replace($findme, '', $vc);
-                                    }
-                                }
-                            }*/
                             $other['columns'] = $columnFinal;
                             self::$gQuery[] = $other;
                             break;
@@ -955,15 +942,18 @@ abstract class _BasePdoOneRepo
             $r = self::getPdoOne()->genError()->select('1')->from(static::TABLE)->where($entity)->firstScalar();
             self::getPdoOne()->genError(true);
             self::reset();
-            return ($r === '1');
+            /** @noinspection TypeUnsafeComparisonInspection */
+            return ($r == '1');
         } catch (Exception $exception) {
             self::reset();
             if (self::$falseOnError) {
                 self::$lastException = $exception->getMessage();
                 return false;
             }
-            throw $exception;
+            self::getPdoOne()
+                ->throwError('', json_encode($entity),'',true,$exception);
         }
+        return false;
     }
 
     protected static function objectToArray($obj)
@@ -985,7 +975,7 @@ abstract class _BasePdoOneRepo
      *
      * @param bool         $transaction
      *
-     * @return mixed
+     * @return false|int
      * @throws Exception
      */
     protected static function _update($entity, $transaction = true)
@@ -1513,7 +1503,9 @@ abstract class _BasePdoOneRepo
                 self::$lastException = $exception->getMessage();
                 return false;
             }
-            throw $exception;
+            self::getPdoOne()
+                ->throwError("PdoOne: Error in $type", json_encode($filter),'',true,$exception);
+            return false;
         }
     }
 
@@ -1615,7 +1607,7 @@ abstract class _BasePdoOneRepo
      *
      * @param bool        $transaction
      *
-     * @return mixed
+     * @return false|int
      * @throws Exception
      */
     protected static function _deleteById($pks, $transaction = true)
@@ -1636,7 +1628,7 @@ abstract class _BasePdoOneRepo
      * @param bool         $transaction
      * @param array|null   $columns
      *
-     * @return mixed
+     * @return false|int
      * @throws Exception
      */
     protected static function _delete($entity, $transaction = true, $columns = null)

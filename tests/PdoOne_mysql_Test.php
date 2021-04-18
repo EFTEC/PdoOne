@@ -73,7 +73,7 @@ class CacheServicesmysql implements IPdoOneCache
      * @param string       $uid
      * @param string|array $family
      *
-     * @return mixed|void
+     * @return void
      */
     public function invalidateCache($uid = '', $family = '')
     {
@@ -199,6 +199,7 @@ class PdoOne_mysql_Test extends TestCase
         self::assertEquals(false, $rows);
 
         $this->pdoOne->throwOnError = false;
+        $this->pdoOne->traceBlackList=[];
         $rows = $this->pdoOne->select('select 123 field1 from dual222')->toList();
         $this->pdoOne->throwOnError = true;
 

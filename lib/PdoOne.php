@@ -52,11 +52,11 @@ use stdClass;
  * @package       eftec
  * @author        Jorge Castro Castillo
  * @copyright (c) Jorge Castro C. MIT License  https://github.com/EFTEC/PdoOne
- * @version       2.12
+ * @version       2.13
  */
 class PdoOne
 {
-    const VERSION = '2.12';
+    const VERSION = '2.13';
     /** @var int We need this value because null and false could be a valid value. */
     const NULL = PHP_INT_MAX;
     /** @var string Prefix of the tables */
@@ -146,7 +146,7 @@ class PdoOne
     /** @var bool If true (default), then it throws a customer message.. If false, then it uses the default (PHP) style */
     public $customError = true;
     public $traceBlackList = ['PdoOne.php', 'PdoOneQuery.php', 'PdoOne_Mysql.php', 'PdoOne.Sqlsrv.php', 'PdoOne.Oci.php'
-        , 'PdoOneTestMockup.php'];
+        , 'PdoOneTestMockup.php','_BasePdoOneRepo.php'];
     /** @var  PDO */
     public $conn1;
     /** @var  bool True if the transaction is open */
@@ -1367,26 +1367,34 @@ eot;
      * Write a log line for debug, clean the command chain then throw an error
      * (if throwOnError==true)
      *
-     * @param string                $txt        The message to show.
-     * @param string                $txtExtra   It's only used if $logLevel>=2. It
+     * @param string                $txt        The message to show or chain.
+     * @param string|array          $txtExtra   It's only used if $logLevel>=2. It
      *                                          shows an extra message
      * @param string|array          $extraParam It's only used if $logLevel>=3  It
      *                                          shows parameters (if any)
      *
      * @param bool                  $throwError if true then it throw error (is enabled). Otherwise it store the error.
      *
-     * @param null|RuntimeException $exception
+     * @param null|Exception $exception
      *
      * @see \eftec\PdoOne::$logLevel
      */
     public function throwError($txt, $txtExtra, $extraParam = '', $throwError = true, $exception = null)
     {
+        if($this->errorText!=='') {
+            // there is another error pending to be displayed.
+            return;
+        }
         if ($this->logLevel === 0) {
             $txt .= "\n{{Message:}} [Error on database]";
         }
         if ($this->logLevel >= 2) {
-            $txt .= "\n{{Message:}} $txtExtra";
-            $txt .= "\n{{Message:}} " . $this->lastError();
+            $txt .= "\n{{Message:}} ".is_array($txtExtra)?json_encode($txtExtra):$txtExtra;
+            if($exception!==null) {
+                $txt .= "\n{{Message:}} " .$this->lastError().' '. $exception->getMessage();
+            } else {
+                $txt .= "\n{{Message:}} " . $this->lastError();
+            }
         }
         if ($this->logLevel >= 2) {
             $txt .= "\n{{Last query:}} [$this->lastQuery]";
@@ -1412,9 +1420,9 @@ eot;
         }
         $this->debugFile($txt, 'ERROR');
         $this->errorText = $txt;
-
         if ($throwError && $this->throwOnError && $this->genError) {
             // endtry() invalidates this call (it is never called)
+
             throw new RuntimeException($txt);
         }
         $this->endTry();
@@ -1465,17 +1473,28 @@ eot;
                                 $args[]=get_class($v);
                             } else if(is_array($v)) {
                                 $args[]=json_encode($v);
+                            } elseif($v===null) {
+                                $args[]='(null)';
                             } else {
-                                $args[]=$v;
+                                $args[]=$v===self::NULL?'(NULL)':"'".addslashes($v)."'";
                             }
                         }
                     }
-                    $r .= $error['file'] . '[' . $error['line'] . ']' . ' function:' . @$error['function'] . '(' . @implode(',', $args) . ')' . "\n";
+                    if(isset($error['class'])) {
+                        $function=$error['class'].$error['type'].$error['function'];
+                    } else {
+                        $function=$error['function'];
+                    }
+
+                    $r .= $error['file'] . ':' . $error['line']  . "\t" .$function . '('
+                        . @implode(' , ', $args) . ')' . "\n";
                 }
             }
         }
         if (!$isCli) {
-            $r = str_replace(["\n", '[', ']', '{{', '}}'], ["<br>", "<b>[", "]</b>", '<u>', '</u>'], $r);
+            $r = str_replace(["\n", '[', ']', '{{', '}}',"\t"]
+                , ["<br>", "<b>[", "]</b>", '<u>', '</u>','&nbsp;&nbsp;&nbsp;&nbsp;']
+                , $r);
         }
         if (!$returnAsString) {
             echo $r;
@@ -1655,7 +1674,6 @@ eot;
         $stmt = $this->prepare($rawSql);
         if ($stmt === false) {
             $this->throwError("Unable to prepare statement", $rawSql);
-            $this->endTry();
             return false;
         }
         $counter = 0;
@@ -1836,11 +1854,10 @@ eot;
             $stmt = $this->conn1->prepare($statement);
         } catch (Exception $ex) {
             $stmt = false;
-            if ($this->errorText === '') {
-                $this->throwError('Failed to prepare', $ex->getMessage(), ['param' => $this->lastParam]);
-            }
+            $this->throwError('Failed to prepare', $ex->getMessage().$this->lastError(), ['param' => $this->lastParam],true,$ex);
         }
         if (($stmt === false) && $this->errorText === '') {
+
             $this->throwError('Unable to prepare query', $this->lastQuery, ['param' => $this->lastParam]);
         }
         $this->endTry();
@@ -4048,7 +4065,7 @@ eot;
 
         $r = str_replace(['{fields}', '{fieldsrel}', '{fieldsfa}', '{fieldsrelfa}'],
             [$fieldsArr, $fields2Arr, $fieldsbArr, $fields2Arrb], $r);
-         if (@count($this->codeClassConversion) > 0) {
+        if (@count($this->codeClassConversion) > 0) {
             // we forced the conversion but only if it is not specified explicit
             foreach ($gdf as $k => $colDef) {
                 $type = $colDef['type'];

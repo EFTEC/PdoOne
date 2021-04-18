@@ -1953,6 +1953,9 @@ In a nutshell:
 * Every minor version means that it adds a new functionality i.e. 1.5 -> 1.6 (new methods)
 * Every decimal version means that it patches/fixes/refactoring a previous functionality i.e. 1.5.0 -> 1.5.1 (fix)
 
+* 2.13 2021-04-17
+  * [debug] More changes to how it shows error messages.
+  * /_BasePdoOneRepo updated to version 5.0 (binary 5).
 * 2.12 2021-04-17
   * [debug] Change how it shows the errors. Now it uses a custom error handle
     (it could be disabled with setting $this->customError=false)
