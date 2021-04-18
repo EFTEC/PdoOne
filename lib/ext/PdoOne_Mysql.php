@@ -54,7 +54,7 @@ class PdoOne_Mysql implements PdoOne_IExt
     public function connect($cs, $alterSession=false)
     {
         $this->parent->conn1
-            = new PDO("{$this->parent->databaseType}:host={$this->parent->server};dbname={$this->parent->db}{$cs}",
+            = new PDO("{$this->parent->databaseType}:host={$this->parent->server};dbname={$this->parent->db}$cs",
             $this->parent->user, $this->parent->pwd);
         $this->parent->user = '';
         $this->parent->pwd = '';
@@ -64,8 +64,8 @@ class PdoOne_Mysql implements PdoOne_IExt
     public function callProcedure($procName, &$arguments=[], $outputColumns=[]) {
         $keys=array_keys($arguments);
         $outputFields='';
+        $argList = '';
         if(count($keys)>0) {
-            $argList = '';
             foreach($arguments as $k=>$v) {
                 if(in_array($k,$outputColumns)) {
                     $argList.="@$k,";
@@ -79,8 +79,6 @@ class PdoOne_Mysql implements PdoOne_IExt
             }
             $argList=trim($argList,','); // remove the trail comma
             $outputFields=trim($outputFields,',');
-        } else {
-            $argList='';
         }
         $stmt=$this->parent->prepare("call $procName($argList)");
         foreach($arguments as $k=>$v) {
@@ -339,7 +337,7 @@ class PdoOne_Mysql implements PdoOne_IExt
         $sql = 'SET GLOBAL log_bin_trust_function_creators = 1';
         $this->parent->runRawQuery($sql);
         if ($method === 'snowflake') {
-            $sql = "CREATE FUNCTION `next_{$tableSequence}`(node integer) RETURNS BIGINT(20)
+            $sql = "CREATE FUNCTION `next_$tableSequence`(node integer) RETURNS BIGINT(20)
                     MODIFIES SQL DATA
                     NOT DETERMINISTIC
 					BEGIN
@@ -348,17 +346,17 @@ class PdoOne_Mysql implements PdoOne_IExt
 					    DECLARE incr BIGINT(20);
 					    SET current_ms = round(UNIX_TIMESTAMP(CURTIME(4)) * 1000);
 					    SET epoch = 1459440000000; 
-					    REPLACE INTO {$tableSequence} (stub) VALUES ('a');
+					    REPLACE INTO $tableSequence (stub) VALUES ('a');
 					    SELECT LAST_INSERT_ID() INTO incr;    
 					RETURN (current_ms - epoch) << 22 | (node << 12) | (incr % 4096);
 					END";
         } else {
-            $sql = "CREATE DEFINER=CURRENT_USER FUNCTION `next_{$tableSequence}`(node integer) RETURNS BIGINT(20)
+            $sql = "CREATE DEFINER=CURRENT_USER FUNCTION `next_$tableSequence`(node integer) RETURNS BIGINT(20)
                     MODIFIES SQL DATA
                     NOT DETERMINISTIC
 					BEGIN
 					    DECLARE incr BIGINT(20);
-					    REPLACE INTO {$tableSequence} (stub) VALUES ('a');
+					    REPLACE INTO $tableSequence (stub) VALUES ('a');
 					    SELECT LAST_INSERT_ID() INTO incr;    
 					RETURN incr;
 					END";
@@ -381,9 +379,9 @@ class PdoOne_Mysql implements PdoOne_IExt
             foreach ($arguments as $k => $v) {
                 if (is_array($v)) {
                     if (count($v) > 2) {
-                        $sqlArgs .= "{$v[0]} {$v[1]} {$v[2]},";
+                        $sqlArgs .= "$v[0] $v[1] $v[2],";
                     } else {
-                        $sqlArgs .= "in {$v[1]} {$v[2]},";
+                        $sqlArgs .= "in $v[1] $v[2],";
                     }
                 } else {
                     $sqlArgs .= "in $k $v,";
@@ -401,7 +399,7 @@ class PdoOne_Mysql implements PdoOne_IExt
     public function getSequence($sequenceName)
     {
         $sequenceName = ($sequenceName == '') ? $this->parent->tableSequence : $sequenceName;
-        return "select next_{$sequenceName}({$this->parent->nodeId}) id";
+        return "select next_$sequenceName({$this->parent->nodeId}) id";
     }
 
     public function createTable(
@@ -413,7 +411,7 @@ class PdoOne_Mysql implements PdoOne_IExt
     ) {
         $extraOutside = ($extraOutside === '') ? "ENGINE=InnoDB DEFAULT CHARSET={$this->parent->charset};"
             : $extraOutside;
-        $sql = "CREATE TABLE `{$tableName}` (";
+        $sql = "CREATE TABLE `$tableName` (";
         foreach ($definition as $key => $type) {
             $sql .= "`$key` $type,";
         }
@@ -474,7 +472,7 @@ class PdoOne_Mysql implements PdoOne_IExt
             $type = strtoupper(trim(substr($value, 0, $p0)));
             $value = substr($value, $p0 + 4);
             if ($type === 'FOREIGN') {
-                $sql .= "ALTER TABLE `{$tableName}` ADD CONSTRAINT `fk_{$tableName}_{$key}` FOREIGN KEY(`$key`) $value;";
+                $sql .= "ALTER TABLE `$tableName` ADD CONSTRAINT `fk_{$tableName}_$key` FOREIGN KEY(`$key`) $value;";
             }
         }
         return $sql;

@@ -56,7 +56,7 @@ class PdoOne_Sqlsrv implements PdoOne_IExt
     public function connect($cs, $alterSession=false)
     {
         $this->parent->conn1 = new PDO("{$this->parent->databaseType}:server={$this->parent->server};" .
-                                       "database={$this->parent->db}{$cs}", $this->parent->user, $this->parent->pwd);
+                                       "database={$this->parent->db}$cs", $this->parent->user, $this->parent->pwd);
         $this->parent->user='';
         $this->parent->pwd='';
         $this->parent->conn1->setAttribute( PDO::SQLSRV_ATTR_FETCHES_NUMERIC_TYPE,true);
@@ -174,7 +174,7 @@ class PdoOne_Sqlsrv implements PdoOne_IExt
                          ->from('sys.indexes ind')
                          ->innerjoin('sys.index_columns ic ON ind.object_id = ic.object_id and ind.index_id = ic.index_id')
                          ->innerjoin('sys.columns col ON ic.object_id = col.object_id and ic.column_id = col.column_id')
-                         ->where("OBJECT_NAME( ind.object_id)='{$table}'")
+                         ->where("OBJECT_NAME( ind.object_id)='$table'")
                          ->order('ind.name, ind.index_id, ic.index_column_id')->toList();
         foreach ($result as $item) {
             if ($item['is_primary_key']) {
@@ -221,7 +221,7 @@ class PdoOne_Sqlsrv implements PdoOne_IExt
                     ,fk.name fk_name')
                                ->from('sys.foreign_key_columns AS f')
                                ->innerjoin('sys.foreign_keys as fk on fk.OBJECT_ID = f.constraint_object_id')
-                               ->where("OBJECT_NAME(f.parent_object_id)='{$table}'")
+                               ->where("OBJECT_NAME(f.parent_object_id)='$table'")
                                ->order('COL_NAME(f.parent_object_id, f.parent_column_id)')->toList();
         /*echo "table:";
         var_dump($table);
@@ -385,11 +385,11 @@ class PdoOne_Sqlsrv implements PdoOne_IExt
 
     public function createSequence($tableSequence = null, $method = 'snowflake')
     {
-        $sql = "CREATE SEQUENCE [{$tableSequence}]
+        $sql = "CREATE SEQUENCE [$tableSequence]
 				    START WITH 1  
 				    INCREMENT BY 1
 			    ";
-        $sql .= "create PROCEDURE next_{$tableSequence}
+        $sql .= "create PROCEDURE next_$tableSequence
 					@node int
 				AS
 					BEGIN
@@ -400,7 +400,7 @@ class PdoOne_Sqlsrv implements PdoOne_IExt
 						declare @incr bigint
 						-- 2018-01-01 is an arbitrary epoch
 						set @current_ms=cast(DATEDIFF(s, '2018-01-01 00:00:00', GETDATE()) as bigint) *cast(1000 as bigint)  + DATEPART(MILLISECOND,getutcdate())	
-						SELECT @incr= NEXT VALUE FOR {$tableSequence}
+						SELECT @incr= NEXT VALUE FOR $tableSequence
 						-- current_ms << 22 | (node << 12) | (incr % 4096)
 						set @return=(@current_ms*cast(4194304 as bigint)) + (@node *4096) + (@incr % 4096)
 						select @return as id
@@ -410,14 +410,14 @@ class PdoOne_Sqlsrv implements PdoOne_IExt
     }
     public function getSequence($sequenceName) {
         $sequenceName = ($sequenceName == '') ? $this->parent->tableSequence : $sequenceName;
-        return "exec next_{$sequenceName} {$this->parent->nodeId}";
+        return "exec next_$sequenceName {$this->parent->nodeId}";
     }
 
     public function createTable($tableName, $definition, $primaryKey = null, $extra = '', $extraOutside = '')
     {
         $extraOutside = ($extraOutside === '') ? 'ON [PRIMARY]' : $extraOutside;
         $sql = "set nocount on;
-				CREATE TABLE [{$tableName}] (";
+				CREATE TABLE [$tableName] (";
         foreach ($definition as $key => $type) {
             $sql .= "[$key] $type,";
         }
@@ -451,13 +451,13 @@ class PdoOne_Sqlsrv implements PdoOne_IExt
                         }
                         break;
                     case '':
-                        $sql .= "CREATE INDEX {$tableName}_{$key}_idx ON {$tableName} ({$key}) $value;";
+                        $sql .= "CREATE INDEX {$tableName}_{$key}_idx ON $tableName ($key) $value;";
                         break;
                     case 'UNIQUE':
-                        $sql .= "CREATE UNIQUE INDEX {$tableName}_{$key}_idx ON {$tableName} ({$key}) $value;";
+                        $sql .= "CREATE UNIQUE INDEX {$tableName}_{$key}_idx ON $tableName ($key) $value;";
                         break;
                     case 'FOREIGN':
-                        $sql .= "ALTER TABLE {$tableName} ADD FOREIGN KEY ($key) $value;";
+                        $sql .= "ALTER TABLE $tableName ADD FOREIGN KEY ($key) $value;";
                         break;
                     default:
                         trigger_error("createTable: [$type KEY] not defined");
@@ -483,7 +483,7 @@ class PdoOne_Sqlsrv implements PdoOne_IExt
             $type = strtoupper(trim(substr($value, 0, $p0)));
             $value = substr($value, $p0 + 4);
             if($type==='FOREIGN') {
-                $sql .= "ALTER TABLE {$tableName} ADD FOREIGN KEY ($key) $value;";
+                $sql .= "ALTER TABLE $tableName ADD FOREIGN KEY ($key) $value;";
             }
         }
         return $sql;
@@ -496,7 +496,7 @@ class PdoOne_Sqlsrv implements PdoOne_IExt
         //}
         if (strpos($sql, ',')) {
             $arr = explode(',', $sql);
-            return " OFFSET {$arr[0]} ROWS FETCH NEXT {$arr[1]} ROWS ONLY";
+            return " OFFSET $arr[0] ROWS FETCH NEXT $arr[1] ROWS ONLY";
         }
 
         return " OFFSET 0 ROWS FETCH NEXT $sql ROWS ONLY";
@@ -533,10 +533,12 @@ class PdoOne_Sqlsrv implements PdoOne_IExt
     public function callProcedure($procName, &$arguments = [], $outputColumns = [])
     {
         // TODO: Implement callProcedure() method.
+        throw new \RuntimeException('not defined yet');
     }
 
     public function createProcedure($procedureName, $arguments = [], $body = '', $extra = '')
     {
         // TODO: Implement createProcedure() method.
+        throw new \RuntimeException('not defined yet');
     }
 }

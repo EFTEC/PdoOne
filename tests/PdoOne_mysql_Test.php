@@ -249,15 +249,7 @@ class PdoOne_mysql_Test extends TestCase
         self::assertContains('$pdo->createTable(\'table1', $this->pdoOne->generateCodeCreate('table1'));
     }
 
-    public function test_debug()
-    {
-        $file = __DIR__ . '/file.txt';
-        $this->pdoOne->logFile = $file;
-        $this->pdoOne->debugFile('dummy');
-        self::assertEquals(true, file_exists($file));
-        @unlink($file);
-        $this->pdoOne->logFile = '';
-    }
+
 
     public function test_chainresetErrorMeta()
     {

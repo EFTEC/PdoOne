@@ -446,7 +446,7 @@ class PdoOne_Oci implements PdoOne_IExt
     }
     public function getSequence($sequenceName) {
         $sequenceName = ($sequenceName == '') ? $this->parent->tableSequence : $sequenceName;
-        return "select {$sequenceName}.nextval as \"id\" from dual";
+        return "select $sequenceName.nextval as \"id\" from dual";
     }
 
     public function createTable($tableName, $definition, $primaryKey = null, $extra = '', $extraOutside = '')

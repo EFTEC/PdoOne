@@ -7,19 +7,30 @@ use mapache_commons\Collection;
 include "../../vendor/autoload.php";
 include "../Collection.php";
 include "../dBug.php";
-echo "<body><div style='width:600px'>";
+echo "<body>";
 // connecting to database sakila at 127.0.0.1 with user root and password abc.123
 $dao=new PdoOne("mysql","127.0.0.1","root","abc.123","sakila","");
-$dao->logLevel=3;
+$dao->logLevel=4;
+$dao->throwOnError=true;
+$dao->customError=true;
 try {
     echo "<h1>Connection. The instance {$dao->server}, base:{$dao->db}  user:{$dao->user} and password:{$dao->pwd} must exists</h1>";
     $dao->connect();
     echo "Connected A-OK!<br>";
 } catch (Exception $e) {
     echo "<h2>connection error:</h2>";
-    echo $dao->lastError()."-".$e->getMessage()."<br>";
+    echo $dao->lastError()."-".$e->getMessage()." FIN<br>";
     die(1);
 }
+/*
+function f1($arg1) {
+    global $dao;
+    $dao->runRawQuery('select * from actor where actor_id2=:arg',['arg'=>'abc']);
+    $dao->select('*')->from('actor')->where(['actor_id'=>'aaaa'])->toList();
+}
+f1('hello');
+*/
+
 
 echo "<h1>Stat</h1>";
 
@@ -224,7 +235,7 @@ try {
     echo $ex->getTraceAsString();
 }
 */
-echo "</div></body>";
+echo "</body>";
 function build_table($array){
     if (!isset($array[0])) {
         $tmp=$array;

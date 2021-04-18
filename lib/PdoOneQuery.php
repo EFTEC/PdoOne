@@ -51,6 +51,10 @@ class PdoOneQuery
     protected $having = [];
     protected $distinct = '';
     //<editor-fold desc="Query Builder DQL functions" defaultstate="collapsed" >
+    /**
+     * @var bool
+     */
+    private $throwOnErrorB;
 
     /**
      * PdoOneQuery constructor.
@@ -78,7 +82,7 @@ class PdoOneQuery
     {
         $uid = false;
         if ($sql === null) {
-            $this->parent->beginTry();
+            $this->beginTry();
             /** @var PDOStatement $stmt */
             $stmt = $this->runGen(false, PDO::FETCH_ASSOC, 'tometa', $this->parent->genError);
             if ($this->endtry() === false) {
@@ -157,7 +161,7 @@ class PdoOneQuery
                 }
             }
 
-            /** @var PDOStatement $stmt */
+            /** @var PDOStatement|bool $stmt */
             $stmt = $this->parent->prepare($sql);
         } catch (Exception $e) {
             $this->throwErrorChain('Error in prepare runGen', $extraIdCache, ['values' => $allparam], $throwError, $e);
@@ -171,18 +175,18 @@ class PdoOneQuery
         $reval = true;
         if ($allparam) {
             try {
-                foreach ($allparam as $k => $v) {
-                    $reval = $reval && $stmt->bindParam($v[0], $allparam[$k][1], $v[2]);
+                foreach ($allparam as $k => &$v) {
+                    $reval = $reval && $stmt->bindParam($v[0], $v[1], $v[2]);
                 }
             } catch (Exception $ex) {
-                if (is_object($allparam[$k][1])) {
+                if (is_object($v[1])) {
                     $this->throwErrorChain("Error in bind. Parameter error."
-                        , "Parameter {$v[0]} ($k) is an object of the class " . get_class($allparam[$k][1])
+                        , "Parameter $v[0] ($k) is an object of the class " . get_class($v[1])
                         , ['values' => $allparam], $throwError);
                     $this->builderReset();
                     return false;
                 }
-                $this->throwErrorChain("Error in bind. Parameter error.", "Parameter {$v[0]} ($k)"
+                $this->throwErrorChain("Error in bind. Parameter error.", "Parameter $v[0] ($k)"
                     , ['values' => $allparam], $throwError);
                 $this->builderReset();
                 return false;
@@ -339,13 +343,13 @@ class PdoOneQuery
         if ($this->parent->logLevel === 0) {
             $txt = 'Error on database';
         }
-        if ($this->parent->logLevel >= 2) {
-            $txt .= "\n<br><b>extra:</b>[{$txtExtra}]";
+        /*if ($this->parent->logLevel >= 2) {
+            $txt .= "\n<br><b>extra:</b>[$txtExtra]";
         }
         if ($this->parent->logLevel >= 2) {
             $txt .= "\n<br><b>last query:</b>[{$this->parent->lastQuery}]";
-        }
-        if ($this->parent->logLevel >= 3) {
+        }*/
+        /*if ($this->parent->logLevel >= 3) {
             $txt .= "\n<br><b>database:</b>" . $this->parent->server . ' - ' . $this->parent->db;
             if (is_array($extraParam)) {
                 foreach ($extraParam as $k => $v) {
@@ -362,13 +366,11 @@ class PdoOneQuery
                 $txt .= "\n<br><b>trace :</b>[" . str_replace("\n", "\n<br>", $exception->getTraceAsString()) . "]";
                 $txt .= "\n<br><b>code :</b>[" . str_replace("\n", "\n<br>", $exception->getCode()) . "]\n<br>";
             }
-        }
-        if ($this->parent->getMessages() === null) {
-            $this->parent->debugFile($txt, 'ERROR');
-        } else {
+        }*/
+        if ($this->parent->getMessages() !== null) {
             $this->parent->getMessages()->addItem($this->parent->db, $txt);
-            $this->parent->debugFile($txt, 'ERROR');
         }
+        $this->parent->debugFile($txt, 'ERROR');
         $this->parent->errorText = $txt;
 
         if ($throwError && $this->parent->throwOnError && $this->parent->genError) {
@@ -376,7 +378,19 @@ class PdoOneQuery
         }
         $this->builderReset(true); // it resets the chain if any.
     }
-
+    /**
+     * Begin a try block. It marks the erroText as empty and it store the value of genError
+     */
+    public function beginTry()
+    {
+        $this->parent->errorText = '';
+        $this->parent->isThrow = $this->parent->genError; // this value is deleted when it trigger an error
+        $this->throwOnErrorB = $this->parent->throwOnError;
+        $this->parent->throwOnError = false;
+        if($this->parent->customError) {
+            set_exception_handler([$this->parent,'custom_exception_handler']);
+        }
+    }
     /**
      * It ends a try block and throws the error (if any)
      *
@@ -385,10 +399,16 @@ class PdoOneQuery
      */
     private function endTry()
     {
-        $this->parent->throwOnError = $this->parent->throwOnErrorB;
+        $this->parent->throwOnError = $this->throwOnErrorB;
         if ($this->parent->errorText) {
             $this->throwErrorChain('endtry:' . $this->parent->errorText, '', '', $this->parent->isThrow);
+            if($this->parent->customError) {
+                restore_exception_handler();
+            }
             return false;
+        }
+        if($this->parent->customError) {
+            restore_exception_handler();
         }
         return true;
     }
@@ -411,7 +431,6 @@ class PdoOneQuery
      */
     public function firstScalar($colName = null)
     {
-        $rows = null;
         $useCache = $this->useCache; // because builderReset cleans this value
         if ($useCache !== false) {
             $sql = $this->sqlGen();
@@ -425,13 +444,12 @@ class PdoOneQuery
                 return $rows;
             }
         }
-        $this->parent->beginTry();
-        /** @var PDOStatement $statement */
+        $this->beginTry();
+        /** @var PDOStatement|bool $statement */
         $statement = $this->runGen(false, PDO::FETCH_ASSOC, 'firstscalar', false);
         if ($this->endtry() === false) {
             return null;
         }
-        $row = null;
         if ($statement === false) {
             $row = null;
         } elseif (!$statement->columnCount()) {
@@ -488,8 +506,8 @@ class PdoOneQuery
                 return $rows;
             }
         }
-        $this->parent->beginTry();
-        /** @var PDOStatement $statement */
+        $this->beginTry();
+        /** @var PDOStatement|bool $statement */
         $statement = $this->runGen(false, PDO::FETCH_ASSOC, 'last', false);
         if ($this->endtry() === false) {
             return null;
@@ -529,7 +547,7 @@ class PdoOneQuery
     public function toListSimple()
     {
         $useCache = $this->useCache; // because builderReset cleans this value
-        $this->parent->beginTry();
+        $this->beginTry();
         $rows = $this->runGen(true, PDO::FETCH_COLUMN, 'tolistsimple', false);
         if ($this->endtry() === false) {
             return false;
@@ -670,16 +688,14 @@ class PdoOneQuery
                         if (strpos($k, '?') === false) {
                             if (strpos($k, ':') !== false) {
                                 // "aaa=:aaa"
-
                                 $parts = explode(':', $k, 2);
                                 $paramName = ':' . str_replace('.', '_', $parts[1]);
-                                $named[] = $paramName;
                             } else {
                                 // "aaa"
 
                                 $paramName = ':' . str_replace('.', '_', $k);
-                                $named[] = $paramName;
                             }
+                            $named[] = $paramName;
                         } else {
                             // "aa=?"
                             $paramName = $this->whereCounter;
@@ -710,7 +726,7 @@ class PdoOneQuery
                 $queryEnd[] = $where;
                 $numeric = isset($params[0]);
                 if ($numeric) {
-                    foreach ($params as $k => $v) {
+                    foreach ($params as $v) {
                         // constructParam2('name=? and type>?', ['Coca-Cola',12345]);
                         $named[] = '?';
                         $pars[] = [
@@ -737,7 +753,7 @@ class PdoOneQuery
                 $numeric = isset($where[0]);
 
                 if ($numeric) {
-                    foreach ($where as $k => $v) {
+                    foreach ($where as $v) {
                         //$named[] = '?';
                         $queryEnd[] = $v;
                     }
@@ -750,7 +766,7 @@ class PdoOneQuery
                 }
                 $numeric = isset($params[0]);
                 if ($numeric) {
-                    foreach ($params as $k => $v) {
+                    foreach ($params as $v) {
                         //$paramEnd[]=$param;
                         // constructParam2(['name','type'], ['Coca-Cola',123]);
                         $named[] = '?';
@@ -894,7 +910,7 @@ class PdoOneQuery
      *                                             concatenated with the value.
      *                                             Example '|'
      *
-     * @return array|bool|null
+     * @return array|null
      * @throws Exception
      */
     public function toListKeyValue($extraValueSeparator = null)
@@ -936,7 +952,7 @@ class PdoOneQuery
     public function toList($pdoMode = PDO::FETCH_ASSOC)
     {
         $useCache = $this->useCache; // because builderReset cleans this value
-        $this->parent->beginTry();
+        $this->beginTry();
         $rows = $this->runGen(true, $pdoMode, 'tolist', false);
         if ($this->endtry() === false) {
             return false;
@@ -999,13 +1015,12 @@ class PdoOneQuery
                 return $this->parent->internalCache[$uid];
             }
         }
-        $this->parent->beginTry();
-        /** @var PDOStatement $statement */
+        $this->beginTry();
+        /** @var PDOStatement|bool $statement */
         $statement = $this->runGen(false, PDO::FETCH_ASSOC, 'first', false);
         if ($this->endtry() === false) {
             return null;
         }
-        $row = null;
         if ($statement === false) {
             $row = null;
         } elseif (!$statement->columnCount()) {
@@ -1118,15 +1133,19 @@ class PdoOneQuery
 
     public function _aggFn($method, $sql = '', $arg = '')
     {
+        $this->parent->beginTry();
         if ($arg === '') {
             $arg = $sql; // if the argument is empty then it uses sql as argument
             $sql = ''; // and it lefts sql as empty
         }
         if ($arg === '*' || $this->parent->databaseType !== 'sqlsrv') {
-            return $this->select("select $method($arg) $sql");
+            $r=$this->select("select $method($arg) $sql");
+            $this->parent->endTry();
+            return $r;
         }
-
-        return $this->select("select $method(cast($arg as decimal)) $sql");
+        $r=$this->select("select $method(cast($arg as decimal)) $sql");
+        $this->parent->endTry();
+        return $r;
     }
 
     /**
@@ -1434,11 +1453,12 @@ class PdoOneQuery
      * @param array        $excludeColumn (optional) columns to exclude. Example
      *                                    ['col1','col2']
      *
-     * @return mixed
+     * @return false|int|string
      * @throws Exception
      */
     public function insertObject($tableName, &$object, $excludeColumn = [])
     {
+        $this->parent->beginTry();
         $objectCopy = (array)$object;
         foreach ($excludeColumn as $ex) {
             unset($objectCopy[$ex]);
@@ -1458,6 +1478,7 @@ class PdoOneQuery
                 }
             }
         }
+        $this->parent->endTry();
         return $id;
     }
 
@@ -1479,7 +1500,7 @@ class PdoOneQuery
      * @param string[]|null     $tableDef
      * @param string[]|int|null $values
      *
-     * @return mixed Returns the identity (if any) or false if the operation fails.
+     * @return false|int|string Returns the identity (if any) or false if the operation fails.
      * @throws Exception
      */
     public function insert(
@@ -1517,7 +1538,7 @@ class PdoOneQuery
             = /** @lang text */
             'insert into ' . $this->parent->addDelimiter($tableName) . '  ' . $this->constructInsert();
         $param = $this->setParamAssoc;
-        $this->parent->beginTry();
+        $this->beginTry();
         $this->parent->runRawQuery($sql, $param, true, $this->useCache, $this->cacheFamily);
         $this->builderReset(true);
         if ($this->endtry() === false) {
@@ -1576,7 +1597,7 @@ class PdoOneQuery
      * @param string[]|null $tableDefWhere
      * @param string[]|int  $valueWhere
      *
-     * @return mixed
+     * @return false|int
      * @throws Exception
      */
     public function delete(
@@ -1585,6 +1606,7 @@ class PdoOneQuery
         $valueWhere = PdoOne::NULL
     )
     {
+
         if ($tableName === null) {
             $tableName = $this->from;
         } else {
@@ -1600,6 +1622,7 @@ class PdoOneQuery
         }
         if ($errorCause) {
             $this->throwErrorChain('Delete:' . $errorCause, '');
+            $this->parent->endTry();
             return false;
         }
 
@@ -1612,7 +1635,7 @@ class PdoOneQuery
         $sql .= $this->constructWhere();
         $param = $this->whereParamAssoc;
 
-        $this->parent->beginTry();
+        $this->beginTry();
         $stmt = $this->parent->runRawQuery($sql, $param, false, $this->useCache, $this->cacheFamily);
         $this->builderReset(true);
         if ($this->endtry() === false) {
@@ -1645,7 +1668,7 @@ class PdoOneQuery
      * @param string[]|null     $tableDefWhere
      * @param string[]|int|null $valueWhere
      *
-     * @return mixed
+     * @return false|int
      * @throws Exception
      */
     public function update(
@@ -1693,7 +1716,7 @@ class PdoOneQuery
         $param = array_merge($this->setParamAssoc, $this->whereParamAssoc); // the order matters.
 
         // $this->builderReset();
-        $this->parent->beginTry();
+        $this->beginTry();
         $stmt = $this->parent->runRawQuery($sql, $param, false, $this->useCache, $this->cacheFamily);
         $this->builderReset(true);
         if ($this->endtry() === false) {

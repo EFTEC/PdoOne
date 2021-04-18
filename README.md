@@ -1304,10 +1304,10 @@ var_dump($pdoOne->lastParam); // and it shows the last parameters.
 
 ### Generating a log file
 
-If empty then it will not generate a log file
+If empty then it will not generate a log file (using the php log file)
 
 ```php
-$pdoOne->logFile='/folder/log.log'; 
+$pdoOne->logFile=true; 
 ```
 
 
@@ -1953,7 +1953,9 @@ In a nutshell:
 * Every minor version means that it adds a new functionality i.e. 1.5 -> 1.6 (new methods)
 * Every decimal version means that it patches/fixes/refactoring a previous functionality i.e. 1.5.0 -> 1.5.1 (fix)
 
-
+* 2.12 2021-04-17
+  * [debug] Change how it shows the errors. Now it uses a custom error handle
+    (it could be disabled with setting $this->customError=false)
 * 2.11.1 2021-04-17
   * [fix] Mysql extension now knows the type int24 (plus other types of variables).
   * [fix] Regresion, some removed { } caused a bug when they are followed by []  
