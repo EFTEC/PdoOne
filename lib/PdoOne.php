@@ -52,11 +52,11 @@ use stdClass;
  * @package       eftec
  * @author        Jorge Castro Castillo
  * @copyright (c) Jorge Castro C. MIT License  https://github.com/EFTEC/PdoOne
- * @version       2.13
+ * @version       2.13.1
  */
 class PdoOne
 {
-    const VERSION = '2.13';
+    const VERSION = '2.13.1';
     /** @var int We need this value because null and false could be a valid value. */
     const NULL = PHP_INT_MAX;
     /** @var string Prefix of the tables */
@@ -2615,7 +2615,7 @@ abstract class Abstract{classname} extends {baseclass}
      */
     public static function where($sql, $param = PdoOne::NULL)
     {
-        static::$pdoOneQuery= self::getPdoOne()->where($sql, $param,false,{classname}::TABLE);
+        static::getQuery()->where($sql, $param,false,{classname}::TABLE);
         return {classname}::class;
     }
 
@@ -2690,7 +2690,7 @@ abstract class Abstract{classname} extends {baseclass}
 
     public static function limit($sql)
     {
-        static::$pdoOneQuery=self::getPdoOne()->limit($sql);
+        static::getQuery()->limit($sql);
         return {classname}::class;
     }
 
@@ -3295,6 +3295,20 @@ eot;
     {
         $query = new PdoOneQuery($this);
         return $query->set($sqlOrArray, $param);
+    }
+    /**
+     * Returns true if the current query has a "having" or "where"
+     *
+     * @param bool $having <b>true</b> it return the number of where<br>
+     *                     <b>false</b> it returns the number of having
+     *
+     * @return bool
+     * @noinspection PhpUnusedParameterInspection
+     */
+    public function hasWhere($having = false)
+    {
+        // there is not a query so it always returns false. This method is keep for compatibility with old code.
+        return false;
     }
 
     /**

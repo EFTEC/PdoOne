@@ -1,15 +1,14 @@
-<?php /** @noinspection PhpPropertyOnlyWrittenInspection */
-/** @noinspection StrContainsCanBeUsedInspection */
-/** @noinspection JsonEncodingApiUsageInspection */
-/** @noinspection PhpStrFunctionsInspection */
-/** @noinspection PhpSwitchCanBeReplacedWithMatchExpressionInspection */
-/** @noinspection NullCoalescingOperatorCanBeUsedInspection */
-/** @noinspection AccessModifierPresentedInspection */
-/** @noinspection PhpMissingFieldTypeInspection */
-/** @noinspection PhpMissingReturnTypeInspection */
-/** @noinspection PhpPureAttributeCanBeAddedInspection */
-
-/**
+<?php
+/** @noinspection PhpPropertyOnlyWrittenInspection
+ * @noinspection StrContainsCanBeUsedInspection 
+ * @noinspection JsonEncodingApiUsageInspection 
+ * @noinspection PhpStrFunctionsInspection 
+ * @noinspection PhpSwitchCanBeReplacedWithMatchExpressionInspection 
+ * @noinspection NullCoalescingOperatorCanBeUsedInspection 
+ * @noinspection AccessModifierPresentedInspection 
+ * @noinspection PhpMissingFieldTypeInspection 
+ * @noinspection PhpMissingReturnTypeInspection 
+ * @noinspection PhpPureAttributeCanBeAddedInspection
  * @noinspection PhpMissingParamTypeInspection
  * @noinspection ReturnTypeCanBeDeclaredInspection
  * @noinspection UnknownInspectionInspection

@@ -1,4 +1,4 @@
-<?php
+<?php /** @noinspection PhpUnhandledExceptionInspection */
 
 use eftec\_BasePdoOneRepo;
 use eftec\PdoOne;
@@ -18,20 +18,21 @@ class PdoOne_mysql_Test extends TestCase
 
     public function test_gen()
     {
-        $this->pdoOne->builderReset();
+        $query=new \eftec\PdoOneQuery($this->pdoOne);
+        $query->builderReset();
         self::assertEquals('select * from table where a1=:a1 and a2=:a2', $this->pdoOne->select('*')
             ->from('table')->where(['a1' => 123, 'a2' => 456])->sqlGen());
-        self::assertEquals([0 => [':a1', 123, 1, null], 1 => [':a2', 456, 1, null]], $this->pdoOne->getWhereParamAssoc());
+        self::assertEquals([0 => [':a1', 123, 1, null], 1 => [':a2', 456, 1, null]], $query->getWhereParamAssoc());
 
-        $this->pdoOne->builderReset();
+        $query->builderReset();
         self::assertEquals('select * from table where fn(a3)=:a3 and a2=:a2', $this->pdoOne->select('*')
             ->from('table')->where(['fn(a3)=:a3' => 1234, 'a2' => 456])->sqlGen());
-        self::assertEquals([0 => [':a3', 1234, 1, null], 1 => [':a2', 456, 1, null]], $this->pdoOne->getWhereParamAssoc());
+        self::assertEquals([0 => [':a3', 1234, 1, null], 1 => [':a2', 456, 1, null]], $query->getWhereParamAssoc());
 
-        $this->pdoOne->builderReset();
+        $query->builderReset();
         self::assertEquals('select * from table where a1=? and a2=?', $this->pdoOne->select('*')
             ->from('table')->where(['a1', 123, 'a2', 456])->sqlGen());
-        self::assertEquals([0 => [1, 123, 1, null], 1 => [2, 456, 1, null]], $this->pdoOne->getWhereParamAssoc());
+        self::assertEquals([0 => [1, 123, 1, null], 1 => [2, 456, 1, null]], $query->getWhereParamAssoc());
 
     }
     public function test_dateconvert() {
@@ -65,51 +66,52 @@ class PdoOne_mysql_Test extends TestCase
      */
     public function test_parameter()
     {
+        $query=new \eftec\PdoOneQuery($this->pdoOne);
 
-        $this->pdoOne->builderReset();
+        $query->builderReset();
         self::assertEquals([
             ['name=:name and type<:type'],
             [[':name', 'Coca-Cola', PDO::PARAM_STR, null], [':type', 987, PDO::PARAM_INT, null]]
-        ], $this->pdoOne->constructParam2('name=:name and type<:type', [':name' => 'Coca-Cola', ':type' => 987],
+        ], $query->constructParam2('name=:name and type<:type', [':name' => 'Coca-Cola', ':type' => 987],
             'where', true));
 
-        $this->pdoOne->builderReset();
+        $query->builderReset();
         self::assertEquals([
             ['name=? and type<?'],
             [[1, 'Coca-Cola', PDO::PARAM_STR, null], [2, 987, PDO::PARAM_INT, null]]
-        ], $this->pdoOne->constructParam2('name=? and type<?', ['Coca-Cola', 987], 'where', true));
+        ], $query->constructParam2('name=? and type<?', ['Coca-Cola', 987], 'where', true));
 
-        $this->pdoOne->builderReset();
+        $query->builderReset();
         self::assertEquals([
             ['name=:name', 'type=:type'],
             [[':name', 'Coca-Cola', PDO::PARAM_STR, null], [':type', 987, PDO::PARAM_INT, null]]
-        ], $this->pdoOne->constructParam2(['name', 'type'], [':name' => 'Coca-Cola', ':type' => 987], 'where', true));
+        ], $query->constructParam2(['name', 'type'], [':name' => 'Coca-Cola', ':type' => 987], 'where', true));
 
-        $this->pdoOne->builderReset();
+        $query->builderReset();
         self::assertEquals([
             ['name=?', 'type<?'],
             [[1, 'Coca-Cola', PDO::PARAM_STR, null], [2, 987, PDO::PARAM_INT, null]]
-        ], $this->pdoOne->constructParam2(['name=?' => 'Coca-Cola', 'type<?' => 987], null, 'where', true));
+        ], $query->constructParam2(['name=?' => 'Coca-Cola', 'type<?' => 987], null, 'where', true));
 
-        $this->pdoOne->builderReset();
+        $query->builderReset();
         self::assertEquals([
             ['name=?', 'type<?'],
             [[1, 'Coca-Cola', PDO::PARAM_STR, null], [2, 987, PDO::PARAM_INT, null]]
-        ], $this->pdoOne->constructParam2(['name=?', 'Coca-Cola', 'type<?', 987], null, 'where', true));
+        ], $query->constructParam2(['name=?', 'Coca-Cola', 'type<?', 987], null, 'where', true));
 
-        $this->pdoOne->builderReset();
-        self::assertEquals([['aa=bbb'], []], $this->pdoOne->constructParam2('aa=bbb', PdoOne::NULL, 'where', true));
+        $query->builderReset();
+        self::assertEquals([['aa=bbb'], []], $query->constructParam2('aa=bbb', PdoOne::NULL, 'where', true));
 
-        $this->pdoOne->builderReset();
+        $query->builderReset();
         self::assertEquals([
             ['name=:name', 'type=:type'],
             [
                 [':name', 'Coca-Cola', PDO::PARAM_STR, null],
                 [':type', 987, PDO::PARAM_INT, null]
             ]
-        ], $this->pdoOne->constructParam2(['name' => 'Coca-Cola', 'type' => 987], null, 'where', true));
+        ], $query->constructParam2(['name' => 'Coca-Cola', 'type' => 987], null, 'where', true));
 
-        $this->pdoOne->builderReset();
+        $query->builderReset();
     }
 
     public function test_Time()
@@ -333,7 +335,7 @@ class PdoOne_mysql_Test extends TestCase
             self::assertContains('Failed to prepare', $this->pdoOne->errorText);
             self::assertEquals('select * from missintable', $this->pdoOne->lastQuery);
             try {
-                $this->pdoOne->toList();
+                $this->pdoOne->from('')->toList();
             } catch (Exception $e) {
                 // stack was deleted so the columns and table are not keeped
                 self::assertEquals('select  from ', $this->pdoOne->lastQuery);
