@@ -581,10 +581,10 @@ Generates a query that returns a count of values.
 It is a macro of the method select()
 
 ```php
-$result = $pdoOne->count('from table where condition=1')->firstScalar(); // select count(*) from table where c..
-$result = $pdoOne->count()->from('table')->where('condition=?',[1])->firstScalar(); // select count(*) from table where c..
-$result = $pdoOne->count('from table','col1')->firstScalar(); // select count(col1) from table
-$result = $pdoOne->count()->from('table')->firstScalar(); // select count(*) from table
+$result = $pdoOne->count('from table where condition=1'); // select count(*) from table where c..
+$result = $pdoOne->count()->from('table')->where('condition=?',[1]); // select count(*) from table where c..
+$result = $pdoOne->count('from table','col1'); // select count(col1) from table
+$result = $pdoOne->count()->from('table'); // select count(*) from table
 ```
 
 ### min($sql,$arg='*')
@@ -594,10 +594,10 @@ If $arg is empty then it uses $sql for the name of the column
 It is a macro of the method select()
 
 ```php
-$result = $pdoOne->min('from table where condition=1','col')->firstScalar(); // select min(col) from table where c..
-$result = $pdoOne->min('from table','col1')->firstScalar(); // select min(col1) from table
-$result = $pdoOne->min('','col1')->from('table')->firstScalar(); // select min(col1) from table
-$result = $pdoOne->min('col1')->from('table')->firstScalar(); // select min(col1) from table
+$result = $pdoOne->min('from table where condition=1','col'); // select min(col) from table where c..
+$result = $pdoOne->min('from table','col1'); // select min(col1) from table
+$result = $pdoOne->min('','col1')->from('table'); // select min(col1) from table
+$result = $pdoOne->min('col1')->from('table'); // select min(col1) from table
 ```
 
 ### max($sql,$arg='*')
@@ -607,8 +607,8 @@ If $arg is empty then it uses $sql for the name of the column
 It is a macro of the method select()
 
 ```php
-$result = $pdoOne->max('from table where condition=1','col')->firstScalar(); // select max(col) from table where c..
-$result = $pdoOne->max('from table','col1')->firstScalar(); // select max(col1) from table
+$result = $pdoOne->max('from table where condition=1','col'); // select max(col) from table where c..
+$result = $pdoOne->max('from table','col1'); // select max(col1) from table
 ```
 
 ### sum($sql,$arg='*')
@@ -618,8 +618,8 @@ If $arg is empty then it uses $sql for the name of the column
 It is a macro of the method select()
 
 ```php
-$result = $pdoOne->sum('from table where condition=1','col')->firstScalar(); // select sum(col) from table where c..
-$result = $pdoOne->sum('from table','col1')->firstScalar(); // select sum(col1) from table
+$result = $pdoOne->sum('from table where condition=1','col'); // select sum(col) from table where c..
+$result = $pdoOne->sum('from table','col1'); // select sum(col1) from table
 ```
 
 ### avg($sql,$arg='*')
@@ -629,8 +629,8 @@ If $arg is empty then it uses $sql for the name of the column
 It is a macro of the method select()
 
 ```php
-$result = $pdoOne->avg('from table where condition=1','col')->firstScalar(); // select avg(col) from table where c..
-$result = $pdoOne->avg('from table','col1')->firstScalar(); // select avg(col1) from table
+$result = $pdoOne->avg('from table where condition=1','col'); // select avg(col) from table where c..
+$result = $pdoOne->avg('from table','col1'); // select avg(col1) from table
 ```
 
 ### distinct($distinct='distinct')
@@ -1953,78 +1953,141 @@ In a nutshell:
 * Every minor version means that it adds a new functionality i.e. 1.5 -> 1.6 (new methods)
 * Every decimal version means that it patches/fixes/refactoring a previous functionality i.e. 1.5.0 -> 1.5.1 (fix)
 
+
+
+* 2.14 2021-06-04
+
+* * **_BasePdoOneRepo** now works more closely with the class **PdoOneQuery**, so each query is a different instance.
+  
+  * [fix] **PdoOne** dateConvertInput() does not crashes when the value is not a date.
+  
+  * [fix] **PdoOne** throwError() does not stack errors but still triggers the last error (if any).
+  
+  * [changes] ❗ **PdoOne** aggregate functions (sum,min,max,avg) now returns a value instead of generating a query.
+  
+    * ```php
+      $result=$pdo->sum('xxx')->firstScalar(); // before
+      $result=$pdo->sum('xxx'); // now
+      ```
+  
+      
+  
+  * [fix] **PdoOne**  generateCodeArray() used for the generation of classes, returns the correct name when it is set.
+  
+  * [changes] **_BasePdoOneRepo**: reset(),getQuery(),dropTable(),useCache(),limit(),newQuery(),order(),innerjoin(),left(),right()
+  
+  * [changes] **PdoOneQuery**: Multiples changes.
+  
+    
+  
 * 2.13.1 2021-05-22
+  
   * [fix] [orm] the method where() and limit() generated a new query every time, so the command 
     ClaseRepo::recursive()::where() failed generated two queries instead of one.
+  
 * 2.13 2021-04-17
   * [debug] More changes to how it shows error messages.
   * /_BasePdoOneRepo updated to version 5.0 (binary 5).
+  
 * 2.12 2021-04-17
   * [debug] Change how it shows the errors. Now it uses a custom error handle
     (it could be disabled with setting $this->customError=false)
+  
 * 2.11.1 2021-04-17
   * [fix] Mysql extension now knows the type int24 (plus other types of variables).
   * [fix] Regresion, some removed { } caused a bug when they are followed by []  
   * [code] 
+  
 * 2.11 2021-04-17
+  
   * [code] Lots of cleanups. Removed unneeding { }. Merged common code in branches.
+  
 * 2.10.3 2021-04-14
   * [fix] BasePdoOne fixed method getRecursive(), it generated a new query, and now it reuses a query (if any).
   * It also returns the query
+  
 * 2.10.2 2021-04-06
+  
   * Fixed
+  
 * 2.10.1 2021-04-05
+  
   * Fixed the generation of the ORM in the use of where(), limit() and dependencies()     
+  
 * 2.10 2021-04-04
+  
   * Some CLI cleanups.
+  
 * 2.9.4 2021-03-22
   * **ORM:** **_BasePdoOneRepo** is updated to BINARYVERSION=4. If you are using the ORM, then you should rebuild all ORM classes.
   * **CORE:** Query chains creates a new instance of **PdoOneQuery** instead of a instance of **PdoOne**, so it is possible to define
     multiples chains without interfering each others.
   * **ORM:** Fixed a problem with the base class. Now the Base class contains the constant COMPILEDVERSION
   * **ORM**: Fixed a problem with the model and the method toArray()
+  
 * 2.9.3 2021-02-22
+  
   * fix a bug with **useCache()** when we use with where()   
+  
 * 2.9.2 2021-02-18
+  
   * fixed a bug with createSequence()   
+  
 * 2.9.1 2021-02-16
+  
   * Fixed debugFile() when the file is unable to open.   
+  
 * 2.9 2021-02-16
   * BasePdoOneRepo::getPdoOne() validates if the static class uses the right version.  It is only done once 
     (when it creates the instance of pdoOne), so it must not affects the performance.
   * **You should re-generate all ORM classes generated (if you are generated one)**  
+  
 * **2.8** 2021-02-13
+  
   * Updated _BasePdoOneRepo to 4.13. **You should re-generate all ORM classes generated (if you are generated one)** 
+  
 * 2.7.1 2021-01-21
+  
   * Oracle is still a WIP (OCI)
+  
 * **2.7** 2021-01-10
   * Many changes, compatibility with PHP 8.0
   * Fixed a bug with cache where it keeps the cache of previous runs.
   * Note: $PdoOne->useCache considers = false (no cache) and everything else as use cache. Nulls are not allowed.
   * Note: Previous generated code must be rebuilt it again.
+  
 * **2.6.3** 2020-10-16
   * Internal, Changed beginTry() and endTry(). Now, if an operation that uses beginTry() and endTry() fails,
     then the error is throw in endTry().
+  
 * **2.6.2** 2020-10-09
+  
   * The default argument of _first (code generated) is PdoOne::NULL instead of null because null is a valid value
+  
 * 2.6.1 2020-09-24
   * update \_BasePdoOneRepo to 4.12.1
   * Preliminary support to Oracle OCI (only raw operations)
   * \_BasePdoOneRepo() insert now allows using nulls
   * \_BasePdoOneRepo() first() the "where" uses the name of the table.
+  
 * 2.6 2020-09-17
   * the methods insert(),update(),delete() and insertObject() flushes the cache if it is called with useCache()
     , example: $this->usecache('','customers')->insert(); // delete the group cache customers.
+  
 * 2.5 2020-09-13
   * update \_BasePdoOneRepo to 4.12
   * new method setCache()
   * updated method useCache(). Now it allows '*' to use the same tables assigned by from() and joins()
+  
 * 2.4.1 2020-09-13
+  
   * The code generated now the method first() returns false if it doesn't found any value, instead of an empty array.
+  
 * 2.4 2020-09-06
   * update \_BasePdoOneRepo to 4.11
   * The code generated now store the column of the identity SELF::IDENTITY;
   * \_BasePdoOneRepo now converts objects to array recursively (array)$obj only converts the first level.
+  
 * 2.3 2020-09-06
   * new method getDefTableExtended() that returns extended information about the table (motor,description,collation and schema)
   * method truncate() has a new argument $forced. Now, it is possible to force truncate (for example, when the table has FK)
@@ -2032,18 +2095,27 @@ In a nutshell:
   * Updated \_BasePdoOneRepo
   * The code generated now allows to set values using the factory()
   * The code generated now reset the recursivity when we use the method factory()
+  
 * 2.2.6 2020-09-03
   * Updated \_BasePdoOneRepo
   * Method validateDefTable() works with table
+  
 * 2.2.5 2020-08-30
+  
   * Fixed a bug with the method dateConvert(). The conversion from date -> any other format misses the time.
+  
 * 2.2.3 2020-08-23
+  
   * \_BasePdoOneRepo update to 4.8.2. Solved a fix returning a ONETOMANY field.
+  
 * 2.2.2 2020-08-17
+  
   * \_BasePdoOneRepo update to 4.8.2. It solved a problem with insert,update,delete and merge when the input is an object.
+  
 * 2.2.1 2020-08-16
   * Fixed a bug when the system is unable to convert the date. Now, it returns false.
   * BasePdoOneRepo update to 4.8.1, if the transaction is open, then it doesn't nest a new transaction.
+  
 * 2.2 2020-08-14
   * New method setUseInternalCache() and flushInternalCache() where we could set an internal cache. The internal cache stores
     results and they are keep into memory.   For example

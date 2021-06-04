@@ -52,11 +52,11 @@ use stdClass;
  * @package       eftec
  * @author        Jorge Castro Castillo
  * @copyright (c) Jorge Castro C. MIT License  https://github.com/EFTEC/PdoOne
- * @version       2.13.1
+ * @version       2.14
  */
 class PdoOne
 {
-    const VERSION = '2.13.1';
+    const VERSION = '2.14';
     /** @var int We need this value because null and false could be a valid value. */
     const NULL = PHP_INT_MAX;
     /** @var string Prefix of the tables */
@@ -146,7 +146,7 @@ class PdoOne
     /** @var bool If true (default), then it throws a customer message.. If false, then it uses the default (PHP) style */
     public $customError = true;
     public $traceBlackList = ['PdoOne.php', 'PdoOneQuery.php', 'PdoOne_Mysql.php', 'PdoOne.Sqlsrv.php', 'PdoOne.Oci.php'
-        , 'PdoOneTestMockup.php','_BasePdoOneRepo.php'];
+        , 'PdoOneTestMockup.php', '_BasePdoOneRepo.php'];
     /** @var  PDO */
     public $conn1;
     /** @var  bool True if the transaction is open */
@@ -542,7 +542,11 @@ class PdoOne
                 }
                 /** @var DateTime $tmpDate */
                 $tmpDate = $inputValue;
-                $time = $tmpDate->format('Gis') !== '000000';
+                if (!is_object($tmpDate)) {
+                    $time = false;
+                } else {
+                    $time = $tmpDate->format('Gis') !== '000000';
+                }
                 break;
             case 'timestamp':
                 $tmpDate = new DateTime();
@@ -1367,13 +1371,13 @@ eot;
      * Write a log line for debug, clean the command chain then throw an error
      * (if throwOnError==true)
      *
-     * @param string                $txt        The message to show or chain.
-     * @param string|array          $txtExtra   It's only used if $logLevel>=2. It
+     * @param string         $txt               The message to show or chain.
+     * @param string|array   $txtExtra          It's only used if $logLevel>=2. It
      *                                          shows an extra message
-     * @param string|array          $extraParam It's only used if $logLevel>=3  It
+     * @param string|array   $extraParam        It's only used if $logLevel>=3  It
      *                                          shows parameters (if any)
      *
-     * @param bool                  $throwError if true then it throw error (is enabled). Otherwise it store the error.
+     * @param bool           $throwError        if true then it throw error (is enabled). Otherwise it store the error.
      *
      * @param null|Exception $exception
      *
@@ -1381,45 +1385,46 @@ eot;
      */
     public function throwError($txt, $txtExtra, $extraParam = '', $throwError = true, $exception = null)
     {
-        if($this->errorText!=='') {
+        if ($this->errorText !== '') {
             // there is another error pending to be displayed.
-            return;
-        }
-        if ($this->logLevel === 0) {
-            $txt .= "\n{{Message:}} [Error on database]";
-        }
-        if ($this->logLevel >= 2) {
-            $txt .= "\n{{Message:}} ".is_array($txtExtra)?json_encode($txtExtra):$txtExtra;
-            if($exception!==null) {
-                $txt .= "\n{{Message:}} " .$this->lastError().' '. $exception->getMessage();
-            } else {
-                $txt .= "\n{{Message:}} " . $this->lastError();
+            $txt = $this->errorText;
+        } else {
+            if ($this->logLevel === 0) {
+                $txt .= "\n{{Message:}} [Error on database]";
             }
-        }
-        if ($this->logLevel >= 2) {
-            $txt .= "\n{{Last query:}} [$this->lastQuery]";
-        }
-        if ($this->logLevel >= 3) {
-            $txt .= "\n{{Database:}} " . $this->server . ' - ' . $this->db;
-            if (is_array($extraParam)) {
-                foreach ($extraParam as $k => $v) {
-                    if (is_array($v) || is_object($v)) {
-                        $v = json_encode($v);
-                    }
-                    $txt .= "\n{{" . $k . ":}} $v";
+            if ($this->logLevel >= 2) {
+                $txt .= "\n{{Message:}} " . is_array($txtExtra) ? json_encode($txtExtra) : $txtExtra;
+                if ($exception !== null) {
+                    $txt .= "\n{{Message:}} " . $this->lastError() . ' ' . $exception->getMessage();
+                } else {
+                    $txt .= "\n{{Message:}} " . $this->lastError();
                 }
-            } else {
-                $txt .= "\n{{Params:}} [" . $extraParam . "]";
             }
-            if ($exception !== null) {
-                $txt = $this->custom_exception_handler($exception, $txt, true);
+            if ($this->logLevel >= 2) {
+                $txt .= "\n{{Last query:}} [$this->lastQuery]";
             }
+            if ($this->logLevel >= 3) {
+                $txt .= "\n{{Database:}} " . $this->server . ' - ' . $this->db;
+                if (is_array($extraParam)) {
+                    foreach ($extraParam as $k => $v) {
+                        if (is_array($v) || is_object($v)) {
+                            $v = json_encode($v);
+                        }
+                        $txt .= "\n{{" . $k . ":}} $v";
+                    }
+                } else {
+                    $txt .= "\n{{Params:}} [" . $extraParam . "]";
+                }
+                if ($exception !== null) {
+                    $txt = $this->custom_exception_handler($exception, $txt, true);
+                }
+            }
+            if ($this->getMessages() !== null) {
+                $this->getMessages()->addItem($this->db, $txt);
+            }
+            $this->debugFile($txt, 'ERROR');
+            $this->errorText = $txt;
         }
-        if ($this->getMessages() !== null) {
-            $this->getMessages()->addItem($this->db, $txt);
-        }
-        $this->debugFile($txt, 'ERROR');
-        $this->errorText = $txt;
         if ($throwError && $this->throwOnError && $this->genError) {
             // endtry() invalidates this call (it is never called)
 
@@ -1466,34 +1471,34 @@ eot;
                     }
                 }
                 if (!$found) {
-                    $args=[];
-                    if(is_array($error['args'])) {
+                    $args = [];
+                    if (is_array($error['args'])) {
                         foreach ($error['args'] as $v) {
-                            if(is_object($v)) {
-                                $args[]=get_class($v);
-                            } else if(is_array($v)) {
-                                $args[]=json_encode($v);
-                            } elseif($v===null) {
-                                $args[]='(null)';
+                            if (is_object($v)) {
+                                $args[] = get_class($v);
+                            } else if (is_array($v)) {
+                                $args[] = json_encode($v);
+                            } elseif ($v === null) {
+                                $args[] = '(null)';
                             } else {
-                                $args[]=$v===self::NULL?'(NULL)':"'".addslashes($v)."'";
+                                $args[] = $v === self::NULL ? '(NULL)' : "'" . addslashes($v) . "'";
                             }
                         }
                     }
-                    if(isset($error['class'])) {
-                        $function=$error['class'].$error['type'].$error['function'];
+                    if (isset($error['class'])) {
+                        $function = $error['class'] . $error['type'] . $error['function'];
                     } else {
-                        $function=$error['function'];
+                        $function = $error['function'];
                     }
 
-                    $r .= $error['file'] . ':' . $error['line']  . "\t" .$function . '('
+                    $r .= $error['file'] . ':' . $error['line'] . "\t" . $function . '('
                         . @implode(' , ', $args) . ')' . "\n";
                 }
             }
         }
         if (!$isCli) {
-            $r = str_replace(["\n", '[', ']', '{{', '}}',"\t"]
-                , ["<br>", "<b>[", "]</b>", '<u>', '</u>','&nbsp;&nbsp;&nbsp;&nbsp;']
+            $r = str_replace(["\n", '[', ']', '{{', '}}', "\t"]
+                , ["<br>", "<b>[", "]</b>", '<u>', '</u>', '&nbsp;&nbsp;&nbsp;&nbsp;']
                 , $r);
         }
         if (!$returnAsString) {
@@ -1854,7 +1859,7 @@ eot;
             $stmt = $this->conn1->prepare($statement);
         } catch (Exception $ex) {
             $stmt = false;
-            $this->throwError('Failed to prepare', $ex->getMessage().$this->lastError(), ['param' => $this->lastParam],true,$ex);
+            $this->throwError('Failed to prepare', $ex->getMessage() . $this->lastError(), ['param' => $this->lastParam], true, $ex);
         }
         if (($stmt === false) && $this->errorText === '') {
 
@@ -2160,19 +2165,21 @@ eot;
                                     $default = 'null';
                                 }
                                 if (!in_array($colName, $norepeat)) {
+
                                     if (isset($relation[$colName])) {
-                                        $key = $relation[$colName]['key'];
+                                        $rc =& $relation[$colName];
+                                        $key = $rc['key'];
 
                                         if ($key === 'PARENT') {
                                             $default = 'null';
                                         }
                                         if ($key === 'ONETOONE' && !$defaultNull) {
                                             if ($classRelations === null
-                                                || !isset($classRelations[$relation[$colName]['reftable']])
+                                                || !isset($classRelations[$rc['reftable']])
                                             ) {
-                                                $className = self::camelize($relation[$colName]['reftable']) . 'Repo';
+                                                $className = self::camelize($rc['reftable']) . 'Repo';
                                             } else {
-                                                $className = $relation[$colName]['reftable'];
+                                                $className = $classRelations[$rc['reftable']];
                                             }
                                             $default = '(in_array($recursivePrefix.\'' . $colName . '\',$recursive,true))
                             ? ' . $className . '::factory(null,$recursivePrefix.\'' . $colName . '\') 
@@ -2481,6 +2488,7 @@ eot;
  */
 {namespace}
 use eftec\PdoOne;
+use eftec\PdoOneQuery;
 {modelnamespace}
 {exception}
 
@@ -2611,12 +2619,11 @@ abstract class Abstract{classname} extends {baseclass}
      * @param array|string   $sql =self::factory()
      * @param null|array|int $param
      *
-     * @return {classname}
+     * @return PdoOneQuery
      */
     public static function where($sql, $param = PdoOne::NULL)
     {
-        static::getQuery()->where($sql, $param,false,{classname}::TABLE);
-        return {classname}::class;
+        return static::newQuery()->where($sql, $param,false,{classname}::TABLE);
     }
 
     public static function getDefFK($structure=false) {
@@ -2678,7 +2685,7 @@ abstract class Abstract{classname} extends {baseclass}
      *
      * @param string|array $recursive=self::factory();
      *
-     * @return {classname}
+     * @return PdoOneQuery
      */
     public static function setRecursive($recursive=[])
     {
@@ -2688,10 +2695,22 @@ abstract class Abstract{classname} extends {baseclass}
         return parent::_setRecursive($recursive); 
     }
 
+    /**
+     * It adds an "limit" in a query. It depends on the type of database<br>
+     * <b>Example:</b><br>
+     * <pre>
+     *      ->select("")->limit("10,20")->toList();
+     * </pre>
+     *
+     * @param string $sql Input SQL query
+     *
+     * @return PdoOneQuery
+     * @throws Exception
+     * @test InstanceOf PdoOne::class,this('1,10')
+     */
     public static function limit($sql)
     {
-        static::getQuery()->limit($sql);
-        return {classname}::class;
+        return static::newQuery()->limit($sql);
     }
 
     /**
@@ -2780,7 +2799,7 @@ abstract class Abstract{classname} extends {baseclass}
      * @param array $pk =self::factory()
      * @param bool  $transactional If true (default) then the operation is transactional   
      *
-     * @return mixed
+     * @return int|false
      * @throws Exception
      */
     public static function deleteById($pk,$transactional=true) {
@@ -3296,6 +3315,7 @@ eot;
         $query = new PdoOneQuery($this);
         return $query->set($sqlOrArray, $param);
     }
+
     /**
      * Returns true if the current query has a "having" or "where"
      *
@@ -3375,7 +3395,7 @@ eot;
             return false;
         }
         $this->transactionOpen = false;
-        $r=@$this->conn1->rollback();
+        $r = @$this->conn1->rollback();
         $this->endTry();
         return $r;
     }
@@ -3639,10 +3659,12 @@ eot;
      * it avoid to query values that are in memory.
      *
      * @param bool $useInternalCache
+     * @return PdoOne
      */
     public function setUseInternalCache($useInternalCache = true)
     {
         $this->useInternalCache = $useInternalCache;
+        return $this;
     }
 
     public function generateBaseClass($baseClassName, $namespace, $classes, $modelUse = false)
@@ -4625,7 +4647,8 @@ eot;
      *
      * @param null|string $sequenceName [optional] the name of the sequence
      *
-     * @return int|string a number or 0 if it is not found
+     * @return int|bool a number or 0 if it is not found
+     * @noinspection PhpStrictComparisonWithOperandsOfDifferentTypesInspection
      */
     public function insert_id($sequenceName = null)
     {
@@ -4633,7 +4656,8 @@ eot;
             return -1;
         }
 
-        return $this->conn1->lastInsertId($sequenceName);
+        $id = $this->conn1->lastInsertId($sequenceName);
+        return $id === false ? false : (int)$id;
     }
 
     /**
@@ -5030,7 +5054,7 @@ BOOTS;
     public function dropTable($tableName, $extra = '')
     {
         $this->beginTry();
-        $r=$this->drop($tableName, 'table', $extra);
+        $r = $this->drop($tableName, 'table', $extra);
         $this->endTry();
         return $r;
     }
@@ -5051,7 +5075,7 @@ BOOTS;
     {
         $this->beginTry();
         $sql = "drop $type " . $this->addDelimiter($objectName) . " $extra";
-        $r=$this->conn1->exec($sql) !== false;
+        $r = $this->conn1->exec($sql) !== false;
         $this->endTry();
         return $r;
     }
@@ -5070,7 +5094,7 @@ BOOTS;
     public function truncate($tableName, $extra = '', $forced = false)
     {
         $this->beginTry();
-        $r=$this->service->truncate($tableName, $extra, $forced);
+        $r = $this->service->truncate($tableName, $extra, $forced);
         $this->endTry();
         return $r;
     }
@@ -5110,7 +5134,7 @@ BOOTS;
     public function resetIdentity($tableName, $newValue = 0)
     {
         $this->beginTry();
-        $r=$this->service->resetIdentity($tableName, $newValue);
+        $r = $this->service->resetIdentity($tableName, $newValue);
         $this->endTry();
         return $r;
     }
@@ -5137,7 +5161,7 @@ BOOTS;
         $this->beginTry();
         $tableSequence = ($tableSequence === null) ? $this->tableSequence : $tableSequence;
         $sql = $this->service->createSequence($tableSequence, $method);
-        $r=$this->conn1->exec($sql);
+        $r = $this->conn1->exec($sql);
         $this->endTry();
         return $r;
     }
@@ -5175,7 +5199,7 @@ BOOTS;
     {
         $this->beginTry();
         $sql = $this->service->createProcedure($procedureName, $arguments, $body, $extra);
-        $r=$this->conn1->exec($sql);
+        $r = $this->conn1->exec($sql);
         $this->endTry();
         return $r;
     }
@@ -5221,7 +5245,7 @@ BOOTS;
     {
         $this->endTry();
         $sql = $this->service->createTable($tableName, $definition, $primaryKey, $extra, $extraOutside);
-        $r=$this->runMultipleRawQuery($sql);
+        $r = $this->runMultipleRawQuery($sql);
         $this->endTry();
         return $r;
     }
@@ -5309,7 +5333,7 @@ BOOTS;
     {
         $this->beginTry();
         $sql = $this->service->createFK($tableName, $definition);
-        $r=$this->runMultipleRawQuery($sql);
+        $r = $this->runMultipleRawQuery($sql);
         $this->endTry();
         return $r;
     }
@@ -5378,14 +5402,14 @@ BOOTS;
     /**
      * It gets the primary key of a table
      *
-     * @param string $table The name of the table
+     * @param string $table     The name of the table
      * @param string $pkDefault The default pk if the key is not found.
      * @return array|false|mixed|string
      */
     public function getPK($table, $pkDefault = null)
     {
         $this->beginTry();
-        $r=$this->service->getPK($table, $pkDefault);
+        $r = $this->service->getPK($table, $pkDefault);
         $this->endTry();
         return $r;
     }
@@ -5526,7 +5550,7 @@ BOOTS;
     public function tableExist($tableName)
     {
         $this->beginTry();
-        $r=$this->objectExist($tableName);
+        $r = $this->objectExist($tableName);
         $this->endTry();
         return $r;
     }
@@ -5552,7 +5576,7 @@ BOOTS;
             $arr = $this->runRawQuery($query, [$objectName]);
         }
 
-        $r=is_array($arr) && count($arr) > 0;
+        $r = is_array($arr) && count($arr) > 0;
         $this->endTry();
         return $r;
     }
@@ -5709,7 +5733,7 @@ BOOTS;
 						,count($columnName) count
 						 from $tableName";
 
-        $r=$this->runRawQuery($query);
+        $r = $this->runRawQuery($query);
         $this->endTry();
         return $r;
     }
@@ -5726,7 +5750,7 @@ BOOTS;
     {
         $this->beginTry();
         $query = $this->service->columnTable($tableName);
-        $r=$this->runRawQuery($query);
+        $r = $this->runRawQuery($query);
         $this->endTry();
         return $r;
     }
@@ -5743,7 +5767,7 @@ BOOTS;
     {
         $this->beginTry();
         $query = $this->service->foreignKeyTable($tableName);
-        $r=$this->runRawQuery($query);
+        $r = $this->runRawQuery($query);
         $this->endTry();
         return $r;
     }
@@ -5810,7 +5834,7 @@ BOOTS;
     {
         $this->beginTry();
         $query = new PdoOneQuery($this);
-        $r=$query->insert($tableName, $tableDef, $values);
+        $r = $query->insert($tableName, $tableDef, $values);
         $this->endTry();
         return $r;
     }
@@ -5832,7 +5856,7 @@ BOOTS;
     {
         $this->beginTry();
         $query = new PdoOneQuery($this);
-        $r= $query->toMeta($sql, $args);
+        $r = $query->toMeta($sql, $args);
         $this->endTry();
         return $r;
     }
@@ -5867,7 +5891,8 @@ BOOTS;
      * @param string $sql
      * @param string $arg
      *
-     * @return PdoOneQuery
+     * @return mixed|null
+     * @throws Exception
      */
     public function min($sql = '', $arg = '')
     {
@@ -5879,7 +5904,7 @@ BOOTS;
      * It generates a query for "count". It is a macro of select()
      * <br><b>Example</b>:<br>
      * <pre>
-     * ->count('')->from('table')->firstScalar() // select count(*) from
+     * ->from('table')->count('') // select count(*) from
      * table<br>
      * ->count('from table')->firstScalar() // select count(*) from table<br>
      * ->count('from table where condition=1')->firstScalar() // select count(*)
@@ -5892,6 +5917,7 @@ BOOTS;
      * @param string      $arg [optional]
      *
      * @return PdoOneQuery
+     * @throws Exception
      */
     public function count($sql = '', $arg = '*')
     {
@@ -5914,6 +5940,7 @@ BOOTS;
      * @param string $arg     [optiona] it could be the name of the column
      *
      * @return PdoOneQuery
+     * @throws Exception
      */
     public function sum($sql = '', $arg = '')
     {
@@ -5935,6 +5962,7 @@ BOOTS;
      * @param string $arg
      *
      * @return PdoOneQuery
+     * @throws Exception
      */
     public function max($sql = '', $arg = '')
     {
@@ -5956,6 +5984,7 @@ BOOTS;
      * @param string $arg
      *
      * @return PdoOneQuery
+     * @throws Exception
      */
     public function avg($sql = '', $arg = '')
     {
@@ -5996,7 +6025,7 @@ BOOTS;
      * @param array        $excludeColumn (optional) columns to exclude. Example
      *                                    ['col1','col2']
      *
-     * @return false|int|string
+     * @return false|int
      * @throws Exception
      */
     public function insertObject($tableName, &$object, $excludeColumn = [])
@@ -6020,7 +6049,7 @@ BOOTS;
      * @param string[]|null $tableDefWhere
      * @param string[]|int  $valueWhere
      *
-     * @return false|int
+     * @return false|int If successes then it returns the number of rows deleted.
      * @throws Exception
      */
     public function delete(

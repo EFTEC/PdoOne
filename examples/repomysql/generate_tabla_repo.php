@@ -38,7 +38,7 @@ $columnRelation = [
     'TableParentExt'=>['_idtablaparentExtPK'=>'PARENT']
 ];
 $columnRemove=[
-    'TableParent'=>['idchild2FK']
+    //'TableParent'=>['idchild2FK']
 ];
 $extraColumn = [
     'TableParent' => ['extracol' => 'CURRENT_TIMESTAMP', 'extracol2' => '20']

@@ -12,9 +12,12 @@ use RuntimeException;
 
 class PdoOneQuery
 {
+    //<editor-fold desc="query builder fields">
     /** @var PdoOne */
     public $parent;
-    //<editor-fold desc="query builder fields">
+    /** @var _BasePdoOneRepo */
+    public $ormClass;
+
     /** @var array parameters for the where. [paramvar,value,type,size] */
     public $whereParamAssoc = [];
     /** @var array parameters for the having. [paramvar,value,type,size] */
@@ -50,6 +53,9 @@ class PdoOneQuery
     /** @var array */
     protected $having = [];
     protected $distinct = '';
+
+    //</editor-fold>
+
     //<editor-fold desc="Query Builder DQL functions" defaultstate="collapsed" >
     /**
      * @var bool
@@ -59,11 +65,14 @@ class PdoOneQuery
     /**
      * PdoOneQuery constructor.
      * @param PdoOne $parent
+     * @param string $repo
      */
-    public function __construct(PdoOne $parent)
+    public function __construct(PdoOne $parent, $repo = null)
     {
         $this->parent = $parent;
+        $this->ormClass = $repo;
     }
+
 
     /**
      * It returns an array with the metadata of each columns (i.e. name, type,
@@ -115,6 +124,21 @@ class PdoOneQuery
             $this->parent->internalCache[$uid] = $rows;
         }
         return $rows;
+    }
+
+    /**
+     * Begin a try block. It marks the errorText as empty and it store the value of genError<br>
+     * It also avoids to throw any error.
+     */
+    public function beginTry()
+    {
+        $this->parent->errorText = '';
+        $this->parent->isThrow = $this->parent->genError; // this value is deleted when it trigger an error
+        $this->throwOnErrorB = $this->parent->throwOnError;
+        $this->parent->throwOnError = false;
+        if ($this->parent->customError) {
+            set_exception_handler([$this->parent, 'custom_exception_handler']);
+        }
     }
 
     /**
@@ -178,7 +202,7 @@ class PdoOneQuery
                     $reval = $reval && $stmt->bindParam($v[0], $v[1], $v[2]);
                 }
             } catch (Exception $ex) {
-                $this->throwErrorChain("Error in bind. Parameter error.", $throwError,$ex);
+                $this->throwErrorChain("Error in bind. Parameter error.", $throwError, $ex);
                 $this->builderReset();
                 return false;
             }
@@ -290,6 +314,8 @@ class PdoOneQuery
         if ($this->noReset && !$forced) {
             return;
         }
+        $this->ormClass = null;
+
         $this->select = '';
         $this->noReset = false;
         $this->useCache = false;
@@ -335,7 +361,7 @@ class PdoOneQuery
         $this->parent->debugFile($txt, 'ERROR');
         $this->parent->errorText = $txt;
         if ($throwError && $this->parent->throwOnError && $this->parent->genError) {
-            if($exception!==null) {
+            if ($exception !== null) {
                 throw $exception;
             } else {
                 throw new RuntimeException($txt);
@@ -343,20 +369,7 @@ class PdoOneQuery
         }
         $this->builderReset(true); // it resets the chain if any.
     }
-    /**
-     * Begin a try block. It marks the errorText as empty and it store the value of genError<br>
-     * It also avoids to throw any error.
-     */
-    public function beginTry()
-    {
-        $this->parent->errorText = '';
-        $this->parent->isThrow = $this->parent->genError; // this value is deleted when it trigger an error
-        $this->throwOnErrorB = $this->parent->throwOnError;
-        $this->parent->throwOnError = false;
-        if($this->parent->customError) {
-            set_exception_handler([$this->parent,'custom_exception_handler']);
-        }
-    }
+
     /**
      * It ends a try block and throws the error (if any)
      *
@@ -369,163 +382,17 @@ class PdoOneQuery
         $this->parent->throwOnError = $this->throwOnErrorB;
         if ($this->parent->errorText) {
             $this->throwErrorChain('endtry:' . $this->parent->errorText, $this->parent->isThrow);
-            if($this->parent->customError) {
+            if ($this->parent->customError) {
                 restore_exception_handler();
             }
             return false;
         }
-        if($this->parent->customError) {
+        if ($this->parent->customError) {
             restore_exception_handler();
         }
         return true;
     }
 
-    /**
-     * Executes the query, and returns the first column of the first row in the
-     * result set returned by the query. Additional columns or rows are ignored.<br>
-     * If value is not found then it returns null.<br>
-     * * This method is an <b>end of the chain method</b>, so it clears the method stack<br>
-     * <b>Example</b>:<br>
-     * <pre>
-     * $con->select('*')->from('table')->firstScalar(); // select * from table (first scalar value)
-     * </pre>
-     *
-     * @param string|null $colName     If it's null then it uses the first
-     *                                 column.
-     *
-     * @return mixed|null
-     * @throws Exception
-     */
-    public function firstScalar($colName = null)
-    {
-        $useCache = $this->useCache; // because builderReset cleans this value
-        if ($useCache !== false) {
-            $sql = $this->sqlGen();
-            $this->uid = hash($this->parent->encryption->hashType,
-                $sql . PDO::FETCH_ASSOC . serialize($this->whereParamAssoc) . serialize($this->havingParamAssoc)
-                . 'firstscalar');
-            $rows = $this->parent->cacheService->getCache($this->uid, $this->cacheFamily);
-            if ($rows !== false) {
-                $this->builderReset();
-
-                return $rows;
-            }
-        }
-        $this->beginTry();
-        /** @var PDOStatement|bool $statement */
-        $statement = $this->runGen(false, PDO::FETCH_ASSOC, 'firstscalar', false);
-        if ($this->endtry() === false) {
-            return null;
-        }
-        if ($statement === false) {
-            $row = null;
-        } elseif (!$statement->columnCount()) {
-            $row = null;
-        } else {
-            $row = $statement->fetch(PDO::FETCH_ASSOC);
-            @$statement->closeCursor();
-            $statement = null;
-            if ($row !== false) {
-                if ($colName === null) {
-                    $row = reset($row); // first column of the first row
-                } else {
-                    $row = $row[$colName];
-                }
-            } else {
-                $row = null;
-            }
-        }
-        if ($this->uid && $useCache !== false) {
-            // we store the information of the cache.
-            $this->parent->setCache($this->uid, $this->cacheFamily, $row, $useCache);
-        }
-
-        return $row;
-    }
-
-    /**
-     * Returns the last row. It's not recommended. Use instead first() and change the order.<br>
-     * This method is an <b>end of the chain method</b>, so it clears the method stack<br>
-     * <b>Note</b>: This method could not be efficient because it reads all the values.
-     * If you can, then use the methods sort()::first()<br>
-     * <b>Example</b>:<br>
-     * <pre>
-     * $con->select('*')->from('table')->last(); // select * from table (last scalar value)
-     * </pre>
-     *
-     * @return array|null
-     * @throws Exception
-     * @see \eftec\PdoOne::first
-     */
-    public function last()
-    {
-        $useCache = $this->useCache; // because builderReset cleans this value
-
-        if ($useCache !== false) {
-            $sql = $this->sqlGen();
-            $this->uid = hash($this->parent->encryption->hashType,
-                $sql . PDO::FETCH_ASSOC . serialize($this->whereParamAssoc) . serialize($this->havingParamAssoc)
-                . 'last');
-            $rows = $this->parent->cacheService->getCache($this->uid, $this->cacheFamily);
-            if ($rows !== false) {
-                $this->builderReset();
-
-                return $rows;
-            }
-        }
-        $this->beginTry();
-        /** @var PDOStatement|bool $statement */
-        $statement = $this->runGen(false, PDO::FETCH_ASSOC, 'last', false);
-        if ($this->endtry() === false) {
-            return null;
-        }
-        $row = null;
-        if ($statement === false) {
-            $row = null;
-        } elseif (!$statement->columnCount()) {
-            $row = null;
-        } else {
-            while ($dummy = $statement->fetch(PDO::FETCH_ASSOC)) {
-                $row = $dummy;
-            }
-            @$statement->closeCursor();
-            $statement = null;
-        }
-
-        if ($this->uid && $useCache !== false) {
-            // we store the information of the cache.
-            $this->parent->setCache($this->uid, $this->cacheFamily, $row, $useCache);
-        }
-
-        return $row;
-    }
-
-    /**
-     * It returns an array of simple columns (not declarative). It uses the
-     * first column<br>
-     * <b>Example:</b><br>
-     * <pre>
-     * select('select id from table')->toListSimple() // ['1','2','3','4']
-     * </pre>
-     *
-     * @return array|bool
-     * @throws Exception
-     */
-    public function toListSimple()
-    {
-        $useCache = $this->useCache; // because builderReset cleans this value
-        $this->beginTry();
-        $rows = $this->runGen(true, PDO::FETCH_COLUMN, 'tolistsimple', false);
-        if ($this->endtry() === false) {
-            return false;
-        }
-        if ($this->uid && $useCache !== false) {
-            // we store the information of the cache.
-            $this->parent->setCache($this->uid, $this->cacheFamily, $rows, $useCache);
-        }
-
-        return $rows;
-    }
 
     /**
      * It adds a having to the query builder.
@@ -588,7 +455,7 @@ class PdoOneQuery
      */
     public function where($sql, $param = PdoOne::NULL, $isHaving = false, $tablePrefix = null)
     {
-        if ($sql === null) {
+        if ($sql === null || $sql === PdoOne::NULL) {
             return $this;
         }
         $this->constructParam2($sql, $param, $isHaving ? 'having' : 'where', false, $tablePrefix);
@@ -792,81 +659,250 @@ class PdoOneQuery
 
     //</editor-fold>
 
-    //<editor-fold desc="Query Builder functions" defaultstate="collapsed" >
+
+    //<editor-fold desc="Query Builder functions end chain" defaultstate="collapsed" >
 
     /**
-     * Returns true if the current query has a "having" or "where"
+     * Returns the last row. It's not recommended. Use instead first() and change the order.<br>
+     * This method is an <b>end of the chain method</b>, so it clears the method stack<br>
+     * <b>Note</b>: This method could not be efficient because it reads all the values.
+     * If you can, then use the methods sort()::first()<br>
+     * <b>Example</b>:<br>
+     * <pre>
+     * $con->select('*')->from('table')->last(); // select * from table (last scalar value)
+     * </pre>
      *
-     * @param bool $having <b>true</b> it return the number of where<br>
-     *                     <b>false</b> it returns the number of having
-     *
-     * @return bool
+     * @return array|null
+     * @throws Exception
+     * @see \eftec\PdoOne::first
      */
-    public function hasWhere($having = false)
+    public function last()
     {
-        if ($having) {
-            return count($this->having) > 0;
+        if ($this->ormClass !== null) {
+            throw new RuntimeException("The method [" . __FUNCTION__ . "] is not yet implemented with an ORM class");
+        }
+        $useCache = $this->useCache; // because builderReset cleans this value
+
+        if ($useCache !== false) {
+            $sql = $this->sqlGen();
+            $this->uid = hash($this->parent->encryption->hashType,
+                $sql . PDO::FETCH_ASSOC . serialize($this->whereParamAssoc) . serialize($this->havingParamAssoc)
+                . 'last');
+            $rows = $this->parent->cacheService->getCache($this->uid, $this->cacheFamily);
+            if ($rows !== false) {
+                $this->builderReset();
+
+                return $rows;
+            }
+        }
+        $this->beginTry();
+        /** @var PDOStatement|bool $statement */
+        $statement = $this->runGen(false, PDO::FETCH_ASSOC, 'last', false);
+        if ($this->endtry() === false) {
+            return null;
+        }
+        $row = null;
+        if ($statement === false) {
+            $row = null;
+        } elseif (!$statement->columnCount()) {
+            $row = null;
+        } else {
+            while ($dummy = $statement->fetch(PDO::FETCH_ASSOC)) {
+                $row = $dummy;
+            }
+            @$statement->closeCursor();
+            $statement = null;
         }
 
-        return count($this->where) > 0;
+        if ($this->uid && $useCache !== false) {
+            // we store the information of the cache.
+            $this->parent->setCache($this->uid, $this->cacheFamily, $row, $useCache);
+        }
+
+        return $row;
     }
 
     /**
-     * It adds an "limit" in a query. It depends on the type of database<br>
+     * It returns an array of simple columns (not declarative). It uses the
+     * first column<br>
      * <b>Example:</b><br>
      * <pre>
-     *      ->select("")->limit("10,20")->toList();
+     * select('select id from table')->toListSimple() // ['1','2','3','4']
+     * </pre>
+     *
+     * @return array|bool
+     * @throws Exception
+     */
+    public function toListSimple()
+    {
+        $this->usingORM(true);
+        $useCache = $this->useCache; // because builderReset cleans this value
+        $this->beginTry();
+        $rows = $this->runGen(true, PDO::FETCH_COLUMN, 'tolistsimple', false);
+        if ($this->endtry() === false) {
+            return false;
+        }
+        if ($this->uid && $useCache !== false) {
+            // we store the information of the cache.
+            $this->parent->setCache($this->uid, $this->cacheFamily, $rows, $useCache);
+        }
+
+        return $rows;
+    }
+
+    /**
+     * It is called when we want to runs a method and it is called by an ORM.<br>
+     *  It helps to assign the table and the fields
+     * @param bool $addColumns
+     */
+    private function usingORM($addColumns = false)
+    {
+        if ($this->ormClass !== null && $this->from === '') {
+            /** @var _BasePdoOneRepo $cls */
+            $cls = $this->ormClass;
+            if ($addColumns) {
+                /** @noinspection PhpPossiblePolymorphicInvocationInspection */
+                $this->select($cls::getDefName());
+            }
+            /** @noinspection PhpPossiblePolymorphicInvocationInspection */
+            $this->from($cls::TABLE);
+            //throw new RuntimeException('Method toListKeyValue not yet implemented for PdoOne::ORM');
+        }
+    }
+
+    /**
+     * It adds a select to the query builder.
+     * <br><b>Example</b>:<br>
+     * <pre>
+     * ->select("\*")->from('table') = <i>"select * from table"</i><br>
+     * ->select(['col1','col2'])->from('table') = <i>"select col1,col2 from
+     * table"</i><br>
+     * ->select('col1,col2')->from('table') = <i>"select col1,col2 from
+     * table"</i><br>
+     * ->select('select *')->from('table') = <i>"select * from table"</i><br>
+     * ->select('select * from table') = <i>"select * from table"</i><br>
+     * ->select('select * from table where id=1') = <i>"select * from table
+     * where id=1"</i><br>
+     * </pre>
+     *
+     * @param string|array $sql
+     *
+     * @return PdoOneQuery
+     * @test InstanceOf PdoOne::class,this('select 1 from DUAL')
+     */
+    public function select($sql)
+    {
+        if (is_array($sql)) {
+            $this->select .= implode(', ', $sql);
+        } elseif ($this->select === '') {
+            $this->select = $sql;
+        } else {
+            $this->select .= ', ' . $sql;
+        }
+
+        return $this;
+    }
+
+    /**
+     * Adds a from for a query. It could be used by select,insert,update and
+     * delete.<br>
+     * <b>Example:</b><br>
+     * <pre>
+     *      from('table')
+     *      from('table alias')
+     *      from('table1,table2')
+     *      from('table1 inner join table2 on table1.c=table2.c')
      * </pre>
      *
      * @param string $sql Input SQL query
      *
      * @return PdoOneQuery
+     * @test InstanceOf PdoOne::class,this('table t1')
+     */
+    public function from($sql)
+    {
+        if ($sql === null) {
+            return $this;
+        }
+        $this->from = ($sql) ? $sql . $this->from : $this->from;
+        $this->parent->tables[] = explode(' ', $sql)[0];
+        return $this;
+    }
+
+    /**
      * @throws Exception
-     * @test InstanceOf PdoOne::class,this('1,10')
      */
-    public function limit($sql)
+    public function _exist($conditions)
     {
-        if ($sql === null) {
-            return $this;
+        if ($this->ormClass !== null) {
+            $cls = $this->ormClass;
+            return $cls::setPdoOneQuery($this)::exist($conditions);
         }
-        $this->limit = $this->parent->service->limit($sql);
+        $useCache = $this->useCache; // because builderReset cleans this value
+        if ($useCache !== false) {
+            $sql = $this->sqlGen();
+            $this->uid = hash($this->parent->encryption->hashType,
+                $sql . PDO::FETCH_ASSOC . serialize($this->whereParamAssoc) . serialize($this->havingParamAssoc)
+                . 'firstscalar');
+            $rows = $this->parent->cacheService->getCache($this->uid, $this->cacheFamily);
+            if ($rows !== false) {
+                $this->builderReset();
 
-        return $this;
+                return $rows;
+            }
+        }
+        $exist = false;
+        $this->beginTry();
+        /** @var PDOStatement|bool $statement */
+        $statement = $this->runGen(false, PDO::FETCH_ASSOC, 'exist', false);
+        if ($this->endtry() === false) {
+            return null;
+        }
+        if ($statement === false) {
+            $row = null;
+        } elseif (!$statement->columnCount()) {
+            $row = null;
+        } else {
+            $row = $statement->fetch(PDO::FETCH_ASSOC);
+            @$statement->closeCursor();
+            $statement = null;
+            if ($row !== false) {
+                $exist = true;
+            } else {
+                $exist = false;
+            }
+        }
+        if ($this->uid && $useCache !== false) {
+            // we store the information of the cache.
+            $this->parent->setCache($this->uid, $this->cacheFamily, $row, $useCache);
+        }
+
+        return $exist;
     }
 
     /**
-     * Adds a distinct to the query. The value is ignored if the select() is
-     * written complete.<br>
-     * <pre>
-     *      ->select("*")->distinct() // works
-     *      ->select("select *")->distinct() // distinct is ignored.
-     *</pre>
-     *
-     * @param string $sql Input SQL query
-     *
-     * @return PdoOneQuery
-     * @test InstanceOf PdoOne::class,this()
+     * Alias of from()
+     * @param $sql
+     * @return $this
+     * @see \eftec\PdoOneQuery::from
      */
-    public function distinct($sql = 'distinct')
+    public function table($sql)
     {
-        if ($sql === null) {
-            return $this;
-        }
-        $this->distinct = ($sql) ? $sql . ' ' : '';
-
-        return $this;
+        return $this->from($sql);
     }
 
     /**
-     * It returns an associative array where the first value is the key and the
-     * second is the value<br> If the second value does not exist then it uses
-     * the index as value (first value)<br>
+     * It returns an associative array where the first value is the key (first column) and the value is the second
+     * column<br>
+     * If the second column does not exist then it uses first column as the second value<br>
+     * If there is 3 columns and it does not use a separator, then it only uses the first 2 columns<br>
+     * If there is 3 columns and it does use a separator, then the second value is the merge of the last 2 columns<br>
      * <b>Example:</b><br>
      * <pre>
-     * select('select cod,name from table')->toListKeyValue() //
-     * ['cod1'=>'name1','cod2'=>'name2'] select('select cod,name,ext from
-     * table')->toListKeyValue('|') //
-     * ['cod1'=>'name1|ext1','cod2'=>'name2|ext2']
+     * select('select cod,name from table')->toListKeyValue()
+     * // ['cod1'=>'name1','cod2'=>'name2']
+     * select('select cod,name,ext from table')->toListKeyValue('|')
+     * // ['cod1'=>'name1|ext1','cod2'=>'name2|ext2']
      * </pre>
      *
      * @param string|null $extraValueSeparator     (optional) It allows to read a
@@ -879,7 +915,8 @@ class PdoOneQuery
      */
     public function toListKeyValue($extraValueSeparator = null)
     {
-        $list = $this->toList(PDO::FETCH_NUM);
+        $this->usingORM();
+        $list = $this->_toList(PDO::FETCH_NUM);
         if (!is_array($list)) {
             return null;
         }
@@ -888,11 +925,29 @@ class PdoOneQuery
             if ($extraValueSeparator === null) {
                 $result[$item[0]] = isset($item[1]) ? $item[1] : $item[0];
             } else {
-                $result[$item[0]] = (isset($item[1]) ? $item[1] : $item[0]) . $extraValueSeparator . @$item[2];
+                $result[$item[0]] = (isset($item[1]) ? $item[1] : $item[0])
+                    . ((isset($item[2]) ? $extraValueSeparator . $item[2] : ''));
             }
         }
-
         return $result;
+    }
+
+    /**
+     * @throws Exception
+     */
+    public function _toList($pdoMode = PDO::FETCH_ASSOC)
+    {
+        $useCache = $this->useCache; // because builderReset cleans this value
+        $this->beginTry();
+        $rows = $this->runGen(true, $pdoMode, 'tolist', false);
+        if ($this->endtry() === false) {
+            return false;
+        }
+        if ($this->uid && $useCache !== false) {
+            // we store the information of the cache.
+            $this->parent->setCache($this->uid, $this->cacheFamily, $rows, $useCache);
+        }
+        return $rows;
     }
 
     /**
@@ -915,17 +970,11 @@ class PdoOneQuery
      */
     public function toList($pdoMode = PDO::FETCH_ASSOC)
     {
-        $useCache = $this->useCache; // because builderReset cleans this value
-        $this->beginTry();
-        $rows = $this->runGen(true, $pdoMode, 'tolist', false);
-        if ($this->endtry() === false) {
-            return false;
+        if ($this->ormClass !== null) {
+            $cls = $this->ormClass;
+            return $cls::setPdoOneQuery($this)::ToList(PdoOne::NULL, null);
         }
-        if ($this->uid && $useCache !== false) {
-            // we store the information of the cache.
-            $this->parent->setCache($this->uid, $this->cacheFamily, $rows, $useCache);
-        }
-        return $rows;
+        return $this->_toList($pdoMode);
     }
 
     /**
@@ -937,8 +986,14 @@ class PdoOneQuery
      */
     public function toResult()
     {
+        if ($this->ormClass !== null) {
+            throw new RuntimeException("The method [" . __FUNCTION__ . "] is not yet implemented with an ORM class");
+        }
         return $this->runGen(false);
     }
+
+    //</editor-fold>
+    //<editor-fold desc="Query Builder aggregations" defaultstate="collapsed" >
 
     /**
      * It returns the first row.  If there is not row then it returns false.<br>
@@ -949,10 +1004,24 @@ class PdoOneQuery
      *      (first value)
      * </pre>
      *
+     * @param int $pk the argument is used together with ORM.
      * @return array|null|false
      * @throws Exception
      */
-    public function first()
+    public function first($pk = PdoOne::NULL)
+    {
+        if ($this->ormClass !== null) {
+            $cls = $this->ormClass;
+            /** @see \eftec\_BasePdoOneRepo::first */
+            return $cls::setPdoOneQuery($this)::first($pk);
+        }
+        return $this->_first();
+    }
+
+    /**
+     * @throws Exception
+     */
+    public function _first()
     {
         $useCache = $this->useCache; // because builderReset cleans this value
         $uid = false;
@@ -1004,6 +1073,318 @@ class PdoOneQuery
         }
 
         return $row;
+    }
+
+    /**
+     * It generates a query for "count". It is a macro of select()
+     * <br><b>Example</b>:<br>
+     * <pre>
+     * ->from('table')->count('') // select count(*) from
+     * table<br>
+     * ->count('from table') // select count(*) from table<br>
+     * ->count('from table where condition=1') // select count(*)
+     * from table where condition=1<br>
+     * ->count('from table','col') // select count(col) from
+     * table<br>
+     * </pre>
+     *
+     * @param string|null $sql [optional]
+     * @param string      $arg [optional]
+     *
+     * @return mixed|null
+     * @throws Exception
+     */
+    public function count($sql = '', $arg = '*')
+    {
+        return $this->_aggFn('count', $sql, $arg);
+    }
+
+    /**
+     * This method is used internally for the methods count(), sum(), min(), etc.
+     *
+     * @param string $method
+     * @param string $sql
+     * @param string $arg
+     * @return mixed|null
+     * @throws Exception
+     */
+    public function _aggFn($method, $sql = '', $arg = '')
+    {
+        // ORM is read using firstScalar()
+        $this->parent->beginTry();
+        if ($arg === '') {
+            $arg = $sql; // if the argument is empty then it uses sql as argument
+            $sql = ''; // and it lefts sql as empty
+        }
+        if ($arg === '*' || $this->parent->databaseType !== 'sqlsrv') {
+            $r = $this->select("select $method($arg) $sql")->firstScalar();
+            $this->parent->endTry();
+            return $r;
+        }
+        $r = $this->select("select $method(cast($arg as decimal)) $sql")->firstScalar();
+        $this->parent->endTry();
+        return $r;
+    }
+
+    /**
+     * Executes the query, and returns the first column of the first row in the
+     * result set returned by the query. Additional columns or rows are ignored.<br>
+     * If value is not found then it returns null.<br>
+     * * This method is an <b>end of the chain method</b>, so it clears the method stack<br>
+     * <b>Example</b>:<br>
+     * <pre>
+     * $con->select('*')->from('table')->firstScalar(); // select * from table (first scalar value)
+     * </pre>
+     *
+     * @param string|null $colName     If it's null then it uses the first
+     *                                 column.
+     *
+     * @return mixed|null
+     * @throws Exception
+     */
+    public function firstScalar($colName = null)
+    {
+        $this->usingORM(true);
+        $useCache = $this->useCache; // because builderReset cleans this value
+        if ($useCache !== false) {
+            $sql = $this->sqlGen();
+            $this->uid = hash($this->parent->encryption->hashType,
+                $sql . PDO::FETCH_ASSOC . serialize($this->whereParamAssoc) . serialize($this->havingParamAssoc)
+                . __FUNCTION__);
+            $rows = $this->parent->cacheService->getCache($this->uid, $this->cacheFamily);
+            if ($rows !== false) {
+                $this->builderReset();
+
+                return $rows;
+            }
+        }
+        $this->beginTry();
+        /** @var PDOStatement|bool $statement */
+        $statement = $this->runGen(false, PDO::FETCH_ASSOC, 'firstscalar', false);
+        if ($this->endtry() === false) {
+            return null;
+        }
+        if ($statement === false) {
+            $row = null;
+        } elseif (!$statement->columnCount()) {
+            $row = null;
+        } else {
+            $row = $statement->fetch(PDO::FETCH_ASSOC);
+            @$statement->closeCursor();
+            $statement = null;
+            if ($row !== false) {
+                if ($colName === null) {
+                    $row = reset($row); // first column of the first row
+                } else {
+                    $row = $row[$colName];
+                }
+            } else {
+                $row = null;
+            }
+        }
+        if ($this->uid && $useCache !== false) {
+            // we store the information of the cache.
+            $this->parent->setCache($this->uid, $this->cacheFamily, $row, $useCache);
+        }
+
+        return $row;
+    }
+
+    /**
+     * It generates a query for "sum". It is a macro of select()
+     * <br><b>Example</b>:<br>
+     * ->sum('from table','col')->firstScalar() // select sum(col) from
+     * table<br>
+     * ->sum('col')->from('table')->firstScalar() // select sum(col) from
+     * table<br>
+     * ->sum('','col')->from('table')->firstScalar() // select sum(col) from
+     * table<br>
+     *
+     * @param string $sql     [optional] it could be the name of column or part
+     *                        of the query ("from table..")
+     * @param string $arg     [optiona] it could be the name of the column
+     *
+     * @return mixed|null
+     * @throws Exception
+     */
+    public function sum($sql = '', $arg = '')
+    {
+        return $this->_aggFn('sum', $sql, $arg);
+    }
+
+    /**
+     * It generates a query for "min". It is a macro of select()
+     * <br><b>Example</b>:<br>
+     * ->min('from table','col') // select min(col) from
+     * table<br>
+     * ->from('table')->min('col') // select min(col) from
+     * table<br>
+     * ->from('table')->min('','col') // select min(col) from
+     * table<br>
+     *
+     * @param string $sql
+     * @param string $arg
+     *
+     * @return mixed|null
+     * @throws Exception
+     */
+    public function min($sql = '', $arg = '')
+    {
+        return $this->_aggFn('min', $sql, $arg);
+    }
+
+
+    //</editor-fold>
+    //<editor-fold desc="Query Builder functions" defaultstate="collapsed" >
+
+    /**
+     * It generates a query for "max". It is a macro of select()
+     * <br><b>Example</b>:<br>
+     * ->max('from table','col')->firstScalar() // select max(col) from
+     * table<br>
+     * ->max('col')->from('table')->firstScalar() // select max(col) from
+     * table<br>
+     * ->max('','col')->from('table')->firstScalar() // select max(col) from
+     * table<br>
+     *
+     * @param string $sql
+     * @param string $arg
+     *
+     * @return mixed|null
+     * @throws Exception
+     */
+    public function max($sql = '', $arg = '')
+    {
+        return $this->_aggFn('max', $sql, $arg);
+    }
+
+    /**
+     * It generates a query for "avg". It is a macro of select()
+     * <br><b>Example</b>:<br>
+     * ->avg('from table','col')->firstScalar() // select avg(col) from
+     * table<br>
+     * ->avg('col')->from('table')->firstScalar() // select avg(col) from
+     * table<br>
+     * ->avg('','col')->from('table')->firstScalar() // select avg(col) from
+     * table<br>
+     *
+     * @param string $sql
+     * @param string $arg
+     *
+     * @return mixed|null
+     * @throws Exception
+     */
+    public function avg($sql = '', $arg = '')
+    {
+        return $this->_aggFn('avg', $sql, $arg);
+    }
+
+    /**
+     * Returns true if the current query has a "having" or "where"
+     *
+     * @param bool $having <b>true</b> it return the number of where<br>
+     *                     <b>false</b> it returns the number of having
+     *
+     * @return bool
+     */
+    public function hasWhere($having = false)
+    {
+        if ($having) {
+            return count($this->having) > 0;
+        }
+
+        return count($this->where) > 0;
+    }
+
+    /**
+     * It adds an "limit" in a query. It depends on the type of database<br>
+     * <b>Example:</b><br>
+     * <pre>
+     *      ->select("")->limit("10,20")->toList();
+     * </pre>
+     *
+     * @param string $sql Input SQL query
+     *
+     * @return PdoOneQuery
+     * @throws Exception
+     * @test InstanceOf PdoOne::class,this('1,10')
+     */
+    public function limit($sql)
+    {
+        if ($sql === null) {
+            return $this;
+        }
+        $this->limit = $this->parent->service->limit($sql);
+
+        return $this;
+    }
+    /**
+     * Its a macro of limit but it works for paging. It uses static::$pageSize to determine the rows to return
+     *
+     * @param int $numPage Number of page. It starts with 1.
+     *
+     * @return PdoOneQuery
+     * @throws Exception
+     */
+    public function page($numPage)
+    {
+        if ($this->ormClass !== null) {
+            $cls = $this->ormClass;
+            $p0 = $cls::$pageSize * ($numPage - 1);
+            $p1 = $p0 + $cls::$pageSize;
+        } else {
+            $p0 = 20 * ($numPage - 1);
+            $p1 = $p0 + 20;
+        }
+        return $this->limit("$p0,$p1");
+    }
+
+    /**
+     * Returns an array with the default values (0 for numbers, empty for string, and array|null if recursive)
+     *
+     * @param array|null $values          =self::factory()
+     * @param string     $recursivePrefix It is the prefix of the recursivity.
+     *
+     * @return array
+     */
+    public function factory($values = null, $recursivePrefix = '') {
+        if ($this->ormClass !== null) {
+            $cls = $this->ormClass;
+            return $cls::setPdoOneQuery($this)::factory($values,$recursivePrefix);
+        }
+        $result=[];
+        $fields=explode(',',$this->select);
+        foreach($fields as $field) {
+            $subfield=explode(' ',$field);
+            $result[$subfield[0]]=null;
+        }
+        if ($values !== null) {
+            $result=array_merge($result,$values);
+        }
+        return $result;
+    }
+
+    /**
+     * Adds a distinct to the query. The value is ignored if the select() is
+     * written complete.<br>
+     * <pre>
+     *      ->select("*")->distinct() // works
+     *      ->select("select *")->distinct() // distinct is ignored.
+     *</pre>
+     *
+     * @param string $sql Input SQL query
+     *
+     * @return PdoOneQuery
+     * @test InstanceOf PdoOne::class,this()
+     */
+    public function distinct($sql = 'distinct')
+    {
+        if ($sql === null) {
+            return $this;
+        }
+        $this->distinct = ($sql) ? $sql . ' ' : '';
+
+        return $this;
     }
 
     /**
@@ -1070,160 +1451,6 @@ class PdoOneQuery
             $extra
         ];
         return $prefix . hash($this->parent->encryption->hashType, json_encode($all));
-    }
-
-    /**
-     * It generates a query for "count". It is a macro of select()
-     * <br><b>Example</b>:<br>
-     * <pre>
-     * ->count('')->from('table')->firstScalar() // select count(*) from
-     * table<br>
-     * ->count('from table')->firstScalar() // select count(*) from table<br>
-     * ->count('from table where condition=1')->firstScalar() // select count(*)
-     * from table where condition=1<br>
-     * ->count('from table','col')->firstScalar() // select count(col) from
-     * table<br>
-     * </pre>
-     *
-     * @param string|null $sql [optional]
-     * @param string      $arg [optional]
-     *
-     * @return PdoOneQuery
-     */
-    public function count($sql = '', $arg = '*')
-    {
-        return $this->_aggFn('count', $sql, $arg);
-    }
-
-    public function _aggFn($method, $sql = '', $arg = '')
-    {
-        $this->parent->beginTry();
-        if ($arg === '') {
-            $arg = $sql; // if the argument is empty then it uses sql as argument
-            $sql = ''; // and it lefts sql as empty
-        }
-        if ($arg === '*' || $this->parent->databaseType !== 'sqlsrv') {
-            $r=$this->select("select $method($arg) $sql");
-            $this->parent->endTry();
-            return $r;
-        }
-        $r=$this->select("select $method(cast($arg as decimal)) $sql");
-        $this->parent->endTry();
-        return $r;
-    }
-
-    /**
-     * It adds a select to the query builder.
-     * <br><b>Example</b>:<br>
-     * <pre>
-     * ->select("\*")->from('table') = <i>"select * from table"</i><br>
-     * ->select(['col1','col2'])->from('table') = <i>"select col1,col2 from
-     * table"</i><br>
-     * ->select('col1,col2')->from('table') = <i>"select col1,col2 from
-     * table"</i><br>
-     * ->select('select *')->from('table') = <i>"select * from table"</i><br>
-     * ->select('select * from table') = <i>"select * from table"</i><br>
-     * ->select('select * from table where id=1') = <i>"select * from table
-     * where id=1"</i><br>
-     * </pre>
-     *
-     * @param string|array $sql
-     *
-     * @return PdoOneQuery
-     * @test InstanceOf PdoOne::class,this('select 1 from DUAL')
-     */
-    public function select($sql)
-    {
-        if (is_array($sql)) {
-            $this->select .= implode(', ', $sql);
-        } elseif ($this->select === '') {
-            $this->select = $sql;
-        } else {
-            $this->select .= ', ' . $sql;
-        }
-
-        return $this;
-    }
-
-    /**
-     * It generates a query for "sum". It is a macro of select()
-     * <br><b>Example</b>:<br>
-     * ->sum('from table','col')->firstScalar() // select sum(col) from
-     * table<br>
-     * ->sum('col')->from('table')->firstScalar() // select sum(col) from
-     * table<br>
-     * ->sum('','col')->from('table')->firstScalar() // select sum(col) from
-     * table<br>
-     *
-     * @param string $sql     [optional] it could be the name of column or part
-     *                        of the query ("from table..")
-     * @param string $arg     [optiona] it could be the name of the column
-     *
-     * @return PdoOneQuery
-     */
-    public function sum($sql = '', $arg = '')
-    {
-        return $this->_aggFn('sum', $sql, $arg);
-    }
-
-    /**
-     * It generates a query for "min". It is a macro of select()
-     * <br><b>Example</b>:<br>
-     * ->min('from table','col')->firstScalar() // select min(col) from
-     * table<br>
-     * ->min('col')->from('table')->firstScalar() // select min(col) from
-     * table<br>
-     * ->min('','col')->from('table')->firstScalar() // select min(col) from
-     * table<br>
-     *
-     * @param string $sql
-     * @param string $arg
-     *
-     * @return PdoOneQuery
-     */
-    public function min($sql = '', $arg = '')
-    {
-        return $this->_aggFn('min', $sql, $arg);
-    }
-
-    /**
-     * It generates a query for "max". It is a macro of select()
-     * <br><b>Example</b>:<br>
-     * ->max('from table','col')->firstScalar() // select max(col) from
-     * table<br>
-     * ->max('col')->from('table')->firstScalar() // select max(col) from
-     * table<br>
-     * ->max('','col')->from('table')->firstScalar() // select max(col) from
-     * table<br>
-     *
-     * @param string $sql
-     * @param string $arg
-     *
-     * @return PdoOneQuery
-     */
-    public function max($sql = '', $arg = '')
-    {
-        return $this->_aggFn('max', $sql, $arg);
-    }
-
-    /**
-     * It generates a query for "avg". It is a macro of select()
-     * <br><b>Example</b>:<br>
-     * ->avg('from table','col')->firstScalar() // select avg(col) from
-     * table<br>
-     * ->avg('col')->from('table')->firstScalar() // select avg(col) from
-     * table<br>
-     * ->avg('','col')->from('table')->firstScalar() // select avg(col) from
-     * table<br>
-     *
-     * @param string $sql
-     * @param string $arg
-     *
-     * @return PdoOneQuery
-     */
-    public function avg($sql = '', $arg = '')
-    {
-        return $this->_aggFn('avg', $sql, $arg);
     }
 
     /**
@@ -1303,6 +1530,8 @@ class PdoOneQuery
         return $this;
     }
 
+    //</editor-fold>
+
     /**
      * It groups by a condition.<br>
      * <b>Example:</b><br>
@@ -1335,8 +1564,6 @@ class PdoOneQuery
         return $this->recursive($fields);
     }
 
-    //</editor-fold>
-
     /**
      * It sets a recursive array.<br>
      * <b>example:</b>:<br>
@@ -1349,6 +1576,21 @@ class PdoOneQuery
      * @return $this
      */
     public function recursive($rec)
+    {
+        if ($this->ormClass !== null) {
+            $cls = $this->ormClass;
+            return $cls::setPdoOneQuery($this)::setRecursive($rec);
+        }
+        return $this->_recursive($rec);
+    }
+
+    /**
+     * Used internally _BasePdoOneRepo. It always calls the native recursive assignment.
+     *
+     * @param $rec
+     * @return $this
+     */
+    public function _recursive($rec)
     {
         if (is_array($rec)) {
             $this->recursive = $rec;
@@ -1417,7 +1659,7 @@ class PdoOneQuery
      * @param array        $excludeColumn (optional) columns to exclude. Example
      *                                    ['col1','col2']
      *
-     * @return false|int|string
+     * @return false|int
      * @throws Exception
      */
     public function insertObject($tableName, &$object, $excludeColumn = [])
@@ -1428,10 +1670,10 @@ class PdoOneQuery
             unset($objectCopy[$ex]);
         }
 
-        $id = $this->insert($tableName, $objectCopy);
-        /** id could be 0,false or null (when it is not generated */
+        $id = $this->_insert($tableName, $objectCopy);
+        /** id could be 0,false or null (when it is not generated) */
         if ($id) {
-            $pks = $this->parent->service->getDefTableKeys($tableName, true, 'PRIMARY KEY');
+            $pks = $this->parent->setUseInternalCache()->service->getDefTableKeys($tableName, true, 'PRIMARY KEY');
             if ($pks > 0) {
                 // we update the object because it returned an identity.
                 $k = array_keys($pks)[0]; // first primary key
@@ -1460,7 +1702,7 @@ class PdoOneQuery
      *      ->insert();
      *</pre>
      *
-     * @param null|string       $tableName
+     * @param string|array      $tableNameOrValues
      * @param string[]|null     $tableDef
      * @param string[]|int|null $values
      *
@@ -1468,10 +1710,24 @@ class PdoOneQuery
      * @throws Exception
      */
     public function insert(
-        $tableName = null,
+        &$tableNameOrValues = null,
         $tableDef = null,
         $values = PdoOne::NULL
     )
+    {
+        if ($this->ormClass !== null) {
+            $cls = $this->ormClass;
+            return $cls::setPdoOneQuery($this)::insert($tableNameOrValues);
+        }
+        return $this->_insert($tableNameOrValues, $tableDef, $values);
+    }
+
+    /**
+     * @throws Exception
+     */
+    protected function _insert($tableName = null,
+                               $tableDef = null,
+                               $values = PdoOne::NULL)
     {
         if ($tableName === null) {
             $tableName = $this->from;
@@ -1546,6 +1802,9 @@ class PdoOneQuery
         return $set;
     }
 
+
+    //<editor-fold desc="Encryption functions" defaultstate="collapsed" >
+
     /**
      * Delete a row(s) if they exists.
      * Example:
@@ -1556,31 +1815,37 @@ class PdoOneQuery
      *          ->delete() // running on a chain
      *      delete('table where condition=1');
      *
-     * @param string|null   $tableName
+     * @param string|null   $tableOrObject
      * @param string[]|null $tableDefWhere
      * @param string[]|int  $valueWhere
      *
-     * @return false|int
+     * @return false|int If successes then it returns the number of rows deleted.
      * @throws Exception
      */
     public function delete(
-        $tableName = null,
+        $tableOrObject = null,
         $tableDefWhere = null,
         $valueWhere = PdoOne::NULL
     )
     {
 
-        if ($tableName === null) {
-            $tableName = $this->from;
+        if ($this->ormClass !== null) {
+            $cls = $this->ormClass;
+            $this->ormClass = null; // toavoid recursivity
+            /** @see \eftec\_BasePdoOneRepo::_delete() */
+            return $cls::setPdoOneQuery($this)::delete($tableOrObject);
+        }
+        if ($tableOrObject === null) {
+            $tableOrObject = $this->from;
         } else {
-            $this->parent->tables[] = $tableName;
+            $this->parent->tables[] = $tableOrObject;
         }
         if ($this->useCache === true) {
             $this->parent->invalidateCache('', $this->cacheFamily);
         }
         // using builder. from()->set()->where()->update()
         $errorCause = '';
-        if (!$tableName) {
+        if (!$tableOrObject) {
             $errorCause = "you can't execute an empty delete() without a from()";
         }
         if ($errorCause) {
@@ -1593,7 +1858,7 @@ class PdoOneQuery
         }
 
         /** @noinspection SqlWithoutWhere */
-        $sql = 'delete from ' . $this->parent->addDelimiter($tableName);
+        $sql = 'delete from ' . $this->parent->addDelimiter($tableOrObject);
         $sql .= $this->constructWhere();
         $param = $this->whereParamAssoc;
 
@@ -1606,9 +1871,6 @@ class PdoOneQuery
 
         return $this->parent->affected_rows($stmt);
     }
-
-
-    //<editor-fold desc="Encryption functions" defaultstate="collapsed" >
 
     /**
      * Generate and run an update in the database.
@@ -1623,7 +1885,7 @@ class PdoOneQuery
      *      update('product_category set col1=10 where idproducttype=1')
      * </pre>
      *
-     * @param string|null       $tableName The name of the table or the whole
+     * @param string|null|array $tableOrObject The name of the table or the whole
      *                                     query.
      * @param string[]|null     $tableDef
      * @param string[]|int|null $values
@@ -1634,18 +1896,24 @@ class PdoOneQuery
      * @throws Exception
      */
     public function update(
-        $tableName = null,
+        $tableOrObject = null,
         $tableDef = null,
         $values = PdoOne::NULL,
         $tableDefWhere = null,
         $valueWhere = PdoOne::NULL
     )
     {
-        if ($tableName === null) {
+        if ($this->ormClass !== null) {
+            $cls = $this->ormClass;
+            $this->ormClass=null; // toavoid recursivity
+            /** @see \eftec\_BasePdoOneRepo::_update() */
+            return $cls::setPdoOneQuery($this)::update($tableOrObject);
+        }
+        if ($tableOrObject === null) {
             // using builder. from()->set()->where()->update()
-            $tableName = $this->from;
+            $tableOrObject = $this->from;
         } else {
-            $this->parent->tables[] = $tableName;
+            $this->parent->tables[] = $tableOrObject;
         }
         if ($this->useCache === true) {
             $this->parent->invalidateCache('', $this->cacheFamily);
@@ -1661,7 +1929,7 @@ class PdoOneQuery
 
         $errorCause = '';
 
-        if (!$tableName) {
+        if (!$tableOrObject) {
             $errorCause = "you can't execute an empty update() without a from()";
         }
         if (count($this->set) === 0) {
@@ -1672,7 +1940,7 @@ class PdoOneQuery
             return false;
         }
 
-        $sql = 'update ' . $this->parent->addDelimiter($tableName);
+        $sql = 'update ' . $this->parent->addDelimiter($tableOrObject);
         $sql .= $this->constructSet();
         $sql .= $this->constructWhere();
         $param = array_merge($this->setParamAssoc, $this->whereParamAssoc); // the order matters.
@@ -1718,7 +1986,6 @@ class PdoOneQuery
     {
         return $this->havingParamAssoc;
     }
-
 
     /**
      * It adds an "order by" in a query.<br>
@@ -1783,33 +2050,6 @@ class PdoOneQuery
             $sql = "$sql on $condition";
         }
         $this->from .= ($sql) ? " inner join $sql " : '';
-        $this->parent->tables[] = explode(' ', $sql)[0];
-
-        return $this;
-    }
-
-    /**
-     * Adds a from for a query. It could be used by select,insert,update and
-     * delete.<br>
-     * <b>Example:</b><br>
-     * <pre>
-     *      from('table')
-     *      from('table alias')
-     *      from('table1,table2')
-     *      from('table1 inner join table2 on table1.c=table2.c')
-     * </pre>
-     *
-     * @param string $sql Input SQL query
-     *
-     * @return PdoOneQuery
-     * @test InstanceOf PdoOne::class,this('table t1')
-     */
-    public function from($sql)
-    {
-        if ($sql === null) {
-            return $this;
-        }
-        $this->from = ($sql) ? $sql . $this->from : $this->from;
         $this->parent->tables[] = explode(' ', $sql)[0];
 
         return $this;

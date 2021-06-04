@@ -115,6 +115,7 @@ class PdoOne_mysql_Test extends TestCase
         $this->pdoOne->setCacheService($cache);
     }
 
+
     public function test_procedure() {
         if(!$this->pdoOne->objectExist('tablelog')) {
             self::assertEquals(true,
@@ -511,7 +512,7 @@ class PdoOne_mysql_Test extends TestCase
 
         $this->pdoOne->insert('product_category', ['id_category' => 4, 'catname' => 'cheap4']);
         $this->pdoOne->insert('product_category', ['id_category', '5', 'catname', 'cheap']);
-        $count = $this->pdoOne->count('from product_category')->firstScalar();
+        $count = $this->pdoOne->count('from product_category');
         self::assertEquals(5, $count, 'insert must value 5');
 
         $count = $this->pdoOne->select('select id_category from product_category where id_category=123')->useCache()
@@ -559,13 +560,13 @@ class PdoOne_mysql_Test extends TestCase
         $count = $this->pdoOne->select('select catname from product_category')
             ->where('id_category=:idcat', ['idcat' => 4])->firstScalar();
         self::assertEquals('cheap4', $count, 'insert must value cheap4');
-        self::assertEquals(137, $this->pdoOne->sum('id_category')->from('product_category')->firstScalar(),
+        self::assertEquals(137, $this->pdoOne->from('product_category')->sum('id_category'),
             'sum must value 137');
-        self::assertEquals(2, $this->pdoOne->min('id_category')->from('product_category')->firstScalar(),
+        self::assertEquals(2, $this->pdoOne->from('product_category')->min('id_category'),
             'min must value 2');
-        self::assertEquals(123, $this->pdoOne->max('id_category')->from('product_category')->firstScalar(),
+        self::assertEquals(123, $this->pdoOne->from('product_category')->max('id_category'),
             'max must value 123');
-        self::assertEquals(27.4, $this->pdoOne->avg('id_category')->from('product_category')->firstScalar(),
+        self::assertEquals(27.4, $this->pdoOne->from('product_category')->avg('id_category'),
             'avg must value 27.4');
         self::assertEquals([
             ['id_category' => 2],
@@ -819,7 +820,7 @@ class PdoOne_mysql_Test extends TestCase
 
         $this->pdoOne->runMultipleRawQuery("insert into product_category(id_category,catname) values (3,'multi');
                 insert into product_category(id_category,catname) values (4,'multi'); ");
-        self::assertEquals(4, $this->pdoOne->count()->from('product_category')->firstScalar());
+        self::assertEquals(4, $this->pdoOne->from('product_category')->count());
         $r = $this->pdoOne->set(['id_category', 1, 'catname', 'c1'])->from('category')->insert();
         $obj = ['id_category' => 2, 'catname' => 'c2'];
         $r = $this->pdoOne->insertObject('category', $obj);
@@ -831,7 +832,7 @@ class PdoOne_mysql_Test extends TestCase
 
         $this->pdoOne->delete('product_category where id_category>0');
 
-        self::assertEquals(0, $this->pdoOne->count()->from('product_category')->firstScalar());
+        self::assertEquals(0, $this->pdoOne->from('product_category')->count());
     }
 
     public function test_time()

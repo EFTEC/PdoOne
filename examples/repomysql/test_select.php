@@ -7,11 +7,15 @@ use repomysql\TableParentRepo;
 
 
 include "common.php";
+//$result=TableParentRepo::insert();
+$result=TableParentRepo::where('idtablaparentPK=2')->recursive('*')->toListKeyValue();
 
-$result=TableParentRepo::where('fieldkey',['key1'])::toList(); // ::setRecursive(['*'])
+
+//$result=TableParentRepo::where('fieldkey',['key1'])->toList(); // ::setRecursive(['*'])
 new dBug($result);
+die(1);
 echo "<br><br>";
-$result=TableParentRepo::where('fieldkey',['key1'])::first(); // ::setRecursive(['*'])
+$result=TableParentRepo::where('fieldkey',['key1'])->first(); // ::setRecursive(['*'])
 new dBug($result);
 echo "<br><br>";
 

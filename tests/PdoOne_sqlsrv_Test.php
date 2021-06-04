@@ -33,7 +33,11 @@ class CacheServicesrv implements IPdoOneCache {
     }
 }
 
-
+/**
+ * Class PdoOne_sqlsrv_Test
+ * @package eftec\tests
+ * @deprecated
+ */
 class PdoOne_sqlsrv_Test extends TestCase
 {
 	/** @var PdoOne */
@@ -385,9 +389,9 @@ class PdoOne_sqlsrv_Test extends TestCase
             ,$this->pdoOne->min('id_category')->from('product_category')->firstScalar()
             ,'min must value 2');
         self::assertEquals(123
-            ,$this->pdoOne->max('id_category')->from('product_category')->firstScalar()
+            ,$this->pdoOne->from('product_category')->max('id_category')
             ,'max must value 123');
-        $rr=$this->pdoOne->avg('id_category')->from('product_category')->firstScalar();
+        $rr=$this->pdoOne->from('product_category')->avg('id_category');
         self::assertEquals(27.4
             ,$rr
             ,'avg must value 27.4',0.1);
