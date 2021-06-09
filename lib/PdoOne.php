@@ -52,11 +52,11 @@ use stdClass;
  * @package       eftec
  * @author        Jorge Castro Castillo
  * @copyright (c) Jorge Castro C. MIT License  https://github.com/EFTEC/PdoOne
- * @version       2.14
+ * @version       2.14.1
  */
 class PdoOne
 {
-    const VERSION = '2.14';
+    const VERSION = '2.14.1';
     /** @var int We need this value because null and false could be a valid value. */
     const NULL = PHP_INT_MAX;
     /** @var string Prefix of the tables */
@@ -1472,7 +1472,10 @@ eot;
                 }
                 if (!$found) {
                     $args = [];
-                    if (is_array($error['args'])) {
+                    if (array_key_exists('args',$error)) {
+                        if(!is_array($error['args'])) {
+                            $error['args']=[$error['args']]; // converting into array
+                        }
                         foreach ($error['args'] as $v) {
                             if (is_object($v)) {
                                 $args[] = get_class($v);

@@ -1954,7 +1954,8 @@ In a nutshell:
 * Every decimal version means that it patches/fixes/refactoring a previous functionality i.e. 1.5.0 -> 1.5.1 (fix)
 
 
-
+* 2.14.1 2021-06-09
+  * [fix] custom_exception_handler when the error returned does not have an argument, or the argument is not an array.
 * 2.14 2021-06-04
 
 * * **_BasePdoOneRepo** now works more closely with the class **PdoOneQuery**, so each query is a different instance.

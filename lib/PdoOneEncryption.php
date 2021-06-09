@@ -1,4 +1,5 @@
-<?php /** @noinspection EncryptionInitializationVectorRandomnessInspection */
+<?php /** @noinspection PhpComposerExtensionStubsInspection */
+/** @noinspection EncryptionInitializationVectorRandomnessInspection */
 
 /** @noinspection CryptographicallySecureRandomnessInspection */
 
@@ -153,7 +154,7 @@ class PdoOneEncryption
     /**
      * It is a simple encryption. It's less safe but generates a short string
      * @param $data
-     * @return mixed
+     * @return array|string|string[]
      */
     public function encryptSimple($data) {
         $result = '';
@@ -182,7 +183,6 @@ class PdoOneEncryption
             $this->encEnabled = false;
             throw new RuntimeException('OpenSSL not loaded, encryption disabled');
         }
-
         $this->encEnabled = true;
         $this->encPassword = $password;
         $this->encSalt = $salt;
@@ -202,6 +202,13 @@ class PdoOneEncryption
         }
         return (PHP_INT_SIZE === 4 ? $this->encrypt32($n) : $this->encrypt64($n)) ^ $this->encPassword;
     }
+
+    /**
+     * It decrypt an integer
+     *
+     * @param int $n
+     * @return int|null
+     */
     public function decryptInteger($n) {
         if (!is_numeric($n)) {
             return null;
