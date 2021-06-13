@@ -52,11 +52,11 @@ use stdClass;
  * @package       eftec
  * @author        Jorge Castro Castillo
  * @copyright (c) Jorge Castro C. MIT License  https://github.com/EFTEC/PdoOne
- * @version       2.14.1
+ * @version       2.14.2
  */
 class PdoOne
 {
-    const VERSION = '2.14.1';
+    const VERSION = '2.14.2';
     /** @var int We need this value because null and false could be a valid value. */
     const NULL = PHP_INT_MAX;
     /** @var string Prefix of the tables */
