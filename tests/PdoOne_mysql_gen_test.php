@@ -4,6 +4,7 @@
 /** @noinspection PhpIllegalPsrClassPathInspection */
 
 //<editor-fold desc="use">
+use eftec\IPdoOneCache;
 use eftec\PdoOne;
 use PHPUnit\Framework\TestCase;
 use repomysql\TableCategoryRepo;
@@ -38,6 +39,90 @@ include __DIR__ . '/../examples/repomysql/generated/TableParentxCategoryRepo.php
 
 include __DIR__ . '/dBug.php';
 //</editor-fold>
+
+/**
+ * Class CacheServicesmysql
+ *
+ * @package eftec\tests
+ * @noautoload
+ */
+// it is an example of a CacheService
+class CacheServicesmysql implements IPdoOneCache
+{
+    public $cacheData = [];
+    public $cacheDataFamily = [];
+    public $cacheCounter = 0; // for debug
+    public $track=[];
+
+    public function getCache($uid, $family = '')
+    {
+        if (isset($this->cacheData[$uid])) {
+            $this->track[]='getok.'.$uid;
+            $this->cacheCounter++;
+            return $this->cacheData[$uid];
+        }
+        $this->track[]='getfail.'.$uid;
+        return false;
+    }
+
+    /**
+     * @param string $uid
+     * @param string $family
+     * @param null   $data
+     * @param null   $ttl
+     */
+    public function setCache($uid, $family = '', $data = null, $ttl = null)
+    {
+        $this->track[]='set.'.$uid;
+        if ($family === '') {
+            $this->cacheData[$uid] = $data;
+        } else {
+            if (!is_array($family)) {
+                $family = [$family];
+            }
+            foreach ($family as $fam) {
+                if (!isset($this->cacheDataFamily[$fam])) {
+                    $this->cacheDataFamily[$fam] = [];
+                }
+
+                $this->cacheDataFamily[$fam][] = $uid;
+                $this->cacheData[$uid] = $data;
+                //var_dump($fam);
+                //var_dump($this->cacheDataFamily[$fam]);
+            }
+        }
+    }
+
+    /**
+     * @param string       $uid
+     * @param string|array $family
+     *
+     * @return void
+     */
+    public function invalidateCache($uid = '', $family = '')
+    {
+        if ($family === '') {
+            if ($uid === '') {
+                $this->cacheData = []; // we delete all the cache
+            } else {
+                $this->cacheData[$uid] = [];
+            }
+        } else {
+            if (!is_array($family)) {
+                $family = [$family];
+            }
+            foreach ($family as $fam) {
+                foreach ($this->cacheDataFamily[$fam] as $id) {
+                    unset($this->cacheData[$id]);
+                    echo "deleting cache $id\n";
+                }
+                $this->cacheDataFamily[$fam] = [];
+            }
+        }
+        //unset($this->cacheData[$uid]);
+    }
+}
+
 
 /**
  * It tests the code generated in examples/repo
@@ -540,6 +625,47 @@ class PdoOne_mysql_gen_test extends TestCase
         $gc['idtablaparentPKFK'] = 1;
         $gc['idcategoryPKFK'] = 2;
         self::assertEquals(1, TableParentxCategoryRepo::insert($gc));
+    }
+
+    /** @noinspection NullPointerExceptionInspection */
+    public function testCache()
+    {
+
+        $rows = TableParentRepo::toList();
+        self::assertGreaterThan(0, count($rows));
+        $cs = new CacheServicesmysql();
+        TableParentRepo::base()->setCacheService($cs);
+     //   $rows = TableParentRepo::useCache(2000)->recursive(['_idchildFK'])->first();
+      //  self::assertEquals([
+      //      "getfail.TableParent::firstc47e9fda10c3e9581450d888d6d47ddbd239765657977d3b6e76d751d918a7a3",
+      //      "set.TableParent::firstc47e9fda10c3e9581450d888d6d47ddbd239765657977d3b6e76d751d918a7a3"
+      //  ],$cs->track);
+        $rows = TableParentRepo::useCache(2000,['a1'])->recursive(['_idchildFK'])->first();
+        self::assertEquals([
+            "getfail.TableParent::firstc47e9fda10c3e9581450d888d6d47ddbd239765657977d3b6e76d751d918a7a3",
+            "set.TableParent::firstc47e9fda10c3e9581450d888d6d47ddbd239765657977d3b6e76d751d918a7a3"
+        ],$cs->track);
+
+        //$rows = TableParentRepo::useCache(2000)->recursive(['_idchildFK'])->limit("0,2")->toList();
+        //$rows = TableParentRepo::useCache(2000)->recursive(['_idchildFK'])->limit("0,2")->toList();
+        //$this->assertEquals(3,count($rows[0]['_idchildFK']));
+
+    }
+    public function testCache2()
+    {
+        $rows = TableParentRepo::toList();
+        self::assertGreaterThan(0, count($rows));
+        $cs = new CacheServicesmysql();
+        TableParentRepo::base()->setCacheService($cs);
+        //$rows = TableParentRepo::setRecursive(['_idchildFK'])->useCache(2000)->limit("0,2")->toList();
+        $rows = TableParentRepo::setRecursive(['_idchildFK'])->useCache(2000)->first();
+        //$rows = TableParentRepo::setRecursive(['_idchildFK'])->useCache(2000)->limit("0,2")->toList();
+        //$this->assertEquals(3,count($rows[0]['_idchildFK']));
+        self::assertEquals([
+            "getfail.TableParent::firstc47e9fda10c3e9581450d888d6d47ddbd239765657977d3b6e76d751d918a7a3",
+            "set.TableParent::firstc47e9fda10c3e9581450d888d6d47ddbd239765657977d3b6e76d751d918a7a3"
+        ],$cs->track);
+
     }
 
     public function testSelect()

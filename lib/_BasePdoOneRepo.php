@@ -49,18 +49,10 @@ abstract class _BasePdoOneRepo
     public static $lastException = '';
     /** @var bool if true then it returns a false on error. If false, it throw an exception in case of error */
     protected static $falseOnError = false;
-    /**
-     * @var null|bool|int $ttl If <b>null</b> then the cache never expires.<br>
-     *                         If <b>false</b> then we don't use cache.<br>
-     *                         If <b>int</b> then it is the duration of the
-     *     cache
-     *                         (in seconds)
-     */
-    private static $useCache = false;
+
     /** @var null|string the unique id generate by sha256 and based in the query, arguments, type and methods */
     private static $uid;
-    /** @var string [optional] It is the family or group of the cache */
-    private static $cacheFamily = '';
+
 
     /**
      * If true then it returns false on exception. Otherwise, it throws an exception.
@@ -148,9 +140,7 @@ abstract class _BasePdoOneRepo
      */
     protected static function reset()
     {
-        self::$useCache = false;
         self::$uid = null;
-        self::$cacheFamily = '';
         self::$gQueryCounter = 0;
         self::$gQuery = [];
         self::$falseOnError = false;
@@ -285,10 +275,10 @@ abstract class _BasePdoOneRepo
     public static function query($sql, $param = null)
     {
         try {
-            $pdoOne = self::getQuery();
-            if (self::$useCache && $pdoOne->parent->getCacheService() !== null) {
-                self::$uid = $pdoOne->buildUniqueID([$sql, $param], 'query');
-                $getCache = $pdoOne->parent->getCacheService()->getCache(self::$uid, static::TABLE);
+            $query = self::getQuery();
+            if ($query->useCache && $query->parent->getCacheService() !== null) {
+                self::$uid = $query->buildUniqueID([$sql, $param], 'query');
+                $getCache = $query->parent->getCacheService()->getCache(self::$uid, static::TABLE);
                 if ($getCache !== false) {
                     self::reset();
                     return $getCache;
@@ -301,7 +291,7 @@ abstract class _BasePdoOneRepo
             }
             $rowc = self::getPdoOne()->runRawQuery($sql, $param);
             if ($rowc !== false && $usingCache) {
-                $pdoOne->parent->getCacheService()->setCache(self::$uid, $recursiveClass, $rowc, self::$useCache);
+                $query->parent->getCacheService()->setCache(self::$uid, $recursiveClass, $rowc,$query->useCache);
                 self::reset();
             }
         } catch (Exception $exception) {
@@ -537,8 +527,7 @@ abstract class _BasePdoOneRepo
      */
     public static function useCache($ttl = null, $family = '')
     {
-        self::$useCache = $ttl;
-        return self::getQuery()->useCache($ttl, $family);
+        return self::newQuery()->useCache($ttl, $family);
     }
 
     /**
@@ -641,7 +630,7 @@ abstract class _BasePdoOneRepo
     public static function count($where = null)
     {
         $pdoOne = self::getQuery();
-        if (self::$useCache && $pdoOne->parent->getCacheService() !== null) {
+        if ($pdoOne->useCache && $pdoOne->parent->getCacheService() !== null) {
             self::$uid = $pdoOne->buildUniqueID([$where], static::TABLE . '::count');
             $getCache = $pdoOne->parent->getCacheService()->getCache(self::$uid, static::TABLE);
             if ($getCache !== false) {
@@ -663,7 +652,7 @@ abstract class _BasePdoOneRepo
         $from = (isset(self::$gQuery[0]['joins'])) ? self::$gQuery[0]['joins'] : [];
         $rowc = self::getPdoOne()->from($from)->where($where)->count();
         if ($rowc !== false && $usingCache) {
-            $pdoOne->parent->getCacheService()->setCache(self::$uid, $recursiveClass, (int)$rowc, self::$useCache);
+            $pdoOne->parent->getCacheService()->setCache(self::$uid, $recursiveClass, (int)$rowc, $pdoOne->useCache);
             //self::reset();
         }
         self::reset();
@@ -967,19 +956,22 @@ abstract class _BasePdoOneRepo
             static::$gQuery = [];
             static::$gQueryCounter = 0;
             $pdoOneQuery = self::getQuery();
+
             //$thowableBackup = $pdoOneQuery->parent->throwOnError;
-            if (self::$useCache && $pdoOneQuery->parent->getCacheService() !== null) {
+            if ($pdoOneQuery->useCache && $pdoOneQuery->parent->getCacheService() !== null) {
                 self::$uid = $pdoOneQuery->buildUniqueID([$filter, $filterValue], static::TABLE . '::' . $typeOper);
                 $getCache = $pdoOneQuery->parent->getCacheService()->getCache(self::$uid, static::TABLE);
                 if ($getCache !== false) {
                     self::reset();
                     return $getCache;
                 }
-                $recursiveClass = static::getRecursiveClass();
-                $usingCache = true;
+                //$recursiveClass = static::getRecursiveClass();
+                $usingCache = $pdoOneQuery->useCache;
+                $usingCacheFamily=$pdoOneQuery->cacheFamily;
             } else {
-                $recursiveClass = null;
+                //$recursiveClass = null;
                 $usingCache = false;
+                $usingCacheFamily='';
             }
             $newQuery = [];
             $ns = self::getNamespace();
@@ -999,12 +991,13 @@ abstract class _BasePdoOneRepo
                     }
                     switch ($typeOper) {
                         case 'toList':
-                            $rows = $pdoOneQuery->select($cols)->from($from)->where($filter, $filterValue)->_toList();
+                            // useCache(false) avoid double cache.
+                            $rows = $pdoOneQuery->useCache(false)->select($cols)->from($from)->where($filter, $filterValue)->_toList();
                             break;
                         case 'first':
                             //$pdoOne->builderReset();
                             $rows = [
-                                $pdoOneQuery->select($cols)->from($from)->where($filter)->_first()
+                                $pdoOneQuery->useCache(false)->select($cols)->from($from)->where($filter)->_first()
                             ];
                             break;
                         default:
@@ -1025,7 +1018,7 @@ abstract class _BasePdoOneRepo
                         }
                         $rc = trim($query['data']['refcol2'], PdoOne::$prefixBase);
 
-                        $partialRows = $pdoOneQuery->select($cols)->from($from . ' as t1 ')
+                        $partialRows = $pdoOneQuery->useCache(false)->select($cols)->from($from . ' as t1 ')
                             ->join($query['data']['table2'] . ' as tj on tj.' . $query['data']['col2'] . '=t1.' . $rc)
                             ->where($query['where'], $row[$query['col']])
                             ->_toList();
@@ -1042,7 +1035,7 @@ abstract class _BasePdoOneRepo
                     foreach ($rows as &$row) {
                         $from = $query['joins'];
                         $cols = implode(',', $query['columns']);
-                        $partialRows = $pdoOneQuery->select($cols)->from($from)->where($query['where'], $row[$query['col']])
+                        $partialRows = $pdoOneQuery->useCache(false)->select($cols)->from($from)->where($query['where'], $row[$query['col']])
                             ->_toList();
                         foreach ($partialRows as $k => $rowP) {
                             $row2 = self::convertRow($rowP);
@@ -1065,7 +1058,7 @@ abstract class _BasePdoOneRepo
                 self::convertSQLValueInit($rowc, true);
             }
             if ($rowc !== false && $usingCache) {
-                $pdoOneQuery->parent->getCacheService()->setCache(self::$uid, $recursiveClass, $rowc, self::$useCache);
+                $pdoOneQuery->parent->getCacheService()->setCache(self::$uid, $usingCacheFamily, $rowc, $pdoOneQuery->useCache);
             }
             self::reset();
             return $rowc;

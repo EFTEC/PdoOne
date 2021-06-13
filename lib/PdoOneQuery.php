@@ -30,9 +30,9 @@ class PdoOneQuery
      *     cache
      *                         (in seconds)
      */
-    protected $useCache = false;
+    public $useCache = false;
     /** @var string|array [optional] It is the family or group of the cache */
-    protected $cacheFamily = '';
+    public $cacheFamily = '';
     protected $select = '';
     protected $limit = '';
     protected $order = '';
@@ -1579,7 +1579,10 @@ class PdoOneQuery
     {
         if ($this->ormClass !== null) {
             $cls = $this->ormClass;
-            return $cls::setPdoOneQuery($this)::setRecursive($rec);
+            if(is_string($rec)) {
+                /** @noinspection PhpPossiblePolymorphicInvocationInspection */
+                $rec=$cls::getRelations($rec);
+            }
         }
         return $this->_recursive($rec);
     }
@@ -2076,7 +2079,7 @@ class PdoOneQuery
      * @param null|bool|int $ttl        <b>null</b> then the cache never expires.<br>
      *                                  <b>false</b> then we don't use cache.<br>
      *                                  <b>int</b> then it is the duration of the cache (in seconds)
-     * @param string|array  $family     [optional] It is the family or group of the cache. It could be used to
+     * @param string|array|null  $family     [optional] It is the family or group of the cache. It could be used to
      *                                  identify a group of cache to invalidate the whole group (for example
      *                                  ,invalidate all cache from a specific table).<br>
      *                                  <b>*</b> If "*" then it uses the tables assigned by from() and join()
@@ -2086,6 +2089,13 @@ class PdoOneQuery
      */
     public function useCache($ttl = 0, $family = '')
     {
+        if ($this->ormClass !== null && $ttl!==false) {
+            $cls = $this->ormClass;
+            if($family==='') {
+                $family=$cls::setPdoOneQuery($this)::getRecursiveClass();
+            }
+            //return $cls::setPdoOneQuery($this)::(PdoOne::NULL, null);
+        }
         if ($this->parent->cacheService === null) {
             $ttl = false;
         }
