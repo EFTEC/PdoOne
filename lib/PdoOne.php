@@ -52,11 +52,11 @@ use stdClass;
  * @package       eftec
  * @author        Jorge Castro Castillo
  * @copyright (c) Jorge Castro C. MIT License  https://github.com/EFTEC/PdoOne
- * @version       2.14.2
+ * @version       2.14.3
  */
 class PdoOne
 {
-    const VERSION = '2.14.2';
+    const VERSION = '2.14.3';
     /** @var int We need this value because null and false could be a valid value. */
     const NULL = PHP_INT_MAX;
     /** @var string Prefix of the tables */
@@ -141,10 +141,15 @@ class PdoOne
     public $charset = 'utf8';
     /** @var bool It is true if the database is connected otherwise,it's false */
     public $isOpen = false;
-    /** @var bool If true (default), then it throws an error if happens an error. If false, then the execution continues */
+    /**
+     * @var bool If true (default), then it throws an error if happens an error. If false, then the execution continues
+     */
     public $throwOnError = true;
-    /** @var bool If true (default), then it throws a customer message.. If false, then it uses the default (PHP) style */
+    /**
+     * @var bool If true (default), then it throws a customer message.. If false, then it uses the default (PHP) style
+     */
     public $customError = true;
+    /** @var string[] PHP classes excluded by the custom error log */
     public $traceBlackList = ['PdoOne.php', 'PdoOneQuery.php', 'PdoOne_Mysql.php', 'PdoOne.Sqlsrv.php', 'PdoOne.Oci.php'
         , 'PdoOneTestMockup.php', '_BasePdoOneRepo.php'];
     /** @var  PDO */
@@ -162,8 +167,8 @@ class PdoOne
      * 0=no debug for production (all message of error are generic)<br>
      * 1=it shows an error message<br>
      * 2=it shows the error messages and the last query<br>
-     * 3=it shows the error messages, the last query, the trace and the last parameters (if
-     * any). It could be unsafe (it could show password)
+     * 3=it shows the error messages, the last query, the trace and the last parameters (if any).
+     * Note: it could show passwords<br>
      */
     public $logLevel = 0;
     /** @var string last query executed */
@@ -1457,15 +1462,16 @@ eot;
     {
         $isCli = !http_response_code();
         $customMessage = $customMessage === null ? $exception->getMessage() : $customMessage;
-        $r = "Uncaught Exception: [" . get_class($exception) . "] code:" . $exception->getCode() . "\n" . $customMessage . "\n";
+        $r = "Uncaught Exception: [" . get_class($exception) . "] code:" . $exception->getCode() . "\n"
+            . $customMessage . "\n";
         if ($this->logLevel > 2) {
             $r .= "{{Trace:}}\n";
             foreach ($exception->getTrace() as $error) {
                 // we remove all trace pointing to this file.
                 $found = false;
-                $f = $error['file'];
+                $file = isset($error['file'])?$error['file']:'(fileless)';
                 foreach ($this->traceBlackList as $k) {
-                    if (strpos($f, $k) !== false) {
+                    if (strpos($file, $k) !== false) {
                         $found = true;
                         break;
                     }
@@ -1491,10 +1497,10 @@ eot;
                     if (isset($error['class'])) {
                         $function = $error['class'] . $error['type'] . $error['function'];
                     } else {
-                        $function = $error['function'];
+                        $function = @$error['function'];
                     }
 
-                    $r .= $error['file'] . ':' . $error['line'] . "\t" . $function . '('
+                    $r .= $file . ':' . @$error['line'] . "\t" . $function . '('
                         . @implode(' , ', $args) . ')' . "\n";
                 }
             }
@@ -2681,7 +2687,7 @@ abstract class Abstract{classname} extends {baseclass}
      * self::setRecursive('*'); // recursive every MANYTOONE,ONETOONE,MANYTOONE and ONETOONE relations (first level) 
      * self::setRecursive('MANYTOONE'); // recursive all relations of the type MANYTOONE (first level)
      * self::setRecursive(['_relation1','_relation2']); // recursive only the relations of the first level 
-     * self::setRecursive(['_relation1','_relation1/_subrelation1']); // recursive the relations (first and second level)
+     * self::setRecursive(['_relation1','_relation1/_subrelation1']); //recursive the relations (first and second level)
      * </pre>
      * If array then it uses the values to set the recursivity.<br>
      * If string then the values allowed are '*', 'MANYTOONE','ONETOMANY','MANYTOMANY','ONETOONE' (first level only)<br>

@@ -279,11 +279,9 @@ class PdoOneQuery
         $having = $this->constructHaving();
 
         $sql .= $where . $this->group . $having . $this->order . $this->limit;
-
         if ($resetStack) {
             $this->builderReset();
         }
-
         return $sql;
     }
 
@@ -1362,6 +1360,21 @@ class PdoOneQuery
             $result=array_merge($result,$values);
         }
         return $result;
+    }
+    /**
+     * Returns an array with nulls
+     *
+     * @param array|null $values          =self::factory()
+     * @param string     $recursivePrefix It is the prefix of the recursivity.
+     *
+     * @return array
+     */
+    public function factoryNull($values = null, $recursivePrefix = '') {
+        if ($this->ormClass !== null) {
+            $cls = $this->ormClass;
+            return $cls::setPdoOneQuery($this)::factoryNull($values,$recursivePrefix);
+        }
+        return $this->factory($values,$recursivePrefix);
     }
 
     /**

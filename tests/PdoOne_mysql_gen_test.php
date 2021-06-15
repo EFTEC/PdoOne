@@ -52,16 +52,16 @@ class CacheServicesmysql implements IPdoOneCache
     public $cacheData = [];
     public $cacheDataFamily = [];
     public $cacheCounter = 0; // for debug
-    public $track=[];
+    public $track = [];
 
     public function getCache($uid, $family = '')
     {
         if (isset($this->cacheData[$uid])) {
-            $this->track[]='getok.'.$uid;
+            $this->track[] = 'getok.' . $uid;
             $this->cacheCounter++;
             return $this->cacheData[$uid];
         }
-        $this->track[]='getfail.'.$uid;
+        $this->track[] = 'getfail.' . $uid;
         return false;
     }
 
@@ -73,7 +73,7 @@ class CacheServicesmysql implements IPdoOneCache
      */
     public function setCache($uid, $family = '', $data = null, $ttl = null)
     {
-        $this->track[]='set.'.$uid;
+        $this->track[] = 'set.' . $uid;
         if ($family === '') {
             $this->cacheData[$uid] = $data;
         } else {
@@ -627,30 +627,51 @@ class PdoOne_mysql_gen_test extends TestCase
         self::assertEquals(1, TableParentxCategoryRepo::insert($gc));
     }
 
-    /** @noinspection NullPointerExceptionInspection */
-    public function testCache()
+    /** @noinspection SuspiciousAssignmentsInspection */
+    public function testCacheSimple()
     {
-
         $rows = TableParentRepo::toList();
         self::assertGreaterThan(0, count($rows));
         $cs = new CacheServicesmysql();
         TableParentRepo::base()->setCacheService($cs);
-     //   $rows = TableParentRepo::useCache(2000)->recursive(['_idchildFK'])->first();
-      //  self::assertEquals([
-      //      "getfail.TableParent::firstc47e9fda10c3e9581450d888d6d47ddbd239765657977d3b6e76d751d918a7a3",
-      //      "set.TableParent::firstc47e9fda10c3e9581450d888d6d47ddbd239765657977d3b6e76d751d918a7a3"
-      //  ],$cs->track);
-        $rows = TableParentRepo::useCache(2000,['a1'])->recursive(['_idchildFK'])->first();
+        $row = TableParentRepo::useCache(2000)->first();
+        $row = TableParentRepo::useCache(2000)->first();
+        self::assertEquals([
+            0 => 'getfail.TableParent::first70d697ea4281195ebedfb784d13aa2241760521ee792326129f609e8da713127',
+            1 => 'set.TableParent::first70d697ea4281195ebedfb784d13aa2241760521ee792326129f609e8da713127',
+            2 => 'getok.TableParent::first70d697ea4281195ebedfb784d13aa2241760521ee792326129f609e8da713127'
+        ], $cs->track);
+
+        TableParentRepo::base()->setCacheService(null);
+    }
+
+    /** @noinspection NullPointerExceptionInspection */
+    public function testCache()
+    {
+        $rows = TableParentRepo::toList();
+        self::assertGreaterThan(0, count($rows));
+        $cs = new CacheServicesmysql();
+
+        TableParentRepo::base()->setCacheService($cs);
+        //   $rows = TableParentRepo::useCache(2000)->recursive(['_idchildFK'])->first();
+        //  self::assertEquals([
+        //      "getfail.TableParent::firstc47e9fda10c3e9581450d888d6d47ddbd239765657977d3b6e76d751d918a7a3",
+        //      "set.TableParent::firstc47e9fda10c3e9581450d888d6d47ddbd239765657977d3b6e76d751d918a7a3"
+        //  ],$cs->track);
+        $rows = TableParentRepo::useCache(2000, ['a1'])->recursive(['_idchildFK'])->first();
         self::assertEquals([
             "getfail.TableParent::firstc47e9fda10c3e9581450d888d6d47ddbd239765657977d3b6e76d751d918a7a3",
             "set.TableParent::firstc47e9fda10c3e9581450d888d6d47ddbd239765657977d3b6e76d751d918a7a3"
-        ],$cs->track);
+        ], $cs->track);
+
 
         //$rows = TableParentRepo::useCache(2000)->recursive(['_idchildFK'])->limit("0,2")->toList();
         //$rows = TableParentRepo::useCache(2000)->recursive(['_idchildFK'])->limit("0,2")->toList();
         //$this->assertEquals(3,count($rows[0]['_idchildFK']));
+        TableParentRepo::base()->setCacheService(null);
 
     }
+
     public function testCache2()
     {
         $rows = TableParentRepo::toList();
@@ -664,7 +685,7 @@ class PdoOne_mysql_gen_test extends TestCase
         self::assertEquals([
             "getfail.TableParent::firstc47e9fda10c3e9581450d888d6d47ddbd239765657977d3b6e76d751d918a7a3",
             "set.TableParent::firstc47e9fda10c3e9581450d888d6d47ddbd239765657977d3b6e76d751d918a7a3"
-        ],$cs->track);
+        ], $cs->track);
 
     }
 

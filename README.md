@@ -1953,6 +1953,9 @@ In a nutshell:
 * Every minor version means that it adds a new functionality i.e. 1.5 -> 1.6 (new methods)
 * Every decimal version means that it patches/fixes/refactoring a previous functionality i.e. 1.5.0 -> 1.5.1 (fix)
 
+* 2.14.3 2021-06-15
+  * [fix] [orm] setCache()::first() and setCache()::count() didn't work correctly. fixed.
+  * Query now supports factoryNull()
 * 2.14.2 2021-06-13
   * [fix] [orm] useCache() and setRelation() do not chain correctly, fixed.
   * [fix] [orm] useCache() doubled the cache. fixed.
@@ -2096,7 +2099,7 @@ In a nutshell:
   * method truncate() has a new argument $forced. Now, it is possible to force truncate (for example, when the table has FK)
   * new method resetIdentity() that reset the identity/autonumeric of a table (if any)
   * Updated \_BasePdoOneRepo
-  * The code generated now allows to set values using the factory()
+  * The code generated now allows setting values using the factory()
   * The code generated now reset the recursivity when we use the method factory()
   
 * 2.2.6 2020-09-03

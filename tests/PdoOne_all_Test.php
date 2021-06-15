@@ -20,17 +20,18 @@ class PdoOne_mysql_Test extends TestCase
     {
         $query=new \eftec\PdoOneQuery($this->pdoOne);
         $query->builderReset();
-        self::assertEquals('select * from table where a1=:a1 and a2=:a2', $this->pdoOne->select('*')
-            ->from('table')->where(['a1' => 123, 'a2' => 456])->sqlGen());
+        self::assertEquals('select * from table where a1=:a1 and a2=:a2', $query->select('*')
+            ->from('table')->where(['a1' => 123, 'a2' => 456])->sqlGen(false));
+
         self::assertEquals([0 => [':a1', 123, 1, null], 1 => [':a2', 456, 1, null]], $query->getWhereParamAssoc());
 
         $query->builderReset();
-        self::assertEquals('select * from table where fn(a3)=:a3 and a2=:a2', $this->pdoOne->select('*')
+        self::assertEquals('select * from table where fn(a3)=:a3 and a2=:a2', $query->select('*')
             ->from('table')->where(['fn(a3)=:a3' => 1234, 'a2' => 456])->sqlGen());
         self::assertEquals([0 => [':a3', 1234, 1, null], 1 => [':a2', 456, 1, null]], $query->getWhereParamAssoc());
 
         $query->builderReset();
-        self::assertEquals('select * from table where a1=? and a2=?', $this->pdoOne->select('*')
+        self::assertEquals('select * from table where a1=? and a2=?', $query->select('*')
             ->from('table')->where(['a1', 123, 'a2', 456])->sqlGen());
         self::assertEquals([0 => [1, 123, 1, null], 1 => [2, 456, 1, null]], $query->getWhereParamAssoc());
 

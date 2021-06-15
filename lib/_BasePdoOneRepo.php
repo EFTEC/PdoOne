@@ -284,14 +284,14 @@ abstract class _BasePdoOneRepo
                     return $getCache;
                 }
                 $recursiveClass = static::getRecursiveClass();
-                $usingCache = true;
+                $usingCache = $query->useCache;
             } else {
                 $recursiveClass = null;
                 $usingCache = false;
             }
             $rowc = self::getPdoOne()->runRawQuery($sql, $param);
-            if ($rowc !== false && $usingCache) {
-                $query->parent->getCacheService()->setCache(self::$uid, $recursiveClass, $rowc,$query->useCache);
+            if ($rowc !== false && $usingCache!==false) {
+                $query->parent->getCacheService()->setCache(self::$uid, $recursiveClass, $rowc, $usingCache);
                 self::reset();
             }
         } catch (Exception $exception) {
@@ -321,7 +321,7 @@ abstract class _BasePdoOneRepo
      */
     public static function getRecursiveClass(&$final = null, $prefix = '')
     {
-        $recs = self::$pdoOneQuery->getRecursive();
+        $recs = self::getQuery()->getRecursive();
         $keyRels = static::getDefFK(false);
         $ns = self::getNamespace();
         if ($final === null) {
@@ -530,6 +530,11 @@ abstract class _BasePdoOneRepo
         return self::newQuery()->useCache($ttl, $family);
     }
 
+    protected static function newQuery()
+    {
+        return new PdoOneQuery(self::getPdoOne(), static::class);
+    }
+
     /**
      * Its a macro of limit but it works for paging. It uses static::$pageSize to determine the rows to return
      *
@@ -561,11 +566,6 @@ abstract class _BasePdoOneRepo
     public static function limit($sql)
     {
         return static::newQuery()->limit($sql);
-    }
-
-    protected static function newQuery()
-    {
-        return new PdoOneQuery(self::getPdoOne(), static::class);
     }
 
     /**
@@ -638,7 +638,7 @@ abstract class _BasePdoOneRepo
                 return $getCache;
             }
             $recursiveClass = static::getRecursiveClass();
-            $usingCache = true;
+            $usingCache = $pdoOne->useCache;
         } else {
             $recursiveClass = null;
             $usingCache = false;
@@ -651,8 +651,8 @@ abstract class _BasePdoOneRepo
         static::generationRecursive($newQuery, static::TABLE . '.'); //, '', '', false
         $from = (isset(self::$gQuery[0]['joins'])) ? self::$gQuery[0]['joins'] : [];
         $rowc = self::getPdoOne()->from($from)->where($where)->count();
-        if ($rowc !== false && $usingCache) {
-            $pdoOne->parent->getCacheService()->setCache(self::$uid, $recursiveClass, (int)$rowc, $pdoOne->useCache);
+        if ($rowc !== false && $usingCache!==false) {
+            $pdoOne->parent->getCacheService()->setCache(self::$uid, $recursiveClass, (int)$rowc,$usingCache);
             //self::reset();
         }
         self::reset();
@@ -685,13 +685,13 @@ abstract class _BasePdoOneRepo
             $newQuery['columns'][] = $pt . $col . ' as ' . self::getPdoOne()->addQuote($pColumn . $col);
         }
         $ns = self::getNamespace();
-
+        $pdoQuery = self::getQuery();
         foreach ($keyRels as $nameCol => $keyRel) {
             $type = $keyRel['key'];
             if ($type !== 'FOREIGN KEY') {
                 // $nameColClean = trim($nameCol, PdoOne::$prefixBase);
                 $recursiveComplete = ltrim($recursiveInit . '/' . $nameCol, '/');
-                if (self::getQuery()->hasRecursive($recursiveComplete)) {
+                if ($pdoQuery->hasRecursive($recursiveComplete)) {
                     switch ($type) {
                         case 'MANYTOONE':
                             static::$gQueryCounter++;
@@ -748,10 +748,10 @@ abstract class _BasePdoOneRepo
                             self::$gQuery[] = $other;
                             break;
                         case 'MANYTOMANY':
-                            $rec = self::$pdoOneQuery->getRecursive();
+                            $rec = $pdoQuery->getRecursive();
                             // automatically we add recursive.
                             $rec[] = $recursiveComplete . $keyRel['refcol2']; // $recursiveInit . $nameCol
-                            self::getQuery()->_recursive($rec);
+                            $pdoQuery->_recursive($rec);
                             //$tableRelAlias = ''; //'t' . static::$gQueryCounter;
                             $other = [];
                             $refColClean = trim($keyRel['refcol'], PdoOne::$prefixBase); //note 2021: refcol2 , refcol
@@ -967,11 +967,11 @@ abstract class _BasePdoOneRepo
                 }
                 //$recursiveClass = static::getRecursiveClass();
                 $usingCache = $pdoOneQuery->useCache;
-                $usingCacheFamily=$pdoOneQuery->cacheFamily;
+                $usingCacheFamily = $pdoOneQuery->cacheFamily;
             } else {
                 //$recursiveClass = null;
                 $usingCache = false;
-                $usingCacheFamily='';
+                $usingCacheFamily = '';
             }
             $newQuery = [];
             $ns = self::getNamespace();
@@ -1057,8 +1057,8 @@ abstract class _BasePdoOneRepo
                 }
                 self::convertSQLValueInit($rowc, true);
             }
-            if ($rowc !== false && $usingCache) {
-                $pdoOneQuery->parent->getCacheService()->setCache(self::$uid, $usingCacheFamily, $rowc, $pdoOneQuery->useCache);
+            if ($rowc !== false && $usingCache!==false) {
+                $pdoOneQuery->parent->getCacheService()->setCache(self::$uid, $usingCacheFamily, $rowc, $usingCache);
             }
             self::reset();
             return $rowc;
@@ -1747,12 +1747,13 @@ abstract class _BasePdoOneRepo
     {
         $columns = ($columns === null) ? static::getDefName() : $columns;
         try {
+            $pdoOne = self::getQuery();
             if (is_object($entity)) {
                 $entity = static::objectToArray($entity);
             }
             $entityCopy = self::intersectArraysNotNull($entity, $columns);
             self::invalidateCache();
-            $pdoOne = self::getQuery();
+
             if ($pdoOne->parent->transactionOpen === true) {
                 // we disable transaction to avoid nested transactions.
                 // mysql does not allows nested transactions
