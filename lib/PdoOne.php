@@ -52,11 +52,11 @@ use stdClass;
  * @package       eftec
  * @author        Jorge Castro Castillo
  * @copyright (c) Jorge Castro C. MIT License  https://github.com/EFTEC/PdoOne
- * @version       2.14.3
+ * @version       2.15
  */
 class PdoOne
 {
-    const VERSION = '2.14.3';
+    const VERSION = '2.15';
     /** @var int We need this value because null and false could be a valid value. */
     const NULL = PHP_INT_MAX;
     /** @var string Prefix of the tables */
@@ -194,6 +194,9 @@ class PdoOne
     /** @var null|array it stores the values obtained by $this->tableDependency() */
     public $tableDependencyArrayCol;
     public $tableDependencyArray;
+    /** @var null|array $partition is an associative array [column=>value] with a fixed and pre-established conditions */
+    public $partition;
+
     protected $phpstart = "<?php\n";
 
     //</editor-fold>
@@ -1338,7 +1341,7 @@ eot;
             if ($this->logLevel >= 2) {
                 $this->storeInfo("connecting to $this->server $this->user/*** $this->db");
             }
-            $cs = (!$this->charset) ? ';charset=' . $this->charset : '';
+            $cs = ($this->charset) ? ';charset=' . $this->charset : '';
             $this->service->connect($cs, false);
             if ($this->conn1 instanceof stdClass) {
                 $this->isOpen = true;
@@ -1469,7 +1472,7 @@ eot;
             foreach ($exception->getTrace() as $error) {
                 // we remove all trace pointing to this file.
                 $found = false;
-                $file = isset($error['file'])?$error['file']:'(fileless)';
+                $file = isset($error['file']) ? $error['file'] : '(fileless)';
                 foreach ($this->traceBlackList as $k) {
                     if (strpos($file, $k) !== false) {
                         $found = true;
@@ -1478,9 +1481,9 @@ eot;
                 }
                 if (!$found) {
                     $args = [];
-                    if (array_key_exists('args',$error)) {
-                        if(!is_array($error['args'])) {
-                            $error['args']=[$error['args']]; // converting into array
+                    if (array_key_exists('args', $error)) {
+                        if (!is_array($error['args'])) {
+                            $error['args'] = [$error['args']]; // converting into array
                         }
                         foreach ($error['args'] as $v) {
                             if (is_object($v)) {
@@ -1624,7 +1627,7 @@ eot;
      * </pr>
      *
      * @param string     $rawSql      The query to execute
-     * @param array|null $param       [type1,value1,type2,value2] or [name1=>value,name2=value2]
+     * @param array|null $params      [type1,value1,type2,value2] or [name1=>value,name2=value2]
      * @param bool       $returnArray if true then it returns an array. If false then it returns a PDOStatement
      * @param bool       $useCache    if true then it uses cache (if the service is available).
      * @param null       $cacheFamily if use cache, then it is used to set the family or group of the cache.
@@ -1632,7 +1635,7 @@ eot;
      * @throws Exception
      * @test equals [0=>[1=>1]],this('select 1',null,true)
      */
-    public function runRawQuery($rawSql, $param = null, $returnArray = true, $useCache = false, $cacheFamily = null)
+    public function runRawQuery($rawSql, $params = null, $returnArray = true, $useCache = false, $cacheFamily = null)
     {
         $this->beginTry();
         if (!$this->isOpen) {
@@ -1654,14 +1657,14 @@ eot;
             $this->endTry();
             return false;
         }
-        if (!is_array($param) && $param !== null) {
+        if (!is_array($params) && $params !== null) {
             $this->throwError('runRawQuery, param must be null or an array', '');
             $this->endTry();
             return false;
         }
         if ($this->useInternalCache && $returnArray === true && !$writeCommand) {
             // if we use internal cache and we returns an array and it is not a write command
-            $uid = hash($this->encryption->hashType, $rawSql . serialize($param));
+            $uid = hash($this->encryption->hashType, $rawSql . serialize($params));
             if (isset($this->internalCache[$uid])) {
                 // we have an internal cache, so we will return it.
                 $this->internalCacheCounter++;
@@ -1670,12 +1673,12 @@ eot;
             }
         }
 
-        $this->lastParam = $param;
+        $this->lastParam = $params;
         $this->lastQuery = $rawSql;
         if ($this->logLevel >= 2) {
             $this->storeInfo($rawSql);
         }
-        if ($param === null) {
+        if ($params === null) {
             $rows = $this->runRawQueryParamLess($rawSql, $returnArray);
             if ($uid !== false && $returnArray) {
                 $this->internalCache[$uid] = $rows;
@@ -1691,33 +1694,33 @@ eot;
             return false;
         }
         $counter = 0;
-        if ($this->isAssoc($param)) {
-            $this->lastBindParam = $param;
+        if ($this->isAssoc($params)) {
+            // named parameter (aka col=:arg)
+            $this->lastBindParam = $params;
             // [':name'=>value,':name2'=>value2];
-            foreach ($param as $k => $v) {
-                // note: the second field is & so we could not use $v
-                $stmt->bindParam($k, $param[$k], $this->getType($v));
+            foreach ($params as $k => &$v) {
+                $stmt->bindParam($k, $v, $this->getType($v)); // note, the second argument is &
             }
         } else {
-            // parameters numeric
+            // parameters numeric (aka col=?)
             $this->lastBindParam = [];
-            $f = reset($param);
+            $f = reset($params);
             if (is_array($f)) {
                 // arrays of arrays.
                 // [[name1,value1,type1,l1],[name2,value2,type2,l1]]
-                foreach ($param as $k => $v) {
-                    $this->lastBindParam[$counter] = $v[0];
+                foreach ($params as $param) {
+                    $this->lastBindParam[$counter] = $param[0];
                     // note: the second field is & so we could not use $v
-                    $stmt->bindParam($v[0], $v[1], $v[2], $v[3]);
+                    $stmt->bindParam(...$param);
                 }
             } else {
                 // [value1,value2]
-                foreach ($param as $i => $iValue) {
+                foreach ($params as $i => $iValue) {
                     //$counter++;
                     //$typeP = $this->stringToPdoParam($param[$i]);
                     $this->lastBindParam[$i] = $iValue;
                     //$stmt->bindParam($counter, $param[$i + 1], $typeP);
-                    $stmt->bindParam($i + 1, $param[$i], $this->getType($param[$i]));
+                    $stmt->bindParam($i + 1, $params[$i], $this->getType($params[$i]));
                 }
             }
         }
@@ -1964,8 +1967,6 @@ eot;
             return null;
         }
         try {
-            //$namedArgument = ($namedArgument === null)
-            //    ? array_merge($this->setParamAssoc,$this->whereParamAssoc,$this->havingParamAssoc) : $namedArgument;
             $r = $stmt->execute($namedArgument);
         } catch (Exception $ex) {
             $this->throwError($this->databaseType . ':Failed to run query', $this->lastQuery,
@@ -2300,12 +2301,12 @@ eot;
                 $v['reftable'] = ($forceLowerCase) ? strtolower($v['reftable']) : $v['reftable'];
                 $k = ($forceLowerCase) ? strtolower($k) : $k;
                 if ($returnColumn) {
+                    // inverse relation
                     $deps[$k] = $v['reftable'];
                     if (!isset($before[$v['reftable']][$v['refcol']])) {
                         $before[$v['reftable']][$v['refcol']] = [];
                     }
                     $before[$v['reftable']][$v['refcol']][] = [$k, $table]; // remote column and remote table
-
                 } else {
                     $deps[] = $v['reftable'];
                     $before[$v['reftable']][] = $table;
@@ -2517,6 +2518,8 @@ abstract class Abstract{classname} extends {baseclass}
     const PK = {pk};
     const ME=__CLASS__;
     const EXTRACOLS='{extracol}';
+    /** @var string|null $schema you can set the current schema/database used by this class. [Default is null] */
+    public static $schema;
 
     /**
      * It returns the definitions of the columns<br>
@@ -2723,7 +2726,14 @@ abstract class Abstract{classname} extends {baseclass}
     }
 
     /**
-     * It returns the first row of a query.
+     * It returns the first row of a query.<br>
+     * <b>Example:</b><br>
+     * <pre>
+     * Repo::first(); // it returns the first value encountered.
+     * Repo::first(2); // it returns the first value where the primary key is equals to 2 (simple primary key)
+     * Repo::first([2,3]); // it returns the first value where the primary key is equals to 2 (multiple primary keys)
+     * Repo::first(['id'=>2,'id2'=>3]); // it returns the first value where id=2 and id2=3 (multiple primary keys)
+     * </pre>
      * @param array|mixed|null $pk [optional] Specify the value of the primary key.
      *
      * @return array|bool It returns false if not file is found.
@@ -2795,7 +2805,7 @@ abstract class Abstract{classname} extends {baseclass}
      * @param array|object $entity =self::factory()
      * @param bool         $transactional If true (default) then the operation is transactional   
      *
-     * @return mixed
+     * @return false|int
      * @throws Exception
      */
     public static function delete($entity,$transactional=true) {
@@ -5802,6 +5812,7 @@ BOOTS;
         }
         $result = [];
         foreach ($columns as $key => $col) {
+
             if ($returnSimple) {
                 if ($col == $condition) {
                     $result[$key] = $col;
@@ -5810,7 +5821,6 @@ BOOTS;
                 $result[$key] = $col;
             }
         }
-
         return $result;
     }
 
@@ -6008,19 +6018,22 @@ BOOTS;
      * <pre>
      *      from('table')
      *      from('table alias')
+     *      from('table alias','dbo') // from dbo.table alias
      *      from('table1,table2')
      *      from('table1 inner join table2 on table1.c=table2.c')
      * </pre>
      *
-     * @param string $sql Input SQL query
+     * @param string      $sql    Input SQL query
+     * @param null|string $schema The schema/database of the table without trailing dot.<br>
+     *                            Example 'database' or 'database.dbo'
      *
      * @return PdoOneQuery
      * @test InstanceOf PdoOne::class,this('table t1')
      */
-    public function from($sql)
+    public function from($sql, $schema = null)
     {
         $query = new PdoOneQuery($this);
-        return $query->from($sql);
+        return $query->from($sql, $schema);
     }
 
     /**

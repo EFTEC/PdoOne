@@ -40,6 +40,8 @@ abstract class _BasePdoOneRepo
     const BINARYVERSION = 6;
     /** @var PdoOne */
     public static $pdoOne;
+    /** @var string|null $schema the current schema/database */
+    public static $schema;
     /** @var PdoOneQuery */
     public static $pdoOneQuery;
     /** @var array $gQuery =[['columns'=>[],'joins'=>[],'where'=>[]] */
@@ -650,7 +652,10 @@ abstract class _BasePdoOneRepo
         // we build the query
         static::generationRecursive($newQuery, static::TABLE . '.'); //, '', '', false
         $from = (isset(self::$gQuery[0]['joins'])) ? self::$gQuery[0]['joins'] : [];
-        $rowc = self::getPdoOne()->from($from)->where($where)->count();
+        $rowc = self::getPdoOne()
+            ->from($from,static::$schema)
+            ->where($where)
+            ->count();
         if ($rowc !== false && $usingCache!==false) {
             $pdoOne->parent->getCacheService()->setCache(self::$uid, $recursiveClass, (int)$rowc,$usingCache);
             //self::reset();
@@ -992,12 +997,22 @@ abstract class _BasePdoOneRepo
                     switch ($typeOper) {
                         case 'toList':
                             // useCache(false) avoid double cache.
-                            $rows = $pdoOneQuery->useCache(false)->select($cols)->from($from)->where($filter, $filterValue)->_toList();
+                            $rows = $pdoOneQuery
+                                ->useCache(false)
+                                ->select($cols)
+                                ->from($from,static::$schema)
+                                ->where($filter, $filterValue)
+                                ->_toList();
                             break;
                         case 'first':
                             //$pdoOne->builderReset();
                             $rows = [
-                                $pdoOneQuery->useCache(false)->select($cols)->from($from)->where($filter)->_first()
+                                $pdoOneQuery
+                                    ->useCache(false)
+                                    ->select($cols)
+                                    ->from($from,static::$schema)
+                                    ->where($filter)
+                                    ->_first()
                             ];
                             break;
                         default:
@@ -1018,7 +1033,10 @@ abstract class _BasePdoOneRepo
                         }
                         $rc = trim($query['data']['refcol2'], PdoOne::$prefixBase);
 
-                        $partialRows = $pdoOneQuery->useCache(false)->select($cols)->from($from . ' as t1 ')
+                        $partialRows = $pdoOneQuery
+                            ->useCache(false)
+                            ->select($cols)
+                            ->from($from . ' as t1 ',static::$schema)
                             ->join($query['data']['table2'] . ' as tj on tj.' . $query['data']['col2'] . '=t1.' . $rc)
                             ->where($query['where'], $row[$query['col']])
                             ->_toList();
@@ -1035,7 +1053,11 @@ abstract class _BasePdoOneRepo
                     foreach ($rows as &$row) {
                         $from = $query['joins'];
                         $cols = implode(',', $query['columns']);
-                        $partialRows = $pdoOneQuery->useCache(false)->select($cols)->from($from)->where($query['where'], $row[$query['col']])
+                        $partialRows = $pdoOneQuery
+                            ->useCache(false)
+                            ->select($cols)
+                            ->from($from,static::$schema)
+                            ->where($query['where'], $row[$query['col']])
                             ->_toList();
                         foreach ($partialRows as $k => $rowP) {
                             $row2 = self::convertRow($rowP);
@@ -1253,7 +1275,12 @@ abstract class _BasePdoOneRepo
             } else {
                 $entity = [$pks[0] => $entity];
             }
-            $r = self::getPdoOne()->genError()->select('1')->from(static::TABLE)->where($entity)->firstScalar();
+            $r = self::getPdoOne()
+                ->genError()
+                ->select('1')
+                ->from(static::TABLE,static::$schema)
+                ->where($entity)
+                ->firstScalar();
             self::getPdoOne()->genError(true);
             self::reset();
             /** @noinspection TypeUnsafeComparisonInspection */
@@ -1319,7 +1346,10 @@ abstract class _BasePdoOneRepo
             $recursiveBack = $query->getRecursive();
 
 
-            $r = static::getPdoOne()->from(static::TABLE)->set($entityCopy)->where(static::intersectArrays($entity, static::PK))
+            $r = static::getPdoOne()
+                ->from(static::TABLE,static::$schema)
+                ->set($entityCopy)
+                ->where(static::intersectArrays($entity, static::PK))
                 ->update();
 
             $query->_recursive($recursiveBack); // update() delete the value of recursive

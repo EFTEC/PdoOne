@@ -162,38 +162,59 @@ class PdoOne_Mysql implements PdoOne_IExt
         /** @var array $result =array(["CONSTRAINT_NAME"=>'',"COLUMN_NAME"=>'',"REFERENCED_TABLE_NAME"=>''
          * ,"REFERENCED_COLUMN_NAME"=>'',"UPDATE_RULE"=>'',"DELETE_RULE"=>''])
          */
-        $fkArr = $this->parent->select('k.CONSTRAINT_NAME,k.COLUMN_NAME,k.REFERENCED_TABLE_NAME,k.REFERENCED_COLUMN_NAME
-                    ,c.UPDATE_RULE,c.DELETE_RULE')->from('INFORMATION_SCHEMA.KEY_COLUMN_USAGE k')->innerjoin('information_schema.REFERENTIAL_CONSTRAINTS c 
+        $fkArr = $this->parent->select('k.CONSTRAINT_NAME,k.COLUMN_NAME,k.REFERENCED_TABLE_NAME
+                    ,k.REFERENCED_COLUMN_NAME,c.UPDATE_RULE,c.DELETE_RULE,K.POSITION_IN_UNIQUE_CONSTRAINT')
+            ->from('INFORMATION_SCHEMA.KEY_COLUMN_USAGE k')
+            ->innerjoin('information_schema.REFERENTIAL_CONSTRAINTS c 
                         ON k.referenced_table_schema=c.CONSTRAINT_SCHEMA AND k.CONSTRAINT_NAME=c.CONSTRAINT_NAME')
             ->where('k.TABLE_SCHEMA=? AND k.TABLE_NAME = ?', [ $this->parent->db,$table])
-            ->order('k.COLUMN_NAME')->toList();
+            ->order('k.POSITION_IN_UNIQUE_CONSTRAINT,k.COLUMN_NAME')->toList(); // to sort by the position is important.
 
-        /*echo "table:";
-        var_dump($table);
-        echo "<pre>";
-        var_dump($fkArr);
-        echo "</pre>";*/
-        //var_dump($this->parent->lastQuery);
-        foreach ($fkArr as $item) {
-            $txt = "FOREIGN KEY REFERENCES`{$item['REFERENCED_TABLE_NAME']}`(`{$item['REFERENCED_COLUMN_NAME']}`)";
-            $extra = '';
-            if ($item['UPDATE_RULE'] && $item['UPDATE_RULE'] !== 'NO ACTION') {
-                $extra .= ' ON UPDATE ' . $item['UPDATE_RULE'];
-            }
-            if ($item['DELETE_RULE'] && $item['DELETE_RULE'] !== 'NO ACTION') {
-                $extra .= ' ON DELETE ' . $item['DELETE_RULE'];
-            }
-            if ($returnSimple) {
-                $columns[$item['COLUMN_NAME']] = $txt . $extra;
-            } else {
-                $columns[$item['COLUMN_NAME']] = PdoOne::newColFK('FOREIGN KEY', $item['REFERENCED_COLUMN_NAME'],
-                    $item['REFERENCED_TABLE_NAME'], $extra, $item['CONSTRAINT_NAME']);
-                $columns[PdoOne::$prefixBase . $item['COLUMN_NAME']] = PdoOne::newColFK('MANYTOONE', $item['REFERENCED_COLUMN_NAME'],
-                    $item['REFERENCED_TABLE_NAME'], $extra, $item['CONSTRAINT_NAME']);
+        foreach ($fkArr as $k=>$item) {
+            if($item['POSITION_IN_UNIQUE_CONSTRAINT']==2) {
+                // constraint uses two columns
+                $find=null;
+                foreach ($fkArr as $k2=>$item2) {
+                    if($item['CONSTRAINT_NAME']===$item2['CONSTRAINT_NAME']) {
+                        $find=$k2;
+                        break;
+                    }
+                }
+                if($find!==null) {
+                    $fkArr[$find]['REFERENCED_COLUMN_NAME'] .= ',' . $item['REFERENCED_COLUMN_NAME'];
+                    $fkArr[$k]=null;
+                    //unset($fkArr[$k]);
+                }
             }
         }
 
-
+        foreach ($fkArr as $item) {
+            if($item!==null) {
+                $rcn = $item['REFERENCED_COLUMN_NAME'];
+                if(strpos($rcn,',')!==false) {
+                    $tmp=explode(',',$rcn);
+                    $rcn =  "`$tmp[0]`,`$tmp[1]`";
+                } else {
+                    $rcn = "`$rcn`";
+                }
+                $txt = "FOREIGN KEY REFERENCES`{$item['REFERENCED_TABLE_NAME']}`($rcn)";
+                $extra = '';
+                if ($item['UPDATE_RULE'] && $item['UPDATE_RULE'] !== 'NO ACTION') {
+                    $extra .= ' ON UPDATE ' . $item['UPDATE_RULE'];
+                }
+                if ($item['DELETE_RULE'] && $item['DELETE_RULE'] !== 'NO ACTION') {
+                    $extra .= ' ON DELETE ' . $item['DELETE_RULE'];
+                }
+                if ($returnSimple) {
+                    $columns[$item['COLUMN_NAME']] = $txt . $extra;
+                } else {
+                    $columns[$item['COLUMN_NAME']] = PdoOne::newColFK('FOREIGN KEY', $item['REFERENCED_COLUMN_NAME'],
+                        $item['REFERENCED_TABLE_NAME'], $extra, $item['CONSTRAINT_NAME']);
+                    $columns[PdoOne::$prefixBase . $item['COLUMN_NAME']] = PdoOne::newColFK('MANYTOONE', $item['REFERENCED_COLUMN_NAME'],
+                        $item['REFERENCED_TABLE_NAME'], $extra, $item['CONSTRAINT_NAME']);
+                }
+            }
+        }
         if ($assocArray) {
             return $columns;
         }
@@ -419,14 +440,15 @@ class PdoOne_Mysql implements PdoOne_IExt
             if (is_array($primaryKey)) {
                 $hasPK = false;
                 foreach ($primaryKey as $key => $value) {
-                    $p0 = stripos($value . ' ', 'KEY ');
+                    $valueKey=(is_array($value))?reset($value):$value;
+                    $p0 = stripos($valueKey . ' ', 'KEY ');
                     if ($p0 === false) {
                         trigger_error('createTable: Key with a wrong syntax. Example: "PRIMARY KEY.." ,
                                  "KEY...", "UNIQUE KEY..." "FOREIGN KEY.." ');
                         break;
                     }
-                    $type = strtoupper(trim(substr($value, 0, $p0)));
-                    $value = substr($value, $p0 + 4);
+                    $type = strtoupper(trim(substr($valueKey, 0, $p0)));
+                    $value = substr($valueKey, $p0 + 4);
                     switch ($type) {
                         case 'PRIMARY':
                             if (!$hasPK) {
@@ -532,10 +554,11 @@ class PdoOne_Mysql implements PdoOne_IExt
             }
             if ($filter === null || $filter === $type) {
                 if (!isset($columns[$item['Column_name']])) {
+
                     if ($returnSimple) {
-                        $columns[$item['Column_name']] = $type;
+                        $columns[$item['Column_name']] = $type; // [$item['Seq_in_index']-1]
                     } else {
-                        $columns[$item['Column_name']] = PdoOne::newColFK($type, '', '');
+                        $columns[$item['Column_name']] = PdoOne::newColFK($type, '', ''); //[$item['Seq_in_index']-1]
                     }
                 }
             }

@@ -642,7 +642,7 @@ class PdoOne_mysql_Test extends TestCase
 
         $this->pdoOne->insert('product_category', ['id_category' => 4, 'catname' => 'cheap4']);
         $this->pdoOne->insert('product_category', ['id_category', '5', 'catname', 'cheap']);
-        $query1=$this->pdoOne->select('*')->from('product_category')->where('1=1')->order('id_category');
+        $query1=$this->pdoOne->select('*')->from('product_category','travisdb')->where('1=1')->order('id_category');
         $r = $query1->toList();
         $query2=$this->pdoOne->select('*')->from('product_category')->where('catname=?',['cheap'])->order('id_category');
         $r2 = $query2->toList();

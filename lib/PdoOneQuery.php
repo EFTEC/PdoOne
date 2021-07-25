@@ -17,9 +17,6 @@ class PdoOneQuery
     public $parent;
     /** @var _BasePdoOneRepo */
     public $ormClass;
-
-    /** @var array parameters for the where. [paramvar,value,type,size] */
-    public $whereParamAssoc = [];
     /** @var array parameters for the having. [paramvar,value,type,size] */
     public $havingParamAssoc = [];
     public $whereCounter = 1;
@@ -33,6 +30,11 @@ class PdoOneQuery
     public $useCache = false;
     /** @var string|array [optional] It is the family or group of the cache */
     public $cacheFamily = '';
+    /**
+     * @var boolean $numericArgument if true the the arguments are numeric. Otherwise, it doesn't have arguments or
+     *      they are named. This value is used for the method where() and having()
+     */
+    protected $numericArgument = false;
     protected $select = '';
     protected $limit = '';
     protected $order = '';
@@ -44,15 +46,17 @@ class PdoOneQuery
     /** @var array parameters for the set. [paramvar,value,type,size] */
     protected $setParamAssoc = [];
     /** @var array */
-    //private $whereParamValue = [];
-    /** @var array */
     protected $set = [];
+    /** @var array */
+    //private $whereParamValue = [];
     protected $from = '';
     protected $group = '';
     protected $recursive = [];
     /** @var array */
     protected $having = [];
     protected $distinct = '';
+    /** @var array parameters for the where. [paramvar,value,type,size] */
+    private $whereParamAssoc = [];
 
     //</editor-fold>
 
@@ -198,8 +202,18 @@ class PdoOneQuery
         $reval = true;
         if ($allparam) {
             try {
-                foreach ($allparam as &$v) {
-                    $reval = $reval && $stmt->bindParam($v[0], $v[1], $v[2]);
+                foreach ($allparam as &$param) {
+                    $reval = $reval && $stmt->bindParam(...$param); // unpack
+                }
+                if ($this->parent->partition !== null) {
+                    if ($this->numericArgument) {
+                        $partitionParam = [];
+                        $partitionParam[0] = end($allparam)[0] + 1;
+                        $partitionParam[1] = end($this->parent->partition);
+                    } else {
+                        $partitionParam = $this->parent->partition;
+                    }
+                    $reval = $reval && $stmt->bindParam(...$partitionParam);
                 }
             } catch (Exception $ex) {
                 $this->throwErrorChain("Error in bind. Parameter error.", $throwError, $ex);
@@ -313,7 +327,7 @@ class PdoOneQuery
             return;
         }
         $this->ormClass = null;
-
+        $this->numericArgument = false;
         $this->select = '';
         $this->noReset = false;
         $this->useCache = false;
@@ -501,9 +515,10 @@ class PdoOneQuery
 
         if ($params === PdoOne::NULL || $params === null) {
             if (is_array($where)) {
-                $numeric = isset($where[0]);
+                $numeric = isset($where[0]) || $this->numericArgument;
                 if ($numeric) {
-                    // numeric
+                    $this->numericArgument = true;
+                    // numeric  column=?
                     $c = count($where) - 1;
                     for ($i = 0; $i < $c; $i += 2) {
                         $v = $where[$i + 1];
@@ -515,7 +530,7 @@ class PdoOneQuery
                         $pars[] = $param;
                     }
                 } else {
-                    // named
+                    // named  column=:arg
                     foreach ($where as $k => $v) {
                         if (strpos($k, '?') === false) {
                             if (strpos($k, ':') !== false) {
@@ -524,7 +539,6 @@ class PdoOneQuery
                                 $paramName = ':' . str_replace('.', '_', $parts[1]);
                             } else {
                                 // "aaa"
-
                                 $paramName = ':' . str_replace('.', '_', $k);
                             }
                             $named[] = $paramName;
@@ -545,7 +559,7 @@ class PdoOneQuery
                     }
                 }
             } else {
-                // constructParam2('query=xxx')
+                // constructParam2('query=xxx') without argument
                 $named[] = '';
                 $queryEnd[] = $where;
             }
@@ -809,19 +823,38 @@ class PdoOneQuery
      *      from('table')
      *      from('table alias')
      *      from('table1,table2')
+     *      from('table1,table2','dbo')
      *      from('table1 inner join table2 on table1.c=table2.c')
      * </pre>
      *
-     * @param string $sql Input SQL query
-     *
+     * @param string      $sql Input SQL query
+     * @param null|string $schema The schema/database of the table without trailing dot.<br>
+     *                            Example 'database' or 'database.dbo'
      * @return PdoOneQuery
      * @test InstanceOf PdoOne::class,this('table t1')
      */
-    public function from($sql)
+    public function from($sql, $schema = null)
     {
         if ($sql === null) {
             return $this;
         }
+        if($schema!==null) {
+            $schema .= '.';
+            $comma=strpos($sql,',')!==false;
+            if($comma) {
+                // table1,table2 => prefix.table1,prefix.table2
+                $sql=str_replace(',',','.$schema,$sql);
+            } else {
+                $join=stripos($sql,' join ')!==false;
+                if($join) {
+                    // table1 inner join table2 => prefix.table1 inner join prefix.table2
+                    $sql = str_ireplace(' join ', ' join ' . $schema, $sql);
+                }
+            }
+            // prefix at the begginer table1=> prefix.table1
+            $sql=$schema.ltrim($sql);
+        }
+
         $this->from = ($sql) ? $sql . $this->from : $this->from;
         $this->parent->tables[] = explode(' ', $sql)[0];
         return $this;
@@ -998,8 +1031,11 @@ class PdoOneQuery
      * This method is an <b>end of the chain method</b>, so it clears the method stack<br>
      * <b>Example</b>:<br>
      * <pre>
-     *      $con->select('*')->from('table')->first(); // select * from table
-     *      (first value)
+     *      $con->select('*')->from('table')->first(); // select * from table (first value)
+     *      Repo::->method(...)->first(1); // (ORM only, the first value where the primary key is 1
+     *      Repo::->method(...)->first([1,2]); // (ORM only, first value where the primary keys are 1 and 2
+     *      Repo::->method(...)->first(['id1'=>1,'id'=>2]); // (ORM only,first value where the primary keys are 1 and 2
+     *
      * </pre>
      *
      * @param int $pk the argument is used together with ORM.
@@ -1295,28 +1331,6 @@ class PdoOneQuery
     }
 
     /**
-     * It adds an "limit" in a query. It depends on the type of database<br>
-     * <b>Example:</b><br>
-     * <pre>
-     *      ->select("")->limit("10,20")->toList();
-     * </pre>
-     *
-     * @param string $sql Input SQL query
-     *
-     * @return PdoOneQuery
-     * @throws Exception
-     * @test InstanceOf PdoOne::class,this('1,10')
-     */
-    public function limit($sql)
-    {
-        if ($sql === null) {
-            return $this;
-        }
-        $this->limit = $this->parent->service->limit($sql);
-
-        return $this;
-    }
-    /**
      * Its a macro of limit but it works for paging. It uses static::$pageSize to determine the rows to return
      *
      * @param int $numPage Number of page. It starts with 1.
@@ -1338,29 +1352,28 @@ class PdoOneQuery
     }
 
     /**
-     * Returns an array with the default values (0 for numbers, empty for string, and array|null if recursive)
+     * It adds an "limit" in a query. It depends on the type of database<br>
+     * <b>Example:</b><br>
+     * <pre>
+     *      ->select("")->limit("10,20")->toList();
+     * </pre>
      *
-     * @param array|null $values          =self::factory()
-     * @param string     $recursivePrefix It is the prefix of the recursivity.
+     * @param string $sql Input SQL query
      *
-     * @return array
+     * @return PdoOneQuery
+     * @throws Exception
+     * @test InstanceOf PdoOne::class,this('1,10')
      */
-    public function factory($values = null, $recursivePrefix = '') {
-        if ($this->ormClass !== null) {
-            $cls = $this->ormClass;
-            return $cls::setPdoOneQuery($this)::factory($values,$recursivePrefix);
+    public function limit($sql)
+    {
+        if ($sql === null) {
+            return $this;
         }
-        $result=[];
-        $fields=explode(',',$this->select);
-        foreach($fields as $field) {
-            $subfield=explode(' ',$field);
-            $result[$subfield[0]]=null;
-        }
-        if ($values !== null) {
-            $result=array_merge($result,$values);
-        }
-        return $result;
+        $this->limit = $this->parent->service->limit($sql);
+
+        return $this;
     }
+
     /**
      * Returns an array with nulls
      *
@@ -1369,12 +1382,39 @@ class PdoOneQuery
      *
      * @return array
      */
-    public function factoryNull($values = null, $recursivePrefix = '') {
+    public function factoryNull($values = null, $recursivePrefix = '')
+    {
         if ($this->ormClass !== null) {
             $cls = $this->ormClass;
-            return $cls::setPdoOneQuery($this)::factoryNull($values,$recursivePrefix);
+            return $cls::setPdoOneQuery($this)::factoryNull($values, $recursivePrefix);
         }
-        return $this->factory($values,$recursivePrefix);
+        return $this->factory($values, $recursivePrefix);
+    }
+
+    /**
+     * Returns an array with the default values (0 for numbers, empty for string, and array|null if recursive)
+     *
+     * @param array|null $values          =self::factory()
+     * @param string     $recursivePrefix It is the prefix of the recursivity.
+     *
+     * @return array
+     */
+    public function factory($values = null, $recursivePrefix = '')
+    {
+        if ($this->ormClass !== null) {
+            $cls = $this->ormClass;
+            return $cls::setPdoOneQuery($this)::factory($values, $recursivePrefix);
+        }
+        $result = [];
+        $fields = explode(',', $this->select);
+        foreach ($fields as $field) {
+            $subfield = explode(' ', $field);
+            $result[$subfield[0]] = null;
+        }
+        if ($values !== null) {
+            $result = array_merge($result, $values);
+        }
+        return $result;
     }
 
     /**
@@ -1592,9 +1632,9 @@ class PdoOneQuery
     {
         if ($this->ormClass !== null) {
             $cls = $this->ormClass;
-            if(is_string($rec)) {
+            if (is_string($rec)) {
                 /** @noinspection PhpPossiblePolymorphicInvocationInspection */
-                $rec=$cls::getRelations($rec);
+                $rec = $cls::getRelations($rec);
             }
         }
         return $this->_recursive($rec);
@@ -1705,40 +1745,6 @@ class PdoOneQuery
     }
 
     /**
-     * Generates and execute an insert command.<br>
-     * <b>Example:</b><br>
-     * <pre>
-     * insert('table',['col1',10,'col2','hello world']); // simple array: name1,value1,name2,value2..
-     * insert('table',null,['col1'=>10,'col2'=>'hello world']); // definition is obtained from the values
-     * insert('table',['col1'=>10,'col2'=>'hello world']); // definition is obtained from the values
-     * insert('table',['col1','col2'],[10,'hello world']); // definition (binary) and value
-     * insert('table',['col1','col2'],['col1'=>10,'col2'=>'hello world']); // definition declarative array)
-     *      ->set(['col1',10,'col2','hello world'])
-     *      ->from('table')
-     *      ->insert();
-     *</pre>
-     *
-     * @param string|array      $tableNameOrValues
-     * @param string[]|null     $tableDef
-     * @param string[]|int|null $values
-     *
-     * @return false|int|string Returns the identity (if any) or false if the operation fails.
-     * @throws Exception
-     */
-    public function insert(
-        &$tableNameOrValues = null,
-        $tableDef = null,
-        $values = PdoOne::NULL
-    )
-    {
-        if ($this->ormClass !== null) {
-            $cls = $this->ormClass;
-            return $cls::setPdoOneQuery($this)::insert($tableNameOrValues);
-        }
-        return $this->_insert($tableNameOrValues, $tableDef, $values);
-    }
-
-    /**
      * @throws Exception
      */
     protected function _insert($tableName = null,
@@ -1816,6 +1822,40 @@ class PdoOneQuery
         }
 
         return $set;
+    }
+
+    /**
+     * Generates and execute an insert command.<br>
+     * <b>Example:</b><br>
+     * <pre>
+     * insert('table',['col1',10,'col2','hello world']); // simple array: name1,value1,name2,value2..
+     * insert('table',null,['col1'=>10,'col2'=>'hello world']); // definition is obtained from the values
+     * insert('table',['col1'=>10,'col2'=>'hello world']); // definition is obtained from the values
+     * insert('table',['col1','col2'],[10,'hello world']); // definition (binary) and value
+     * insert('table',['col1','col2'],['col1'=>10,'col2'=>'hello world']); // definition declarative array)
+     *      ->set(['col1',10,'col2','hello world'])
+     *      ->from('table')
+     *      ->insert();
+     *</pre>
+     *
+     * @param string|array      $tableNameOrValues
+     * @param string[]|null     $tableDef
+     * @param string[]|int|null $values
+     *
+     * @return false|int|string Returns the identity (if any) or false if the operation fails.
+     * @throws Exception
+     */
+    public function insert(
+        &$tableNameOrValues = null,
+        $tableDef = null,
+        $values = PdoOne::NULL
+    )
+    {
+        if ($this->ormClass !== null) {
+            $cls = $this->ormClass;
+            return $cls::setPdoOneQuery($this)::insert($tableNameOrValues);
+        }
+        return $this->_insert($tableNameOrValues, $tableDef, $values);
     }
 
 
@@ -1902,7 +1942,7 @@ class PdoOneQuery
      * </pre>
      *
      * @param string|null|array $tableOrObject The name of the table or the whole
-     *                                     query.
+     *                                         query.
      * @param string[]|null     $tableDef
      * @param string[]|int|null $values
      * @param string[]|null     $tableDefWhere
@@ -1921,7 +1961,7 @@ class PdoOneQuery
     {
         if ($this->ormClass !== null) {
             $cls = $this->ormClass;
-            $this->ormClass=null; // toavoid recursivity
+            $this->ormClass = null; // toavoid recursivity
             /** @see \eftec\_BasePdoOneRepo::_update() */
             return $cls::setPdoOneQuery($this)::update($tableOrObject);
         }
@@ -2089,10 +2129,10 @@ class PdoOneQuery
      *      ->from('table')->toList(); // '*' uses all the table assigned.
      * </pre>
      *
-     * @param null|bool|int $ttl        <b>null</b> then the cache never expires.<br>
+     * @param null|bool|int     $ttl    <b>null</b> then the cache never expires.<br>
      *                                  <b>false</b> then we don't use cache.<br>
      *                                  <b>int</b> then it is the duration of the cache (in seconds)
-     * @param string|array|null  $family     [optional] It is the family or group of the cache. It could be used to
+     * @param string|array|null $family [optional] It is the family or group of the cache. It could be used to
      *                                  identify a group of cache to invalidate the whole group (for example
      *                                  ,invalidate all cache from a specific table).<br>
      *                                  <b>*</b> If "*" then it uses the tables assigned by from() and join()
@@ -2102,10 +2142,10 @@ class PdoOneQuery
      */
     public function useCache($ttl = 0, $family = '')
     {
-        if ($this->ormClass !== null && $ttl!==false) {
+        if ($this->ormClass !== null && $ttl !== false) {
             $cls = $this->ormClass;
-            if($family==='') {
-                $family=$cls::setPdoOneQuery($this)::getRecursiveClass();
+            if ($family === '') {
+                $family = $cls::setPdoOneQuery($this)::getRecursiveClass();
             }
             //return $cls::setPdoOneQuery($this)::(PdoOne::NULL, null);
         }

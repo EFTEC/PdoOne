@@ -182,8 +182,9 @@ class PdoOneEncryption
         if (!extension_loaded('openssl')) {
             $this->encEnabled = false;
             throw new RuntimeException('OpenSSL not loaded, encryption disabled');
+        } else {
+            $this->encEnabled = true;
         }
-        $this->encEnabled = true;
         $this->encPassword = $password;
         $this->encSalt = $salt;
         $this->encMethod = $encMethod;
