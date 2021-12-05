@@ -6,10 +6,11 @@ include "../vendor/autoload.php";
 include "Collection.php";
 include "dBug.php";
 try {
-    $cs='INSTANCIA1';
+    $cs='XEDB1';
+    # $cs='(DESCRIPTION =(ADDRESS = (PROTOCOL = TCP)(HOST = 127.0.0.1)(PORT = 1521))(CONNECT_DATA =(SERVER = DEDICATED)(SERVICE_NAME = XEPDB1)))';
     //$cs='(DESCRIPTION =(ADDRESS = (PROTOCOL = TCP)(HOST = localhost)(PORT = 1521))(CONNECT_DATA =(SERVER = DEDICATED)(SERVICE_NAME = instancia1)))';
     //$cs='(DESCRIPTION=(ADDRESS=(PROTOCOL=tcp)(HOST=127.0.0.1)(PORT=1521)(CONNECT_DATA =(SERVER = DEDICATED)(SERVICE_NAME = instancia1) ))';
-    $conn = new PdoOne('oci', $cs, 'C##OT', 'oracle123');
+    $conn = new PdoOne('oci', $cs, 'web', 'abc.123');
     $conn->logLevel=3;
     $conn->open();
 } catch(Exception $ex) {

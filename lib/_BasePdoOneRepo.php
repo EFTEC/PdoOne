@@ -1053,15 +1053,19 @@ abstract class _BasePdoOneRepo
                     foreach ($rows as &$row) {
                         $from = $query['joins'];
                         $cols = implode(',', $query['columns']);
-                        $partialRows = $pdoOneQuery
-                            ->useCache(false)
-                            ->select($cols)
-                            ->from($from,static::$schema)
-                            ->where($query['where'], $row[$query['col']])
-                            ->_toList();
-                        foreach ($partialRows as $k => $rowP) {
-                            $row2 = self::convertRow($rowP);
-                            $partialRows[$k] = $row2;
+                        if(is_array($row) && isset($row[$query['col']])) {
+                            $partialRows = $pdoOneQuery
+                                ->useCache(false)
+                                ->select($cols)
+                                ->from($from, static::$schema)
+                                ->where($query['where'], $row[$query['col']])
+                                ->_toList();
+                            foreach ($partialRows as $k => $rowP) {
+                                $row2 = self::convertRow($rowP);
+                                $partialRows[$k] = $row2;
+                            }
+                        } else {
+                            $partialRows=null;
                         }
                         //$row['/' . $query['table']] = $partialRows;
                         $row[$query['col2']] = $partialRows;

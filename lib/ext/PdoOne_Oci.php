@@ -116,7 +116,7 @@ class PdoOne_Oci implements PdoOne_IExt
     public function getDefTable($table)
     {
         /** @var array $result =array(["name"=>'',"is_identity"=>0,"increment_value"=>0,"seed_value"=>0]) */
-        //throw new RuntimeException("no yet implemented");
+        throw new RuntimeException("no yet implemented");
 
         $raw=$this->parent->runRawQuery('select TO_CHAR(DBMS_METADATA.GET_DDL(\'TABLE\',?)) COL from dual',[$table]);
         if(!isset($raw[0]['COL'])) {
@@ -135,14 +135,8 @@ class PdoOne_Oci implements PdoOne_IExt
         foreach($cols as $k=>$v) {
             $cols[$k]=trim($v);
         }
-        var_dump($rcut);
-        var_dump($cols);
-
-
-
-
-
-
+        //var_dump($rcut);
+        //var_dump($cols);
         //var_dump(stream_get_contents($raw[0]['COL']));
 
         die(1);
@@ -221,7 +215,7 @@ class PdoOne_Oci implements PdoOne_IExt
                         (CASE WHEN UNIQUENESS = \'UNIQUE\' THEN 1 ELSE 0 END) "is_unique",0 "is_primary_key",0 "TYPE"')
                          ->from('ALL_indexes')
                          ->innerjoin('all_ind_columns on ALL_indexes.index_name=all_ind_columns.index_name ')
-                         ->where("ALL_indexes.table_name='{$table}' and ALL_indexes.table_owner='{$this->parent->db}'")
+                         ->where("ALL_indexes.table_name='$table' and ALL_indexes.table_owner='{$this->parent->db}'")
                          ->order('"IndexName"')->toList();
         foreach ($result as $k=>$item) {
             if (in_array($item['ColumnName'],$pks)) {
@@ -271,7 +265,7 @@ class PdoOne_Oci implements PdoOne_IExt
                     ,fk.name fk_name')
                                ->from('sys.foreign_key_columns AS f')
                                ->innerjoin('sys.foreign_keys as fk on fk.OBJECT_ID = f.constraint_object_id')
-                               ->where("OBJECT_NAME(f.parent_object_id)='{$table}'")
+                               ->where("OBJECT_NAME(f.parent_object_id)='$table'")
                                ->order('COL_NAME(f.parent_object_id, f.parent_column_id)')->toList();
         /*echo "table:";
         var_dump($table);
@@ -440,7 +434,7 @@ class PdoOne_Oci implements PdoOne_IExt
 
     public function createSequence($tableSequence = null, $method = 'snowflake')
     {
-        return "CREATE SEQUENCE {$tableSequence}
+        return "CREATE SEQUENCE $tableSequence
 				    START WITH 1  
 				    INCREMENT BY 1";
     }
@@ -451,7 +445,7 @@ class PdoOne_Oci implements PdoOne_IExt
 
     public function createTable($tableName, $definition, $primaryKey = null, $extra = '', $extraOutside = '')
     {
-        $sql = "CREATE TABLE {$tableName} (";
+        $sql = "CREATE TABLE $tableName (";
         foreach ($definition as $key => $type) {
             $sql .= "$key $type,";
         }
@@ -482,20 +476,20 @@ class PdoOne_Oci implements PdoOne_IExt
                 switch ($type) {
                     case 'PRIMARY':
                         if(!$hasPK) {
-                            $sql .= "ALTER TABLE {$tableName} ADD ( CONSTRAINT PK_$tableName PRIMARY KEY($key*pk*) ENABLE VALIDATE);";
+                            $sql .= "ALTER TABLE $tableName ADD ( CONSTRAINT PK_$tableName PRIMARY KEY($key*pk*) ENABLE VALIDATE);";
                             $hasPK=true;
                         } else {
                             $sql=str_replace('*pk*',",$key",$sql); // we add an extra primary key
                         }
                         break;
                     case '':
-                        $sql .= "CREATE INDEX {$tableName}_{$key}_KEY ON {$tableName} ({$key}) $value;";
+                        $sql .= "CREATE INDEX {$tableName}_{$key}_KEY ON $tableName ($key) $value;";
                         break;
                     case 'UNIQUE':
-                        $sql .= "CREATE UNIQUE INDEX {$tableName}_{$key}_UK ON {$tableName} ({$key}) $value;";
+                        $sql .= "CREATE UNIQUE INDEX {$tableName}_{$key}_UK ON $tableName ($key) $value;";
                         break;
                     case 'FOREIGN':
-                        $sql .= "ALTER TABLE {$tableName} ADD CONSTRAINT {$tableName}_{$key}_FK FOREIGN KEY ($key) $value;";
+                        $sql .= "ALTER TABLE $tableName ADD CONSTRAINT {$tableName}_{$key}_FK FOREIGN KEY ($key) $value;";
                         break;
                     default:
                         trigger_error("createTable: [$type KEY] not defined");
@@ -522,7 +516,7 @@ class PdoOne_Oci implements PdoOne_IExt
             $type = strtoupper(trim(substr($value, 0, $p0)));
             $value = substr($value, $p0 + 4);
             if($type==='FOREIGN') {
-                $sql .= "ALTER TABLE {$tableName} ADD FOREIGN KEY ($key) $value;";
+                $sql .= "ALTER TABLE $tableName ADD CONSTRAINT {$tableName}_fk_$key FOREIGN KEY ($key) $value;";
             }
         }
         return $sql;
@@ -530,13 +524,9 @@ class PdoOne_Oci implements PdoOne_IExt
 
     public function limit($sql)
     {
-        //throw new RuntimeException("no yet implemented");
-        //if (!$this->parent->order) {
-        //    $this->parent->throwError('limit without a sort', '');
-        //}
         if (strpos($sql, ',')) {
             $arr = explode(',', $sql);
-            return " OFFSET {$arr[0]} ROWS FETCH NEXT {$arr[1]} ROWS ONLY";
+            return " OFFSET $arr[0] ROWS FETCH NEXT $arr[1] ROWS ONLY";
         }
 
         return " OFFSET 0 ROWS FETCH NEXT $sql ROWS ONLY";
@@ -561,7 +551,7 @@ class PdoOne_Oci implements PdoOne_IExt
                 $r=$this->parent->runRawQuery($q,[$query,$this->parent->db],true);
 
                 if (count($r) >= 1) {
-                    foreach ($r as $key => $item) {
+                    foreach ($r as $item) {
                         $pkResult[] = $item['RESULT'];
                     }
                 } else {

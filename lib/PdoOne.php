@@ -46,13 +46,13 @@ use stdClass;
 
 /**
  * Class PdoOne
- * This class wrappes PDO but it could be used for another framework/library.
+ * This class wrappes PDO, but it could be used for another framework/library.
  *
  * @see           https://github.com/EFTEC/PdoOne
  * @package       eftec
  * @author        Jorge Castro Castillo
  * @copyright (c) Jorge Castro C. MIT License  https://github.com/EFTEC/PdoOne
- * @version       2.15
+ * @version       2.16
  */
 class PdoOne
 {
@@ -89,12 +89,11 @@ class PdoOne
      */
     public static $dateTimeMicroFormat = 'Y-m-d\TH:i:s.u\Z';
     public static $dateTimeMicroHumanFormat = 'd/m/Y H:i:s.u';
-    /**
-     * @var string ISO format for date
-     */
+    /** @var string This format is used to determine how the database will return a date */
     public static $isoDate = 'Y-m-d';
     public static $isoDateTimeMs = 'Y-m-d H:i:s.u';
     public static $isoDateTime = 'Y-m-d H:i:s';
+    /** @var string This format is used to determine how the database expect a date value */
     public static $isoDateInput = '';
     public static $isoDateInputTimeMs = '';
     public static $isoDateInputTime = '';
@@ -1929,7 +1928,7 @@ eot;
                 $vt = PDO::PARAM_INT;
                 $v = ($v) ? 1 : 0;
                 break;
-            case (is_object($v) && $v instanceof DateTime):
+            case ($v instanceof DateTime):
                 $vt = PDO::PARAM_STR;
                 $v = self::dateTimePHP2Sql($v);
                 break;
@@ -2352,8 +2351,7 @@ eot;
      */
     public function select($sql)
     {
-        $query = new PdoOneQuery($this);
-        return $query->select($sql);
+        return (new PdoOneQuery($this))->select($sql);
     }
 
     //</editor-fold>
@@ -3331,8 +3329,7 @@ eot;
      */
     public function set($sqlOrArray, $param = PdoOne::NULL)
     {
-        $query = new PdoOneQuery($this);
-        return $query->set($sqlOrArray, $param);
+        return (new PdoOneQuery($this))->set($sqlOrArray, $param);
     }
 
     /**
@@ -3999,6 +3996,7 @@ eot;
                         /** @noinspection PhpArrayIsAlwaysEmptyInspection */
                         if ($pks !== false || count($pks) === 2) {
                             $relation[$k]['key'] = 'MANYTOMANY';
+                            /** @noinspection PhpIdempotentOperationInspection */
                             $refcol2 = ('' . self::$prefixBase . $pks[0] === $relation[$k]['refcol']) ? $pks[1]
                                 : $pks[0];
 
@@ -4339,6 +4337,7 @@ eot;
                         /** @noinspection PhpArrayIsAlwaysEmptyInspection */
                         if ($pks !== false || count($pks) === 2) {
                             $relation[$k]['key'] = 'MANYTOMANY';
+                            /** @noinspection PhpIdempotentOperationInspection */
                             $refcol2 = ('' . self::$prefixBase . $pks[0] === $relation[$k]['refcol']) ? $pks[1]
                                 : $pks[0];
 
@@ -5893,8 +5892,7 @@ BOOTS;
      */
     public function genError($error = false)
     {
-        $query = new PdoOneQuery($this);
-        return $query->genError($error);
+        return (new PdoOneQuery($this))->genError($error);
     }
 
     /**
@@ -5915,8 +5913,7 @@ BOOTS;
      */
     public function min($sql = '', $arg = '')
     {
-        $query = new PdoOneQuery($this);
-        return $query->_aggFn('min', $sql, $arg);
+        return (new PdoOneQuery($this))->_aggFn('min', $sql, $arg);
     }
 
     /**
@@ -5940,8 +5937,7 @@ BOOTS;
      */
     public function count($sql = '', $arg = '*')
     {
-        $query = new PdoOneQuery($this);
-        return $query->_aggFn('count', $sql, $arg);
+        return (new PdoOneQuery($this))->_aggFn('count', $sql, $arg);
     }
 
     /**
@@ -5963,8 +5959,7 @@ BOOTS;
      */
     public function sum($sql = '', $arg = '')
     {
-        $query = new PdoOneQuery($this);
-        return $query->_aggFn('sum', $sql, $arg);
+        return (new PdoOneQuery($this))->_aggFn('sum', $sql, $arg);
     }
 
     /**
@@ -5985,8 +5980,7 @@ BOOTS;
      */
     public function max($sql = '', $arg = '')
     {
-        $query = new PdoOneQuery($this);
-        return $query->_aggFn('max', $sql, $arg);
+        return (new PdoOneQuery($this))->_aggFn('max', $sql, $arg);
     }
 
     /**
@@ -6007,8 +6001,7 @@ BOOTS;
      */
     public function avg($sql = '', $arg = '')
     {
-        $query = new PdoOneQuery($this);
-        return $query->_aggFn('avg', $sql, $arg);
+        return (new PdoOneQuery($this))->_aggFn('avg', $sql, $arg);
     }
 
     /**
@@ -6032,8 +6025,7 @@ BOOTS;
      */
     public function from($sql, $schema = null)
     {
-        $query = new PdoOneQuery($this);
-        return $query->from($sql, $schema);
+        return (new PdoOneQuery($this))->from($sql, $schema);
     }
 
     /**
@@ -6053,8 +6045,7 @@ BOOTS;
     public function insertObject($tableName, &$object, $excludeColumn = [])
     {
 
-        $query = new PdoOneQuery($this);
-        return $query->insertObject($tableName, $object, $excludeColumn);
+        return (new PdoOneQuery($this))->insertObject($tableName, $object, $excludeColumn);
     }
 
     /**
@@ -6080,8 +6071,7 @@ BOOTS;
         $valueWhere = PdoOne::NULL
     )
     {
-        $query = new PdoOneQuery($this);
-        return $query->delete($tableName, $tableDefWhere, $valueWhere);
+        return (new PdoOneQuery($this))->delete($tableName, $tableDefWhere, $valueWhere);
     }
 
     /**
@@ -6115,8 +6105,7 @@ BOOTS;
         $valueWhere = PdoOne::NULL
     )
     {
-        $query = new PdoOneQuery($this);
-        return $query->update($tableName, $tableDef, $values, $tableDefWhere, $valueWhere);
+        return (new PdoOneQuery($this))->update($tableName, $tableDef, $values, $tableDefWhere, $valueWhere);
     }
 
     /**
@@ -6134,8 +6123,7 @@ BOOTS;
      */
     public function right($sql)
     {
-        $query = new PdoOneQuery($this);
-        return $query->right($sql);
+        return (new PdoOneQuery($this))->right($sql);
     }
 
     /**
@@ -6155,8 +6143,7 @@ BOOTS;
      */
     public function left($sql)
     {
-        $query = new PdoOneQuery($this);
-        return $query->left($sql);
+        return (new PdoOneQuery($this))->left($sql);
     }
 
     /**
@@ -6189,8 +6176,7 @@ BOOTS;
      */
     public function where($sql, $param = PdoOne::NULL, $isHaving = false, $tablePrefix = null)
     {
-        $query = new PdoOneQuery($this);
-        return $query->where($sql, $param, $isHaving, $tablePrefix);
+        return (new PdoOneQuery($this))->where($sql, $param, $isHaving, $tablePrefix);
     }
 
     /**
@@ -6217,8 +6203,7 @@ BOOTS;
      */
     public function having($sql, $param = PdoOne::NULL)
     {
-        $query = new PdoOneQuery($this);
-        return $query->having($sql, $param);
+        return (new PdoOneQuery($this))->having($sql, $param);
     }
 
     /**
@@ -6237,8 +6222,7 @@ BOOTS;
      */
     public function join($sql, $condition = '')
     {
-        $query = new PdoOneQuery($this);
-        return $query->join($sql, $condition);
+        return (new PdoOneQuery($this))->join($sql, $condition);
     }
 
     /**
@@ -6253,8 +6237,7 @@ BOOTS;
      */
     public function group($sql)
     {
-        $query = new PdoOneQuery($this);
-        return $query->group($sql);
+        return (new PdoOneQuery($this))->group($sql);
     }
 
     /**
@@ -6272,8 +6255,7 @@ BOOTS;
      */
     public function order($sql)
     {
-        $query = new PdoOneQuery($this);
-        return $query->order($sql);
+        return (new PdoOneQuery($this))->order($sql);
     }
 
     //</editor-fold>
@@ -6294,8 +6276,7 @@ BOOTS;
      */
     public function limit($sql)
     {
-        $query = new PdoOneQuery($this);
-        return $query->limit($sql);
+        return (new PdoOneQuery($this))->limit($sql);
     }
 
     /**
@@ -6313,8 +6294,7 @@ BOOTS;
      */
     public function distinct($sql = 'distinct')
     {
-        $query = new PdoOneQuery($this);
-        return $query->distinct($sql);
+        return (new PdoOneQuery($this))->distinct($sql);
     }
 
     /**
@@ -6330,8 +6310,7 @@ BOOTS;
      */
     public function recursive($rec)
     {
-        $query = new PdoOneQuery($this);
-        return $query->recursive($rec);
+        return (new PdoOneQuery($this))->recursive($rec);
     }
 
     /**
@@ -6341,8 +6320,7 @@ BOOTS;
      */
     public function getRecursive()
     {
-        $query = new PdoOneQuery($this);
-        return $query->getRecursive();
+        return (new PdoOneQuery($this))->getRecursive();
     }
 
     /**
@@ -6375,8 +6353,7 @@ BOOTS;
      */
     public function useCache($ttl = 0, $family = '')
     {
-        $query = new PdoOneQuery($this);
-        return $query->useCache($ttl, $family);
+        return (new PdoOneQuery($this))->useCache($ttl, $family);
     }
     //</editor-fold>
 

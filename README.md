@@ -1953,6 +1953,9 @@ In a nutshell:
 * Every minor version means that it adds a new functionality i.e. 1.5 -> 1.6 (new methods)
 * Every decimal version means that it patches/fixes/refactoring a previous functionality i.e. 1.5.0 -> 1.5.1 (fix)
 
+* 2.16
+  * [fix] [sqlsrv] fixed the format of the date-time of sql.
+  * [fix] [sqlsrv] columnTable() returns distinct values.
 * 2.15 2021-07-24
 * 2.14.3 2021-06-15
   * [fix] [orm] setCache()::first() and setCache()::count() didn't work correctly. fixed.

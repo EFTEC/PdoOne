@@ -113,7 +113,7 @@ class PdoOneQuery
             /** @var PDOStatement $stmt */
             $stmt = $this->parent->runRawQuery($sql, $args, false, $this->useCache, $this->cacheFamily);
         }
-        if ($stmt === null || $stmt instanceof PDOStatement === false) {
+        if ($stmt instanceof PDOStatement === false) {
             $stmt = null;
 
             return false;
@@ -202,6 +202,7 @@ class PdoOneQuery
         $reval = true;
         if ($allparam) {
             try {
+                /** @noinspection PhpParameterByRefIsNotUsedAsReferenceInspection */
                 foreach ($allparam as &$param) {
                     $reval = $reval && $stmt->bindParam(...$param); // unpack
                 }
@@ -1862,7 +1863,7 @@ class PdoOneQuery
     //<editor-fold desc="Encryption functions" defaultstate="collapsed" >
 
     /**
-     * Delete a row(s) if they exists.
+     * Delete a row(s) if they exist.
      * Example:
      *      delete('table',['col1',10,'col2','hello world']);
      *      delete('table',['col1','col2'],[10,'hello world']);

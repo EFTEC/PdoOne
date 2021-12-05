@@ -47,8 +47,8 @@ class PdoOne_Sqlsrv implements PdoOne_IExt
         PdoOne::$isoDateTime = 'Y-m-d H:i:s';
         PdoOne::$isoDateTimeMs = 'Y-m-d H:i:s.u';
         PdoOne::$isoDateInput = 'Ymd';
-        PdoOne::$isoDateInputTime = 'Ymd His';
-        PdoOne::$isoDateInputTimeMs = 'Ymd His.u';
+        PdoOne::$isoDateInputTime = 'Ymd H:i:s';
+        PdoOne::$isoDateInputTimeMs = 'Ymd H:i:s.u';
         $this->parent->isOpen = false;
         return '';
     }
@@ -56,7 +56,7 @@ class PdoOne_Sqlsrv implements PdoOne_IExt
     public function connect($cs, $alterSession=false)
     {
         $this->parent->conn1 = new PDO("{$this->parent->databaseType}:server={$this->parent->server};" .
-                                       "database={$this->parent->db}$cs", $this->parent->user, $this->parent->pwd);
+            "database={$this->parent->db}$cs", $this->parent->user, $this->parent->pwd);
         $this->parent->user='';
         $this->parent->pwd='';
         $this->parent->conn1->setAttribute( PDO::SQLSRV_ATTR_FETCHES_NUMERIC_TYPE,true);
@@ -71,7 +71,7 @@ class PdoOne_Sqlsrv implements PdoOne_IExt
         $sql="DELETE FROM ".$this->parent->addDelimiter($tableName)." $extra";
         return $this->parent->runRawQuery($sql,null, true);
     }
-    
+
     public function resetIdentity($tableName,$newValue=0,$column='') {
         $sql="DBCC CHECKIDENT ('$tableName',RESEED, $newValue)";
         return $this->parent->runRawQuery($sql, null, true);
@@ -105,13 +105,13 @@ class PdoOne_Sqlsrv implements PdoOne_IExt
         /** @var array $result =array(["name"=>'',"is_identity"=>0,"increment_value"=>0,"seed_value"=>0]) */
         $findIdentity =
             $this->parent->select('name,is_identity,increment_value,seed_value')->from('sys.identity_columns')
-                         ->where('OBJECT_NAME(object_id)=?', $table)->toList();
+                ->where('OBJECT_NAME(object_id)=?', $table)->toList();
         $findIdentity = (!is_array($findIdentity)) ? [] : $findIdentity; // it's always an arry
 
         $defArray = $this->parent->select('COLUMN_NAME,IS_NULLABLE,DATA_TYPE,CHARACTER_MAXIMUM_LENGTH
                         ,NUMERIC_PRECISION,NUMERIC_SCALE,COLUMN_DEFAULT,IDENT_SEED(\'".$table."\') HASIDENTITY')
-                                 ->from('INFORMATION_SCHEMA.COLUMNS')->where('TABLE_NAME = ?', $table)
-                                 ->order('ORDINAL_POSITION')->toList();
+            ->from('INFORMATION_SCHEMA.COLUMNS')->where('TABLE_NAME = ?', $table)
+            ->order('ORDINAL_POSITION')->toList();
 
         $result = [];
         foreach ($defArray as $col) {
@@ -171,11 +171,11 @@ class PdoOne_Sqlsrv implements PdoOne_IExt
 
         $result =
             $this->parent->select('IndexName = ind.name,ColumnName = col.name,ind.is_unique,IND.is_primary_key,IND.TYPE')
-                         ->from('sys.indexes ind')
-                         ->innerjoin('sys.index_columns ic ON ind.object_id = ic.object_id and ind.index_id = ic.index_id')
-                         ->innerjoin('sys.columns col ON ic.object_id = col.object_id and ic.column_id = col.column_id')
-                         ->where("OBJECT_NAME( ind.object_id)='$table'")
-                         ->order('ind.name, ind.index_id, ic.index_column_id')->toList();
+                ->from('sys.indexes ind')
+                ->innerjoin('sys.index_columns ic ON ind.object_id = ic.object_id and ind.index_id = ic.index_id')
+                ->innerjoin('sys.columns col ON ic.object_id = col.object_id and ic.column_id = col.column_id')
+                ->where("OBJECT_NAME( ind.object_id)='$table'")
+                ->order('ind.name, ind.index_id, ic.index_column_id')->toList();
         foreach ($result as $item) {
             if ($item['is_primary_key']) {
                 $type = 'PRIMARY KEY';
@@ -219,15 +219,10 @@ class PdoOne_Sqlsrv implements PdoOne_IExt
                     ,OBJECT_SCHEMA_NAME(f.referenced_object_id) referenced_schema_name
                     , fk.update_referential_action_desc, fk.delete_referential_action_desc
                     ,fk.name fk_name')
-                               ->from('sys.foreign_key_columns AS f')
-                               ->innerjoin('sys.foreign_keys as fk on fk.OBJECT_ID = f.constraint_object_id')
-                               ->where("OBJECT_NAME(f.parent_object_id)='$table'")
-                               ->order('COL_NAME(f.parent_object_id, f.parent_column_id)')->toList();
-        /*echo "table:";
-        var_dump($table);
-        echo "<pre>";
-        var_dump($fkArr);
-        echo "</pre>";*/
+            ->from('sys.foreign_key_columns AS f')
+            ->innerjoin('sys.foreign_keys as fk on fk.OBJECT_ID = f.constraint_object_id')
+            ->where("OBJECT_NAME(f.parent_object_id)='$table'")
+            ->order('COL_NAME(f.parent_object_id, f.parent_column_id)')->toList();
         foreach ($fkArr as $item) {
             $extra = ($item['update_referential_action_desc'] !== 'NO_ACTION') ? ' ON UPDATE ' .
                 str_replace('_', ' ', $item['update_referential_action_desc']) : '';
@@ -236,7 +231,7 @@ class PdoOne_Sqlsrv implements PdoOne_IExt
             //FOREIGN KEY REFERENCES TABLEREF(COLREF)
             if ($returnSimple) {
                 $columns[$item['COLUMN_NAME']] =
-                    'FOREIGN KEY REFERENCES ' .$this->parent->addQuote($item['referenced_table_name']) 
+                    'FOREIGN KEY REFERENCES ' .$this->parent->addQuote($item['referenced_table_name'])
                     . '(' . $this->parent->addQuote($item['referenced_column_name']) . ')' . $extra;
             } else {
                 $columns[$item['COLUMN_NAME']]=PdoOne::newColFK('FOREIGN KEY'
@@ -351,7 +346,7 @@ class PdoOne_Sqlsrv implements PdoOne_IExt
 
     public function columnTable($tableName)
     {
-        return "SELECT col.name colname
+        return "SELECT distinct col.name colname
 							,st.name coltype
 							,col.max_length colsize
 							,col.precision colpres

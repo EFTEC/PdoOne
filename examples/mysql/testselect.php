@@ -22,6 +22,10 @@ try {
     echo $dao->lastError()."-".$e->getMessage()." FIN<br>";
     die(1);
 }
+new \dBug\dBug($dao->select('*')->from('actor')->toMeta());
+
+die(1);
+
 /*
 function f1($arg1) {
     global $dao;
