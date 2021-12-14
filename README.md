@@ -1298,7 +1298,7 @@ $this->set(['username' => 1, 'password' => $this->encrypt($password)])
 // validate user
 $user=$this->select(['username','password'])
     ->from('user')
-    ->where(['username','password',[1],$this->encrypt($password))
+    ->where(['username','password'],[1,$this->encrypt($password)])
              ->first();
 // $user= if false or null then the user does not exist or the password is incorrect.
 ```
