@@ -1027,6 +1027,7 @@ class PdoOne_mysql_Test extends TestCase
     {
         $this->pdoOne->setEncryption('123//*/*saass11___1212fgbl@#€€"', '123//*/*saass11___1212fgbl@#€€"',
             'AES-256-CTR');
+        self::assertEquals(["hello"],$this->pdoOne->decrypt($this->pdoOne->encrypt(["hello"])));
         $value = $this->pdoOne->encrypt("bv `lfg+hlc ,vc´,c35'ddl ld_vcvñvc +*=/\\");
         self::assertTrue(strlen($value) > 10, 'Encrypted');
         $return = $this->pdoOne->decrypt($value);

@@ -1,4 +1,6 @@
-<?php /** @noinspection PhpSameParameterValueInspection */
+<?php /** @noinspection GrazieInspection */
+/** @noinspection GrazieInspection */
+/** @noinspection PhpSameParameterValueInspection */
 
 /** @noinspection StrStartsWithCanBeUsedInspection
  * @noinspection ShortListSyntaxCanBeUsedInspection
@@ -52,11 +54,11 @@ use stdClass;
  * @package       eftec
  * @author        Jorge Castro Castillo
  * @copyright (c) Jorge Castro C. MIT License  https://github.com/EFTEC/PdoOne
- * @version       2.16
+ * @version       2.17
  */
 class PdoOne
 {
-    const VERSION = '2.15';
+    const VERSION = '2.17';
     /** @var int We need this value because null and false could be a valid value. */
     const NULL = PHP_INT_MAX;
     /** @var string Prefix of the tables */
@@ -839,8 +841,7 @@ class PdoOne
      * @param string|array $defKeys  The primary key or definition of keys
      * @param array        $defFK    The definition of the foreign keys
      *
-     * @return array An array with all the errors or an empty array (if both
-     *               matches)
+     * @return array An array with all the errors or an empty array (if both matches).
      * @throws Exception
      */
     public function validateDefTable($table, $defArray, $defKeys, $defFK)
@@ -867,6 +868,7 @@ class PdoOne
         // keys
         if (!is_array($defKeys)) {
             $k = $defKeys;
+            $defKeys=[];
             $defKeys[$k] = 'PRIMARY KEY';
         }
         $defCurrentKey = $this->getDefTableKeys($table);
@@ -1662,7 +1664,7 @@ eot;
             return false;
         }
         if ($this->useInternalCache && $returnArray === true && !$writeCommand) {
-            // if we use internal cache and we returns an array and it is not a write command
+            // if we use internal cache, then we return an array, and it is not a write command
             $uid = hash($this->encryption->hashType, $rawSql . serialize($params));
             if (isset($this->internalCache[$uid])) {
                 // we have an internal cache, so we will return it.
@@ -2994,7 +2996,7 @@ eot;
                     if ($columnRelations[$k] === 'PARENT') {
                         $relation[$k]['key'] = 'PARENT';
                     } elseif ($columnRelations[$k] === 'MANYTOMANY') {
-                        // the table must has 2 primary keys.
+                        // the table must have 2 primary keys.
                         $pks = null;
                         $pks = $this->service->getPK($rel['reftable'], $pks);
                         /** @noinspection PhpParamsInspection */
@@ -3200,7 +3202,7 @@ eot;
         if ($defNoUpdate !== null) {
             $noUpdate = array_merge($identities, $defNoUpdate);
         } else {
-            $noUpdate = array_merge($identities);
+            $noUpdate = $identities;
         }
         if ($pk) {
             // we never update the primary key.
@@ -3671,8 +3673,8 @@ eot;
     /**
      * If true then the library will use the internal cache that stores DQL commands.<br>
      * By default, the internal cache is disabled<br>
-     * The internal cache only lasts for the execution of the code and it uses memory but
-     * it avoid to query values that are in memory.
+     * The internal cache only lasts for the execution of the code and it uses memory, but
+     * it avoid querying values that are in memory.
      *
      * @param bool $useInternalCache
      * @return PdoOne
@@ -3948,7 +3950,7 @@ eot;
         if (is_array($after) && is_array($before)) {
             foreach ($before as $key => $rows) { // $value is [relcol,table]
                 foreach ($rows as $value) {
-                    $relation['' . self::$prefixBase . $value[1]] = [
+                    $relation[self::$prefixBase . $value[1]] = [
                         'key' => 'ONETOMANY',
                         'col' => $key,
                         'reftable' => $value[1],
@@ -3962,7 +3964,7 @@ eot;
             if ($rel['key'] === 'ONETOMANY') {
                 $pkref = null;
                 $pkref = $this->service->getPK($rel['reftable'], $pkref);
-                if ('' . self::$prefixBase . $pkref[0] === $rel['refcol'] && count($pkref) === 1) {
+                if (self::$prefixBase . $pkref[0] === $rel['refcol'] && count($pkref) === 1) {
                     $relation[$k]['key'] = 'ONETOONE';
                     $relation[$k]['col'] = 'xxx1';
                     $relation[$k]['refcol'] = ltrim($relation[$k]['refcol'], self::$prefixBase);
@@ -3973,7 +3975,7 @@ eot;
                 $pkref = $this->service->getPK($rel['reftable'], $pkref);
 
                 if ($pkref[0] === $rel['refcol'] && count($pkref) === 1
-                    && (strcasecmp($k, '' . self::$prefixBase . $pkFirst) === 0)
+                    && (strcasecmp($k, self::$prefixBase . $pkFirst) === 0)
                 ) {
                     // if they are linked by the pks and the pks are only 1.
                     $relation[$k]['key'] = 'ONETOONE';
@@ -3996,8 +3998,7 @@ eot;
                         /** @noinspection PhpArrayIsAlwaysEmptyInspection */
                         if ($pks !== false || count($pks) === 2) {
                             $relation[$k]['key'] = 'MANYTOMANY';
-                            /** @noinspection PhpIdempotentOperationInspection */
-                            $refcol2 = ('' . self::$prefixBase . $pks[0] === $relation[$k]['refcol']) ? $pks[1]
+                            $refcol2 = (self::$prefixBase . $pks[0] === $relation[$k]['refcol']) ? $pks[1]
                                 : $pks[0];
 
                             try {
@@ -4013,7 +4014,7 @@ eot;
                                 $this->endTry();
                                 return 'Error: Unable read table dependencies' . $e->getMessage();
                             }
-                            $relation[$k]['refcol2'] = '' . self::$prefixBase . $refcol2;
+                            $relation[$k]['refcol2'] = self::$prefixBase . $refcol2;
                             if (is_array($keys2)) {
                                 $keys2 = array_keys($keys2);
                                 $relation[$k]['col2'] = $keys2[0];
@@ -4290,7 +4291,7 @@ eot;
         if (is_array($after) && is_array($before)) {
             foreach ($before as $key => $rows) { // $value is [relcol,table]
                 foreach ($rows as $value) {
-                    $relation['' . self::$prefixBase . $value[1]] = [
+                    $relation[self::$prefixBase . $value[1]] = [
                         'key' => 'ONETOMANY',
                         'col' => $key,
                         'reftable' => $value[1],
@@ -4304,7 +4305,7 @@ eot;
             if ($rel['key'] === 'ONETOMANY') {
                 $pkref = null;
                 $pkref = $this->service->getPK($rel['reftable'], $pkref);
-                if ('' . self::$prefixBase . $pkref[0] === $rel['refcol'] && count($pkref) === 1) {
+                if (self::$prefixBase . $pkref[0] === $rel['refcol'] && count($pkref) === 1) {
                     $relation[$k]['key'] = 'ONETOONE';
                     $relation[$k]['col'] = 'xxx3';
                     $relation[$k]['refcol'] = ltrim($relation[$k]['refcol'], self::$prefixBase);
@@ -4315,7 +4316,7 @@ eot;
                 $pkref = $this->service->getPK($rel['reftable'], $pkref);
 
                 if ($pkref[0] === $rel['refcol'] && count($pkref) === 1
-                    && (strcasecmp($k, '' . self::$prefixBase . $pkFirst) === 0)
+                    && (strcasecmp($k, self::$prefixBase . $pkFirst) === 0)
                 ) {
                     // if they are linked by the pks and the pks are only 1.
                     $relation[$k]['key'] = 'ONETOONE';
@@ -4337,8 +4338,7 @@ eot;
                         /** @noinspection PhpArrayIsAlwaysEmptyInspection */
                         if ($pks !== false || count($pks) === 2) {
                             $relation[$k]['key'] = 'MANYTOMANY';
-                            /** @noinspection PhpIdempotentOperationInspection */
-                            $refcol2 = ('' . self::$prefixBase . $pks[0] === $relation[$k]['refcol']) ? $pks[1]
+                            $refcol2 = (self::$prefixBase . $pks[0] === $relation[$k]['refcol']) ? $pks[1]
                                 : $pks[0];
 
                             try {
@@ -4354,7 +4354,7 @@ eot;
                                 $this->endTry();
                                 return 'Error: Unable read table dependencies' . $e->getMessage();
                             }
-                            $relation[$k]['refcol2'] = '' . self::$prefixBase . $refcol2;
+                            $relation[$k]['refcol2'] = self::$prefixBase . $refcol2;
                             if (is_array($keys2)) {
                                 $keys2 = array_keys($keys2);
                                 $relation[$k]['col2'] = $keys2[0];
@@ -4598,7 +4598,7 @@ eot;
     /**
      * It stores a cache. This method is used internally by PdoOne.<br>
      *
-     * @param string          $uid    The unique id. It is generate by sha256 based in the query, parameters, type of
+     * @param string          $uid    The unique id. It is generated by sha256 based in the query, parameters, type of
      *                                query and method.
      * @param string|string[] $family [optional] It is the family or group of the cache. It could be used to invalidate
      *                                the whole group. For example, to invalidate all the cache related with a table.
@@ -4621,7 +4621,7 @@ eot;
      * Invalidate a single cache or a list of cache based in a single uid or in
      * a family/group of cache.
      *
-     * @param string|string[] $uid        The unique id. It is generate by sha256 (or by $hashtype)
+     * @param string|string[] $uid        The unique id. It is generated by sha256 (or by $hashtype)
      *                                    based in the query, parameters, type
      *                                    of query and method.
      * @param string|string[] $family     [optional] It is the family or group
@@ -4666,7 +4666,6 @@ eot;
      * @param null|string $sequenceName [optional] the name of the sequence
      *
      * @return int|bool a number or 0 if it is not found
-     * @noinspection PhpStrictComparisonWithOperandsOfDifferentTypesInspection
      */
     public function insert_id($sequenceName = null)
     {
@@ -4716,7 +4715,7 @@ eot;
      * @throws Exception
      * @test void this('123','somesalt','AES-128-CTR')
      */
-    public function setEncryption($password, $salt, $encMethod)
+    public function setEncryption($password, $salt, $encMethod='AES-256-CTR')
     {
         $this->beginTry();
         if (!extension_loaded('openssl')) {
@@ -4732,7 +4731,10 @@ eot;
     /**
      * Wrapper of PdoOneEncryption->encrypt
      *
-     * @param $data
+     * @param mixed $data The data to encrypt.<br>
+     *                    If the method of encryption is INTEGER, then this number must be an INTEGER<br>
+     *                    If the method of encryption is SIMPLE, then this value must be a primitive value<br>
+     *                    If the method is other, then it could be any method compatible with your installation<br>
      *
      * @return int|string|null
      * @see \eftec\PdoOneEncryption::encrypt
@@ -4751,10 +4753,10 @@ eot;
     /**
      * Wrapper of PdoOneEncryption->decrypt
      *
-     * @param $data
-     *
-     * @return bool|string
+     * @param mixed $data The data to decrypt.
+     * @return bool|string|int
      * @see \eftec\PdoOneEncryption::decrypt
+     * @see https://www.php.net/manual/en/function.openssl-get-cipher-methods.php
      */
     public function decrypt($data)
     {
@@ -5466,7 +5468,7 @@ BOOTS;
             if (PHP_INT_SIZE === 4) {
                 return $this->encryption->encryptSimple($r[0]['id']);
             }
-            // $r is always a 32 bit number so it will fail in PHP 32bits
+            // $r is always a 32-bit number, so it will fail in PHP 32bits
             return $this->encryption->encryptInteger($r[0]['id']);
         }
         if ($asFloat) {
@@ -6154,7 +6156,7 @@ BOOTS;
      *      where (['field',[20]] ) // array type defined
      *      where('field=20') // literal value
      *      where('field=?',[20]) // automatic type
-     *      where('field',[20]) // automatic type (it's the same than
+     *      where('field',[20]) // automatic type
      *      where('field=?',[20]) where('field=?', [20] ) // type(i,d,s,b)
      *      defined where('field=?,field2=?', [20,'hello'] )
      *      where('field=:field,field2=:field2',

@@ -68,8 +68,8 @@ class PdoOneEncryption
 
 
     /**
-     * It is a two way decryption
-     * @param $data
+     * It is a two-way decryption
+     * @param mixed $data
      * @return bool|string
      */
     public function decrypt($data)
@@ -83,13 +83,20 @@ class PdoOneEncryption
             case 'INTEGER':
                 return $this->decryptInteger($data);
         }
+
         $data=base64_decode(str_replace(array('-', '_'),array('+', '/'),$data));
         $iv_strlen = 2 * openssl_cipher_iv_length($this->encMethod);
         if (preg_match('/^(.{' . $iv_strlen . '})(.+)$/', $data, $regs)) {
             try {
                 list(, $iv, $crypted_string) = $regs;
                 $decrypted_string = openssl_decrypt($crypted_string, $this->encMethod, $this->encPassword, 0, hex2bin($iv));
-                return substr($decrypted_string, strlen($this->encSalt));
+                $result=substr($decrypted_string, strlen($this->encSalt));
+                if(strlen($result)>2 && $result[1]===':') {
+                    $resultfinal=@unserialize($result); // we try to unserialize, if fails, then we keep the current value
+                    $result=$resultfinal===false?$result:$resultfinal;
+                }
+                return $result;
+
             } catch(Exception $ex) {
                 return false;
             }
@@ -97,10 +104,13 @@ class PdoOneEncryption
             return false;
         }
     }
+
     /**
-     * It is a two way encryption. The result is htlml/link friendly.
-     * @param $data
-     * @return string
+     * It is a two-way encryption. The result is htlml/link friendly.
+     * @param mixed $data For the method simple, it could be a simple value (string,int,etc.)<br>
+     *                    For the method integer, it must be an integer<br>
+     *                    For other methods, it could be any value. If it is an object or array, then it is serialized<br>
+     * @return string|int|false     Returns a string with the value encrypted
      */
     public function encrypt($data)
     {
@@ -112,6 +122,9 @@ class PdoOneEncryption
                 return $this->encryptSimple($data);
             case 'INTEGER':
                 return $this->encryptInteger($data);
+        }
+        if(is_array($data) || is_object($data)) {
+            $data=serialize($data);
         }
         if ($this->iv) {
             $iv = openssl_random_pseudo_bytes(openssl_cipher_iv_length($this->encMethod));
@@ -182,9 +195,9 @@ class PdoOneEncryption
         if (!extension_loaded('openssl')) {
             $this->encEnabled = false;
             throw new RuntimeException('OpenSSL not loaded, encryption disabled');
-        } else {
-            $this->encEnabled = true;
         }
+
+        $this->encEnabled = true;
         $this->encPassword = $password;
         $this->encSalt = $salt;
         $this->encMethod = $encMethod;
@@ -195,11 +208,11 @@ class PdoOneEncryption
     /**
      * It encrypts an integer.
      * @param integer $n
-     * @return int
+     * @return int|false
      */
     public function encryptInteger($n) {
         if (!is_numeric($n)) {
-            return null;
+            return false;
         }
         return (PHP_INT_SIZE === 4 ? $this->encrypt32($n) : $this->encrypt64($n)) ^ $this->encPassword;
     }

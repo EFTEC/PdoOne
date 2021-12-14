@@ -1689,8 +1689,8 @@ class PdoOneQuery
     }
 
     /**
-     * If false then it wont generate an error.<br>
-     * If true (default), then on error, it behave normally<br>
+     * If false then it won't generate an error.<br>
+     * If true (default), then on error, it behaves normally<br>
      * If false, then the error is captured and store in $this::$errorText<br>
      * This command is specific for generation of query and its reseted when the query is executed.
      *
@@ -1847,7 +1847,7 @@ class PdoOneQuery
      * @throws Exception
      */
     public function insert(
-        &$tableNameOrValues = null,
+        $tableNameOrValues = null,
         $tableDef = null,
         $values = PdoOne::NULL
     )

@@ -127,8 +127,8 @@ class PdoOne_mysql_Test extends TestCase
         }
         $this->pdoOne->createTable('tdummy', ['c1' => 'int', 'c2' => 'varchar(50)'], 'c1');
 
-        self::assertNotEquals(false, $this->pdoOne->insert('tdummy', ['c1', 'c2'], [1, 'hello']));
-        self::assertNotEquals(false, $this->pdoOne->insert('tdummy', ['c1', 'c2'], [2, 'hello2']));
+        self::assertNotSame(false, $this->pdoOne->insert('tdummy', ['c1', 'c2'], [1, 'hello']));
+        self::assertNotSame(false, $this->pdoOne->insert('tdummy', ['c1', 'c2'], [2, 'hello2']));
         //self::assertNotEquals(false, $this->pdoOne->insert('tdummy', 'c1=?,c2=?', [3, 'hello2']));
 
         var_dump($this->pdoOne->select('*')->from('tdummy')->first());
@@ -152,11 +152,11 @@ class PdoOne_mysql_Test extends TestCase
         $this->pdoOne->createTable('tdummy', ['c1' => 'int', 'c2' => 'varchar(50)', 'c3' => 'int'], 'c1');
         $this->pdoOne->createTable('tdummy2', ['c1' => 'int', 'c2' => 'varchar(50)', 'c3' => 'int'], 'c1');
 
-        self::assertNotEquals(false, $this->pdoOne->insert('tdummy2', ['c1', 'c2'], [1, 'DUMMY2.1']));
-        self::assertNotEquals(false, $this->pdoOne->insert('tdummy2', ['c1', 'c2'], [2, 'DUMMY2.2']));
+        self::assertNotSame(false,$this->pdoOne->insert('tdummy2', ['c1', 'c2'], [1, 'DUMMY2.1']));
+        self::assertNotSame(false,$this->pdoOne->insert('tdummy2', ['c1', 'c2'], [2, 'DUMMY2.2']));
 
-        self::assertNotEquals(false, $this->pdoOne->insert('tdummy', ['c1', 'c2', 'c3'], [1, 'DUMMY1.1', 1]));
-        self::assertNotEquals(false, $this->pdoOne->insert('tdummy', ['c1', 'c2', 'c3'], [2, 'DUMMY1.2', 2]));
+        self::assertNotSame(false,$this->pdoOne->insert('tdummy', ['c1', 'c2', 'c3'], [1, 'DUMMY1.1', 1]));
+        self::assertNotSame(false,$this->pdoOne->insert('tdummy', ['c1', 'c2', 'c3'], [2, 'DUMMY1.2', 2]));
 
         $r = $this->pdoOne->select('tdummy.c1,tdummy.c2,tdummy.c3')
             ->from('tdummy')
@@ -279,21 +279,23 @@ class PdoOne_mysql_Test extends TestCase
 
         $this->pdoOne->setUseInternalCache(true);
         //$this->pdoOne->flushInternalCache(true);
+        // tolist doesn't use internal cache (yet)
         $result = [['c1' => 1, 'c2' => 'hello'], ['c1' => 2, 'c2' => 'hello2']];
         self::assertEquals($result, $this->pdoOne->select('*')->from('tdummy')->toList());
         self::assertEquals($result, $this->pdoOne->select('*')->from('tdummy')->toList());
         self::assertEquals($result, $this->pdoOne->select('*')->from('tdummy')->toList());
-        self::assertEquals(2, $this->pdoOne->internalCacheCounter);
+        self::assertEquals(0, $this->pdoOne->internalCacheCounter);
         $this->pdoOne->setUseInternalCache(false);
 
         $this->pdoOne->flushInternalCache();
         $this->pdoOne->setUseInternalCache(true);
         //$this->pdoOne->flushInternalCache(true);
+        // tolist doesn't use internal cache (yet)
         $result = [['c1' => 1, 'c2' => 'hello'], ['c1' => 2, 'c2' => 'hello2']];
         self::assertEquals($result, $this->pdoOne->select('*')->from('tdummy')->where(['c1>?' => 0])->toList());
         self::assertEquals($result, $this->pdoOne->select('*')->from('tdummy')->where(['c1>?' => 0])->toList());
         self::assertEquals($result, $this->pdoOne->select('*')->from('tdummy')->where(['c1>?' => 0])->toList());
-        self::assertEquals(2, $this->pdoOne->internalCacheCounter);
+        self::assertEquals(0, $this->pdoOne->internalCacheCounter);
         $this->pdoOne->setUseInternalCache(false);
     }
 
@@ -308,8 +310,8 @@ class PdoOne_mysql_Test extends TestCase
         }
         $this->pdoOne->createTable('tdummy', ['c1' => 'int', 'c2' => 'varchar(50)'], 'c1');
 
-        self::assertNotEquals(false, $this->pdoOne->set(['c1', 'c2'], [1, 'hello'])->from('tdummy')->insert());
-        self::assertNotEquals(false, $this->pdoOne->insert('tdummy', ['c1', 'c2'], ['c1' => 2, 'c2' => 'hello2']));
+        self::assertNotSame(false, $this->pdoOne->set(['c1', 'c2'], [1, 'hello'])->from('tdummy')->insert());
+        self::assertNotSame(false, $this->pdoOne->insert('tdummy', ['c1', 'c2'], ['c1' => 2, 'c2' => 'hello2']));
 
         self::assertEquals(['c1' => 1, 'c2' => 'hello'], $this->pdoOne->select('*')->from('tdummy')->first());
 

@@ -922,7 +922,7 @@ It returns the first scalar (one value) of a query.
 If $colName is null then it uses the first column.
 
 ```php
-$count=$this->pdoOne->count('from product_category')->firstScalar();
+$count=$this->count('from product_category')->firstScalar();
 ```
 
 #### first()
@@ -1268,6 +1268,40 @@ $pdo->getSequencePHP(true) // string(19) "1739032938181434311"
 | $lastQuery            | Last query executed                                          | echo $this->lastQuery;             |
 | $lastParam            | The last parameters. It is an associative array              | echo $this->lastParam;             |
 
+## Encryption
+
+This library permits encryption/decryption of the information.
+
+To set the encryption you could use the next command:
+
+```php
+$this->setEncryption(12345678, '', 'INTEGER'); // the type of encryption is integer and it only works with integers. It doesn't use a salt value
+$this->setEncryption('password', 'some-salt', 'AES-256-CTR'); // the password, the salt and the type of encryption (aes-256-ctr), you can use other methods
+$this->setEncryption('passwrd', '', 'SIMPLE'); // the type of encryption is simple and it only works with primitive values. It doesn't use a salt.
+```
+
+Then you can encrypt and decrypt a value using
+
+```php
+$encrypted=$this->encrypt($original); // encrypt $original
+$original=$this->decrypt($encrypted); // decrypt $encrypted
+```
+
+Example:
+
+```php
+$this->setEncryption('12345', 'salt-1234'); // it will use AES-256-CTR, the password and the salt must be secret.
+// create user
+$this->set(['username' => 1, 'password' => $this->encrypt($password)])
+     ->from('user')
+     ->insert();
+// validate user
+$user=$this->select(['username','password'])
+    ->from('user')
+    ->where(['username','password',[1],$this->encrypt($password))
+             ->first();
+// $user= if false or null then the user does not exist or the password is incorrect.
+```
 
 
 ## How to debug and trace errors in the database?
@@ -2160,7 +2194,7 @@ echo $this->internalCacheCounter;
     * update()
     * delete()
     * toMeta()
-  *
+    *
 * 1.55.1 2020-08-05
   * In the generation of the code, changed is_array() by isset()
 * 1.55 2020-8-05
