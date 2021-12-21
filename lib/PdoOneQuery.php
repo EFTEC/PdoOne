@@ -787,15 +787,13 @@ class PdoOneQuery
      * It adds a select to the query builder.
      * <br><b>Example</b>:<br>
      * <pre>
-     * ->select("\*")->from('table') = <i>"select * from table"</i><br>
-     * ->select(['col1','col2'])->from('table') = <i>"select col1,col2 from
-     * table"</i><br>
-     * ->select('col1,col2')->from('table') = <i>"select col1,col2 from
-     * table"</i><br>
-     * ->select('select *')->from('table') = <i>"select * from table"</i><br>
-     * ->select('select * from table') = <i>"select * from table"</i><br>
-     * ->select('select * from table where id=1') = <i>"select * from table
-     * where id=1"</i><br>
+     * $this->select("\*")->from('table') //"select * from table"
+     * $this->select(['col1','col2'])->from('table') // "select col1,col2 from table"
+     * $this->select('col1,col2')->from('table') // "select col1,col2 from table"
+     * $this->select('select *')->from('table') // "select * from table"
+     * $this->select('select * from table') // "select * from table"
+     * * $this->select('select * from table')->where(['id'],[1]) // "select * from table where id=1"
+     * $this->select('select * from table where id=1') // "select * from table where id=1"
      * </pre>
      *
      * @param string|array $sql
@@ -1750,7 +1748,8 @@ class PdoOneQuery
      */
     protected function _insert($tableName = null,
                                $tableDef = null,
-                               $values = PdoOne::NULL)
+                               $values = PdoOne::NULL,
+                               $identityColumn=null)
     {
         if ($tableName === null) {
             $tableName = $this->from;
@@ -1782,10 +1781,24 @@ class PdoOneQuery
             'insert into ' . $this->parent->addDelimiter($tableName) . '  ' . $this->constructInsert();
         $param = $this->setParamAssoc;
         $this->beginTry();
+        if($this->parent->databaseType==='oci' && $identityColumn!==null) {
+
+            $param[]=[':ID_'.$identityColumn,'0',1,null];
+            $sql.=' returning '.$identityColumn.' into :ID_'.$identityColumn;
+        }
+
         $this->parent->runRawQuery($sql, $param, true, $this->useCache, $this->cacheFamily);
         $this->builderReset(true);
         if ($this->endtry() === false) {
             return false;
+        }
+
+        if($this->parent->databaseType==='oci') {
+            if ($identityColumn!==null) {
+                //todo: aqui se debe recuperar el valor insertado
+                var_dump($param);
+            }
+            return null;
         }
         return $this->parent->insert_id();
     }
@@ -1849,14 +1862,15 @@ class PdoOneQuery
     public function insert(
         $tableNameOrValues = null,
         $tableDef = null,
-        $values = PdoOne::NULL
+        $values = PdoOne::NULL,
+        $identityColumn=null
     )
     {
         if ($this->ormClass !== null) {
             $cls = $this->ormClass;
             return $cls::setPdoOneQuery($this)::insert($tableNameOrValues);
         }
-        return $this->_insert($tableNameOrValues, $tableDef, $values);
+        return $this->_insert($tableNameOrValues, $tableDef, $values,$identityColumn);
     }
 
 

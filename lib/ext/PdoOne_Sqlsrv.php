@@ -38,7 +38,7 @@ class PdoOne_Sqlsrv implements PdoOne_IExt
         $this->parent = $parent;
     }
 
-    public function construct($charset)
+    public function construct($charset, $config)
     {
         $this->parent->database_delimiter0 = '[';
         $this->parent->database_delimiter1 = ']';
@@ -81,7 +81,7 @@ class PdoOne_Sqlsrv implements PdoOne_IExt
      * @param string $table
      * @param false $onlyDescription
      *
-     * @return array|bool|mixed|PDOStatement|null
+     * @return array|bool|mixed|PDOStatement|null ['table','engine','schema','collation','description']
      * @throws Exception
      */
     public function getDefTableExtended($table,$onlyDescription=false) {
@@ -535,5 +535,10 @@ class PdoOne_Sqlsrv implements PdoOne_IExt
     {
         // TODO: Implement createProcedure() method.
         throw new \RuntimeException('not defined yet');
+    }
+
+    public function db($dbname)
+    {
+        return  'use ' . $dbname;
     }
 }

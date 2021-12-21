@@ -34,7 +34,7 @@ class PdoOne_TestMockup implements PdoOne_IExt
         $this->parent = $parent;
     }
 
-    public function construct($charset)
+    public function construct($charset, $config)
     {
         $this->parent->database_delimiter0 = '';
         $this->parent->database_delimiter1 = '';
@@ -221,7 +221,7 @@ class PdoOne_TestMockup implements PdoOne_IExt
     public function getSequence($sequenceName)
     {
         $sequenceName = ($sequenceName == '') ? $this->parent->tableSequence : $sequenceName;
-        return "select next_{$sequenceName}({$this->parent->nodeId}) id";
+        return "select next_$sequenceName({$this->parent->nodeId}) id";
     }
 
 
@@ -277,5 +277,10 @@ class PdoOne_TestMockup implements PdoOne_IExt
     public function createProcedure($procedureName, $arguments = [], $body = '', $extra = '')
     {
         // TODO: Implement createProcedure() method.
+    }
+
+    public function db($dbname)
+    {
+        return  'use ' . $dbname;
     }
 }

@@ -14,7 +14,7 @@ use Exception;
  */
 interface PdoOne_IExt
 {
-    public function construct($charset);
+    public function construct($charset, $config);
 
     public function connect($cs, $alterSession);
 
@@ -69,13 +69,18 @@ interface PdoOne_IExt
      * @param string $table           The name of the table
      * @param bool   $onlyDescription If true then it only returns a description
      *
-     * @return array|string|null
+     * @return array|string|null  ['table','engine','schema','collation','description']
      * @throws Exception
      */
     public function getDefTableExtended($table, $onlyDescription = false);
 
     /**
-     * Returns an associative array with the definition of a table (columns of the table).
+     * Returns an associative array with the definition of a table (columns of the table).<br>
+     * <b>Example:</b><br>
+     * <pre>
+     * $this->getDefTable('table');
+     * // ['col1'=>'int not null','col2'=>'varchar(50)']
+     * </pre>
      *
      * @param string $table
      *
@@ -109,7 +114,7 @@ interface PdoOne_IExt
      *                                  example:['id'=>'PRIMARY KEY','name'=>'FOREIGN KEY...']<br>
      *                                  false= returns as an associative array separated by parts<br>
      *                                  ['key','refcol','reftable','extra']
-     * @param null|string $filter       if not null then it only returns keys that matches the condition
+     * @param null|string $filter       if not null then it only returns keys that match the condition
      *
      * @param bool        $assocArray   If true then it returns an associative array (as value)
      * @return array
@@ -117,7 +122,7 @@ interface PdoOne_IExt
      */
     public function getDefTableFK($table, $returnSimple, $filter = null, $assocArray = false);
 
-
+    public function db($dbname);
     /**
      * It returns a default value depending on the type of the column.
      *

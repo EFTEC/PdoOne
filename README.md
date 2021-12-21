@@ -166,7 +166,7 @@ More examples:
 
 ## Installation
 
-This library requires PHP 5.6 and higher and it requires the extension PDO and the extension PDO-MYSQL (Mysql), PDO-SQLSRV (sql server) or PDO-OCI (Oracle)
+This library requires PHP 5.6 and higher, and it requires the extension PDO and the extension PDO-MYSQL (Mysql), PDO-SQLSRV (sql server) or PDO-OCI (Oracle)
 
 ### Install (using composer)
 
@@ -336,11 +336,11 @@ PdoOne allows 5 types of dates.
 
 There are 3 methods to runs a transaction:
 
-| Method             | Description                                                  |
-| ------------------ | ------------------------------------------------------------ |
+| Method             | Description                                                                           |
+|--------------------|---------------------------------------------------------------------------------------|
 | startTransaction() | It starts a transaction. Depending on the type database, it could be stacked  or not. |
-| commit()           | Commit (and closes) a transaction                            |
-| rollback()         | Rollback (and closes) a transaction                          |
+| commit()           | Commit (and closes) a transaction                                                     |
+| rollback()         | Rollback (and closes) a transaction                                                   |
 
 Example:
 
@@ -1987,6 +1987,11 @@ In a nutshell:
 * Every minor version means that it adds a new functionality i.e. 1.5 -> 1.6 (new methods)
 * Every decimal version means that it patches/fixes/refactoring a previous functionality i.e. 1.5.0 -> 1.5.1 (fix)
 
+
+* 2.18
+  * [new] [oci] added oci (oracle) as a new driver.
+  * [fix] [core] dbTypeToPHP() and datesql2Text()
+  * [new] [core] clearError(),removeDoubleQuotes() and a new argument for connect()
 * 2.16
   * [fix] [sqlsrv] fixed the format of the date-time of sql.
   * [fix] [sqlsrv] columnTable() returns distinct values.

@@ -34,7 +34,7 @@ class PdoOne_Mysql implements PdoOne_IExt
         $this->parent = $parent;
     }
 
-    public function construct($charset)
+    public function construct($charset, $config)
     {
         $this->parent->database_delimiter0 = '`';
         $this->parent->database_delimiter1 = '`';
@@ -116,7 +116,7 @@ class PdoOne_Mysql implements PdoOne_IExt
      * @param string $table
      * @param bool $onlyDescription
      *
-     * @return array|string|null
+     * @return array|string|null  ['table','engine','schema','collation','description']
      * @throws Exception
      */
     public function getDefTableExtended($table,$onlyDescription=false) {
@@ -130,6 +130,11 @@ class PdoOne_Mysql implements PdoOne_IExt
         return $result;
     }
 
+    /**
+     * @param $table
+     * @return array ['Field','Type','Null','Key','Default','Extra']
+     * @throws Exception
+     */
     public function getDefTable($table)
     {
         $defArray = $this->parent->runRawQuery('show columns from ' . $table, [], true);
@@ -566,4 +571,8 @@ class PdoOne_Mysql implements PdoOne_IExt
         return $columns; //$this->parent->filterKey($filter,$columns,$returnSimple);
     }
 
+    public function db($dbname)
+    {
+        return  'use ' . $dbname;
+    }
 }

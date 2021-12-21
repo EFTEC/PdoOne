@@ -5,27 +5,37 @@ use mapache_commons\Collection;
 include "../vendor/autoload.php";
 include "Collection.php";
 include "dBug.php";
+
+
+//  The web server will need the environmental variable TNS_ADMIN='Directory of tnsname.ora' unless the default location is used. I use '/etc/tns_admin'. Confirm using the phpinfo().
+
 try {
-    $cs='XEDB1';
+    $cs='xepdb1';
     # $cs='(DESCRIPTION =(ADDRESS = (PROTOCOL = TCP)(HOST = 127.0.0.1)(PORT = 1521))(CONNECT_DATA =(SERVER = DEDICATED)(SERVICE_NAME = XEPDB1)))';
     //$cs='(DESCRIPTION =(ADDRESS = (PROTOCOL = TCP)(HOST = localhost)(PORT = 1521))(CONNECT_DATA =(SERVER = DEDICATED)(SERVICE_NAME = instancia1)))';
     //$cs='(DESCRIPTION=(ADDRESS=(PROTOCOL=tcp)(HOST=127.0.0.1)(PORT=1521)(CONNECT_DATA =(SERVER = DEDICATED)(SERVICE_NAME = instancia1) ))';
-    $conn = new PdoOne('oci', $cs, 'web', 'abc.123');
+    $cs='(DESCRIPTION = (ADDRESS = (PROTOCOL = TCP)(HOST = PCJC)(PORT = 1521)) (CONNECT_DATA = (SERVER = DEDICATED) (SERVICE_NAME = XEPDB1)))';
+    $conn = new PdoOne('oci', $cs, 'books_admin', 'MyPassword');
     $conn->logLevel=3;
-    $conn->open();
+    var_dump('open');
+    $conn->open(true,true);
 } catch(Exception $ex) {
     echo "<pre>";
     var_dump($ex);
     var_dump($conn->lastError());
     echo "</pre>";
+    die(1);
 }
+
 
 if(!$conn->tableExist('TABLE1')) {
     $conn->createTable('TABLE1',[
-            'col1'=>'int not null'
-            ,'col2'=>'varchar2(200)']
-        ,['col1'=>'PRIMARY KEY'
-            ,'col2'=>'KEY']);
+            'COL1'=>'int not null'
+            ,'COL2'=>'varchar2(200)'
+            ,'COL3'=>'decimal(10,2)'
+            ,'COL4'=>'date']
+        ,['COL1'=>'PRIMARY KEY'
+            ,'COL2'=>'KEY']);
 }
 echo "<hr>List with limit:<br>";
 $data=$conn->select('*')->from('TABLE1')->order('col1')->limit("0,3")->toList();
@@ -42,10 +52,10 @@ var_dump($keys);
 
 echo "</pre><br>";
 
-echo "<pre>getDefTableKeys:";
-$keys=$conn->getDefTable('TABLE3');
+echo "<pre>getDefTable:";
+$keys=$conn->getDefTable('TABLE1');
 var_dump($keys);
-
+die(1);
 echo "</pre><br>";
 
 echo Collection::generateTable($conn->objectList('table'));

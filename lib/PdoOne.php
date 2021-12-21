@@ -54,11 +54,11 @@ use stdClass;
  * @package       eftec
  * @author        Jorge Castro Castillo
  * @copyright (c) Jorge Castro C. MIT License  https://github.com/EFTEC/PdoOne
- * @version       2.17
+ * @version       2.18
  */
 class PdoOne
 {
-    const VERSION = '2.17';
+    const VERSION = '2.18';
     /** @var int We need this value because null and false could be a valid value. */
     const NULL = PHP_INT_MAX;
     /** @var string Prefix of the tables */
@@ -262,7 +262,7 @@ class PdoOne
                 $this->service = new PdoOne_TestMockup($this);
                 break;
         }
-        $charset = $this->service->construct($charset);
+        $charset = $this->service->construct($charset, []);
         $this->server = $server;
         $this->user = $user;
         $this->pwd = $pwd;
@@ -354,7 +354,9 @@ class PdoOne
             return $tmpDate->format((strpos($sqlField, '.') !== false) ? self::$dateTimeMicroHumanFormat
                 : self::$dateTimeHumanFormat);
         }
-
+        if(!$tmpDate) {
+            return false;
+        }
         return $tmpDate->format(self::$dateHumanFormat);
     }
 
@@ -936,7 +938,7 @@ class PdoOne
      */
     public function getDefTable($table, $specialConversion = null)
     {
-        $r = $this->service->getDefTable($table);
+        $r = $this->service->getDefTable($table); // ['col1'=>'int not null','col2'=>'varchar(50)']
         foreach ($r as $k => $v) {
             $t = explode(' ', trim($v), 2);
             // int unsigned default ...
@@ -992,6 +994,7 @@ class PdoOne
      */
     public function dbTypeToPHP($type)
     {
+        $type=strtolower($type);
         switch ($type) {
             case 'binary':
             case 'blob':
@@ -1027,6 +1030,7 @@ class PdoOne
             case 'smallint':
             case 'tinyint':
             case 'year':
+            case 'number':
                 return ['int', PDO::PARAM_INT];
             case 'table':
             case 'char':
@@ -1324,11 +1328,10 @@ eot;
      *
      * @param bool $failIfConnected     true=it throw an error if it's connected,
      *                                  otherwise it does nothing
-     *
-     * @throws Exception
+     * @param bool|null $alterSession
      * @test exception this(false)
      */
-    public function connect($failIfConnected = true)
+    public function connect($failIfConnected = true,$alterSession=null)
     {
         $this->beginTry();
         if ($this->isOpen) {
@@ -1343,7 +1346,7 @@ eot;
                 $this->storeInfo("connecting to $this->server $this->user/*** $this->db");
             }
             $cs = ($this->charset) ? ';charset=' . $this->charset : '';
-            $this->service->connect($cs, false);
+            $this->service->connect($cs, $alterSession);
             if ($this->conn1 instanceof stdClass) {
                 $this->isOpen = true;
                 $this->endTry();
@@ -1440,6 +1443,12 @@ eot;
             throw new RuntimeException($txt);
         }
         $this->endTry();
+    }
+    public function clearError() {
+        $this->errorText='';
+        if ($this->getMessages() !== null) {
+            $this->getMessages()->resetAll();
+        }
     }
 
     /**
@@ -1990,6 +1999,12 @@ eot;
         $value = str_replace('"', '""', $value);
 
         return '"' . $value . '"';
+    }
+    public static function removeDoubleQuotes($value) {
+        if(!$value) {
+            return null;
+        }
+        return trim($value," \t\n\r\0\x0B\"");
     }
 
     /**
@@ -3001,6 +3016,7 @@ eot;
                         $pks = $this->service->getPK($rel['reftable'], $pks);
                         /** @noinspection PhpParamsInspection */
                         /** @noinspection PhpArrayIsAlwaysEmptyInspection */
+                        /** @noinspection PhpConditionAlreadyCheckedInspection */
                         if ($pks !== false || count($pks) === 2) {
                             $relation[$k]['key'] = 'MANYTOMANY';
                             $refcol2 = (self::$prefixBase . $pks[0] === $relation[$k]['refcol']) ? $pks[1] : $pks[0];
@@ -3996,6 +4012,7 @@ eot;
                         $pks = $this->service->getPK($rel['reftable'], $pks);
                         /** @noinspection PhpParamsInspection */
                         /** @noinspection PhpArrayIsAlwaysEmptyInspection */
+                        /** @noinspection PhpConditionAlreadyCheckedInspection */
                         if ($pks !== false || count($pks) === 2) {
                             $relation[$k]['key'] = 'MANYTOMANY';
                             $refcol2 = (self::$prefixBase . $pks[0] === $relation[$k]['refcol']) ? $pks[1]
@@ -4336,6 +4353,7 @@ eot;
                         $pks = $this->service->getPK($rel['reftable']);
                         /** @noinspection PhpParamsInspection */
                         /** @noinspection PhpArrayIsAlwaysEmptyInspection */
+                        /** @noinspection PhpConditionAlreadyCheckedInspection */
                         if ($pks !== false || count($pks) === 2) {
                             $relation[$k]['key'] = 'MANYTOMANY';
                             $refcol2 = (self::$prefixBase . $pks[0] === $relation[$k]['refcol']) ? $pks[1]
@@ -5341,6 +5359,7 @@ BOOTS;
      * <pre>
      * $this->createFK('table',['col'=>"FOREIGN KEY REFERENCES`tableref`(`colref`)"]); // mysql
      * $this->createFK('table',['col'=>"FOREIGN KEY REFERENCES[tableref]([colref])"]); // sqlsrv
+     * $this->createFK('table',['col'=>"FOREIGN KEY REFERENCES TABLE1(COL1)"]); // oci
      * </pre>
      *
      * @param string $tableName  The name of the table.
@@ -5375,7 +5394,7 @@ BOOTS;
         $this->db = $dbName;
         $this->tableDependencyArray = null;
         $this->tableDependencyArrayCol = null;
-        $this->conn1->exec('use ' . $dbName);
+        $this->conn1->exec($this->service->db($dbName));
         $this->endTry();
     }
 
@@ -5394,14 +5413,13 @@ BOOTS;
      * Alias of PdoOne::connect()
      *
      * @param bool $failIfConnected
-     *
-     * @throws Exception
+     * @param bool $alterSession
      * @test exception this(false)
      * @see  PdoOne::connect()
      */
-    public function open($failIfConnected = true)
+    public function open($failIfConnected = true,$alterSession=false)
     {
-        $this->connect($failIfConnected);
+        $this->connect($failIfConnected,$alterSession);
     }
 
     /**
