@@ -233,7 +233,12 @@ where
 * **sakila** is the database used.
 * "" (optional) it could be a log file, such as c:\temp\log.txt
 
-## How to runs a SQL command?
+### OCI
+Oracle is tricky to install. In Windows, from the Oracle home's bin folder, you must copy all the dll
+to the PHP folder and Apache Folder.
+
+
+## How to run a SQL command?
 
 ### 1. Running a raw query
 
@@ -1951,25 +1956,6 @@ $this->hasRecursive('anything'); // it always returns true.
 
 PdoOne adds a bit of ovehead over PDO, however it is simple a wrapper to pdo.
 
-## OCI
-
-Pending for OCI (Oracle)
-
-- [x] getDefTableExtended
-- [ ] getDefTable
-- [ ] sqlsrv_getType
-- [x] getDefTableKeys (Partial!)
-- [ ] getDefTableFK
-- [ ] typeDict
-- [x] objectExist
-- [x] objectList
-- [ ] columnTable
-- [x] createSequence
-- [x] getSequence
-- [x] createTable
-- [ ] createFK
-- [x] limit
-- [x] getPK
 
 ## Error FAQs
 
@@ -1987,7 +1973,9 @@ In a nutshell:
 * Every minor version means that it adds a new functionality i.e. 1.5 -> 1.6 (new methods)
 * Every decimal version means that it patches/fixes/refactoring a previous functionality i.e. 1.5.0 -> 1.5.1 (fix)
 
-
+* 2.19
+  * [new] [core] callProcedure() could return a value other than true or false (SQL server only)
+  * [new] [sqlsrv] implemented callProcedure() and createProcedure()
 * 2.18
   * [new] [oci] added oci (oracle) as a new driver.
   * [fix] [core] dbTypeToPHP() and datesql2Text()

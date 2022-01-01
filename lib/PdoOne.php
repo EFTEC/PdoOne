@@ -1,8 +1,8 @@
-<?php /** @noinspection GrazieInspection */
-/** @noinspection GrazieInspection */
-/** @noinspection PhpSameParameterValueInspection */
-
-/** @noinspection StrStartsWithCanBeUsedInspection
+<?php
+/** @noinspection GrazieInspection
+ * @noinspection GrazieInspection
+ * @noinspection PhpSameParameterValueInspection
+ * @noinspection StrStartsWithCanBeUsedInspection
  * @noinspection ShortListSyntaxCanBeUsedInspection
  * @noinspection PhpSwitchCanBeReplacedWithMatchExpressionInspection
  * @noinspection StrContainsCanBeUsedInspection
@@ -54,11 +54,11 @@ use stdClass;
  * @package       eftec
  * @author        Jorge Castro Castillo
  * @copyright (c) Jorge Castro C. MIT License  https://github.com/EFTEC/PdoOne
- * @version       2.18
+ * @version       2.19
  */
 class PdoOne
 {
-    const VERSION = '2.18';
+    const VERSION = '2.19';
     /** @var int We need this value because null and false could be a valid value. */
     const NULL = PHP_INT_MAX;
     /** @var string Prefix of the tables */
@@ -1979,11 +1979,13 @@ eot;
         try {
             $r = $stmt->execute($namedArgument);
         } catch (Exception $ex) {
+            //@$stmt->closeCursor();
             $this->throwError($this->databaseType . ':Failed to run query', $this->lastQuery,
                 ['param' => $this->lastParam, 'error_last' => json_encode(error_get_last())], $throwError, $ex);
             return false;
         }
         if ($r === false) {
+            //@$stmt->closeCursor();
             $this->throwError('Exception query ', $this->lastQuery, ['param' => $this->lastParam], $throwError);
             return false;
         }
@@ -5138,21 +5140,26 @@ BOOTS;
     }
 
     /**
-     * It calls a store procedure.
+     * It calls a store procedure.<br>
+     * <b>Example:</b><br>
+     * <pre>
+     * $this->callProcedure('procexample',['in_name'=>'aa','in_description'=>'bbb'],['in_description])
+     * </pre><br>
+     * <b>Note:<b>sqlsrv could returns an associative array.
      *
      * @param string $procName      The name of the store procedure.
      * @param array  $arguments     An associative array with the name of the argument and it's value
      * @param array  $outputColumns [optional] the name of the columns that must be returned.
-     * @return boolean returns true if success, otherwise false. You can find the error message at $this->errorText
+     * @return mixed|false returns a value if success, otherwise false. You can find the error message at $this->errorText
      * @throws Exception
      */
     public function callProcedure($procName, &$arguments = [], $outputColumns = [])
     {
         $this->beginTry();
         try {
-            $this->service->callProcedure($procName, $arguments, $outputColumns);
+            $result=$this->service->callProcedure($procName, $arguments, $outputColumns);
             $this->endTry();
-            return true;
+            return $result;
         } catch (Exception $ex) {
             $this->errorText = $ex->getMessage();
             $this->endTry();
@@ -5217,8 +5224,12 @@ BOOTS;
      *                      [
      *                          ['in','arg1','int'],
      *                          ['out','arg2','varchar(50)']
-     *                      ],'//body here');
-     * // arg1 is "in", arg2 is "in":
+     *                      ],'//body here'); // mysql arg1 is "in", arg2 is "in":
+     * $this->createProcedure('proc1',
+     *                      [
+     *                          ['','arg1','int'],
+     *                          ['output','arg2','varchar(50)']
+     *                      ],'//body here'); // sqlsrv arg1 is "in", arg2 is "output":
      * $this->createProcedure('proc1',
      *                      [
      *                          ['arg1','int'],

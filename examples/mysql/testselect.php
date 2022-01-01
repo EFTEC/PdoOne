@@ -16,6 +16,7 @@ $dao->customError=true;
 try {
     echo "<h1>Connection. The instance {$dao->server}, base:{$dao->db}  user:{$dao->user} and password:{$dao->pwd} must exists</h1>";
     $dao->connect();
+    $dao->conn1->setAttribute(PDO::ATTR_CASE,PDO::CASE_UPPER);
     echo "Connected A-OK!<br>";
 } catch (Exception $e) {
     echo "<h2>connection error:</h2>";

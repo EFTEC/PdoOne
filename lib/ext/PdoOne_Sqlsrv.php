@@ -42,7 +42,7 @@ class PdoOne_Sqlsrv implements PdoOne_IExt
     {
         $this->parent->database_delimiter0 = '[';
         $this->parent->database_delimiter1 = ']';
-        $this->parent->database_identityName='IDENTITY';
+        $this->parent->database_identityName = 'IDENTITY';
         PdoOne::$isoDate = 'Y-m-d';
         PdoOne::$isoDateTime = 'Y-m-d H:i:s';
         PdoOne::$isoDateTimeMs = 'Y-m-d H:i:s.u';
@@ -53,39 +53,42 @@ class PdoOne_Sqlsrv implements PdoOne_IExt
         return '';
     }
 
-    public function connect($cs, $alterSession=false)
+    public function connect($cs, $alterSession = false)
     {
         $this->parent->conn1 = new PDO("{$this->parent->databaseType}:server={$this->parent->server};" .
             "database={$this->parent->db}$cs", $this->parent->user, $this->parent->pwd);
-        $this->parent->user='';
-        $this->parent->pwd='';
-        $this->parent->conn1->setAttribute( PDO::SQLSRV_ATTR_FETCHES_NUMERIC_TYPE,true);
+        $this->parent->user = '';
+        $this->parent->pwd = '';
+        $this->parent->conn1->setAttribute(PDO::SQLSRV_ATTR_FETCHES_NUMERIC_TYPE, true);
 
     }
 
-    public function truncate($tableName,$extra,$force) {
-        if(!$force) {
+    public function truncate($tableName, $extra, $force)
+    {
+        if (!$force) {
             $sql = 'truncate table ' . $this->parent->addDelimiter($tableName) . " $extra";
             return $this->parent->runRawQuery($sql, null, true);
         }
-        $sql="DELETE FROM ".$this->parent->addDelimiter($tableName)." $extra";
-        return $this->parent->runRawQuery($sql,null, true);
+        $sql = "DELETE FROM " . $this->parent->addDelimiter($tableName) . " $extra";
+        return $this->parent->runRawQuery($sql, null, true);
     }
 
-    public function resetIdentity($tableName,$newValue=0,$column='') {
-        $sql="DBCC CHECKIDENT ('$tableName',RESEED, $newValue)";
+    public function resetIdentity($tableName, $newValue = 0, $column = '')
+    {
+        $sql = "DBCC CHECKIDENT ('$tableName',RESEED, $newValue)";
         return $this->parent->runRawQuery($sql, null, true);
     }
 
     /**
      * @param string $table
-     * @param false $onlyDescription
+     * @param false  $onlyDescription
      *
      * @return array|bool|mixed|PDOStatement|null ['table','engine','schema','collation','description']
      * @throws Exception
      */
-    public function getDefTableExtended($table,$onlyDescription=false) {
-        $query="SELECT objects.name as [table],'' as [engine],schemas.name as [schema]
+    public function getDefTableExtended($table, $onlyDescription = false)
+    {
+        $query = "SELECT objects.name as [table],'' as [engine],schemas.name as [schema]
                 ,'' as [collation],value description
                 FROM sys.objects
                 inner join sys.schemas on objects.schema_id=schemas.schema_id
@@ -93,8 +96,8 @@ class PdoOne_Sqlsrv implements PdoOne_IExt
                                     'SCHEMA', schema_name(objects.schema_id),
                                     'TABLE', objects.name, null, null) ep
                 WHERE sys.objects.name=?";
-        $result=$this->parent->runRawQuery($query,[$table],true);
-        if($onlyDescription) {
+        $result = $this->parent->runRawQuery($query, [$table], true);
+        if ($onlyDescription) {
             return $result['description'];
         }
         return $result;
@@ -159,8 +162,8 @@ class PdoOne_Sqlsrv implements PdoOne_IExt
 
     /**
      * @param string $table
-     * @param bool $returnSimple
-     * @param null $filter
+     * @param bool   $returnSimple
+     * @param null   $filter
      * @return array
      * @throws Exception
      */
@@ -184,7 +187,7 @@ class PdoOne_Sqlsrv implements PdoOne_IExt
             } else {
                 $type = 'KEY';
             }
-            if($filter===null || $filter===$type) {
+            if ($filter === null || $filter === $type) {
                 if ($returnSimple) {
                     $columns[$item['ColumnName']] = $type;
                 } else {
@@ -198,13 +201,13 @@ class PdoOne_Sqlsrv implements PdoOne_IExt
 
     /**
      * @param string $table
-     * @param bool $returnSimple
-     * @param null $filter
-     * @param bool $assocArray
+     * @param bool   $returnSimple
+     * @param null   $filter
+     * @param bool   $assocArray
      * @return array
      * @throws Exception
      */
-    public function getDefTableFK($table, $returnSimple, $filter = null, $assocArray =false)
+    public function getDefTableFK($table, $returnSimple, $filter = null, $assocArray = false)
     {
         $columns = [];
         /** @var array $fkArr =array(["foreign_key_name"=>'',"referencing_table_name"=>'',"COLUMN_NAME"=>''
@@ -231,24 +234,24 @@ class PdoOne_Sqlsrv implements PdoOne_IExt
             //FOREIGN KEY REFERENCES TABLEREF(COLREF)
             if ($returnSimple) {
                 $columns[$item['COLUMN_NAME']] =
-                    'FOREIGN KEY REFERENCES ' .$this->parent->addQuote($item['referenced_table_name'])
+                    'FOREIGN KEY REFERENCES ' . $this->parent->addQuote($item['referenced_table_name'])
                     . '(' . $this->parent->addQuote($item['referenced_column_name']) . ')' . $extra;
             } else {
-                $columns[$item['COLUMN_NAME']]=PdoOne::newColFK('FOREIGN KEY'
-                    ,$item['referenced_column_name']
-                    ,$item['referenced_table_name']
-                    ,$extra
-                    ,$item['fk_name']);
-                $columns[PdoOne::$prefixBase.$item['COLUMN_NAME']]=PdoOne::newColFK(
+                $columns[$item['COLUMN_NAME']] = PdoOne::newColFK('FOREIGN KEY'
+                    , $item['referenced_column_name']
+                    , $item['referenced_table_name']
+                    , $extra
+                    , $item['fk_name']);
+                $columns[PdoOne::$prefixBase . $item['COLUMN_NAME']] = PdoOne::newColFK(
                     'MANYTOONE'
-                    ,$item['referenced_column_name']
-                    ,$item['referenced_table_name']
-                    ,$extra
-                    ,$item['fk_name']);
+                    , $item['referenced_column_name']
+                    , $item['referenced_table_name']
+                    , $extra
+                    , $item['fk_name']);
             }
         }
 
-        if($assocArray) {
+        if ($assocArray) {
             return $columns;
         }
 
@@ -403,7 +406,9 @@ class PdoOne_Sqlsrv implements PdoOne_IExt
 
         return $sql;
     }
-    public function getSequence($sequenceName) {
+
+    public function getSequence($sequenceName)
+    {
         $sequenceName = ($sequenceName == '') ? $this->parent->tableSequence : $sequenceName;
         return "exec next_$sequenceName {$this->parent->nodeId}";
     }
@@ -425,7 +430,7 @@ class PdoOne_Sqlsrv implements PdoOne_IExt
 						ALTER TABLE [$tableName] ADD CONSTRAINT
 							PK_$tableName PRIMARY KEY CLUSTERED ([$primaryKey]) $extraOutside;";
         } else {
-            $hasPK=false;
+            $hasPK = false;
             foreach ($primaryKey as $key => $value) {
                 $p0 = stripos($value . ' ', 'KEY ');
                 if ($p0 === false) {
@@ -437,12 +442,12 @@ class PdoOne_Sqlsrv implements PdoOne_IExt
                 $value = substr($value, $p0 + 4);
                 switch ($type) {
                     case 'PRIMARY':
-                        if(!$hasPK) {
+                        if (!$hasPK) {
                             $sql .= "ALTER TABLE [$tableName] ADD CONSTRAINT
 							            PK_$tableName PRIMARY KEY CLUSTERED ([$key]*pk*) $extraOutside;";
-                            $hasPK=true;
+                            $hasPK = true;
                         } else {
-                            $sql=str_replace('*pk*',",[$key]",$sql);
+                            $sql = str_replace('*pk*', ",[$key]", $sql);
                         }
                         break;
                     case '':
@@ -459,7 +464,7 @@ class PdoOne_Sqlsrv implements PdoOne_IExt
                         break;
                 }
             }
-            $sql=str_replace('*pk*','',$sql);
+            $sql = str_replace('*pk*', '', $sql);
         }
 
         return $sql;
@@ -477,7 +482,7 @@ class PdoOne_Sqlsrv implements PdoOne_IExt
             }
             $type = strtoupper(trim(substr($value, 0, $p0)));
             $value = substr($value, $p0 + 4);
-            if($type==='FOREIGN') {
+            if ($type === 'FOREIGN') {
                 $sql .= "ALTER TABLE $tableName ADD FOREIGN KEY ($key) $value;";
             }
         }
@@ -497,7 +502,7 @@ class PdoOne_Sqlsrv implements PdoOne_IExt
         return " OFFSET 0 ROWS FETCH NEXT $sql ROWS ONLY";
     }
 
-    public function getPK($query, $pk=null)
+    public function getPK($query, $pk = null)
     {
         try {
             $pkResult = [];
@@ -520,25 +525,68 @@ class PdoOne_Sqlsrv implements PdoOne_IExt
             }
             $pkAsArray = (is_array($pk)) ? $pk : array($pk);
             return count($pkResult) === 0 ? $pkAsArray : $pkResult;
-        } catch(Exception $ex) {
+        } catch (Exception $ex) {
             return false;
         }
     }
 
     public function callProcedure($procName, &$arguments = [], $outputColumns = [])
     {
-        // TODO: Implement callProcedure() method.
-        throw new \RuntimeException('not defined yet');
+        $keys = array_keys($arguments);
+        $argList = '';
+        if (count($keys) > 0) {
+            foreach ($arguments as $k => $v) {
+                $argList .= ":$k,";
+            }
+            $argList = rtrim($argList, ','); // remove the trail comma
+        }
+        $sql = "{call $procName ($argList)}";
+        $stmt = $this->parent->prepare($sql);
+        foreach ($arguments as $k => $v) {
+            if (in_array($k, $outputColumns)) {
+                $stmt->bindParam(':' . $k, $arguments[$k], PDO::PARAM_STR | PDO::PARAM_INPUT_OUTPUT, 4000);
+            } else {
+                $stmt->bindParam(':' . $k, $arguments[$k]);
+            }
+        }
+        $r = $stmt->execute();
+        if ($r) {
+            $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        } else {
+            $result = false;
+        }
+        $stmt = null;
+        return $result;
     }
 
     public function createProcedure($procedureName, $arguments = [], $body = '', $extra = '')
     {
-        // TODO: Implement createProcedure() method.
-        throw new \RuntimeException('not defined yet');
+        if (is_array($arguments)) {
+            $sqlArgs = '';
+            foreach ($arguments as $k => $v) {
+                if (is_array($v)) {
+                    if (count($v) > 2) {
+                        // direction(in,output),name,type
+                        $sqlArgs .= "@$v[1] $v[2] $v[0],";
+                    } else {
+                        // name, type
+                        $sqlArgs .= "@$v[0] $v[1],";
+                    }
+                } else {
+                    $sqlArgs .= "@$k $v,";
+                }
+            }
+            $sqlArgs = trim($sqlArgs, ',');
+        } else {
+            $sqlArgs = $arguments;
+        }
+        $sql = "CREATE PROCEDURE [$procedureName] $sqlArgs $extra\n";
+        $sql .= "AS\nBEGIN\n$body\nEND";
+        return $sql;
     }
 
     public function db($dbname)
     {
-        return  'use ' . $dbname;
+        return 'use ' . $dbname;
     }
 }

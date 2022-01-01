@@ -150,7 +150,7 @@ class PdoOne_Mysql implements PdoOne_IExt
             if ($col['Default'] === 'CURRENT_TIMESTAMP') {
                 $value .= ' default CURRENT_TIMESTAMP';
             } else {
-                $value .= ($col['Default']) ? ' default ' . PdoOne::addParenthesis($col['Default'], "'", "'") . '' : '';
+                $value .= ($col['Default']) ? ' default ' . PdoOne::addParenthesis($col['Default'], "'", "'") : '';
             }
             $col['Extra'] = str_replace('DEFAULT_GENERATED ', '', $col['Extra']);
             $value .= ($col['Extra']) ? ' ' . $col['Extra'] : '';
@@ -407,7 +407,7 @@ class PdoOne_Mysql implements PdoOne_IExt
                     if (count($v) > 2) {
                         $sqlArgs .= "$v[0] $v[1] $v[2],";
                     } else {
-                        $sqlArgs .= "in $v[1] $v[2],";
+                        $sqlArgs .= "in $v[0] $v[1],";
                     }
                 } else {
                     $sqlArgs .= "in $k $v,";
