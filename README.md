@@ -2,7 +2,7 @@
 
 PdoOne. It's a simple wrapper for PHP's PDO library compatible with SQL Server (2008 R2 or higher), MySQL (5.7 or higher) and Oracle (12.1 or higher).
 
-This library tries to **work as fast as possible**. Most of the operations are simple string/array managements and work in the bare metal of the PDO library but it also allows to create an ORM.
+This library tries to **work as fast as possible**. Most of the operations are simple string/array managements and work in the bare metal of the PDO library, but it also allows to create an ORM.
 
 
 [![Packagist](https://img.shields.io/packagist/v/eftec/PdoOne.svg)](https://packagist.org/packages/eftec/PdoOne)
@@ -156,8 +156,8 @@ ProductRepo // this class was generated with echo $pdoOne()->generateCodeClass([
 
 
 
-| [ExampleTicketPHP](https://github.com/jorgecc/ExampleTicketPHP) | [Example cupcakes](https://github.com/EFTEC/example.cupcakes) | [Example Search](https://github.com/EFTEC/example-search)    | [Example Different Method](https://github.com/escuelainformatica/example-pdoone) |
-| ------------------------------------------------------------ | ------------------------------------------------------------ | ------------------------------------------------------------ | ------------------------------------------------------------ |
+| [ExampleTicketPHP](https://github.com/jorgecc/ExampleTicketPHP)                                                                                                                                                                                                        | [Example cupcakes](https://github.com/EFTEC/example.cupcakes)                                                                     | [Example Search](https://github.com/EFTEC/example-search)                                                                              | [Example Different Method](https://github.com/escuelainformatica/example-pdoone)                          |
+|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------|
 | <img src="https://camo.githubusercontent.com/3c938f71f46a90eb85bb104f0f396fcba62b8f4a/68747470733a2f2f74686570726163746963616c6465762e73332e616d617a6f6e6177732e636f6d2f692f3436696b7061376661717677726533797537706a2e6a7067" alt="example php bladeone" width="200"/> | <img src="https://github.com/EFTEC/example.cupcakes/raw/master/docs/result.jpg" alt="example php bladeone cupcakes" width="200"/> | <img src="https://github.com/EFTEC/example-search/raw/master/img/search_bootstrap.jpg" alt="example php bladeone search" width="200"/> | <img src='https://github.com/escuelainformatica/example-pdoone/raw/master/docs/database.jpg' width=200 /> |
 
 More examples:
@@ -242,7 +242,7 @@ to the PHP folder and Apache Folder.
 
 ### 1. Running a raw query
 
-With the method **RunRawQuery()**, we could execute a command directly to PDO with or without parameters. And it could returns a **PdoStatement** or an **array**. It is useful when we want speed.
+With the method **RunRawQuery()**, we could execute a command directly to PDO with or without parameters. And it could return a **PdoStatement** or an **array**. It is useful when we want speed.
 
 > **RunRawQuery($rawSql,$param,$returnArray)**
 >
@@ -405,15 +405,15 @@ Returns all foreign keys of a table (source table)
 Creates a table using a definition and primary key.
 
 * **$definition** The definition is an associative array with the name of the column as key and the definition as value.
-* **primaryKey** It could be an string or associative array.
-  * if it is an string then it is the name of the primary key, example "user_id";
-  * it it is an associative array, then it could be used to define primary key, unique, key and foreign keys:
+* **primaryKey** It could be a string or associative array.
+  * if it is a string then it is the name of the primary key, example "user_id";
+  * if it is an associative array, then it could be used to define primary key, unique, key and foreign keys:
     * 'key_name'=>'PRIMARY KEY'
     * 'key_name'=>'KEY'
     * 'key_name'=>'UNIQUE KEY'
     * 'key_name'=>'FOREIGN KEY REFERENCES TABLEREF(COLREF) ...'
-* **$extra** It defines a extra definition inside the definition of the table.
-* **extraOutside** It defines a extra definition after the definition of the table.
+* **$extra** It defines an extra definition inside the definition of the table.
+* **extraOutside** It defines an extra definition after the definition of the table.
 
 >Note: You could generate a code to create a table using an existing table by executing cli (output classcode)   
 > php pdoone.php -database mysql -server 127.0.0.1 -user root -pwd abc.123 -db sakila -input film -output classcode
@@ -1247,31 +1247,31 @@ $pdo->getSequencePHP(true) // string(19) "1739032938181434311"
 
 ## Fields
 
-| Field                 | Description                                                  | Example                            |
-| --------------------- | ------------------------------------------------------------ | ---------------------------------- |
-| $prefixBase           | If we need to add a prefix to every table                    | $this->prefixBase='example_';      |
-| $internalCacheCounter | The counter of hits of the internal cache.                   | $this->internalCacheCounter=;      |
-| $nodeId               | Used by sequence (snowflake). nodeId It is the identifier of the node. It  must be between 0..1023 | $this->nodeId=3;                   |
-| $tableSequence        | The name of the table sequence (snowflake)                   | $this->tableSequence="tableseq1";  |
-| $masks0               | If we want to generate an unpredictable number (used by sequence) | $this->masks0=[0,1,2,3,4];         |
-| $masks1               | If we want to generate an unpredictable number (used by sequence) | $this->masks1=[4,3,2,1,0];         |
-| $databaseType         | The current type of database. It is set via el constructor   | echo $this->databaseType;          |
-| $server               | The current server machine                                   | echo $this->server;                |
-| $user                 | The current user                                             | echo $this->user;                  |
-| $pwd                  | The current password                                         | echo $this->pwd;                   |
-| $db                   | The current database or schema (oracle ignores this value)   | echo $this->db;                    |
-| $charset              | To set the default charset. It must be set via constructor   | echo $this->charset;               |
-| $isOpen               | It is true if the database is connected otherwise,it's false | if($this->isOpen) { …};            |
-| $throwOnError         | If true (default), then it throws an error if happens an  error. If false, then the execution continues | $this->throwOnError=false;         |
-| $conn1                | The instance of PDO. You can set it or use it directly.      | $this->conn1->pdoStatement(..);    |
-| $transactionOpen      | True if the transaction is open                              | if($this->transactionOpen) { …};   |
-| $readonly             | if the database is in READ ONLY mode or not. If true then we  must avoid to write in the database | $this->readonly=true;              |
+| Field                 | Description                                                                                                    | Example                            |
+|-----------------------|----------------------------------------------------------------------------------------------------------------|------------------------------------|
+| $prefixBase           | If we need to add a prefix to every table                                                                      | $this->prefixBase='example_';      |
+| $internalCacheCounter | The counter of hits of the internal cache.                                                                     | $this->internalCacheCounter=;      |
+| $nodeId               | Used by sequence (snowflake). nodeId It is the identifier of the node. It  must be between 0..1023             | $this->nodeId=3;                   |
+| $tableSequence        | The name of the table sequence (snowflake)                                                                     | $this->tableSequence="tableseq1";  |
+| $masks0               | If we want to generate an unpredictable number (used by sequence)                                              | $this->masks0=[0,1,2,3,4];         |
+| $masks1               | If we want to generate an unpredictable number (used by sequence)                                              | $this->masks1=[4,3,2,1,0];         |
+| $databaseType         | The current type of database. It is set via el constructor                                                     | echo $this->databaseType;          |
+| $server               | The current server machine                                                                                     | echo $this->server;                |
+| $user                 | The current user                                                                                               | echo $this->user;                  |
+| $pwd                  | The current password                                                                                           | echo $this->pwd;                   |
+| $db                   | The current database or schema (oracle ignores this value)                                                     | echo $this->db;                    |
+| $charset              | To set the default charset. It must be set via constructor                                                     | echo $this->charset;               |
+| $isOpen               | It is true if the database is connected otherwise,it's false                                                   | if($this->isOpen) { …};            |
+| $throwOnError         | If true (default), then it throws an error if happens an  error. If false, then the execution continues        | $this->throwOnError=false;         |
+| $conn1                | The instance of PDO. You can set it or use it directly.                                                        | $this->conn1->pdoStatement(..);    |
+| $transactionOpen      | True if the transaction is open                                                                                | if($this->transactionOpen) { …};   |
+| $readonly             | if the database is in READ ONLY mode or not. If true then we  must avoid to write in the database              | $this->readonly=true;              |
 | $logFile              | full filename of the log file. If it's empty then it doesn't  store a log file. The log file is limited to 1mb | $this->logFile="/folder/file.log"; |
-| $errorText            | It stores the last error. runGet and beginTry resets it      | echo $this->errorText;             |
-| $isThrow              | todo                                                         | $this->isThrow=;                   |
-| $logLevel             | It indicates the current level of log. 0 = no log (for production), 3= full log | $this->logLevel=3;                 |
-| $lastQuery            | Last query executed                                          | echo $this->lastQuery;             |
-| $lastParam            | The last parameters. It is an associative array              | echo $this->lastParam;             |
+| $errorText            | It stores the last error. runGet and beginTry resets it                                                        | echo $this->errorText;             |
+| $isThrow              | todo                                                                                                           | $this->isThrow=;                   |
+| $logLevel             | It indicates the current level of log. 0 = no log (for production), 3= full log                                | $this->logLevel=3;                 |
+| $lastQuery            | Last query executed                                                                                            | echo $this->lastQuery;             |
+| $lastParam            | The last parameters. It is an associative array                                                                | echo $this->lastParam;             |
 
 ## Encryption
 
@@ -1775,13 +1775,13 @@ TableNameRepo::setPdoOne($pdo); // TableNameRepo is our class generated. You mus
 
 The next commands usually are executed alone (not in a chain of methods)
 
-| Method              | Description                                                  | Example                               |
-| ------------------- | ------------------------------------------------------------ | ------------------------------------- |
+| Method              | Description                                                        | Example                               |
+|---------------------|--------------------------------------------------------------------|---------------------------------------|
 | createTable()       | Creates the table and indexes using the definition inside the Repo | TablaParentRepo::createTable();       |
-| createForeignKeys() | Create all foreign keys of the table                         | TablaParentRepo::createForeignKeys(); |
-| dropTable()         | Drop the table                                               | TablaParentRepo::dropTable();         |
-| truncate()          | Truncate the table                                           | TablaParentRepo::truncate();          |
-| validTable()        | Validate if the table hasn't changed                         | $ok=TablaParentRepo::validTable();    |
+| createForeignKeys() | Create all foreign keys of the table                               | TablaParentRepo::createForeignKeys(); |
+| dropTable()         | Drop the table                                                     | TablaParentRepo::dropTable();         |
+| truncate()          | Truncate the table                                                 | TablaParentRepo::truncate();          |
+| validTable()        | Validate if the table hasn't changed                               | $ok=TablaParentRepo::validTable();    |
 
 ```php
 TablaParentRepo::createTable();
@@ -1829,7 +1829,7 @@ $results=$pdo->select('*')
 
 
 | Method      | Description                       | Example                      |
-| ----------- | --------------------------------- | ---------------------------- |
+|-------------|-----------------------------------|------------------------------|
 | where()     | It adds a where to the chain      | TablaParentRepo::where()     |
 | order()     | It adds a order by to the chain   | TablaParentRepo::order()     |
 | group()     | it adds a group by to the chain   | TablaParentRepo::group()     |
@@ -1852,22 +1852,22 @@ We have different methods to generate a DQL (query) command in our database.
 >
 > ClassRepo::op()::toList()::op() will trigger an exception ❌
 
-| Command  | Description                           | Example                                                      |
-| -------- | ------------------------------------- | ------------------------------------------------------------ |
-| toList() | Returns an array of elements          | $data=TableNameRepo::toList(); // select * from tablerepo<br />$data=TableNameRepo::where('a1=?',[$value])::toList(); // select * from tablerepo where a1=$value |
+| Command  | Description                           | Example                                                                                                                                                                                                                         |
+|----------|---------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| toList() | Returns an array of elements          | $data=TableNameRepo::toList(); // select * from tablerepo<br />$data=TableNameRepo::where('a1=?',[$value])::toList(); // select * from tablerepo where a1=$value                                                                |
 | first()  | Returns a simple row                  | $data=TableNameRepo::first($pk); // select * from tablerepo where pk=$pk  (it always returns 1 or zero values)<br />$data=TableNameRepo::where('a1=?',[$value])::first(); // it returns the first value (or false if not found) |
-| exist()  | Returns true if a primary key exists  | $data=TableNameRepo::exist($pk); // returns true if the object exists. |
-| count()  | Returns the number of rows in a query | $data=TableNameRepo::count($conditions); <br />$data=TableNameRepo::where('a1=?',[$value])::count(); |
+| exist()  | Returns true if a primary key exists  | $data=TableNameRepo::exist($pk); // returns true if the object exists.                                                                                                                                                          |
+| count()  | Returns the number of rows in a query | $data=TableNameRepo::count($conditions); <br />$data=TableNameRepo::where('a1=?',[$value])::count();                                                                                                                            |
 
 ### DML Database Model Language
 
 The next methods allow to insert,update or delete values in the database.
 
-| Method     | Description                                                  | Example                                  |
-| ---------- | ------------------------------------------------------------ | ---------------------------------------- |
-| insert     | It inserts a value into the database. It could returns an identity | $identity=TablaParentRepo::insert($obj); |
-| update     | It updates a value into the database.                        | TablaParentRepo::update($obj);           |
-| delete     | It deletes a value from the database.                        | TablaParentRepo::delete($obj);           |
+| Method     | Description                                                                | Example                                  |
+|------------|----------------------------------------------------------------------------|------------------------------------------|
+| insert     | It inserts a value into the database. It could return an identity         | $identity=TablaParentRepo::insert($obj); |
+| update     | It updates a value into the database.                                      | TablaParentRepo::update($obj);           |
+| delete     | It deletes a value from the database.                                      | TablaParentRepo::delete($obj);           |
 | deletebyId | It deletes a value (using the primary key as condition) from the database. | TablaParentRepo::deleteById($pk);        |
 
 
@@ -1893,7 +1893,7 @@ UserRepo::validateModel($obj,false,['_messages']); // returns true if $obj is a 
 
 ### Recursive
 
-A recursive array is a array of  strings with values that it could be read or obtained or compared.  For example, to join a table conditionally.
+A recursive array is an array of  strings with values that it could be read or obtained or compared.  For example, to join a table conditionally.
 PdoOne does not use it directly but _BasePdoOneRepo uses it (_BasePdoOneRepo is a class used when we generate a repository service class automatically).
 
 Example
