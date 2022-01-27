@@ -1,4 +1,5 @@
-<?php /** @noinspection UnknownInspectionInspection */
+<?php /** @noinspection PhpMissingParamTypeInspection */
+/** @noinspection UnknownInspectionInspection */
 /** @noinspection DuplicatedCode */
 
 /** @noinspection PhpUnused */
@@ -31,7 +32,7 @@ class PdoOneQuery
     /** @var string|array [optional] It is the family or group of the cache */
     public $cacheFamily = '';
     /**
-     * @var boolean $numericArgument if true the the arguments are numeric. Otherwise, it doesn't have arguments or
+     * @var boolean $numericArgument if true then the arguments are numeric. Otherwise, it doesn't have arguments or
      *      they are named. This value is used for the method where() and having()
      */
     protected $numericArgument = false;
@@ -79,7 +80,7 @@ class PdoOneQuery
 
 
     /**
-     * It returns an array with the metadata of each columns (i.e. name, type,
+     * It returns an array with the metadata of each column (i.e. name, type,
      * size, etc.) or false if error.
      *
      * @param null|string $sql     If null then it uses the generation of query
@@ -131,10 +132,10 @@ class PdoOneQuery
     }
 
     /**
-     * Begin a try block. It marks the errorText as empty and it store the value of genError<br>
-     * It also avoids to throw any error.
+     * Begin a try block. It marks the errorText as empty, and it stores the value of genError<br>
+     * It also avoids throwing any error.
      */
-    public function beginTry()
+    public function beginTry(): void
     {
         $this->parent->errorText = '';
         $this->parent->isThrow = $this->parent->genError; // this value is deleted when it trigger an error
@@ -150,13 +151,10 @@ class PdoOneQuery
      *
      * @param bool   $returnArray      true=return an array. False returns a
      *                                 PDOStatement
-     * @param int    $extraMode        PDO::FETCH_ASSOC,PDO::FETCH_BOTH,PDO::FETCH_NUM,etc.
-     *                                 By default it returns
-     *                                 $extraMode=PDO::FETCH_ASSOC
+     * @param int    $extraMode        PDO::FETCH_ASSOC,PDO::FETCH_BOTH,PDO::FETCH_NUM,etc.<br>
+     *                                 By default, it returns $extraMode=PDO::FETCH_ASSOC
      *
-     * @param string $extraIdCache     [optional] if 'rungen' then cache is
-     *                                 stored. If false the cache could be
-     *                                 stored
+     * @param string $extraIdCache     [optional] if 'rungen' then cache is stored. If false the cache could be stored
      *
      * @param bool   $throwError
      *
@@ -272,7 +270,7 @@ class PdoOneQuery
      *
      * @return string
      */
-    public function sqlGen($resetStack = false)
+    public function sqlGen($resetStack = false): string
     {
         if (stripos($this->select, 'select ') === 0) {
             // is it a full query? $this->select=select * ..." instead of $this->select=*
@@ -303,7 +301,7 @@ class PdoOneQuery
     /**
      * @return string
      */
-    private function constructWhere()
+    private function constructWhere(): string
     {
         return count($this->where) ? ' where ' . implode(' and ', $this->where) : '';
     }
@@ -311,7 +309,7 @@ class PdoOneQuery
     /**
      * @return string
      */
-    private function constructHaving()
+    private function constructHaving(): string
     {
         return count($this->having) ? ' having ' . implode(' and ', $this->having) : '';
     }
@@ -322,7 +320,7 @@ class PdoOneQuery
      * @param bool $forced if true then calling this method resets the stacks of variables<br>
      *                     if false then it only resets the stack if $this->noreset=false; (default is false)
      */
-    public function builderReset($forced = false)
+    public function builderReset($forced = false): void
     {
         if ($this->noReset && !$forced) {
             return;
@@ -358,12 +356,12 @@ class PdoOneQuery
      * (if throwOnError==true)
      *
      * @param string                $txt        The message to show.
-     * @param bool                  $throwError if true then it throw error (is enabled). Otherwise it store the error.
-     * @param null|RuntimeException $exception  If we already has an exception, then we could use to throw it.
+     * @param bool                  $throwError if true then it throws error (is enabled). Otherwise, it stores the error.
+     * @param null|RuntimeException $exception  If we already have an exception, then we could use to throw it.
      *
      * @see \eftec\PdoOne::$logLevel
      */
-    public function throwErrorChain($txt, $throwError = true, $exception = null)
+    public function throwErrorChain($txt, $throwError = true, $exception = null): void
     {
         if ($this->parent->logLevel === 0) {
             $txt = 'Error on database';
@@ -376,9 +374,9 @@ class PdoOneQuery
         if ($throwError && $this->parent->throwOnError && $this->parent->genError) {
             if ($exception !== null) {
                 throw $exception;
-            } else {
-                throw new RuntimeException($txt);
             }
+
+            throw new RuntimeException($txt);
         }
         $this->builderReset(true); // it resets the chain if any.
     }
@@ -389,7 +387,7 @@ class PdoOneQuery
      * @return bool
      * @throws Exception
      */
-    private function endTry()
+    private function endTry(): bool
     {
 
         $this->parent->throwOnError = $this->throwOnErrorB;
@@ -417,7 +415,7 @@ class PdoOneQuery
      *      having(['field',[20]] ) // array type defined
      *      having('field=20') // literal value
      *      having('field=?',[20]) // automatic type
-     *      having('field',[20]) // automatic type (it's the same than
+     *      having('field',[20]) // automatic type (it's the same "than")
      *      where('field=?',[20]) having('field=?', [20] ) // type(i,d,s,b)
      *      defined having('field=?,field2=?', [20,'hello'] )
      *
@@ -429,7 +427,7 @@ class PdoOneQuery
      * @test InstanceOf
      *       PdoOne::class,this('field1=?,field2=?',[20,'hello'])
      */
-    public function having($sql, $param = PdoOne::NULL)
+    public function having($sql, $param = PdoOne::NULL): PdoOneQuery
     {
         if ($sql === null) {
             return $this;
@@ -446,7 +444,7 @@ class PdoOneQuery
      *      where (['field',[20]] ) // array type defined
      *      where('field=20') // literal value
      *      where('field=?',[20]) // automatic type
-     *      where('field',[20]) // automatic type (it's the same than
+     *      where('field',[20]) // automatic type, it's the same than
      *      where('field=?',[20]) where('field=?', [20] ) // type(i,d,s,b)
      *      defined where('field=?,field2=?', [20,'hello'] )
      *      where('field=:field,field2=:field2',
@@ -466,7 +464,7 @@ class PdoOneQuery
      * @test InstanceOf
      *       PdoOne::class,this('field1=?,field2=?',[20,'hello'])
      */
-    public function where($sql, $param = PdoOne::NULL, $isHaving = false, $tablePrefix = null)
+    public function where($sql, $param = PdoOne::NULL, $isHaving = false, $tablePrefix = null): PdoOneQuery
     {
         if ($sql === null || $sql === PdoOne::NULL) {
             return $this;
@@ -508,7 +506,7 @@ class PdoOneQuery
         $type = 'where',
         $return = false,
         $tablePrefix = null
-    )
+    ): ?array
     {
         $queryEnd = [];
         $named = [];
@@ -689,7 +687,7 @@ class PdoOneQuery
      * @throws Exception
      * @see \eftec\PdoOne::first
      */
-    public function last()
+    public function last(): ?array
     {
         if ($this->ormClass !== null) {
             throw new RuntimeException("The method [" . __FUNCTION__ . "] is not yet implemented with an ORM class");
@@ -715,11 +713,7 @@ class PdoOneQuery
             return null;
         }
         $row = null;
-        if ($statement === false) {
-            $row = null;
-        } elseif (!$statement->columnCount()) {
-            $row = null;
-        } else {
+        if ($statement !== false && $statement->columnCount()) {
             while ($dummy = $statement->fetch(PDO::FETCH_ASSOC)) {
                 $row = $dummy;
             }
@@ -764,11 +758,11 @@ class PdoOneQuery
     }
 
     /**
-     * It is called when we want to runs a method and it is called by an ORM.<br>
+     * It is called when we want to run a method, and it is called by an ORM.<br>
      *  It helps to assign the table and the fields
      * @param bool $addColumns
      */
-    private function usingORM($addColumns = false)
+    private function usingORM($addColumns = false): void
     {
         if ($this->ormClass !== null && $this->from === '') {
             /** @var _BasePdoOneRepo $cls */
@@ -801,7 +795,7 @@ class PdoOneQuery
      * @return PdoOneQuery
      * @test InstanceOf PdoOne::class,this('select 1 from DUAL')
      */
-    public function select($sql)
+    public function select($sql): PdoOneQuery
     {
         if (is_array($sql)) {
             $this->select .= implode(', ', $sql);
@@ -826,32 +820,32 @@ class PdoOneQuery
      *      from('table1 inner join table2 on table1.c=table2.c')
      * </pre>
      *
-     * @param string      $sql Input SQL query
+     * @param string      $sql    Input SQL query
      * @param null|string $schema The schema/database of the table without trailing dot.<br>
      *                            Example 'database' or 'database.dbo'
      * @return PdoOneQuery
      * @test InstanceOf PdoOne::class,this('table t1')
      */
-    public function from($sql, $schema = null)
+    public function from($sql, $schema = null): PdoOneQuery
     {
         if ($sql === null) {
             return $this;
         }
-        if($schema!==null) {
+        if ($schema !== null) {
             $schema .= '.';
-            $comma=strpos($sql,',')!==false;
-            if($comma) {
+            $comma = strpos($sql, ',') !== false;
+            if ($comma) {
                 // table1,table2 => prefix.table1,prefix.table2
-                $sql=str_replace(',',','.$schema,$sql);
+                $sql = str_replace(',', ',' . $schema, $sql);
             } else {
-                $join=stripos($sql,' join ')!==false;
-                if($join) {
+                $join = stripos($sql, ' join ') !== false;
+                if ($join) {
                     // table1 inner join table2 => prefix.table1 inner join prefix.table2
                     $sql = str_ireplace(' join ', ' join ' . $schema, $sql);
                 }
             }
             // prefix at the begginer table1=> prefix.table1
-            $sql=$schema.ltrim($sql);
+            $sql = $schema . ltrim($sql);
         }
 
         $this->from = ($sql) ? $sql . $this->from : $this->from;
@@ -898,8 +892,6 @@ class PdoOneQuery
             $statement = null;
             if ($row !== false) {
                 $exist = true;
-            } else {
-                $exist = false;
             }
         }
         if ($this->uid && $useCache !== false) {
@@ -916,7 +908,7 @@ class PdoOneQuery
      * @return $this
      * @see \eftec\PdoOneQuery::from
      */
-    public function table($sql)
+    public function table($sql): self
     {
         return $this->from($sql);
     }
@@ -943,7 +935,7 @@ class PdoOneQuery
      * @return array|null
      * @throws Exception
      */
-    public function toListKeyValue($extraValueSeparator = null)
+    public function toListKeyValue($extraValueSeparator = null): ?array
     {
         $this->usingORM();
         $list = $this->_toList(PDO::FETCH_NUM);
@@ -953,9 +945,9 @@ class PdoOneQuery
         $result = [];
         foreach ($list as $item) {
             if ($extraValueSeparator === null) {
-                $result[$item[0]] = isset($item[1]) ? $item[1] : $item[0];
+                $result[$item[0]] = $item[1] ?? $item[0];
             } else {
-                $result[$item[0]] = (isset($item[1]) ? $item[1] : $item[0])
+                $result[$item[0]] = ($item[1] ?? $item[0])
                     . ((isset($item[2]) ? $extraValueSeparator . $item[2] : ''));
             }
         }
@@ -1071,7 +1063,7 @@ class PdoOneQuery
             }
         }
         if ($this->parent->useInternalCache) {
-            $sql = (!isset($sql)) ? $this->sqlGen() : $sql;
+            $sql = $sql ?? $this->sqlGen();
             $allparam = array_merge($this->setParamAssoc, $this->whereParamAssoc, $this->havingParamAssoc);
             $uid = hash($this->parent->encryption->hashType, 'first' . $sql . serialize($allparam));
             if (isset($this->parent->internalCache[$uid])) {
@@ -1320,7 +1312,7 @@ class PdoOneQuery
      *
      * @return bool
      */
-    public function hasWhere($having = false)
+    public function hasWhere($having = false): bool
     {
         if ($having) {
             return count($this->having) > 0;
@@ -1337,7 +1329,7 @@ class PdoOneQuery
      * @return PdoOneQuery
      * @throws Exception
      */
-    public function page($numPage)
+    public function page($numPage): PdoOneQuery
     {
         if ($this->ormClass !== null) {
             $cls = $this->ormClass;
@@ -1363,7 +1355,7 @@ class PdoOneQuery
      * @throws Exception
      * @test InstanceOf PdoOne::class,this('1,10')
      */
-    public function limit($sql)
+    public function limit($sql): PdoOneQuery
     {
         if ($sql === null) {
             return $this;
@@ -1381,7 +1373,7 @@ class PdoOneQuery
      *
      * @return array
      */
-    public function factoryNull($values = null, $recursivePrefix = '')
+    public function factoryNull($values = null, $recursivePrefix = ''): array
     {
         if ($this->ormClass !== null) {
             $cls = $this->ormClass;
@@ -1398,7 +1390,7 @@ class PdoOneQuery
      *
      * @return array
      */
-    public function factory($values = null, $recursivePrefix = '')
+    public function factory($values = null, $recursivePrefix = ''): array
     {
         if ($this->ormClass !== null) {
             $cls = $this->ormClass;
@@ -1429,7 +1421,7 @@ class PdoOneQuery
      * @return PdoOneQuery
      * @test InstanceOf PdoOne::class,this()
      */
-    public function distinct($sql = 'distinct')
+    public function distinct($sql = 'distinct'): PdoOneQuery
     {
         if ($sql === null) {
             return $this;
@@ -1441,13 +1433,13 @@ class PdoOneQuery
 
     /**
      * If true, then on error, the code thrown an error.<br>>
-     * If false, then on error, the the code returns false and logs the errors ($this->parent->errorText).
+     * If false, then on error, then the code returns false and logs the errors ($this->parent->errorText).
      *
      * @param bool $value
      *
      * @return $this
      */
-    public function setThrowOnError($value = false)
+    public function setThrowOnError($value = false): self
     {
         $this->parent->throwOnError = $value;
         return $this;
@@ -1466,7 +1458,7 @@ class PdoOneQuery
      *
      * @return $this
      */
-    public function setNoReset($noReset = true)
+    public function setNoReset($noReset = true): self
     {
         $this->noReset = $noReset;
         return $this;
@@ -1483,7 +1475,7 @@ class PdoOneQuery
      * @return string
      * @see \eftec\PdoOneEncryption::$hashType
      */
-    public function buildUniqueID($extra = null, $prefix = '')
+    public function buildUniqueID($extra = null, $prefix = ''): string
     {
         // set and setparam are not counted
         $all = [
@@ -1520,7 +1512,7 @@ class PdoOneQuery
      * @return PdoOneQuery
      * @test InstanceOf PdoOne::class,this('table2 on table1.t1=table2.t2')
      */
-    public function left($sql)
+    public function left($sql): PdoOneQuery
     {
         if ($sql === null) {
             return $this;
@@ -1543,7 +1535,7 @@ class PdoOneQuery
      * @return PdoOneQuery
      * @test InstanceOf PdoOne::class,this('table2 on table1.t1=table2.t2')
      */
-    public function right($sql)
+    public function right($sql): PdoOneQuery
     {
         if ($sql === null) {
             return $this;
@@ -1568,7 +1560,7 @@ class PdoOneQuery
      * @test InstanceOf
      *       PdoOne::class,this('field1=?,field2=?',[20,'hello'])
      */
-    public function set($sqlOrArray, $param = PdoOne::NULL)
+    public function set($sqlOrArray, $param = PdoOne::NULL): PdoOneQuery
     {
         if ($sqlOrArray === null) {
             return $this;
@@ -1594,7 +1586,7 @@ class PdoOneQuery
      * @return PdoOneQuery
      * @test InstanceOf PdoOne::class,this('fieldgroup')
      */
-    public function group($sql)
+    public function group($sql): PdoOneQuery
     {
         if ($sql === null) {
             return $this;
@@ -1611,7 +1603,7 @@ class PdoOneQuery
      * @return $this
      * @see \eftec\PdoOne::recursive
      */
-    public function include($fields)
+    public function include($fields): self
     {
         return $this->recursive($fields);
     }
@@ -1627,7 +1619,7 @@ class PdoOneQuery
      *
      * @return $this
      */
-    public function recursive($rec)
+    public function recursive($rec): self
     {
         if ($this->ormClass !== null) {
             $cls = $this->ormClass;
@@ -1645,7 +1637,7 @@ class PdoOneQuery
      * @param $rec
      * @return $this
      */
-    public function _recursive($rec)
+    public function _recursive($rec): self
     {
         if (is_array($rec)) {
             $this->recursive = $rec;
@@ -1660,7 +1652,7 @@ class PdoOneQuery
      *
      * @return array
      */
-    public function getRecursive()
+    public function getRecursive(): array
     {
         return $this->recursive;
     }
@@ -1675,7 +1667,7 @@ class PdoOneQuery
      *
      * @return bool
      */
-    public function hasRecursive($needle, $recursiveArray = null)
+    public function hasRecursive($needle, $recursiveArray = null): bool
     {
         if (count($this->recursive) === 1 && $this->recursive[0] === '*') {
             return true;
@@ -1697,7 +1689,7 @@ class PdoOneQuery
      * @return PdoOneQuery
      * @see \eftec\PdoOne::$errorText
      */
-    public function genError($error = false)
+    public function genError($error = false): PdoOneQuery
     {
         $this->parent->genError = $error;
         return $this;
@@ -1749,7 +1741,7 @@ class PdoOneQuery
     protected function _insert($tableName = null,
                                $tableDef = null,
                                $values = PdoOne::NULL,
-                               $identityColumn=null)
+                               $identityColumn = null)
     {
         if ($tableName === null) {
             $tableName = $this->from;
@@ -1781,10 +1773,10 @@ class PdoOneQuery
             'insert into ' . $this->parent->addDelimiter($tableName) . '  ' . $this->constructInsert();
         $param = $this->setParamAssoc;
         $this->beginTry();
-        if($this->parent->databaseType==='oci' && $identityColumn!==null) {
+        if ($this->parent->databaseType === 'oci' && $identityColumn !== null) {
 
-            $param[]=[':ID_'.$identityColumn,'0',1,null];
-            $sql.=' returning '.$identityColumn.' into :ID_'.$identityColumn;
+            $param[] = [':ID_' . $identityColumn, '0', 1, null];
+            $sql .= ' returning ' . $identityColumn . ' into :ID_' . $identityColumn;
         }
 
         $this->parent->runRawQuery($sql, $param, true, $this->useCache, $this->cacheFamily);
@@ -1793,8 +1785,8 @@ class PdoOneQuery
             return false;
         }
 
-        if($this->parent->databaseType==='oci') {
-            if ($identityColumn!==null) {
+        if ($this->parent->databaseType === 'oci') {
+            if ($identityColumn !== null) {
                 //todo: aqui se debe recuperar el valor insertado
                 var_dump($param);
             }
@@ -1806,7 +1798,7 @@ class PdoOneQuery
     /**
      * @return string
      */
-    private function constructInsert()
+    private function constructInsert(): string
     {
         if (count($this->set)) {
             $arr = [];
@@ -1863,14 +1855,14 @@ class PdoOneQuery
         $tableNameOrValues = null,
         $tableDef = null,
         $values = PdoOne::NULL,
-        $identityColumn=null
+        $identityColumn = null
     )
     {
         if ($this->ormClass !== null) {
             $cls = $this->ormClass;
             return $cls::setPdoOneQuery($this)::insert($tableNameOrValues);
         }
-        return $this->_insert($tableNameOrValues, $tableDef, $values,$identityColumn);
+        return $this->_insert($tableNameOrValues, $tableDef, $values, $identityColumn);
     }
 
 
@@ -1886,9 +1878,9 @@ class PdoOneQuery
      *          ->delete() // running on a chain
      *      delete('table where condition=1');
      *
-     * @param string|null   $tableOrObject
-     * @param string[]|null $tableDefWhere
-     * @param string[]|int  $valueWhere
+     * @param string|null|array $tableOrObject
+     * @param string[]|null     $tableDefWhere
+     * @param string[]|int      $valueWhere
      *
      * @return false|int If successes then it returns the number of rows deleted.
      * @throws Exception
@@ -2029,7 +2021,7 @@ class PdoOneQuery
     /**
      * @return string
      */
-    private function constructSet()
+    private function constructSet(): string
     {
         return count($this->set) ? ' set ' . implode(',', $this->set) : '';
     }
@@ -2037,7 +2029,7 @@ class PdoOneQuery
     /**
      * @return array
      */
-    public function getSetParamAssoc()
+    public function getSetParamAssoc(): array
     {
         return $this->setParamAssoc;
     }
@@ -2045,7 +2037,7 @@ class PdoOneQuery
     /**
      * @return array
      */
-    public function getWhereParamAssoc()
+    public function getWhereParamAssoc(): array
     {
         return $this->whereParamAssoc;
     }
@@ -2053,7 +2045,7 @@ class PdoOneQuery
     /**
      * @return array
      */
-    public function getHavingParamAssoc()
+    public function getHavingParamAssoc(): array
     {
         return $this->havingParamAssoc;
     }
@@ -2071,7 +2063,7 @@ class PdoOneQuery
      * @return PdoOneQuery
      * @test InstanceOf PdoOne::class,this('name desc')
      */
-    public function order($sql)
+    public function order($sql): PdoOneQuery
     {
         if ($sql === null) {
             return $this;
@@ -2096,7 +2088,7 @@ class PdoOneQuery
      * @return PdoOneQuery
      * @see \eftec\PdoOne::join
      */
-    public function innerjoin($sql, $condition = '')
+    public function innerjoin($sql, $condition = ''): PdoOneQuery
     {
         return $this->join($sql, $condition);
     }
@@ -2115,7 +2107,7 @@ class PdoOneQuery
      * @return PdoOneQuery
      * @test InstanceOf PdoOne::class,this('tablejoin on t1.field=t2.field')
      */
-    public function join($sql, $condition = '')
+    public function join($sql, $condition = ''): PdoOneQuery
     {
         if ($condition !== '') {
             $sql = "$sql on $condition";
@@ -2155,7 +2147,7 @@ class PdoOneQuery
      * @return $this
      * @see \eftec\PdoOne::invalidateCache
      */
-    public function useCache($ttl = 0, $family = '')
+    public function useCache($ttl = 0, $family = ''): self
     {
         if ($this->ormClass !== null && $ttl !== false) {
             $cls = $this->ormClass;

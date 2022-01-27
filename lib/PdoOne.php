@@ -54,11 +54,11 @@ use stdClass;
  * @package       eftec
  * @author        Jorge Castro Castillo
  * @copyright (c) Jorge Castro C. MIT License  https://github.com/EFTEC/PdoOne
- * @version       2.19
+ * @version       2.20
  */
 class PdoOne
 {
-    const VERSION = '2.19';
+    const VERSION = '2.20';
     /** @var int We need this value because null and false could be a valid value. */
     const NULL = PHP_INT_MAX;
     /** @var string Prefix of the tables */
@@ -354,7 +354,7 @@ class PdoOne
             return $tmpDate->format((strpos($sqlField, '.') !== false) ? self::$dateTimeMicroHumanFormat
                 : self::$dateTimeHumanFormat);
         }
-        if(!$tmpDate) {
+        if (!$tmpDate) {
             return false;
         }
         return $tmpDate->format(self::$dateHumanFormat);
@@ -824,12 +824,29 @@ class PdoOne
         return self::singularTable(ucfirst(strtolower($txt)));
     }
 
+    /**
+     * It converts a name to singular. This method is used automatically for the generation of the repository classes<br>
+     * <b>Example:</b><br>
+     * <pre>
+     * self::singularTable('categories'); // category
+     * self::singularTable('churches'); // church
+     * self::singularTable('prices'); // pric (it fail with this kind of cases)
+     * self::singularTable('users'); // user
+     * </pre>
+     * @param $tableName
+     * @return false|mixed|string
+     */
     public static function singularTable($tableName)
     {
         $l = strlen($tableName);
-        if (strpos($tableName, 'es') === $l - 2) {
+        if ($l>=3 && substr($tableName,-3)==='ies') {
+            // categories => category
+            $tableName = substr($tableName, 0, $l - 3).'y';
+        } else if ($l>=2 && substr($tableName,-2)==='es') {
+            // churches => church (however it fails with prices => pric)
             $tableName = substr($tableName, 0, $l - 2);
-        } else if (strpos($tableName, 's') === $l - 1) {
+        } else if($l>=1 && substr($tableName,-1)==='s') {
+            // users => user
             $tableName = substr($tableName, 0, $l - 1);
         }
         return $tableName;
@@ -870,7 +887,7 @@ class PdoOne
         // keys
         if (!is_array($defKeys)) {
             $k = $defKeys;
-            $defKeys=[];
+            $defKeys = [];
             $defKeys[$k] = 'PRIMARY KEY';
         }
         $defCurrentKey = $this->getDefTableKeys($table);
@@ -945,7 +962,7 @@ class PdoOne
             // string(30) not null default
             // float(20,3) not null default
             $type = $t[0];
-            $conversion = isset($specialConversion[$k]) ? $specialConversion[$k] : null;
+            $conversion = $specialConversion[$k] ?? null;
             $extra = (count($t) > 1) ? $t[1] : null;
             if (stripos($extra, 'not null') !== false) {
                 $null = false;
@@ -994,7 +1011,7 @@ class PdoOne
      */
     public function dbTypeToPHP($type)
     {
-        $type=strtolower($type);
+        $type = strtolower($type);
         switch ($type) {
             case 'binary':
             case 'blob':
@@ -1326,12 +1343,12 @@ eot;
     /**
      * Connects to the database.
      *
-     * @param bool $failIfConnected     true=it throw an error if it's connected,
-     *                                  otherwise it does nothing
+     * @param bool      $failIfConnected true=it throw an error if it's connected,
+     *                                   otherwise it does nothing
      * @param bool|null $alterSession
      * @test exception this(false)
      */
-    public function connect($failIfConnected = true,$alterSession=null)
+    public function connect($failIfConnected = true, $alterSession = null)
     {
         $this->beginTry();
         if ($this->isOpen) {
@@ -1444,8 +1461,10 @@ eot;
         }
         $this->endTry();
     }
-    public function clearError() {
-        $this->errorText='';
+
+    public function clearError()
+    {
+        $this->errorText = '';
         if ($this->getMessages() !== null) {
             $this->getMessages()->resetAll();
         }
@@ -1482,7 +1501,7 @@ eot;
             foreach ($exception->getTrace() as $error) {
                 // we remove all trace pointing to this file.
                 $found = false;
-                $file = isset($error['file']) ? $error['file'] : '(fileless)';
+                $file = $error['file'] ?? '(fileless)';
                 foreach ($this->traceBlackList as $k) {
                     if (strpos($file, $k) !== false) {
                         $found = true;
@@ -2002,11 +2021,13 @@ eot;
 
         return '"' . $value . '"';
     }
-    public static function removeDoubleQuotes($value) {
-        if(!$value) {
+
+    public static function removeDoubleQuotes($value)
+    {
+        if (!$value) {
             return null;
         }
-        return trim($value," \t\n\r\0\x0B\"");
+        return trim($value, " \t\n\r\0\x0B\"");
     }
 
     /**
@@ -2358,10 +2379,23 @@ eot;
         $this->beginTry();
         $query = $this->service->objectList($type, $onlyName);
         $this->endTry();
-        if ($onlyName) {
-            return $this->select($query)->toListSimple();
+        if (strpos($query, '?') === false) {
+            // query does not have an argument
+            if ($onlyName) {
+                return $this->select($query)->toListSimple();
+            }
+            return $this->runRawQuery($query, []);
         }
-        return $this->runRawQuery($query, []);
+        // query has an argument
+        if ($onlyName) {
+            $values = $this->runRawQuery($query, [$this->db]);
+            $final=[];
+            foreach($values as $v) {
+                $final[]=reset($v);
+            }
+            return $final;
+        }
+        return $this->runRawQuery($query, [$this->db]);
     }
 
     /**
@@ -2495,6 +2529,7 @@ eot;
         $this->beginTry();
         $r = $this->phpstart . <<<'eot'
 /** @noinspection PhpUnusedParameterInspection
+ * @noinspection PhpClassConstantAccessedViaChildClassInspection
  * @noinspection NullCoalescingOperatorCanBeUsedInspection 
  * @noinspection PhpPureAttributeCanBeAddedInspection 
  * @noinspection PhpArrayShapeAttributeCanBeAddedInspection 
@@ -2681,8 +2716,7 @@ abstract class Abstract{classname} extends {baseclass}
             }
             return $result;
         }
-        return isset($r[$type]) ? $r[$type] : [];  
-    
+        return $r[$type] ?? [];      
     }
 
     /**
@@ -3037,7 +3071,7 @@ eot;
                                 return 'Error: Unable read table dependencies' . $e->getMessage();
                             }
                             $relation[$k]['refcol2'] = self::$prefixBase . $refcol2;
-                            if (is_array($keys2)) {
+                            if (count($keys2)>0) {
                                 $keys2 = array_keys($keys2);
                                 $relation[$k]['col2'] = $keys2[0];
                             } else {
@@ -3065,7 +3099,7 @@ eot;
         $allColumns = array_merge($getDefTable, $extraCols); // $extraColArray does not has type
 
         foreach ($allColumns as $kcol => $colDef) {
-            $type = isset($colDef['type']) ? $colDef['type'] : null;
+            $type = $colDef['type'] ?? null;
             $conversion = null;
             if (isset($columnRelations[$kcol])) {
                 $conversion = $columnRelations[$kcol];
@@ -4034,7 +4068,7 @@ eot;
                                 return 'Error: Unable read table dependencies' . $e->getMessage();
                             }
                             $relation[$k]['refcol2'] = self::$prefixBase . $refcol2;
-                            if (is_array($keys2)) {
+                            if (count($keys2)>0) {
                                 $keys2 = array_keys($keys2);
                                 $relation[$k]['col2'] = $keys2[0];
                             } else {
@@ -4123,7 +4157,7 @@ eot;
             \$obj->$varn=$class::fromArray(\$array['$varn']) 
             : null; // onetoone";
 
-                    $col = isset($field['col']) ? $field['col'] : $pkFirst;
+                    $col = $field['col'] ?? $pkFirst;
 
                     $rcol = $field['refcol'];
 
@@ -4375,7 +4409,7 @@ eot;
                                 return 'Error: Unable read table dependencies' . $e->getMessage();
                             }
                             $relation[$k]['refcol2'] = self::$prefixBase . $refcol2;
-                            if (is_array($keys2)) {
+                            if (count($keys2)>0) {
                                 $keys2 = array_keys($keys2);
                                 $relation[$k]['col2'] = $keys2[0];
                             } else {
@@ -4735,7 +4769,7 @@ eot;
      * @throws Exception
      * @test void this('123','somesalt','AES-128-CTR')
      */
-    public function setEncryption($password, $salt, $encMethod='AES-256-CTR')
+    public function setEncryption($password, $salt, $encMethod = 'AES-256-CTR')
     {
         $this->beginTry();
         if (!extension_loaded('openssl')) {
@@ -5150,14 +5184,15 @@ BOOTS;
      * @param string $procName      The name of the store procedure.
      * @param array  $arguments     An associative array with the name of the argument and it's value
      * @param array  $outputColumns [optional] the name of the columns that must be returned.
-     * @return mixed|false returns a value if success, otherwise false. You can find the error message at $this->errorText
+     * @return mixed|false returns a value if success, otherwise false. You can find the error message at
+     *                     $this->errorText
      * @throws Exception
      */
     public function callProcedure($procName, &$arguments = [], $outputColumns = [])
     {
         $this->beginTry();
         try {
-            $result=$this->service->callProcedure($procName, $arguments, $outputColumns);
+            $result = $this->service->callProcedure($procName, $arguments, $outputColumns);
             $this->endTry();
             return $result;
         } catch (Exception $ex) {
@@ -5428,9 +5463,9 @@ BOOTS;
      * @test exception this(false)
      * @see  PdoOne::connect()
      */
-    public function open($failIfConnected = true,$alterSession=false)
+    public function open($failIfConnected = true, $alterSession = false)
     {
-        $this->connect($failIfConnected,$alterSession);
+        $this->connect($failIfConnected, $alterSession);
     }
 
     /**

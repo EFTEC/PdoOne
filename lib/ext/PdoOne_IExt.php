@@ -1,4 +1,4 @@
-<?php
+<?php /** @noinspection PhpMissingParamTypeInspection */
 
 namespace eftec\ext;
 
@@ -16,7 +16,7 @@ interface PdoOne_IExt
 {
     public function construct($charset, $config);
 
-    public function connect($cs, $alterSession);
+    public function connect($cs, $alterSession) : void;
 
     /**
      * It calls a store procedure.
@@ -41,7 +41,7 @@ interface PdoOne_IExt
      * @return array|bool|null
      * @throws Exception
      */
-    public function truncate($tableName, $extra, $force);
+    public function truncate($tableName, $extra, $force) : array|bool|null;
 
     /**
      * It resets the identity of a table (if any)
@@ -87,7 +87,7 @@ interface PdoOne_IExt
      * @return array
      * @throws Exception
      */
-    public function getDefTable($table);
+    public function getDefTable($table): array;
 
     /**
      * Returns an associative array with the definition of keys of a table.<br>
@@ -98,12 +98,12 @@ interface PdoOne_IExt
      *                                  example:['id'=>'PRIMARY KEY','name'=>'FOREIGN KEY...']<br>
      *                                  false= returns as an associative array separated by parts<br>
      *                                  ['key','refcol','reftable','extra']
-     * @param null|string $filter       if not null then it only returns keys that matches the condition
+     * @param null|string $filter       if not null then it only returns keys that match the condition
      *
      * @return array=["IndexName"=>'',"ColumnName"=>'',"is_unique"=>0,"is_primary_key"=>0,"TYPE"=>0]
      * @throws Exception
      */
-    public function getDefTableKeys($table, $returnSimple, $filter = null);
+    public function getDefTableKeys($table, $returnSimple, $filter = null): array;
 
     /**
      * Returns an associative array with the definition of foreign keys of a table.<br>
@@ -120,7 +120,7 @@ interface PdoOne_IExt
      * @return array
      * @throws Exception
      */
-    public function getDefTableFK($table, $returnSimple, $filter = null, $assocArray = false);
+    public function getDefTableFK($table, $returnSimple, $filter = null, $assocArray = false): array;
 
     public function db($dbname);
     /**
@@ -134,7 +134,7 @@ interface PdoOne_IExt
     public function typeDict($row, $default = true);
 
     /**
-     * Returns an associative array if the object exists. Otherwise it will return an empty array<br>
+     * Returns an associative array if the object exists. Otherwise, it will return an empty array<br>
      * The fields of the associative array depends on the type of database
      *
      * @param string $type
@@ -142,7 +142,7 @@ interface PdoOne_IExt
      * @return string|null (null on error)
      * @throws Exception
      */
-    public function objectExist($type = 'table');
+    public function objectExist($type = 'table'): ?string;
 
     /**
      * Returns an associative array with the list of objects from the current schema.<br>
@@ -167,7 +167,7 @@ interface PdoOne_IExt
      * @return string the sql command to create a sequence
      * @throws Exception
      */
-    public function createSequence($tableSequence = null, $method = 'snowflake');
+    public function createSequence($tableSequence = null, $method = 'snowflake'): string;
 
     /**
      * It creates a store procedure<br>
@@ -192,7 +192,7 @@ interface PdoOne_IExt
      * </pre>
      *
      * @param string       $procedureName The name of the store procedure
-     * @param array|string $arguments     The arguments. It could be an associative array, a string or an multiple array
+     * @param array|string $arguments     The arguments. It could be an associative array, a string or a multiple array
      * @param string       $body          The body of the store procedure
      * @param string       $extra
      * @return false|int
@@ -232,7 +232,7 @@ interface PdoOne_IExt
      * @return string
      */
     public function createTable($tableName, $definition, $primaryKey = null, $extra = '',
-                                $extraOutside = '');
+                                $extraOutside = ''): string;
 
     /**
      * Create foreign keys (other keys are ignored).
@@ -258,7 +258,7 @@ interface PdoOne_IExt
      *
      * @throws Exception
      */
-    public function limit($sql);
+    public function limit($sql): string;
 
     /**
      * It gets a primary key based in a query.<br>

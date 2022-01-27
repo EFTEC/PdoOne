@@ -1973,6 +1973,11 @@ In a nutshell:
 * Every minor version means that it adds a new functionality i.e. 1.5 -> 1.6 (new methods)
 * Every decimal version means that it patches/fixes/refactoring a previous functionality i.e. 1.5.0 -> 1.5.1 (fix)
 
+* 2.21
+  * [core][fixed] method singularTable() is now more exact. However, it is not perfect.
+  * [_basepdoone] [fixed] now several methods store
+* 2.20
+  * [new] update dependency to php>=7.1.3. PHP 5.6 was discontinued 3 years ago.    
 * 2.19
   * [new] [core] callProcedure() could return a value other than true or false (SQL server only)
   * [new] [sqlsrv] implemented callProcedure() and createProcedure()

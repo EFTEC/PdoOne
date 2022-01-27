@@ -7,7 +7,6 @@
 namespace eftec\ext;
 
 use eftec\PdoOne;
-use Exception;
 use stdClass;
 
 /**
@@ -34,7 +33,7 @@ class PdoOne_TestMockup implements PdoOne_IExt
         $this->parent = $parent;
     }
 
-    public function construct($charset, $config)
+    public function construct($charset, $config): string
     {
         $this->parent->database_delimiter0 = '';
         $this->parent->database_delimiter1 = '';
@@ -49,17 +48,19 @@ class PdoOne_TestMockup implements PdoOne_IExt
         return '';
     }
 
-    public function connect($cs, $alterSession=false)
+    public function connect($cs, $alterSession=false) : void
     {
         $this->parent->conn1 = new stdClass();
         $this->parent->user = '';
         $this->parent->pwd = '';
     }
 
-    public function truncate($tableName,$extra,$force) {
+    public function truncate($tableName,$extra,$force): array|bool|null
+    {
         return true;
     }
-    public function resetIdentity($tableName,$newValue=0,$column='') {
+    public function resetIdentity($tableName,$newValue=0,$column=''): bool
+    {
         return true;
     }
     public function getDefTableExtended($table,$onlyDescription=false) {
@@ -73,7 +74,7 @@ class PdoOne_TestMockup implements PdoOne_IExt
         return $result;
     }
 
-    public function getDefTable($table)
+    public function getDefTable($table) : array
     {
         $defArray = [
             [
@@ -106,7 +107,7 @@ class PdoOne_TestMockup implements PdoOne_IExt
         return $result;
     }
 
-    public function getDefTableKeys($table, $returnSimple, $filter = null)
+    public function getDefTableKeys($table, $returnSimple, $filter = null) : array
     {
         if ($returnSimple) {
             $columns = ['col1' => 'PRIMARY KEY'];
@@ -116,7 +117,7 @@ class PdoOne_TestMockup implements PdoOne_IExt
         return $this->parent->filterKey($filter, $columns, $returnSimple);
     }
 
-    public function getDefTableFK($table, $returnSimple, $filter = null, $assocArray = false)
+    public function getDefTableFK($table, $returnSimple, $filter = null, $assocArray = false) : array
     {
         if ($returnSimple) {
             $columns = ['col1' => 'FOREIGN KEY REFERENCES col [tableref](colref)'];
@@ -129,12 +130,12 @@ class PdoOne_TestMockup implements PdoOne_IExt
         return $this->parent->filterKey($filter, $columns, $returnSimple);
     }
 
-    public function typeDict($row, $default = true)
+    public function typeDict($row, $default = true): string
     {
         return '';
     }
 
-    public function objectExist($type = 'table')
+    public function objectExist($type = 'table') : null|string
     {
         switch ($type) {
             case 'table':
@@ -190,7 +191,7 @@ class PdoOne_TestMockup implements PdoOne_IExt
         return $query;
     }
 
-    public function columnTable($tableName)
+    public function columnTable($tableName): string
     {
         return "SELECT column_name colname
 								,data_type coltype
@@ -204,7 +205,7 @@ class PdoOne_TestMockup implements PdoOne_IExt
 						where table_schema='{$this->parent->db}' and table_name='$tableName'";
     }
 
-    public function foreignKeyTable($tableName)
+    public function foreignKeyTable($tableName): string
     {
         return "SELECT col.name collocal
 					,objrem.name tablerem
@@ -213,12 +214,12 @@ class PdoOne_TestMockup implements PdoOne_IExt
 					where obj.name='$tableName' ";
     }
 
-    public function createSequence($tableSequence = null, $method = 'snowflake')
+    public function createSequence($tableSequence = null, $method = 'snowflake') : string
     {
         return 'CREATE TABLE';
     }
 
-    public function getSequence($sequenceName)
+    public function getSequence($sequenceName): string
     {
         $sequenceName = ($sequenceName == '') ? $this->parent->tableSequence : $sequenceName;
         return "select next_$sequenceName({$this->parent->nodeId}) id";
@@ -231,8 +232,8 @@ class PdoOne_TestMockup implements PdoOne_IExt
         $primaryKey = null,
         $extra = '',
         $extraOutside = ''
-    ) {
-        $sql = "CREATE TABLE {$tableName} (";
+    ) : string {
+        $sql = "CREATE TABLE $tableName (";
         foreach ($definition as $key => $type) {
             $sql .= "$key $type,";
         }
@@ -246,25 +247,25 @@ class PdoOne_TestMockup implements PdoOne_IExt
         return $sql;
     }
 
-    public function createFK($tableName, $foreignKey)
+    public function createFK($tableName, $foreignKey): string
     {
-        return "ALTER TABLE `{$tableName}` ADD CONSTRAINT `fk_{$tableName}_{key1}` FOREIGN KEY(`key1`);";
+        return "ALTER TABLE `$tableName` ADD CONSTRAINT `fk_{$tableName}_{key1}` FOREIGN KEY(`key1`);";
     }
 
-    public function limit($sql)
+    public function limit($sql) : string
     {
         //if (!$this->parent->order) {
         //    $this->parent->throwError('limit without a sort', '');
         //}
         if (strpos($sql, ',')) {
             $arr = explode(',', $sql);
-            return " OFFSET {$arr[0]} ROWS FETCH NEXT {$arr[1]} ROWS ONLY";
+            return " OFFSET $arr[0] ROWS FETCH NEXT $arr[1] ROWS ONLY";
         }
 
         return " OFFSET 0 ROWS FETCH NEXT $sql ROWS ONLY";
     }
 
-    public function getPK($query, $pk=null)
+    public function getPK($query, $pk=null) : string
     {
         return 'primary_key';
     }
@@ -279,7 +280,7 @@ class PdoOne_TestMockup implements PdoOne_IExt
         // TODO: Implement createProcedure() method.
     }
 
-    public function db($dbname)
+    public function db($dbname): string
     {
         return  'use ' . $dbname;
     }

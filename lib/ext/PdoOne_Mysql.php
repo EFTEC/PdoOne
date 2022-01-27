@@ -34,7 +34,7 @@ class PdoOne_Mysql implements PdoOne_IExt
         $this->parent = $parent;
     }
 
-    public function construct($charset, $config)
+    public function construct($charset, $config): string
     {
         $this->parent->database_delimiter0 = '`';
         $this->parent->database_delimiter1 = '`';
@@ -51,7 +51,7 @@ class PdoOne_Mysql implements PdoOne_IExt
         return $charset;
     }
 
-    public function connect($cs, $alterSession=false)
+    public function connect($cs, $alterSession=false) : void
     {
         $this->parent->conn1
             = new PDO("{$this->parent->databaseType}:host={$this->parent->server};dbname={$this->parent->db}$cs",
@@ -61,7 +61,8 @@ class PdoOne_Mysql implements PdoOne_IExt
         $this->parent->conn1->setAttribute(PDO::ATTR_EMULATE_PREPARES, false);
 
     }
-    public function callProcedure($procName, &$arguments=[], $outputColumns=[]) {
+    public function callProcedure($procName, &$arguments=[], $outputColumns=[]): bool
+    {
         $keys=array_keys($arguments);
         $outputFields='';
         $argList = '';
@@ -94,9 +95,10 @@ class PdoOne_Mysql implements PdoOne_IExt
             $arguments=array_merge($arguments,$var);
         }
         $stmt=null;
+        return true;
     }
 
-    public function truncate($tableName,$extra,$force) {
+    public function truncate($tableName,$extra,$force) : array|bool|null {
         if(!$force) {
             $sql = 'truncate table ' . $this->parent->addDelimiter($tableName) . " $extra";
             return $this->parent->runRawQuery($sql, null, true);
@@ -135,7 +137,7 @@ class PdoOne_Mysql implements PdoOne_IExt
      * @return array ['Field','Type','Null','Key','Default','Extra']
      * @throws Exception
      */
-    public function getDefTable($table)
+    public function getDefTable($table): array
     {
         $defArray = $this->parent->runRawQuery('show columns from ' . $table, [], true);
         $result = [];
@@ -161,7 +163,7 @@ class PdoOne_Mysql implements PdoOne_IExt
     }
 
 
-    public function getDefTableFK($table, $returnSimple, $filter = null, $assocArray = false)
+    public function getDefTableFK($table, $returnSimple, $filter = null, $assocArray = false) : array
     {
         $columns = [];
         /** @var array $result =array(["CONSTRAINT_NAME"=>'',"COLUMN_NAME"=>'',"REFERENCED_TABLE_NAME"=>''
@@ -226,7 +228,7 @@ class PdoOne_Mysql implements PdoOne_IExt
         return $this->parent->filterKey($filter, $columns, $returnSimple);
     }
 
-    public function typeDict($row, $default = true)
+    public function typeDict($row, $default = true): string
     {
         $type = @$row['native_type'];
         switch ($type) {
@@ -260,7 +262,7 @@ class PdoOne_Mysql implements PdoOne_IExt
         }
     }
 
-    public function objectExist($type = 'table')
+    public function objectExist($type = 'table'): ?string
     {
         switch ($type) {
             case 'table':
@@ -316,7 +318,7 @@ class PdoOne_Mysql implements PdoOne_IExt
         return $query;
     }
 
-    public function columnTable($tableName)
+    public function columnTable($tableName): string
     {
         return "SELECT column_name colname
 								,data_type coltype
@@ -330,7 +332,7 @@ class PdoOne_Mysql implements PdoOne_IExt
 						where table_schema='{$this->parent->db}' and table_name='$tableName'";
     }
 
-    public function foreignKeyTable($tableName)
+    public function foreignKeyTable($tableName): string
     {
         return "SELECT 
 							column_name collocal,
@@ -341,7 +343,7 @@ class PdoOne_Mysql implements PdoOne_IExt
 						and referenced_table_name is not null;";
     }
 
-    public function createSequence($tableSequence = null, $method = 'snowflake')
+    public function createSequence($tableSequence = null, $method = 'snowflake'): string
     {
         $ok = $this->parent->createTable($tableSequence, [
             'id'   => 'bigint(20) unsigned NOT NULL AUTO_INCREMENT',
@@ -398,7 +400,7 @@ class PdoOne_Mysql implements PdoOne_IExt
      * @param string $extra
      * @return string
      */
-    public function createProcedure($procedureName,$arguments='',$body='',$extra='')
+    public function createProcedure($procedureName,$arguments='',$body='',$extra=''): string
     {
         if(is_array($arguments)) {
             $sqlArgs = '';
@@ -422,7 +424,7 @@ class PdoOne_Mysql implements PdoOne_IExt
         return $sql;
     }
 
-    public function getSequence($sequenceName)
+    public function getSequence($sequenceName): string
     {
         $sequenceName = ($sequenceName == '') ? $this->parent->tableSequence : $sequenceName;
         return "select next_$sequenceName({$this->parent->nodeId}) id";
@@ -434,7 +436,8 @@ class PdoOne_Mysql implements PdoOne_IExt
         $primaryKey = null,
         $extra = '',
         $extraOutside = ''
-    ) {
+    ): string
+    {
         $extraOutside = ($extraOutside === '') ? "ENGINE=InnoDB DEFAULT CHARSET={$this->parent->charset};"
             : $extraOutside;
         $sql = "CREATE TABLE `$tableName` (";
@@ -487,7 +490,7 @@ class PdoOne_Mysql implements PdoOne_IExt
     }
 
     /** @noinspection SqlResolve */
-    public function createFK($tableName, $foreignKey)
+    public function createFK($tableName, $foreignKey): string
     {
         $sql = '';
         foreach ($foreignKey as $key => $value) {
@@ -505,7 +508,7 @@ class PdoOne_Mysql implements PdoOne_IExt
         return $sql;
     }
 
-    public function limit($sql)
+    public function limit($sql): string
     {
         return ($sql) ? ' limit ' . $sql : '';
     }
@@ -541,7 +544,7 @@ class PdoOne_Mysql implements PdoOne_IExt
         }
     }
 
-    public function getDefTableKeys($table, $returnSimple, $filter = null)
+    public function getDefTableKeys($table, $returnSimple, $filter = null): array
     {
         $columns = [];
         /** @var array $indexArr =array(["Table"=>'',"Non_unique"=>0,"Key_name"=>'',"Seq_in_index"=>0
@@ -571,7 +574,7 @@ class PdoOne_Mysql implements PdoOne_IExt
         return $columns; //$this->parent->filterKey($filter,$columns,$returnSimple);
     }
 
-    public function db($dbname)
+    public function db($dbname): string
     {
         return  'use ' . $dbname;
     }

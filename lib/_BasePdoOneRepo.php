@@ -29,7 +29,7 @@ use PDOStatement;
 /**
  * Class _BasePdoOneRepo
  *
- * @version       6.0 2021-04-18
+ * @version       6.1 2022-01-26
  * @package       eftec
  * @author        Jorge Castro Castillo
  * @copyright (c) Jorge Castro C. MIT License  https://github.com/EFTEC/PdoOne
@@ -49,7 +49,7 @@ abstract class _BasePdoOneRepo
     public static $gQueryCounter = 0;
     public static $pageSize = 20;
     public static $lastException = '';
-    /** @var bool if true then it returns a false on error. If false, it throw an exception in case of error */
+    /** @var bool if true then it returns a false on error. If false, it throws an exception in case of error */
     protected static $falseOnError = false;
 
     /** @var null|string the unique id generate by sha256 and based in the query, arguments, type and methods */
@@ -172,7 +172,7 @@ abstract class _BasePdoOneRepo
     }
 
     /**
-     * It test the recursivity by displaying all recursivity.
+     * It tests the recursivity by displaying all recursivity.
      *
      * @param null   $initClass
      * @param string $recursiveInit
@@ -269,7 +269,7 @@ abstract class _BasePdoOneRepo
      * </pre>
      *
      * @param string     $sql   The query to run
-     * @param array|null $param [Optional] The arguments of the query in the form [value,value2..]
+     * @param array|null $param [Optional] The arguments of the query in the form [value,value2,etc.]
      *
      * @return array|bool|false|null
      * @throws Exception
@@ -483,7 +483,7 @@ abstract class _BasePdoOneRepo
     }
 
     /**
-     * It gets the postfix of the class base considering the the class is based in the table<br>
+     * It gets the postfix of the class base considering then the class is based in the table<br>
      * Example: Class "SomeTableRepo" and table "sometable", the prefix is "Repo"
      *
      * @return false|string False on error or not found.
@@ -505,13 +505,13 @@ abstract class _BasePdoOneRepo
      * <b>Example</b><br>
      * <pre>
      * $this->setCacheService($instanceCache);
-     * $this->useCache()->select()..; // The cache never expires
-     * $this->useCache(60)->select()..; // The cache lasts 60 seconds.
+     * $this->useCache()->select() ...; // The cache never expires
+     * $this->useCache(60)->select() ...; // The cache lasts 60 seconds.
      * $this->useCache(60,'customers')
-     *        ->select()..; // cache associated with customers
+     *        ->select()...; // cache associated with customers
      *                      // it could be invalidated by invalidateCache()
      * $this->useCache(60,['customers','invoices'])
-     *        ->select()..; // cache associated with customers
+     *        ->select()...; // cache associated with customers
      *                      // it could be invalidated by invalidateCache()
      * $this->useCache(60,'*')->select('col')
      *      ->from('table')->toList(); // '*' uses all the table assigned.
@@ -538,7 +538,7 @@ abstract class _BasePdoOneRepo
     }
 
     /**
-     * Its a macro of limit but it works for paging. It uses static::$pageSize to determine the rows to return
+     * It's a macro of limit, but it works for paging. It uses static::$pageSize to determine the rows to return
      *
      * @param int $numPage Number of page. It starts with 1.
      *
@@ -803,7 +803,7 @@ abstract class _BasePdoOneRepo
      * @param object|array $model     It could be one model or multiple models.
      * @param boolean      $multiple  if true then it validates multiples models at once.
      * @param array        $recursive =self::factory()
-     * @return bool if true then the model is valid, otherwise its false.
+     * @return bool if true then the model is valid, otherwise it's false.
      */
     public static function validateModel($model, $multiple = false, $recursive = [])
     {
@@ -825,8 +825,9 @@ abstract class _BasePdoOneRepo
                 $curCol = array_key_exists($col, $mod) ? $mod[$col] : null;
 
                 // if null (or missing) and it is allowed = true
-                // if null (or missing) and not null and it is not identity = false (identities are generated)
+                // if null (or missing) and not null, and it is not identity = false (identities are generated)
                 if (($curCol === null) && !($def['null'] === false && $def['identity'] === false)) {
+                    self::getPdoOne()->errorText="field $col must not be null";
                     return false;
                 }
                 switch ($def['phptype']) {
@@ -834,17 +835,20 @@ abstract class _BasePdoOneRepo
                     case 'string':
                         if (!is_string($curCol)) {
                             // not a string
+                            self::getPdoOne()->errorText="field $col is not a string";
                             return false;
                         }
                         break;
                     case 'float':
                         if (!is_float($curCol)) {
+                            self::getPdoOne()->errorText="field $col is not a float";
                             return false;
                         }
                         break;
                     case 'timestamp':
                     case 'int':
                         if (!is_int($curCol)) {
+                            self::getPdoOne()->errorText="field $col is not a int";
                             return false;
                         }
                         break;
@@ -864,6 +868,7 @@ abstract class _BasePdoOneRepo
                             $r = PdoOne::dateConvertInput($curCol, 'sql', $bool, $time);
                         }
                         if ($r === false) {
+                            self::getPdoOne()->errorText="field $col is not a proper date";
                             return false;
                         }
                 }
@@ -1273,7 +1278,7 @@ abstract class _BasePdoOneRepo
                 // we only keep the fields that are primary keys
                 $tmp = [];
                 foreach ($pks as $pk) {
-                    $tmp[$pk] = isset($entity[$pk]) ? $entity[$pk] : null;
+                    $tmp[$pk] = $entity[$pk] ?? null;
                 }
                 $entity = $tmp;
             } else {
@@ -1315,7 +1320,7 @@ abstract class _BasePdoOneRepo
     }
 
     /**
-     * Update an registry
+     * Update a registry
      *
      * @param array|object $entity =static::factory()
      *
@@ -1340,7 +1345,7 @@ abstract class _BasePdoOneRepo
             $entityCopy = self::diffArrays($entityCopy, array_merge(static::getDefKey(), static::getDefNoUpdate())); // columns discarded
             if ($query->parent->transactionOpen === true) {
                 // we disable transaction to avoid nested transactions.
-                // mysql does not allows nested transactions
+                // mysql does not allow nested transactions
                 // sql server allows nested transaction but afaik, it only counts the outer one.
                 $transaction = false;
             }
@@ -1569,7 +1574,7 @@ abstract class _BasePdoOneRepo
      * @param array $arrayValues An associative array with the keys and values.
      * @param array $arrayIndex  A string array with the indexes (if indexisKey=false then index is the value)
      * @param bool  $indexIsKey  (default false) if true then the index of $arrayIndex is considered as key
-     *                           , otherwise the value of $arrayIndex is considered as key.
+     *                            otherwise, the value of $arrayIndex is considered as key.
      *
      * @return array
      */
@@ -1578,9 +1583,9 @@ abstract class _BasePdoOneRepo
         $result = [];
         foreach ($arrayIndex as $k => $v) {
             if ($indexIsKey) {
-                $result[$k] = isset($arrayValues[$k]) ? $arrayValues[$k] : null;
+                $result[$k] = $arrayValues[$k] ?? null;
             } else {
-                $result[$v] = isset($arrayValues[$v]) ? $arrayValues[$v] : null;
+                $result[$v] = $arrayValues[$v] ?? null;
             }
         }
         return $result;
@@ -1592,16 +1597,16 @@ abstract class _BasePdoOneRepo
      * '/customer' is a relation. Usually, a relation has both fields and relation.
      * - If the relation is manytoone, then the query is joined with the table indicated in the relation. Example:<br>
      * <pre>
-     * ProductRepo::setRecursive(['/Category'])::toList(); // select .. from Producto inner join Category on ..
+     * ProductRepo::setRecursive(['/Category'])::toList(); // select ... from Producto inner join Category on ...
      * </pre>
      * - If the relation is onetomany, then it creates an extra query (or queries) with the corresponding values.
      * Example:<br>
      * <pre>
-     * CategoryRepo::setRecursive(['/Product'])::toList(); // select .. from Category and select from Product where..
+     * CategoryRepo::setRecursive(['/Product'])::toList(); // select ... from Category and select from Product where...
      * </pre>
      * - If the reation is onetoone, then it is considered as a manytoone, but it returns a single value. Example:<br>
      * <pre>
-     * ProductRepo::setRecursive(['/ProductExtension'])::toList(); // select .. from Product inner join
+     * ProductRepo::setRecursive(['/ProductExtension'])::toList(); // select ... from Product inner join
      * ProductExtension
      * </pre>
      * - If the relation is manytomany, then the system load the relational table (always, not matter the recursivity),
@@ -1624,7 +1629,7 @@ abstract class _BasePdoOneRepo
     }
 
     /**
-     * Insert an new row
+     * Insert a new row
      *
      * @param array|object $entity =static::factory()
      *
@@ -1661,7 +1666,7 @@ abstract class _BasePdoOneRepo
             }
             if ($pdoOne->parent->transactionOpen === true) {
                 // we disable transaction to avoid nested transactions.
-                // mysql does not allows nested transactions
+                // mysql does not allow nested transactions
                 // sql server allows nested transaction but afaik, it only counts the outer one.
                 $transaction = false;
             }
@@ -1790,7 +1795,7 @@ abstract class _BasePdoOneRepo
 
             if ($pdoOne->parent->transactionOpen === true) {
                 // we disable transaction to avoid nested transactions.
-                // mysql does not allows nested transactions
+                // mysql does not allow nested transactions
                 // sql server allows nested transaction but afaik, it only counts the outer one.
                 $transaction = false;
             }
@@ -1869,7 +1874,7 @@ abstract class _BasePdoOneRepo
     }
 
     /**
-     * It adds an having condition to the query pipeline. It could be stacked with many having()
+     * It adds a "having" condition to the query pipeline. It could be stacked with many having()
      * @param array|string   $sql =self::factory()
      * @param null|array|int $param
      *

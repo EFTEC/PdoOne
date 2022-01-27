@@ -22,7 +22,7 @@ try {
     die(1);
 }
 
-$valores=['param1'=>'hello','param2'=>''];
+$valores=['param1'=>'hello','param2'=>'','param3'=>-1];
 $result="";
 
 if($dao->objectExist('ping','procedure')) {
@@ -31,9 +31,11 @@ if($dao->objectExist('ping','procedure')) {
 
 $dao->createProcedure('ping',[
     ['','param1','varchar(2000)'],
-    ['output','param2','varchar(2000)']
+    ['output','param2','varchar(2000)'],
+    ['output','param3','int'],
 ],"SET NOCOUNT ON;
-	set @param2=@param1 + ' world';
+	set @param2=@param1 + ' world;';
+	set @param3=1234;
 	select 'resultado' col1;");
 
 echo "<pre>result:";
