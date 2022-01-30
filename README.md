@@ -1980,8 +1980,9 @@ In a nutshell:
   * [PdoOneQuery] [edit] the method page() allows to specify the size of the page. 
   * [_basepdoone] [edit] the method page() allows to specify the size of the page.
 * 2.21 2022-01-28
-  * [core][fixed] method singularTable() is now more exact. However, it is not perfect.
-  * [_basepdoone] [fixed] now several methods store
+  * [core][fixed] method singularTable() is now more exact to convert plural names to singular.
+  *               However, it is far from perfect.
+  * [_basepdoone] [fixed] now several methods store the last error.
 * 2.20 2022-01-04
   * [new] update dependency to php>=7.1.3. PHP 5.6 was discontinued 3 years ago.    
 * 2.19
