@@ -54,15 +54,17 @@ use stdClass;
  * @package       eftec
  * @author        Jorge Castro Castillo
  * @copyright (c) Jorge Castro C. MIT License  https://github.com/EFTEC/PdoOne
- * @version       2.20
+ * @version       2.22.1
  */
 class PdoOne
 {
-    const VERSION = '2.20';
+    const VERSION = '2.22.1';
     /** @var int We need this value because null and false could be a valid value. */
     const NULL = PHP_INT_MAX;
     /** @var string Prefix of the tables */
     public static $prefixBase = '_';
+    /** @var int Used for the method page() */
+    public static $pageSize=20;
     /** @var string|null Static date (when the date is empty) */
     public static $dateEpoch = '2000-01-01 00:00:00.00000';
     /**
@@ -2866,8 +2868,8 @@ abstract class Abstract{classname} extends {baseclass}
     /**
      * It deletes an entity by the primary key.
      *
-     * @param array $pk =self::factory()
-     * @param bool  $transactional If true (default) then the operation is transactional   
+     * @param array|mixed $pk =self::factory()
+     * @param bool        $transactional If true (default) then the operation is transactional   
      *
      * @return int|false
      * @throws Exception
@@ -3588,7 +3590,7 @@ eot;
      *                                      Example:['products'=>['colnotread']]
      *
      *
-     * @return array It returns an array with all the errors (if any).
+     * @return array It returns an array with all the errors or warnings (if any).
      * @see \eftec\PdoOne::generateCodeClassConversions
      */
     public function generateAllClasses(
@@ -3686,7 +3688,7 @@ eot;
                     $result = false;
                 }
                 if ($result === false) {
-                    $logs[] = "Unable to save Abstract Model Class file '{$folder}Abstract"
+                    $logs[] = "Error: Unable to save Abstract Model Class file '{$folder}Abstract"
                         . $relationsModel[$tableName] . ".php' " . json_encode(error_get_last());
                 }
                 try {
@@ -3695,12 +3697,14 @@ eot;
                         null, null, $baseClass);
                     if ($force || @!file_exists($filename)) {
                         $result = @file_put_contents($filename, $classModel1);
+                    } else {
+                        $logs[] = "Warning: Unable to save Model Class file '$filename', file already exist, skipped";
                     }
                 } catch (Exception $e) {
                     $result = false;
                 }
                 if ($result === false) {
-                    $logs[] = "Unable to save Model Class file '$filename' " . json_encode(error_get_last());
+                    $logs[] = "Error: Unable to save Model Class file '$filename' " . json_encode(error_get_last());
                 }
             }
             try {
@@ -3710,12 +3714,14 @@ eot;
                 if ($force || @!file_exists($filename)) {
                     // if the file exists then, we don't want to replace this class
                     $result = @file_put_contents($filename, $classCode2);
+                } else {
+                    $logs[] = "Warning: Unable to save Repo Class file '$folder$className.php', file already exist, skipped";
                 }
             } catch (Exception $e) {
                 $result = false;
             }
             if ($result === false) {
-                $logs[] = "Unable to save Repo Class file '$folder$className.php' " . json_encode(error_get_last());
+                $logs[] = "Error: Unable to save Repo Class file '$folder$className.php' " . json_encode(error_get_last());
             }
         }
         $this->setUseInternalCache($internalCache);
@@ -4766,8 +4772,9 @@ eot;
      *                                  <p>if INTEGER then the encryption is
      *                                  even simple (generates an integer)</p>
      *
+     * @return PdoOne
      * @throws Exception
-     * @test void this('123','somesalt','AES-128-CTR')
+     * @test void this('123','somesalt','AES-256-CTR')
      */
     public function setEncryption($password, $salt, $encMethod = 'AES-256-CTR')
     {
@@ -4780,6 +4787,7 @@ eot;
             $this->encryption->setEncryption($password, $salt, $encMethod);
         }
         $this->endTry();
+        return $this;
     }
 
     /**
@@ -4799,13 +4807,19 @@ eot;
         return $this->encryption->encrypt($data);
     }
 
+    /**
+     * It generates a hash based in the hash type ($this->hashType), the data used and the SALT.
+     * @param mixed $data It could be any type of serializable data.
+     * @return false|string If the serialization is not set, then it returns the same value.
+     */
     public function hash($data)
     {
         return $this->encryption->hash($data);
     }
 
     /**
-     * Wrapper of PdoOneEncryption->decrypt
+     * Wrapper of PdoOneEncryption->decrypt. It decrypt a information if the algoritm allows to decrypt.<br>
+     * The method of encryptation, SALT and PASSWORD must be the same.
      *
      * @param mixed $data The data to decrypt.
      * @return bool|string|int

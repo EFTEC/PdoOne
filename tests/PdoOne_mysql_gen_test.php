@@ -134,7 +134,7 @@ class PdoOne_mysql_gen_test extends TestCase
     /** @var PdoOne */
     protected $pdoOne;
 
-    public function setUp()
+    public function setUp() : void
     {
         //$this->pdoOne = new PdoOne("mysql", "127.0.0.1", "travis", "", "pdotest");
         $this->pdoOne = new PdoOne("mysql", "127.0.0.1", "travis", "", "testdb");
@@ -222,8 +222,9 @@ class PdoOne_mysql_gen_test extends TestCase
         $p['_TableParentxCategory'] = [TableCategoryRepo::first(1), TableCategoryRepo::first(2)];
         self::assertEquals(1, TableParentRepo::setRecursive(['_TableParentxCategory'])->insert($p));
 
+
         $pex = TableParentExtRepo::factory();
-        $pex['idtablaparentExtPK'] = $p['idtablaparentPK'];
+        $pex['idtablaparentExtPK'] = 1; //$p['idtablaparentPK'];
         $pex['fieldExt'] = 'ext123';
         self::assertEquals(1, TableParentExtRepo::insert($pex));
 
@@ -240,7 +241,7 @@ class PdoOne_mysql_gen_test extends TestCase
         self::assertEquals(2, TableParentRepo::setRecursive(['_TableParentxCategory'])->insert($p));
 
         $pex = TableParentExtRepo::factory();
-        $pex['idtablaparentExtPK'] = $p['idtablaparentPK'];
+        $pex['idtablaparentExtPK'] =2; // $p['idtablaparentPK'];
         $pex['fieldExt'] = 'ext123';
         self::assertEquals(2, TableParentExtRepo::insert($pex));
 
@@ -457,7 +458,7 @@ class PdoOne_mysql_gen_test extends TestCase
                                 ]
                             ], $dep);
 
-        
+
     }
     */
 

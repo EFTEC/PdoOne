@@ -1043,7 +1043,7 @@ Using nested chain declarative set
 
 
 ### update($$table,$schema,$values,[$schemaWhere],[$valuesWhere])
-Generates a insert command.
+Generates an insert command.
 
 ```php
 $pdoOne->update("producttype"
@@ -1827,15 +1827,16 @@ $results=$pdo->select('*')
 
 
 
-| Method      | Description                       | Example                      |
-|-------------|-----------------------------------|------------------------------|
-| where()     | It adds a where to the chain      | TablaParentRepo::where()     |
-| order()     | It adds a order by to the chain   | TablaParentRepo::order()     |
-| group()     | it adds a group by to the chain   | TablaParentRepo::group()     |
-| limit()     | It limits the results             | TablaParentRepo::limit()     |
-| innerjoin() | It adds a inner join to the query | TablaParentRepo::innerjoin() |
-| left()      | It adds a left join to the query  | TablaParentRepo::left()      |
-| right()     | It adds a right join to the query | TablaParentRepo::right()     |
+| Method      | Description                           | Example                      |
+|-------------|---------------------------------------|------------------------------|
+| where()     | It adds a where to the chain          | TablaParentRepo::where()     |
+| order()     | It adds a order by to the chain       | TablaParentRepo::order()     |
+| group()     | it adds a group by to the chain       | TablaParentRepo::group()     |
+| limit()     | It limits the results                 | TablaParentRepo::limit()     |
+| page()      | Its similar to limit but it uses page | TablaParentRepo::page()      |
+| innerjoin() | It adds a inner join to the query     | TablaParentRepo::innerjoin() |
+| left()      | It adds a left join to the query      | TablaParentRepo::left()      |
+| right()     | It adds a right join to the query     | TablaParentRepo::right()     |
 
 
 
@@ -1843,7 +1844,7 @@ $results=$pdo->select('*')
 
 We have different methods to generate a DQL (query) command in our database.
 
-> If the operation fails, they return a FALSE and they could trigger an exception.
+> If the operation fails, they return a FALSE, and they could trigger an exception.
 >
 > The next methods should be at the end of the chain.  Examples:
 >
@@ -1860,11 +1861,11 @@ We have different methods to generate a DQL (query) command in our database.
 
 ### DML Database Model Language
 
-The next methods allow to insert,update or delete values in the database.
+The next methods allow inserting,update or delete values in the database.
 
 | Method     | Description                                                                | Example                                  |
 |------------|----------------------------------------------------------------------------|------------------------------------------|
-| insert     | It inserts a value into the database. It could return an identity         | $identity=TablaParentRepo::insert($obj); |
+| insert     | It inserts a value into the database. It could return an identity          | $identity=TablaParentRepo::insert($obj); |
 | update     | It updates a value into the database.                                      | TablaParentRepo::update($obj);           |
 | delete     | It deletes a value from the database.                                      | TablaParentRepo::delete($obj);           |
 | deletebyId | It deletes a value (using the primary key as condition) from the database. | TablaParentRepo::deleteById($pk);        |
@@ -1972,10 +1973,16 @@ In a nutshell:
 * Every minor version means that it adds a new functionality i.e. 1.5 -> 1.6 (new methods)
 * Every decimal version means that it patches/fixes/refactoring a previous functionality i.e. 1.5.0 -> 1.5.1 (fix)
 
-* 2.21
+* 2.22.1 2022-01-03
+  * [core] [edit] generateAllClasses() now returns errors and warnings. 
+* 2.22 2022-01-30
+  * [core] [edit] A new static value called $pageSize 
+  * [PdoOneQuery] [edit] the method page() allows to specify the size of the page. 
+  * [_basepdoone] [edit] the method page() allows to specify the size of the page.
+* 2.21 2022-01-28
   * [core][fixed] method singularTable() is now more exact. However, it is not perfect.
   * [_basepdoone] [fixed] now several methods store
-* 2.20
+* 2.20 2022-01-04
   * [new] update dependency to php>=7.1.3. PHP 5.6 was discontinued 3 years ago.    
 * 2.19
   * [new] [core] callProcedure() could return a value other than true or false (SQL server only)

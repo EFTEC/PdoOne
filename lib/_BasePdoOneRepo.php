@@ -261,15 +261,17 @@ abstract class _BasePdoOneRepo
     }
 
     /**
-     * It runs a query and returns an array, value or false if error.<br>
-     * This command does not stack with other operators (such as where(),sort(),etc.)
-     * <br><b>Example</b>:<br>
+     * It runs a query and returns an array/value or false if error.<br>
+     * This command does not stack with other operators (such as where(),sort(),etc.)<br>
+     * <b>Example</b>:<br>
      * <pre>
-     * $values=$con->query('select * from table where id=?',["i",20]',true);
+     * $values=$con->query('select * from table where id=?',[20]'); // numeric argument
+     * $values=$con->query('select * from table where id=:arg',['arg'=>20]); // named argument
+     * $values=$con->query('select * from table where id=1'); // without argument
      * </pre>
      *
      * @param string     $sql   The query to run
-     * @param array|null $param [Optional] The arguments of the query in the form [value,value2,etc.]
+     * @param array|null $param [Optional] The arguments of the query.
      *
      * @return array|bool|false|null
      * @throws Exception
@@ -540,15 +542,15 @@ abstract class _BasePdoOneRepo
     /**
      * It's a macro of limit, but it works for paging. It uses static::$pageSize to determine the rows to return
      *
-     * @param int $numPage Number of page. It starts with 1.
-     *
+     * @param int  $numPage Number of page. It starts with 1.
+     * @param null|int $pageSize The size of the page. If the value is null, then it uses _BasePdoOneRepo::$pageSize (20)
      * @return PdoOneQuery
      * @throws Exception
      */
-    public static function page($numPage)
+    public static function page($numPage,$pageSize=null)
     {
-        $p0 = static::$pageSize * ($numPage - 1);
-        $p1 = $p0 + static::$pageSize;
+        $p0 = ($pageSize?? static::$pageSize) * ($numPage - 1);
+        $p1 = $p0 + ($pageSize?? static::$pageSize);
         return static::limit("$p0,$p1");
     }
 

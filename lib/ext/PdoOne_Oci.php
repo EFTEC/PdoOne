@@ -80,7 +80,7 @@ class PdoOne_Oci implements PdoOne_IExt
         }
     }
 
-    public function truncate($tableName,$extra,$force) : array|bool|null  {
+    public function truncate($tableName,$extra,$force)   {
         if(!$force) {
             $sql = 'truncate table ' . $this->parent->addDelimiter($tableName) . " $extra";
             return $this->parent->runRawQuery($sql, null, true);

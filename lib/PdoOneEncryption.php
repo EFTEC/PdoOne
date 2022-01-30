@@ -1,4 +1,7 @@
-<?php /** @noinspection PhpComposerExtensionStubsInspection */
+<?php /** @noinspection ReturnTypeCanBeDeclaredInspection */
+/** @noinspection PhpMissingReturnTypeInspection */
+/** @noinspection PhpMissingParamTypeInspection */
+/** @noinspection PhpComposerExtensionStubsInspection */
 /** @noinspection EncryptionInitializationVectorRandomnessInspection */
 
 /** @noinspection CryptographicallySecureRandomnessInspection */
@@ -11,7 +14,7 @@ use RuntimeException;
 /**
  * This class is used for encryption.  It could encrypt (two ways).
  * Class PdoOneEncryption
- * @version 1.47 2020-06-14
+ * @version 2.22.1 2022-01-30
  * @package eftec
  * @author Jorge Castro Castillo
  * @copyright (c) Jorge Castro C. MIT License  https://github.com/EFTEC/PdoOne
@@ -24,7 +27,7 @@ class PdoOneEncryption
     public $encEnabled = false;
     /**
      * @var string=['sha256','sha512','md5'][$i]
-     * @see https://www.php.net/manual/en/function.hash-algos.php           
+     * @see https://www.php.net/manual/en/function.hash-algos.php
      */
     public $hashType='sha256';
     /**
@@ -43,7 +46,7 @@ class PdoOneEncryption
     public $iv=true;
     /**
      * @var string<p> Encryption method, example AES-256-CTR (two ways).</p>
-     * <p>If the method is SIMPLE (two ways) then it's uses an simple conversion (short generated value)</p>
+     * <p>If the method is SIMPLE (two ways) then it's uses a simple conversion (short generated value)</p>
      * <p>If the method is INTEGER (two was) then it's uses another simple conversion (returns an integer)</p>
      * @see http://php.net/manual/en/function.openssl-get-cipher-methods.php
      */
@@ -53,14 +56,15 @@ class PdoOneEncryption
      * PdoOneEncryption constructor.
      * @param string $encPassword
      * @param string $encSalt
-     * @param bool $iv if true it uses true and the each encryption is different (even for the same value) but it is not deterministic.
+     * @param bool $iv If iv is true then it is generated randomly (not deterministically)
+     *                  otherwise, is it generated via md5
      * @param string $encMethod Example : AES-128-CTR @see http://php.net/manual/en/function.openssl-get-cipher-methods.php
      */
     public function __construct($encPassword,$encSalt=null, $iv=true, $encMethod='AES-128-CTR')
     {
 
         $this->encPassword = $encPassword;
-        $this->encSalt = ($encSalt===null)?$encPassword:$encSalt; // if null the it uses the same password
+        $this->encSalt = $encSalt ?? $encPassword; // if null then it uses the same password
         $this->iv = $iv;
         $this->encMethod = $encMethod;
     }
@@ -88,10 +92,11 @@ class PdoOneEncryption
         $iv_strlen = 2 * openssl_cipher_iv_length($this->encMethod);
         if (preg_match('/^(.{' . $iv_strlen . '})(.+)$/', $data, $regs)) {
             try {
-                list(, $iv, $crypted_string) = $regs;
+                [, $iv, $crypted_string] = $regs;
                 $decrypted_string = openssl_decrypt($crypted_string, $this->encMethod, $this->encPassword, 0, hex2bin($iv));
                 $result=substr($decrypted_string, strlen($this->encSalt));
                 if(strlen($result)>2 && $result[1]===':') {
+                    /** @noinspection UnserializeExploitsInspection */
                     $resultfinal=@unserialize($result); // we try to unserialize, if fails, then we keep the current value
                     $result=$resultfinal===false?$result:$resultfinal;
                 }
@@ -135,6 +140,13 @@ class PdoOneEncryption
                 , $this->encPassword, 0, $iv);
         return str_replace(array('+', '/'), array('-', '_'),base64_encode($encrypted_string));
     }
+
+    /**
+     * It generates a hash based in the hash type ($this->hashType), the data used and the SALT.
+     *
+     * @param mixed $data It could be any type of serializable data.
+     * @return false|string If the serialization is not set, then it returns the same value.
+     */
     public function hash($data) {
         if(!is_string($data)) {
             $data=serialize($data);

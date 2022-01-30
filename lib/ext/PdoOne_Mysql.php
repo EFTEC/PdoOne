@@ -98,7 +98,7 @@ class PdoOne_Mysql implements PdoOne_IExt
         return true;
     }
 
-    public function truncate($tableName,$extra,$force) : array|bool|null {
+    public function truncate($tableName,$extra,$force)  {
         if(!$force) {
             $sql = 'truncate table ' . $this->parent->addDelimiter($tableName) . " $extra";
             return $this->parent->runRawQuery($sql, null, true);

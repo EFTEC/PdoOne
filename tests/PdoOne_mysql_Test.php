@@ -105,7 +105,7 @@ class PdoOne_mysql_Test extends TestCase
     /** @var PdoOne */
     protected $pdoOne;
 
-    public function setUp()
+    public function setUp() : void
     {
         $this->pdoOne = new PdoOne('mysql', '127.0.0.1', 'travis', '', 'travisdb');
         $this->pdoOne->connect();
@@ -246,9 +246,9 @@ class PdoOne_mysql_Test extends TestCase
         }
         self::assertNotEquals('', $this->pdoOne->generateCodeClass('table1'));
         self::assertEquals("['id'=>0]", $this->pdoOne->generateCodeArray('table1'));
-        self::assertContains("array \$result=array(['id'=>0])",
+        self::assertStringContainsString("array \$result=array(['id'=>0])",
             $this->pdoOne->generateCodeSelect('select * from table1'));
-        self::assertContains('$pdo->createTable(\'table1', $this->pdoOne->generateCodeCreate('table1'));
+        self::assertStringContainsString('$pdo->createTable(\'table1', $this->pdoOne->generateCodeCreate('table1'));
     }
 
 

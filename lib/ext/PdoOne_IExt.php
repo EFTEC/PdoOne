@@ -41,7 +41,7 @@ interface PdoOne_IExt
      * @return array|bool|null
      * @throws Exception
      */
-    public function truncate($tableName, $extra, $force) : array|bool|null;
+    public function truncate($tableName, $extra, $force);
 
     /**
      * It resets the identity of a table (if any)

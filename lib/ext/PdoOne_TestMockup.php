@@ -55,7 +55,7 @@ class PdoOne_TestMockup implements PdoOne_IExt
         $this->parent->pwd = '';
     }
 
-    public function truncate($tableName,$extra,$force): array|bool|null
+    public function truncate($tableName,$extra,$force)
     {
         return true;
     }

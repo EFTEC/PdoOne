@@ -11,6 +11,14 @@ use PDO;
 use PDOStatement;
 use RuntimeException;
 
+/**
+ * Class PdoOneQuery
+ *
+ * @version       2.2 2022-01-30
+ * @package       eftec
+ * @author        Jorge Castro Castillo
+ * @copyright (c) Jorge Castro C. MIT License  https://github.com/EFTEC/PdoOne
+ */
 class PdoOneQuery
 {
     //<editor-fold desc="query builder fields">
@@ -415,7 +423,7 @@ class PdoOneQuery
      *      having(['field',[20]] ) // array type defined
      *      having('field=20') // literal value
      *      having('field=?',[20]) // automatic type
-     *      having('field',[20]) // automatic type (it's the same "than")
+     *      having('field',[20]) // automatic type (it's the same "as")
      *      where('field=?',[20]) having('field=?', [20] ) // type(i,d,s,b)
      *      defined having('field=?,field2=?', [20,'hello'] )
      *
@@ -444,7 +452,7 @@ class PdoOneQuery
      *      where (['field',[20]] ) // array type defined
      *      where('field=20') // literal value
      *      where('field=?',[20]) // automatic type
-     *      where('field',[20]) // automatic type, it's the same than
+     *      where('field',[20]) // automatic type, it's the same as
      *      where('field=?',[20]) where('field=?', [20] ) // type(i,d,s,b)
      *      defined where('field=?,field2=?', [20,'hello'] )
      *      where('field=:field,field2=:field2',
@@ -485,7 +493,7 @@ class PdoOneQuery
      * where (['field',[20]] ) // indexed array type defined
      * where('field=20') // literal value
      * where('field=?',[20]) // automatic type
-     * where('field',[20]) // automatic type (it's the same than
+     * where('field',[20]) // automatic type (it's the same as
      * where('field=?',[20]) where('field=?', [20] ) // type(i,d,s,b)
      *      defined where('field=?,field2=?', [20,'hello'] )
      * where('field=:field,field2=:field2',
@@ -917,8 +925,8 @@ class PdoOneQuery
      * It returns an associative array where the first value is the key (first column) and the value is the second
      * column<br>
      * If the second column does not exist then it uses first column as the second value<br>
-     * If there is 3 columns and it does not use a separator, then it only uses the first 2 columns<br>
-     * If there is 3 columns and it does use a separator, then the second value is the merge of the last 2 columns<br>
+     * If there is 3 columns, and it does not use a separator, then it only uses the first 2 columns<br>
+     * If there is 3 columns, and it does use a separator, then the second value is the merge of the last 2 columns<br>
      * <b>Example:</b><br>
      * <pre>
      * select('select cod,name from table')->toListKeyValue()
@@ -1018,7 +1026,7 @@ class PdoOneQuery
     //<editor-fold desc="Query Builder aggregations" defaultstate="collapsed" >
 
     /**
-     * It returns the first row.  If there is not row then it returns false.<br>
+     * It returns the first row.  If there is not a row then it returns false.<br>
      * This method is an <b>end of the chain method</b>, so it clears the method stack<br>
      * <b>Example</b>:<br>
      * <pre>
@@ -1226,7 +1234,7 @@ class PdoOneQuery
      * table<br>
      *
      * @param string $sql     [optional] it could be the name of column or part
-     *                        of the query ("from table..")
+     *                        of the query ("from table...")
      * @param string $arg     [optiona] it could be the name of the column
      *
      * @return mixed|null
@@ -1307,7 +1315,7 @@ class PdoOneQuery
     /**
      * Returns true if the current query has a "having" or "where"
      *
-     * @param bool $having <b>true</b> it return the number of where<br>
+     * @param bool $having <b>true</b> it returns the number of where<br>
      *                     <b>false</b> it returns the number of having
      *
      * @return bool
@@ -1322,22 +1330,24 @@ class PdoOneQuery
     }
 
     /**
-     * Its a macro of limit but it works for paging. It uses static::$pageSize to determine the rows to return
+     * It's a macro of limit simplified for pagination.
      *
-     * @param int $numPage Number of page. It starts with 1.
-     *
+     * @param int  $numPage Number of page. It starts with 1.
+     * @param null|int $pageSize The size of the page.<br>
+     *                           If the value is null, then it uses _BasePdoOneRepo::$pageSize (20) when ORM,
+     *                           or it uses the PdoOne::$pageSize (20)
      * @return PdoOneQuery
      * @throws Exception
      */
-    public function page($numPage): PdoOneQuery
+    public function page($numPage,$pageSize=null): PdoOneQuery
     {
         if ($this->ormClass !== null) {
             $cls = $this->ormClass;
-            $p0 = $cls::$pageSize * ($numPage - 1);
-            $p1 = $p0 + $cls::$pageSize;
+            $p0 = ($pageSize??$cls::$pageSize) * ($numPage - 1);
+            $p1 = $p0 + ($pageSize??$cls::$pageSize);
         } else {
-            $p0 = 20 * ($numPage - 1);
-            $p1 = $p0 + 20;
+            $p0 = ($pageSize??PdoOne::$pageSize) * ($numPage - 1);
+            $p1 = $p0 + ($pageSize??PdoOne::$pageSize);
         }
         return $this->limit("$p0,$p1");
     }
@@ -1874,7 +1884,7 @@ class PdoOneQuery
      *      delete('table',['col1',10,'col2','hello world']);
      *      delete('table',['col1','col2'],[10,'hello world']);
      *      $db->from('table')
-     *          ->where('..')
+     *          ->where('.')
      *          ->delete() // running on a chain
      *      delete('table where condition=1');
      *
@@ -2124,13 +2134,13 @@ class PdoOneQuery
      * <b>Example</b><br>
      * <pre>
      * $this->setCacheService($instanceCache);
-     * $this->useCache()->select()..; // The cache never expires
+     * $this->useCache()->select()…; // The cache never expires
      * $this->useCache(60)->select()..; // The cache lasts 60 seconds.
      * $this->useCache(60,'customers')
-     *        ->select()..; // cache associated with customers
+     *        ->select()...; // cache associated with customers
      *                      // it could be invalidated by invalidateCache()
      * $this->useCache(60,['customers','invoices'])
-     *        ->select()..; // cache associated with customers
+     *        ->select()...; // cache associated with customers
      *                      // it could be invalidated by invalidateCache()
      * $this->useCache(60,'*')->select('col')
      *      ->from('table')->toList(); // '*' uses all the table assigned.
