@@ -210,6 +210,10 @@ class PdoOneQuery
             try {
                 /** @noinspection PhpParameterByRefIsNotUsedAsReferenceInspection */
                 foreach ($allparam as &$param) {
+                    if($param[0]===0) {
+                        // it is used because when $param[0]===0, it throws an uncatchable exception.
+                        throw new RuntimeException('incorrect param');
+                    }
                     $reval = $reval && $stmt->bindParam(...$param); // unpack
                 }
                 if ($this->parent->partition !== null) {
@@ -219,6 +223,10 @@ class PdoOneQuery
                         $partitionParam[1] = end($this->parent->partition);
                     } else {
                         $partitionParam = $this->parent->partition;
+                    }
+                    if($partitionParam[0]===0) {
+                        // it is used because when $partitionParam[0]===0, it throws an uncatchable exception.
+                        throw new RuntimeException('incorrect param');
                     }
                     $reval = $reval && $stmt->bindParam(...$partitionParam);
                 }

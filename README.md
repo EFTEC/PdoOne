@@ -1973,6 +1973,8 @@ In a nutshell:
 * Every minor version means that it adds a new functionality i.e. 1.5 -> 1.6 (new methods)
 * Every decimal version means that it patches/fixes/refactoring a previous functionality i.e. 1.5.0 -> 1.5.1 (fix)
 
+* 2.22.2 2022-02-01
+  * [PdoOneQuery] [fix] when the argument of a method is empty or zero.  Now, it throws an exception. 
 * 2.22.1 2022-01-03
   * [core] [edit] generateAllClasses() now returns errors and warnings. 
 * 2.22 2022-01-30
