@@ -165,7 +165,7 @@ More examples:
 
 ## Installation
 
-This library requires PHP 5.6 and higher, and it requires the extension PDO and the extension PDO-MYSQL (Mysql), PDO-SQLSRV (sql server) or PDO-OCI (Oracle)
+This library requires PHP 7.1 and higher, and it requires the extension PDO and the extension PDO-MYSQL (Mysql), PDO-SQLSRV (sql server) or PDO-OCI (Oracle)
 
 ### Install (using composer)
 
@@ -1975,7 +1975,7 @@ In a nutshell:
 
 * 2.23 2022-02-04
   * [PdoOneQuery] [PdoOne] [fix] Fixed compatibility with PHP 8.1. PHP 8.1 deprecates a lot of functionalities.
-  * [new] update dependency to php>=7.2.5 to stay in sync with Composer. If you have troubles, then you can use an old version of the library
+  * [new] update dependency to php>=7.2.5 to stay in sync with Composer. If you have trouble, then you can use an old version of the library
 * 2.22.2 2022-02-01
   * [PdoOneQuery] [fix] when the argument of a method is empty or zero.  Now, it throws an exception. 
 * 2.22.1 2022-01-03
