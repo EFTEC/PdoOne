@@ -214,9 +214,9 @@ class PdoOne_TestMockup implements PdoOne_IExt
 					where obj.name='$tableName' ";
     }
 
-    public function createSequence($tableSequence = null, $method = 'snowflake') : string
+    public function createSequence($tableSequence = null, $method = 'snowflake') : array
     {
-        return 'CREATE TABLE';
+        return ['CREATE TABLE'];
     }
 
     public function getSequence($sequenceName): string

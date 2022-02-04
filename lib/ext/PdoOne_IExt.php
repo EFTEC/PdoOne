@@ -164,10 +164,10 @@ interface PdoOne_IExt
      * @param null|string $tableSequence
      * @param string      $method
      *
-     * @return string the sql command to create a sequence
+     * @return array the sql command to create a sequence
      * @throws Exception
      */
-    public function createSequence($tableSequence = null, $method = 'snowflake'): string;
+    public function createSequence($tableSequence = null, $method = 'snowflake') : array;
 
     /**
      * It creates a store procedure<br>

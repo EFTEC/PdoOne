@@ -1,4 +1,5 @@
-<?php /** @noinspection PhpUnusedLocalVariableInspection */
+<?php /** @noinspection PhpMultipleClassDeclarationsInspection */
+/** @noinspection PhpUnusedLocalVariableInspection */
 /** @noinspection UnknownInspectionInspection */
 /** @noinspection SqlResolve */
 /** @noinspection PhpPossiblePolymorphicInvocationInspection */
@@ -48,7 +49,7 @@ class CacheServicesmysql implements IPdoOneCache
      * @param null   $data
      * @param null   $ttl
      */
-    public function setCache($uid, $family = '', $data = null, $ttl = null)
+    public function setCache($uid, $family = '', $data = null, $ttl = null) : void
     {
         if ($family === '') {
             $this->cacheData[$uid] = $data;
@@ -75,7 +76,7 @@ class CacheServicesmysql implements IPdoOneCache
      *
      * @return void
      */
-    public function invalidateCache($uid = '', $family = '')
+    public function invalidateCache($uid = '', $family = '') : void
     {
         if ($family === '') {
             if ($uid === '') {
@@ -116,7 +117,8 @@ class PdoOne_mysql_Test extends TestCase
     }
 
 
-    public function test_procedure() {
+    public function test_procedure(): void
+    {
         if(!$this->pdoOne->objectExist('tablelog')) {
             self::assertEquals(true,
                 $this->pdoOne->createTable('tablelog'
@@ -141,7 +143,7 @@ class PdoOne_mysql_Test extends TestCase
         self::assertEquals('done!',$args['in_description']);
     }
 
-    public function test_dep()
+    public function test_dep(): void
     {
         // delete all tables
         $tables = $this->pdoOne->objectList('table', true);
@@ -163,24 +165,24 @@ class PdoOne_mysql_Test extends TestCase
     /**
      * @doesNotPerformAssertions
      */
-    public function test_db()
+    public function test_db(): void
     {
         $this->pdoOne->db('travisdb');
     }
 
 
-    public function test_readonly()
+    public function test_readonly(): void
     {
         self::assertEquals(false, $this->pdoOne->readonly(), 'the database is read only');
     }
 
-    public function test_connect()
+    public function test_connect(): void
     {
         $this->expectException(Exception::class);
         $this->pdoOne->connect();
     }
 
-    public function test_chainresetErrorList()
+    public function test_chainresetErrorList(): void
     {
         $this->pdoOne->logLevel = 3;
         $rows = $this->pdoOne->genError(false)->select('select 123 field1 from dual222')->toList();
@@ -210,7 +212,7 @@ class PdoOne_mysql_Test extends TestCase
         self::assertNotEmpty($this->pdoOne->errorText); // there is an error.
     }
 
-    public function test_chainresetErrorListSimple()
+    public function test_chainresetErrorListSimple(): void
     {
         $this->pdoOne->logLevel = 3;
         $rows = $this->pdoOne->genError(false)->select('select 123 field1 from dual222')->toListSimple();
@@ -239,7 +241,7 @@ class PdoOne_mysql_Test extends TestCase
         self::assertNotEmpty($this->pdoOne->errorText); // there is an error.
     }
 
-    public function test_genCode()
+    public function test_genCode(): void
     {
         if (!$this->pdoOne->tableExist('table1')) {
             $this->pdoOne->createTable('table1', ['id' => 'int']);
@@ -253,7 +255,7 @@ class PdoOne_mysql_Test extends TestCase
 
 
 
-    public function test_chainresetErrorMeta()
+    public function test_chainresetErrorMeta(): void
     {
         $this->pdoOne->logLevel = 3;
         $rows = $this->pdoOne->genError(false)->select('select 123 field1 from dual222')->toMeta();
@@ -282,7 +284,7 @@ class PdoOne_mysql_Test extends TestCase
         self::assertNotEmpty($this->pdoOne->errorText); // there is an error.
     }
 
-    public function test_chainresetErrorFirst()
+    public function test_chainresetErrorFirst(): void
     {
         $this->pdoOne->logLevel = 3;
         $rows = $this->pdoOne->genError(false)->select('select 123 field1 from dual222')->first();
@@ -315,7 +317,7 @@ class PdoOne_mysql_Test extends TestCase
         //$this->assertEquals([['field1'=>123]],$rows);
     }
 
-    public function test_chainresetErrorLast()
+    public function test_chainresetErrorLast(): void
     {
         $this->pdoOne->logLevel = 3;
         $rows = $this->pdoOne->genError(false)->select('select 123 field1 from dual222')->last();
@@ -347,7 +349,7 @@ class PdoOne_mysql_Test extends TestCase
 
     }
 
-    public function test_createtable()
+    public function test_createtable(): void
     {
         if ($this->pdoOne->tableExist('table5')) {
             $this->pdoOne->dropTable('table5');
@@ -382,7 +384,7 @@ class PdoOne_mysql_Test extends TestCase
     }
 
 
-    public function test_chainreset()
+    public function test_chainreset(): void
     {
         $this->pdoOne->logLevel = 3;
         $rows = $this->pdoOne->select('select 123 field1 from dual');
@@ -391,7 +393,7 @@ class PdoOne_mysql_Test extends TestCase
         self::assertEquals([['field1' => 123]], $rows);
     }
 
-    public function test_cache()
+    public function test_cache(): void
     {
         $this->pdoOne->getCacheService()->cacheCounter = 0;
 
@@ -413,7 +415,7 @@ class PdoOne_mysql_Test extends TestCase
         $this->pdoOne->getCacheService()->cacheCounter = 0;
     }
 
-    public function test_cache_expire()
+    public function test_cache_expire(): void
     {
         $this->pdoOne->getCacheService()->cacheCounter = 0;
         $this->pdoOne->invalidateCache();
@@ -424,7 +426,7 @@ class PdoOne_mysql_Test extends TestCase
 
     }
 
-    public function test_cache_family()
+    public function test_cache_family(): void
     {
         $this->pdoOne->getCacheService()->cacheCounter = 0;
         $this->pdoOne->invalidateCache();
@@ -436,7 +438,7 @@ class PdoOne_mysql_Test extends TestCase
         self::assertEquals(2, $this->pdoOne->getCacheService()->cacheCounter); // 1= cache used 1 time
     }
 
-    public function test_cache_multiple_family()
+    public function test_cache_multiple_family(): void
     {
         $this->pdoOne->getCacheService()->cacheCounter = 0;
         $this->pdoOne->invalidateCache();
@@ -454,7 +456,7 @@ class PdoOne_mysql_Test extends TestCase
 
     }
 
-    public function test_cache_noCache()
+    public function test_cache_noCache(): void
     {
         $this->pdoOne->setCacheService(null);
 
@@ -476,7 +478,7 @@ class PdoOne_mysql_Test extends TestCase
         $this->pdoOne->setCacheService($cache);
     }
 
-    public function test_open()
+    public function test_open(): void
     {
         //$this->expectException(\Exception::class);
         //$this->pdoOne->open(true);
@@ -606,7 +608,7 @@ class PdoOne_mysql_Test extends TestCase
             $this->pdoOne->select('id_category')->from('product_category')->order('id_category')->useCache()->first());
     }
 
-    public function test_select()
+    public function test_select(): void
     {
         //$this->expectException(\Exception::class);
         //$this->pdoOne->open(true);
@@ -765,7 +767,7 @@ class PdoOne_mysql_Test extends TestCase
     }
 
 
-    public function test_quota()
+    public function test_quota(): void
     {
         self::assertEquals('`hello` world', $this->pdoOne->addDelimiter('hello world'));
         self::assertEquals('`hello`.`world`', $this->pdoOne->addDelimiter('hello.world'));
@@ -778,7 +780,7 @@ class PdoOne_mysql_Test extends TestCase
         self::assertNotEmpty(PdoOne::dateSqlNow()); // '2020-01-25 22:18:32',
     }
 
-    public function test_emptyargs()
+    public function test_emptyargs(): void
     {
         $r = true;
         if ($this->pdoOne->objectExist('product_category')) {
@@ -835,7 +837,7 @@ class PdoOne_mysql_Test extends TestCase
         self::assertEquals(0, $this->pdoOne->from('product_category')->count());
     }
 
-    public function test_time()
+    public function test_time(): void
     {
         PdoOne::$dateTimeFormat = 'Y-m-d\TH:i:s\Z';
         PdoOne::$dateTimeMicroFormat = 'Y-m-d\TH:i:s.u\Z';
@@ -858,7 +860,7 @@ class PdoOne_mysql_Test extends TestCase
     /**
      * @throws Exception
      */
-    public function test_sequence()
+    public function test_sequence(): void
     {
         $this->pdoOne->tableSequence = 'testsequence';
         try {
@@ -877,7 +879,7 @@ class PdoOne_mysql_Test extends TestCase
     /** @noinspection PhpUnitTestsInspection
      * @noinspection TypeUnsafeComparisonInspection
      */
-    public function test_sequence2()
+    public function test_sequence2(): void
     {
         self::assertLessThan(3639088446091303982, $this->pdoOne->getSequencePHP(false),
             'sequence must be greater than 3639088446091303982');
@@ -893,40 +895,40 @@ class PdoOne_mysql_Test extends TestCase
     /**
      * @doesNotPerformAssertions
      */
-    public function test_close()
+    public function test_close(): void
     {
         $this->pdoOne->close();
     }
 
-    public function test_getMessages()
+    public function test_getMessages(): void
     {
         self::assertEquals(null, $this->pdoOne->getMessages(), 'this is not a message container');
     }
 
 
-    public function test_startTransaction()
+    public function test_startTransaction(): void
     {
         self::assertEquals(true, $this->pdoOne->startTransaction());
         $this->pdoOne->commit();
     }
 
-    public function test_commit()
+    public function test_commit(): void
     {
         self::assertEquals(false, (false), 'transaction is not open');
     }
 
-    public function test_rollback()
+    public function test_rollback(): void
     {
         self::assertEquals(false, (false), 'transaction is not open');
     }
 
 
-    public function test_selectDual()
+    public function test_selectDual(): void
     {
         self::assertInstanceOf(PdoOneQuery::class, $this->pdoOne->select('select 1 from DUAL'));
     }
 
-    public function test_sqlGen()
+    public function test_sqlGen(): void
     {
         self::assertEquals('select 1 from DUAL', $this->pdoOne->select('select 1 from DUAL')->sqlGen(true));
 
@@ -949,71 +951,71 @@ class PdoOne_mysql_Test extends TestCase
                 ->having('field2=?', [4])->sqlGen(true));
     }
 
-    public function test_join()
+    public function test_join(): void
     {
         self::assertInstanceOf(PdoOneQuery::class, $this->pdoOne->join('tablejoin on t1.field=t2.field'));
     }
 
 
-    public function test_from()
+    public function test_from(): void
     {
         self::assertInstanceOf(PdoOneQuery::class, $this->pdoOne->from('table t1'));
     }
 
-    public function test_left()
+    public function test_left(): void
     {
         self::assertInstanceOf(PdoOneQuery::class, $this->pdoOne->left('table2 on table1.t1=table2.t2'));
     }
 
-    public function test_right()
+    public function test_right(): void
     {
         self::assertInstanceOf(PdoOneQuery::class, $this->pdoOne->right('table2 on table1.t1=table2.t2'));
     }
 
-    public function test_where()
+    public function test_where(): void
     {
         self::assertInstanceOf(PdoOneQuery::class, $this->pdoOne->where('field1=?,field2=?', [20, 'hello']));
     }
 
-    public function test_set()
+    public function test_set(): void
     {
         self::assertInstanceOf(PdoOneQuery::class, $this->pdoOne->set('field1=?,field2=?', [20, 'hello']));
     }
 
-    public function test_group()
+    public function test_group(): void
     {
         self::assertInstanceOf(PdoOneQuery::class, $this->pdoOne->group('fieldgroup'));
     }
 
-    public function test_having()
+    public function test_having(): void
     {
         self::assertInstanceOf(PdoOneQuery::class, $this->pdoOne->having('field1=?,field2=?', [20, 'hello']));
     }
 
-    public function test_order()
+    public function test_order(): void
     {
         self::assertInstanceOf(PdoOneQuery::class, $this->pdoOne->order('name desc'));
     }
 
-    public function test_limit()
+    public function test_limit(): void
     {
         self::assertInstanceOf(PdoOneQuery::class, $this->pdoOne->limit('1,10'));
     }
 
-    public function test_distinct()
+    public function test_distinct(): void
     {
         self::assertInstanceOf(PdoOneQuery::class, $this->pdoOne->distinct());
     }
 
 
-    public function test_runQuery()
+    public function test_runQuery(): void
     {
         self::assertEquals(true, $this->pdoOne->runQuery($this->pdoOne->prepare('select 1 from dual')));
         self::assertEquals([1 => 1], $this->pdoOne->select('1')->from('dual')->first(), 'it must runs');
     }
 
 
-    public function test_runRawQuery()
+    public function test_runRawQuery(): void
     {
         self::assertEquals([0 => [1 => 1]], $this->pdoOne->runRawQuery('select 1', null, true));
     }
@@ -1023,10 +1025,9 @@ class PdoOne_mysql_Test extends TestCase
      * @noinspection PhpUnitTestsInspection
      * @noinspection TypeUnsafeComparisonInspection
      */
-    public function test_setEncryption()
+    public function test_setEncryption(): void
     {
-        $this->pdoOne->setEncryption('123//*/*saass11___1212fgbl@#€€"', '123//*/*saass11___1212fgbl@#€€"',
-            'AES-256-CTR');
+        $this->pdoOne->setEncryption('123//*/*saass11___1212fgbl@#€€"', '123//*/*saass11___1212fgbl@#€€"');
         self::assertEquals(["hello"],$this->pdoOne->decrypt($this->pdoOne->encrypt(["hello"])));
         $value = $this->pdoOne->encrypt("bv `lfg+hlc ,vc´,c35'ddl ld_vcvñvc +*=/\\");
         self::assertTrue(strlen($value) > 10, 'Encrypted');
@@ -1053,7 +1054,7 @@ class PdoOne_mysql_Test extends TestCase
     /**
      * @throws Exception
      */
-    public function test_setEncryptionINTEGER()
+    public function test_setEncryptionINTEGER(): void
     {
         $this->pdoOne->setEncryption(12345678, '', 'INTEGER');
         // 2147483640
@@ -1076,7 +1077,7 @@ class PdoOne_mysql_Test extends TestCase
     /**
      * @throws Exception
      */
-    public function test_setEncryptionSIMPLE()
+    public function test_setEncryptionSIMPLE(): void
     {
         $this->pdoOne->setEncryption('Zoamelgusta', '', 'SIMPLE');
         // 2147483640

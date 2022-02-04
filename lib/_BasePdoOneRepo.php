@@ -24,12 +24,13 @@ namespace eftec;
 
 use Exception;
 use PDOStatement;
+use RuntimeException;
 
 
 /**
  * Class _BasePdoOneRepo
  *
- * @version       6.1 2022-01-26
+ * @version       6.2 2022-02-04
  * @package       eftec
  * @author        Jorge Castro Castillo
  * @copyright (c) Jorge Castro C. MIT License  https://github.com/EFTEC/PdoOne
@@ -1333,7 +1334,9 @@ abstract class _BasePdoOneRepo
      */
     protected static function _update($entity, $transaction = true)
     {
-
+        if($entity===null) {
+            throw new RuntimeException('unable to update an empty entity');
+        }
         try {
             if (is_object($entity)) {
                 $entity = static::objectToArray($entity);
@@ -1645,6 +1648,9 @@ abstract class _BasePdoOneRepo
     protected static function _insert(&$entity, $transaction = true)
     {
         $returnObject = false;
+        if($entity===null) {
+            throw new RuntimeException('unable to insert an empty entity');
+        }
         try {
             $pdoOne = self::getQuery();
             //$defTable = static::getDef('conversion');
@@ -1786,6 +1792,9 @@ abstract class _BasePdoOneRepo
      */
     protected static function _delete($entity, $transaction = true, $columns = null)
     {
+        if($entity===null) {
+            throw new RuntimeException('unable to delete an empty entity');
+        }
         $columns = ($columns === null) ? static::getDefName() : $columns;
         try {
             $pdoOne = self::getQuery();

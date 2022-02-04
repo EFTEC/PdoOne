@@ -408,11 +408,11 @@ class PdoOne_Oci implements PdoOne_IExt
 					where obj.name='$tableName' ";
     }
 
-    public function createSequence($tableSequence = null, $method = 'snowflake') : string
+    public function createSequence($tableSequence = null, $method = 'snowflake') : array
     {
-        return "CREATE SEQUENCE \"$tableSequence\"
+        return ["CREATE SEQUENCE \"$tableSequence\"
 				    START WITH 1  
-				    INCREMENT BY 1";
+				    INCREMENT BY 1"];
     }
     public function getSequence($sequenceName): string
     {

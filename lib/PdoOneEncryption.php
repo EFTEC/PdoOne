@@ -78,7 +78,7 @@ class PdoOneEncryption
      */
     public function decrypt($data)
     {
-        if (!$this->encEnabled) {
+        if (!$this->encEnabled || $data===null) {
             return $data;
         } // no encryption
         switch ($this->encMethod) {
@@ -215,6 +215,17 @@ class PdoOneEncryption
         $this->encMethod = $encMethod;
         $this->iv=$iv;
     }
+
+    /**
+     * It changes the hash type.
+     *
+     * @param string $hashType=hash_algos()[$i]
+     * @return void
+     * @see https://www.php.net/manual/en/function.hash-algos.php
+     */
+    public function setHashType($hashType) {
+        $this->hashType=$hashType;
+    }
     //<editor-fold desc="encryption INTEGER">
 
     /**
@@ -262,14 +273,16 @@ class PdoOneEncryption
      * @see \eftec\PdoOneEncryption::encryptInteger
      */
     private function encrypt64($n) {
-        return ((0x000000000000FFFF & $n) << 48) + (((0xFFFFFFFFFFFF0000 & $n) >> 16) & 0x0000FFFFFFFFFFFF);
+        /** @noinspection PhpCastIsUnnecessaryInspection */
+        return ((0x000000000000FFFF & $n) << 48) + ((((int)0xFFFFFFFFFFFF0000 & $n) >> 16.0) & 0x0000FFFFFFFFFFFF);
     }
     /** @param $n
      * @return int
      * @see \eftec\PdoOneEncryption::decryptInteger
      */
     private function decrypt64($n) {
-        return ((0x0000FFFFFFFFFFFF & $n) << 16) + (((0xFFFF000000000000 & $n) >> 48) & 0x000000000000FFFF);
+        /** @noinspection PhpCastIsUnnecessaryInspection */
+        return (((int)0x0000FFFFFFFFFFFF & $n) << 16.0) + ((((int)0xFFFF000000000000 & $n) >> 48.0) & 0x000000000000FFFF);
     }
     //</editor-fold">
 }

@@ -54,11 +54,11 @@ use stdClass;
  * @package       eftec
  * @author        Jorge Castro Castillo
  * @copyright (c) Jorge Castro C. MIT License  https://github.com/EFTEC/PdoOne
- * @version       2.22.1
+ * @version       2.23
  */
 class PdoOne
 {
-    const VERSION = '2.22.1';
+    const VERSION = '2.23';
     /** @var int We need this value because null and false could be a valid value. */
     const NULL = PHP_INT_MAX;
     /** @var string Prefix of the tables */
@@ -966,12 +966,12 @@ class PdoOne
             $type = $t[0];
             $conversion = $specialConversion[$k] ?? null;
             $extra = (count($t) > 1) ? $t[1] : null;
-            if (stripos($extra, 'not null') !== false) {
+            if ($extra!==null && stripos($extra, 'not null') !== false) {
                 $null = false;
             } else {
                 $null = true;
             }
-            if (stripos($extra, $this->database_identityName) !== false) {
+            if ($extra!==null && stripos($extra, $this->database_identityName) !== false) {
                 $identity = true;
             } else {
                 $identity = false;
@@ -1742,6 +1742,7 @@ eot;
                 foreach ($params as $param) {
                     $this->lastBindParam[$counter] = $param[0];
                     // note: the second field is & so we could not use $v
+                    $param[3]=$param[3]??0;
                     $stmt->bindParam(...$param);
                 }
             } else {
@@ -1751,7 +1752,7 @@ eot;
                     //$typeP = $this->stringToPdoParam($param[$i]);
                     $this->lastBindParam[$i] = $iValue;
                     //$stmt->bindParam($counter, $param[$i + 1], $typeP);
-                    $stmt->bindParam($i + 1, $params[$i], $this->getType($params[$i]));
+                    $stmt->bindParam($i + 1, $params[$i], $this->getType($params[$i]),0);
                 }
             }
         }
@@ -5254,8 +5255,11 @@ BOOTS;
     {
         $this->beginTry();
         $tableSequence = ($tableSequence === null) ? $this->tableSequence : $tableSequence;
-        $sql = $this->service->createSequence($tableSequence, $method);
-        $r = $this->conn1->exec($sql);
+        $sqls = $this->service->createSequence($tableSequence, $method);
+        $r=true;
+        foreach($sqls as $sql) {
+            $r = $r && ($this->conn1->exec($sql)!==false);
+        }
         $this->endTry();
         return $r;
     }
@@ -5572,7 +5576,7 @@ BOOTS;
         $ms = microtime(true);
         //$ms=1000;
         $timestamp = round($ms * 1000);
-        $rand = (fmod($ms, 1) * 1000000) % 4096; // 4096= 2^12 It is the millionth of seconds
+        $rand = ((int)fmod($ms, 1) * 1000000) % 4096; // 4096= 2^12 It is the millionth of seconds
         $calc = (($timestamp - 1459440000000) << 22) + ($this->nodeId << 12) + $rand;
         usleep(1);
         if ($unpredictable) {

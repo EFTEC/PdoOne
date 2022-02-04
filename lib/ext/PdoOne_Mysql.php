@@ -343,7 +343,7 @@ class PdoOne_Mysql implements PdoOne_IExt
 						and referenced_table_name is not null;";
     }
 
-    public function createSequence($tableSequence = null, $method = 'snowflake'): string
+    public function createSequence($tableSequence = null, $method = 'snowflake'): array
     {
         $ok = $this->parent->createTable($tableSequence, [
             'id'   => 'bigint(20) unsigned NOT NULL AUTO_INCREMENT',
@@ -354,13 +354,13 @@ class PdoOne_Mysql implements PdoOne_IExt
         ], '', 'ENGINE=MyISAM AUTO_INCREMENT=1 DEFAULT CHARSET=utf8');
         if (!$ok) {
             $this->parent->throwError("Unable to create table $tableSequence", '');
-            return '';
+            return [''];
         }
         $ok = $this->parent->insert($tableSequence, ['stub' => 'a']);
         if (!$ok) {
             $this->parent->throwError("Unable to insert in table $tableSequence", '');
 
-            return '';
+            return [''];
         }
         $sql = 'SET GLOBAL log_bin_trust_function_creators = 1';
         $this->parent->runRawQuery($sql);
@@ -390,7 +390,7 @@ class PdoOne_Mysql implements PdoOne_IExt
 					END";
         }
 
-        return $sql;
+        return [$sql];
     }
 
     /**

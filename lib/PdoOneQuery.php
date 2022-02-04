@@ -14,7 +14,7 @@ use RuntimeException;
 /**
  * Class PdoOneQuery
  *
- * @version       2.2 2022-01-30
+ * @version       2.3 2022-02-04
  * @package       eftec
  * @author        Jorge Castro Castillo
  * @copyright (c) Jorge Castro C. MIT License  https://github.com/EFTEC/PdoOne
@@ -208,12 +208,12 @@ class PdoOneQuery
         $reval = true;
         if ($allparam) {
             try {
-                /** @noinspection PhpParameterByRefIsNotUsedAsReferenceInspection */
                 foreach ($allparam as &$param) {
                     if($param[0]===0) {
                         // it is used because when $param[0]===0, it throws an uncatchable exception.
                         throw new RuntimeException('incorrect param');
                     }
+                    $param[3]=$param[3]??0;
                     $reval = $reval && $stmt->bindParam(...$param); // unpack
                 }
                 if ($this->parent->partition !== null) {
@@ -228,6 +228,7 @@ class PdoOneQuery
                         // it is used because when $partitionParam[0]===0, it throws an uncatchable exception.
                         throw new RuntimeException('incorrect param');
                     }
+                    $partitionParam[3]=$partitionParam[3]??0;
                     $reval = $reval && $stmt->bindParam(...$partitionParam);
                 }
             } catch (Exception $ex) {
@@ -1039,9 +1040,9 @@ class PdoOneQuery
      * <b>Example</b>:<br>
      * <pre>
      *      $con->select('*')->from('table')->first(); // select * from table (first value)
-     *      Repo::->method(...)->first(1); // (ORM only, the first value where the primary key is 1
-     *      Repo::->method(...)->first([1,2]); // (ORM only, first value where the primary keys are 1 and 2
-     *      Repo::->method(...)->first(['id1'=>1,'id'=>2]); // (ORM only,first value where the primary keys are 1 and 2
+     *      Repo::->method(...)->first(1); // (ORM only), the first value where the primary key is 1
+     *      Repo::->method(...)->first([1,2]); // (ORM only), first value where the primary keys are 1 and 2
+     *      Repo::->method(...)->first(['id1'=>1,'id'=>2]); // (ORM only),first value where the primary keys are 1 and 2
      *
      * </pre>
      *
@@ -1856,7 +1857,7 @@ class PdoOneQuery
      * insert('table',null,['col1'=>10,'col2'=>'hello world']); // definition is obtained from the values
      * insert('table',['col1'=>10,'col2'=>'hello world']); // definition is obtained from the values
      * insert('table',['col1','col2'],[10,'hello world']); // definition (binary) and value
-     * insert('table',['col1','col2'],['col1'=>10,'col2'=>'hello world']); // definition declarative array)
+     * insert('table',['col1','col2'],['col1'=>10,'col2'=>'hello world']); // definition declarative array.
      *      ->set(['col1',10,'col2','hello world'])
      *      ->from('table')
      *      ->insert();

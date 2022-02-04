@@ -304,7 +304,7 @@ class PdoOne_Sqlsrv implements PdoOne_IExt
         }
     }
 
-    public function objectExist($type = 'table') : null|string
+    public function objectExist($type = 'table') : ?string
     {
         switch ($type) {
             case 'table':
@@ -383,13 +383,14 @@ class PdoOne_Sqlsrv implements PdoOne_IExt
 					where obj.name='$tableName' ";
     }
 
-    public function createSequence($tableSequence = null, $method = 'snowflake') : string
+    public function createSequence($tableSequence = null, $method = 'snowflake'): array
     {
-        $sql = "CREATE SEQUENCE [$tableSequence]
+        $sql=[];
+        $sql[] = "CREATE SEQUENCE [$tableSequence]
 				    START WITH 1  
-				    INCREMENT BY 1
+				    INCREMENT BY 1;			    
 			    ";
-        $sql .= "create PROCEDURE next_$tableSequence
+        $sql[]= "create PROCEDURE next_$tableSequence
 					@node int
 				AS
 					BEGIN
