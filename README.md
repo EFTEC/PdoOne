@@ -2022,7 +2022,12 @@ In a nutshell:
 >
 > Every decimal version means that it patches/fixes/refactoring a previous functionality i.e. 1.5.0 -> 1.5.1 (fix)
 
+* 2.24.1 2022-06-06
+  
+  * **[core]** **[fix]** Now, most generation of classes are defined in templates instead of the code. It will keep the code clean while it will also save a few bits of memories (old: 6446 lines, current: 5963 lines).
+  
 * 2.24 2022-02-06
+
   * **[repo]** Now the library allows multiple connections using different repository class bases.
   * **[_BasePdoOne]** Updated to version 7. You must rebuild the repository classes to rebuild the base class.
   * **[core]** **[new]** Now **MessageContainer** is injected automatically
@@ -2037,39 +2042,52 @@ In a nutshell:
 
   * **[PdoOneQuery]** **[PdoOne]** **[fix]** Fixed compatibility with PHP 8.1. PHP 8.1 deprecates a lot of functionalities.
   * **[new]** update dependency to php>=7.2.5 to stay in sync with Composer. If you have trouble, then you can use an old version of the library
+
 * 2.22.2 2022-02-01
   * **[PdoOneQuery]** **[fix]** when the argument of a method is empty or zero.  Now, it throws an exception. 
+
 * 2.22.1 2022-01-03
   * **[core]** **[edit]** generateAllClasses() now returns errors and warnings. 
+
 * 2.22 2022-01-30
   * **[core]** **[edit]** A new static value called $pageSize 
   * **[PdoOneQuery]** **[edit]** the method page() allows to specify the size of the page. 
   * **[_BasePdoOne]** **[edit]** the method page() allows to specify the size of the page.
+
 * 2.21 2022-01-28
   * **[core]** **[fix]** method singularTable() is now more exact to convert plural names to singular.
   *               However, it is far from perfect.
   * **[_BasePdoOne]** [fixed] now several methods store the last error.
+
 * 2.20 2022-01-04
   * **[new]** update dependency to php>=7.1.3. PHP 5.6 was discontinued 3 years ago.    
+
 * 2.19
   * **[new]** **[core]** callProcedure() could return a value other than true or false (SQL server only)
   * **[new]** **[sqlsrv]** implemented callProcedure() and createProcedure()
+
 * 2.18
   * **[new]** [oci] added oci (oracle) as a new driver.
   * **[fix]** **[core]** dbTypeToPHP() and datesql2Text()
   * **[new]** **[core]** clearError(),removeDoubleQuotes() and a new argument for connect()
+
 * 2.16
   * **[fix]** **[sqlsrv]** fixed the format of the date-time of sql.
   * **[fix]** **[sqlsrv]** columnTable() returns distinct values.
+
 * 2.15 2021-07-24
+
 * 2.14.3 2021-06-15
   * **[fix]** **[orm]** setCache()::first() and setCache()::count() didn't work correctly. fixed.
   * Query now supports factoryNull()
+
 * 2.14.2 2021-06-13
   * **[fix]** **[orm]** useCache() and setRelation() do not chain correctly, fixed.
   * **[fix]** **[orm]** useCache() doubled the cache. fixed.
+
 * 2.14.1 2021-06-09
   * **[fix]** custom_exception_handler when the error returned does not have an argument, or the argument is not an array.
+
 * 2.14 2021-06-04
 
 * * **_BasePdoOneRepo** now works more closely with the class **PdoOneQuery**, so each query is a different instance.
