@@ -15,6 +15,7 @@ namespace eftec\tests;
 
 
 use eftec\IPdoOneCache;
+use eftec\MessageContainer;
 use eftec\PdoOne;
 use eftec\PdoOneQuery;
 use Exception;
@@ -105,6 +106,7 @@ class PdoOne_mysql_Test extends TestCase
 {
     /** @var PdoOne */
     protected $pdoOne;
+
 
     public function setUp() : void
     {
@@ -866,10 +868,11 @@ class PdoOne_mysql_Test extends TestCase
         try {
             $this->pdoOne->createSequence();
         } catch (Exception $ex) {
-            var_dump("it should show some errors:");
+            var_dump("it should show some errors:---------");
             var_dump($ex->getMessage());
             var_dump($this->pdoOne->lastError());
             var_dump($this->pdoOne->lastQuery);
+            var_dump("---------");
         }
 
         self::assertLessThan(3639088446091303982, $this->pdoOne->getSequence(true),
@@ -902,8 +905,18 @@ class PdoOne_mysql_Test extends TestCase
 
     public function test_getMessages(): void
     {
-        self::assertEquals(null, $this->pdoOne->getMessages(), 'this is not a message container');
+        $this->assertInstanceOf(MessageContainer::class,$this->pdoOne->getMessagesContainer());
+
+        $this->pdoOne->clearError();
+        try {
+            $this->pdoOne->select('*')->from('wrongtable')->where('1=1')->toList();
+        } catch(Exception $ex) {
+            $this->assertNotEmpty($this->pdoOne->getErrors());
+            $this->assertStringContainsString('Uncaught Exception',$this->pdoOne->getFirstError());
+        }
+
     }
+
 
 
     public function test_startTransaction(): void
@@ -930,6 +943,8 @@ class PdoOne_mysql_Test extends TestCase
 
     public function test_sqlGen(): void
     {
+        $this->pdoOne->clearError();
+
         self::assertEquals('select 1 from DUAL', $this->pdoOne->select('select 1 from DUAL')->sqlGen(true));
 
         self::assertEquals('select 1 from DUAL', $this->pdoOne->select('select 1')->from('DUAL')->sqlGen(true));
@@ -949,6 +964,7 @@ class PdoOne_mysql_Test extends TestCase
         self::assertEquals('select 1, 2 from DUAL where field=? group by 2 having field2=? order by 1',
             $this->pdoOne->select(['1', '2'])->from('DUAL')->where('field=?', [20])->order('1')->group('2')
                 ->having('field2=?', [4])->sqlGen(true));
+
     }
 
     public function test_join(): void

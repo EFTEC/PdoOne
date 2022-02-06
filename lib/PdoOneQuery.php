@@ -383,9 +383,8 @@ class PdoOneQuery
         if ($this->parent->logLevel === 0) {
             $txt = 'Error on database';
         }
-        if ($this->parent->getMessages() !== null) {
-            $this->parent->getMessages()->addItem($this->parent->db, $txt);
-        }
+        $this->parent->getMessagesContainer()->addItem($this->parent->lockerId, $txt);
+
         $this->parent->debugFile($txt, 'ERROR');
         $this->parent->errorText = $txt;
         if ($throwError && $this->parent->throwOnError && $this->parent->genError) {
@@ -787,6 +786,7 @@ class PdoOneQuery
             if ($addColumns) {
                 /** @noinspection PhpPossiblePolymorphicInvocationInspection */
                 $this->select($cls::getDefName());
+
             }
             /** @noinspection PhpPossiblePolymorphicInvocationInspection */
             $this->from($cls::TABLE);
@@ -949,17 +949,23 @@ class PdoOneQuery
      *                                             concatenated with the value.
      *                                             Example '|'
      *
-     * @return array|null
+     * @return array|null null if error
      * @throws Exception
      */
     public function toListKeyValue($extraValueSeparator = null): ?array
     {
         $this->usingORM();
+        if($this->select==='') {
+            throw new RuntimeException('toListKeyValue, no columns selected');
+        }
         $list = $this->_toList(PDO::FETCH_NUM);
         if (!is_array($list)) {
             return null;
         }
         $result = [];
+        if(count($list)>0 && count($list[0])<2) {
+            throw new RuntimeException('toListKeyValue, no enough columns');
+        }
         foreach ($list as $item) {
             if ($extraValueSeparator === null) {
                 $result[$item[0]] = $item[1] ?? $item[0];
@@ -1347,6 +1353,7 @@ class PdoOneQuery
      *                           or it uses the PdoOne::$pageSize (20)
      * @return PdoOneQuery
      * @throws Exception
+     * @noinspection PhpPossiblePolymorphicInvocationInspection
      */
     public function page($numPage,$pageSize=null): PdoOneQuery
     {

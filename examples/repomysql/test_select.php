@@ -8,7 +8,10 @@ use repomysql\TableParentRepo;
 
 include "common.php";
 //$result=TableParentRepo::insert();
-$result=TableParentRepo::where('idtablaparentPK=2')->recursive('*')->toListKeyValue();
+$result=TableParentRepo::where('idtablaparentPK=2')
+    ->select(['idtablaparentPK','fieldVarchar'])
+    ->recursive('*')
+    ->toListKeyValue();
 
 
 //$result=TableParentRepo::where('fieldkey',['key1'])->toList(); // ::setRecursive(['*'])

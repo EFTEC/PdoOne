@@ -592,7 +592,11 @@ class PdoOne_sqlsrv_Test extends TestCase
 
     public function test_getMessages(): void
     {
-        $this->assertEquals(null,$this->pdoOne->getMessages(),'this is not a message container');
+        try {
+            $this->pdoOne->getMessagesContainer();
+        } catch(Exception $ex) {
+            $this->assertTrue(true);
+        }
     }
 
 

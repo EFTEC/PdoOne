@@ -4,30 +4,21 @@ use eftec\PdoOne;
 use eftec\MessageList;
 
 include "../../vendor/autoload.php";
-include "MessageList.php";
-include "MessageItem.php";
+include 'MessageContainer.php';
+include 'MessageLocker.php';
 
 // connecting to database sakila at 127.0.0.1 with user root and password abc.123
 
-/**
- * @return MessageList|null
- */
-function messages() {
-    global $messageList;
-    if ($messageList===null) {
-        $messageList=new MessageList();
-    }
-    return $messageList;
-}
 
 $dao=new PdoOne("mysql","127.0.0.1","root","abc.123","sakilaxxxx","logpdoone.txt");
-
+$dao->logLevel=3;
 $dao->throwOnError=false;
+echo "<b>This example test the error messages</b><br>";
 
 try {
     echo "<h1>connection error</h1>";
     $dao->connect();
-    echo "Connected A-OK!<br>";
+    echo "The connection must fails but it must not raise an error. If you see this message then the library is working as expected<br>";
 } catch (Exception $e) {
     echo "<h1>connection error:</h1>";
     echo $dao->lastError()."-".$e->getMessage()."<br>";
@@ -45,9 +36,9 @@ try {
 
 echo "Status:";
 if (!$dao->isOpen) {
-    echo "<img style='width: 14px; height: 14px;' src='https://assets-cdn.github.com/images/icons/emoji/unicode/274c.png'/><br>";
+    echo "❌<br>";
 } else {
-    echo "<img style='width: 14px; height: 14px;'  src='https://assets-cdn.github.com/images/icons/emoji/unicode/2714.png'/><br>";
+    echo "✔<br>";
 }
 
 
@@ -66,9 +57,9 @@ try {
 
 echo "Status:";
 if (!$dao->isOpen) {
-    echo "<img style='width: 14px; height: 14px;' src='https://assets-cdn.github.com/images/icons/emoji/unicode/274c.png'/><br>";
+    echo "❌<br>";
 } else {
-    echo "<img style='width: 14px; height: 14px;'  src='https://assets-cdn.github.com/images/icons/emoji/unicode/2714.png'/><br>";
+    echo "✔<br>";
 }
 
 $sql="CREATE TABLE `product` (
@@ -113,7 +104,7 @@ try {
     echo "testing...";
     $stmt=$dao->prepare($sql);
     $productName="Cocacola";
-    $stmt->bind_param("s",$productName); // s stand for string. Also i =integer, d = double and b=blob
+    $stmt->bindParam("s",$productName); // s stand for string. Also i =integer, d = double and b=blob
     $dao->runQuery($stmt);
     echo "Last id inserted :".$dao->insert_id()."<br>";
 } catch (Exception $e) {
@@ -125,7 +116,7 @@ try {
     $sql="insert into `product`(name) values(?)";
     $stmt=$dao->prepare($sql);
     $productName="222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222";
-    $stmt->bind_param("s",$productName); // s stand for string. Also i =integer, d = double and b=blob
+    $stmt->bindParam("s",$productName); // s stand for string. Also i =integer, d = double and b=blob
     $dao->runQuery($stmt);
     echo "Last id inserted :".$dao->insert_id()."<br>";
 } catch (Exception $e) {
@@ -165,7 +156,7 @@ try {
     $dao->startTransaction();
     $stmt=$dao->prepare($sql);
     $productName="Fanta";
-    $stmt->bind_param("s",$productName); // s stand for string. Also i =integer, d = double and b=blob
+    $stmt->bindParam("s",$productName); // s stand for string. Also i =integer, d = double and b=blob
     $dao->runQuery($stmt);
     echo "Last id inserted :".$dao->insert_id()."<br>";
     $dao->commit(); // end transaction
@@ -177,13 +168,13 @@ try {
 
 }
 
-echo "<h1>Error Messages</h1><ul>";
-foreach(messages()->allErrorOrWarningArray() as $msg) {
+echo "<h1>Error Messages using messagecontainer)</h1><ul>";
+foreach($dao->getMessagesContainer()->allErrorOrWarningArray() as $msg) {
     echo "<li>$msg</li>";
 }
 echo "</ul>";
-echo "<h1>Info Messages</h1><ul>";
-foreach(messages()->allInfoArray() as $msg) {
+echo "<h1>Info Messages (using messagecontainer)</h1><ul>";
+foreach($dao->getMessagesContainer()->allInfoArray() as $msg) {
     echo "<li>$msg</li>";
 }
 echo "</ul>";

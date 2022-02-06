@@ -11,9 +11,7 @@
  * @noinspection JsonEncodingApiUsageInspection
  * @noinspection NullCoalescingOperatorCanBeUsedInspection
  * @noinspection PhpMissingFieldTypeInspection
- * @noinspection ReturnTypeCanBeDeclaredInspection
  * @noinspection PhpUnusedLocalVariableInspection
- * @noinspection PhpMissingReturnTypeInspection
  * @noinspection PhpArrayShapeAttributeCanBeAddedInspection
  * @noinspection PhpPureAttributeCanBeAddedInspection
  * @noinspection UnnecessaryCastingInspection
@@ -54,11 +52,11 @@ use stdClass;
  * @package       eftec
  * @author        Jorge Castro Castillo
  * @copyright (c) Jorge Castro C. MIT License  https://github.com/EFTEC/PdoOne
- * @version       2.23
+ * @version       2.24
  */
 class PdoOne
 {
-    const VERSION = '2.23';
+    const VERSION = '2.24';
     /** @var int We need this value because null and false could be a valid value. */
     const NULL = PHP_INT_MAX;
     /** @var string Prefix of the tables */
@@ -141,6 +139,8 @@ class PdoOne
     public $pwd;
     /** @var string The name of the database/schema */
     public $db;
+    /** @var string the name of the locker */
+    public $lockerId;
     public $charset = 'utf8';
     /** @var bool It is true if the database is connected otherwise,it's false */
     public $isOpen = false;
@@ -162,15 +162,15 @@ class PdoOne
     /** @var bool if the database is in READ ONLY mode or not. If true then we must avoid to write in the database. */
     public $readonly = false;
     /** @var boolean if not false then it logs the file using the php log file (if enabled) */
-    public $logFile = false;
+    private $logFile = false;
     /** @var string It stores the last error. runGet and beginTry resets it */
     public $errorText = '';
     public $isThrow = false;
-    /** @var int
-     * 0=no debug for production (all message of error are generic)<br>
-     * 1=it shows an error message<br>
-     * 2=it shows the error messages and the last query<br>
-     * 3=it shows the error messages, the last query, the trace and the last parameters (if any).
+    /** @var int=[0,1,2,3,4][$i]
+     * <b>0</b>=no debug for production (all messages of errors are generic)<br>
+     * <b>1</b>=it shows an error message<br>
+     * <b>2</b>=it shows the error messages and the last query<br>
+     * <b>3</b>=it shows the error messages, the last query, the trace and the last parameters (if any).
      * Note: it could show passwords<br>
      */
     public $logLevel = 0;
@@ -199,8 +199,13 @@ class PdoOne
     public $tableDependencyArray;
     /** @var null|array $partition is an associative array [column=>value] with a fixed and pre-established conditions */
     public $partition;
+    /** @var MessageContainer it stores the messages. */
+    private $messageContainer;
 
     protected $phpstart = "<?php\n";
+
+    /** @var PdoOne */
+    protected static $instance;
 
     //</editor-fold>
 
@@ -234,6 +239,29 @@ class PdoOne
     )
     {
         $this->construct($database, $server, $user, $pwd, $db, $logFile, $charset, $nodeId);
+        if (!class_exists('eftec\MessageContainer')) {
+            throw new RuntimeException('MessageContainer class does not exist');
+
+        }
+        // autowire MessageContainer if the method exists.
+        $this->messageContainer=MessageContainer::instance();
+        if(self::$instance===null) {
+            self::$instance=$this;
+        }
+
+    }
+
+    /**
+     * It returns the instance of PdoOne or throw an error if the instance is not set.
+     * @param bool $throwIfNull
+     * @return PdoOne|null
+     */
+    public static function instance($throwIfNull=true): ?PdoOne
+    {
+            if(self::$instance===null && $throwIfNull) {
+                throw new RuntimeException('instance not created for PdoOne');
+            }
+            return self::$instance;
     }
 
     protected function construct(
@@ -242,10 +270,10 @@ class PdoOne
         $user,
         $pwd,
         $db,
-        $logFile = '',
+        $logFile = false,
         $charset = null,
         $nodeId = 1
-    )
+    ): void
     {
         $this->databaseType = $database;
         switch ($this->databaseType) {
@@ -269,6 +297,7 @@ class PdoOne
         $this->user = $user;
         $this->pwd = $pwd;
         $this->db = $db;
+        $this->lockerId='Pdo::'.$this->db;
         $this->tableDependencyArray = null;
         $this->tableDependencyArrayCol = null;
         $this->logFile = $logFile;
@@ -278,7 +307,7 @@ class PdoOne
         $this->encryption = new PdoOneEncryption($pwd, $user . $pwd);
     }
 
-    public static function newColFK($key, $refcol, $reftable, $extra = null, $name = null)
+    public static function newColFK($key, $refcol, $reftable, $extra = null, $name = null): array
     {
         return ['key' => $key, 'refcol' => $refcol, 'reftable' => $reftable, 'extra' => $extra, 'name' => $name];
     }
@@ -300,7 +329,7 @@ class PdoOne
      *
      * @return bool
      */
-    public static function hasParenthesis($txt, $start = '(', $end = ')')
+    public static function hasParenthesis($txt, $start = '(', $end = ')'): bool
     {
         if (!$txt) {
             return false;
@@ -328,7 +357,7 @@ class PdoOne
      *
      * @return string
      */
-    public static function unixtime2Sql($dateNum)
+    public static function unixtime2Sql($dateNum): ?string
     {
         // 31/01/2016 20:20:00 --> 2016-01-31 00:00
         if ($dateNum === null) {
@@ -408,15 +437,15 @@ class PdoOne
      * <pre>
      * $pdoOne->dateConvert('01/01/2019','human','sql'); // 2019-01-01
      * </pre>
-     * <br><b>iso</b> depends on the database.
-     * Example: Y-m-d H:i:s<br>
-     * <b>human</b> is based in d/m/Y H:i:s but it could be changed (self::dateHumanFormat)<br>
-     * <b>sql</b> depends on the database<br>
-     * <b>class</b> is a DateTime() object<br>
+     * <b>iso</b> it is the standard format used for transporting<br>
+     * <b>human</b> It is based in d/m/Y H:i:s but it could be changed (self::dateHumanFormat)<br>
+     * <b>sql</b> it is the format used by the database<br>
+     * <b>class</b> it is an instance of a DateClass object<br>
+     * <b>timestamp:</b> the time is presented as a timestamp value (integer)<br>
      *
-     * @param string      $sqlField     The date to convert
-     * @param string      $inputFormat  =['iso','human','sql','class','timestamp'][$i]
-     * @param string      $outputFormat =['iso','human','sql','class','timestamp'][$i]
+     * @param string      $sqlField     The date to convert (the input value)
+     * @param string      $inputFormat  =['iso','human','sql','class','timestamp'][$i] the input value type
+     * @param string      $outputFormat =['iso','human','sql','class','timestamp'][$i] the output value type
      * @param null|string $force        =[null,'time','ms','none'][$i] It forces if the result gets time or
      *                                  microseconds<br>
      *                                  null = no force the result (it is calculated automatically)<br>
@@ -583,7 +612,7 @@ class PdoOne
      *
      * @return string
      */
-    public static function dateText2Sql($textDate, $hasTime = true)
+    public static function dateText2Sql($textDate, $hasTime = true): ?string
     {
         if (($hasTime)) {
             $tmpFormat = strpos($textDate, '.') === false ? self::$dateTimeFormat : self::$dateTimeMicroFormat;
@@ -608,7 +637,7 @@ class PdoOne
      *
      * @return string
      */
-    public static function dateTimePHP2Sql($date)
+    public static function dateTimePHP2Sql($date): ?string
     {
         // 31/01/2016 20:20:00 --> 2016-01-31 00:00
         if ($date == null) {
@@ -634,7 +663,7 @@ class PdoOne
     public static function dateTextNow(
         $hasTime = true,
         $hasMicroseconds = false
-    )
+    ): string
     {
         $tmpDate = new DateTime();
         if ($hasTime) {
@@ -657,7 +686,7 @@ class PdoOne
     public static function dateNow(
         $hasTime = true,
         $hasMicroseconds = false
-    )
+    ): string
     {
         $tmpDate = new DateTime();
         if ($hasTime) {
@@ -674,7 +703,7 @@ class PdoOne
      *
      * @return string
      */
-    public static function dateSqlNow($hasTime = true, $hasMicroseconds = false)
+    public static function dateSqlNow($hasTime = true, $hasMicroseconds = false): string
     {
         $tmpDate = new DateTime();
         if ($hasTime) {
@@ -684,7 +713,7 @@ class PdoOne
         return $tmpDate->format(self::$isoDate);
     }
 
-    public static function isCli()
+    public static function isCli(): bool
     {
         return !http_response_code();
     }
@@ -717,7 +746,7 @@ class PdoOne
      * @param bool   $lineCarriage
      * @return string
      */
-    public static function messageCli($str, $color = '', $lineCarriage = true)
+    public static function messageCli($str, $color = '', $lineCarriage = true): string
     {
         switch ($color) {
             case 'e': //error
@@ -865,7 +894,7 @@ class PdoOne
      * @return array An array with all the errors or an empty array (if both matches).
      * @throws Exception
      */
-    public function validateDefTable($table, $defArray, $defKeys, $defFK)
+    public function validateDefTable($table, $defArray, $defKeys, $defFK): array
     {
         // columns
         $defCurrent = $this->getDefTable($table);
@@ -955,7 +984,7 @@ class PdoOne
      *              ,'identity'=>null,'sql'=null]
      * @throws Exception
      */
-    public function getDefTable($table, $specialConversion = null)
+    public function getDefTable($table, $specialConversion = null): array
     {
         $r = $this->service->getDefTable($table); // ['col1'=>'int not null','col2'=>'varchar(50)']
         foreach ($r as $k => $v) {
@@ -1011,7 +1040,7 @@ class PdoOne
      *
      * @return array
      */
-    public function dbTypeToPHP($type)
+    public function dbTypeToPHP($type): array
     {
         $type = strtolower($type);
         switch ($type) {
@@ -1111,7 +1140,7 @@ class PdoOne
      * @return array=["IndexName"=>'',"ColumnName"=>'',"is_unique"=>0,"is_primary_key"=>0,"TYPE"=>0]
      * @throws Exception
      */
-    public function getDefTableKeys($table, $returnSimple = true, $filter = null)
+    public function getDefTableKeys($table, $returnSimple = true, $filter = null): array
     {
         return $this->service->getDefTableKeys($table, $returnSimple, $filter);
     }
@@ -1130,7 +1159,7 @@ class PdoOne
      * @return array
      * @throws Exception
      */
-    public function getDefTableFK($table, $returnSimple = true, $assocArray = false)
+    public function getDefTableFK($table, $returnSimple = true, $assocArray = false): array
     {
         return $this->service->getDefTableFK($table, $returnSimple, null, $assocArray);
     }
@@ -1170,7 +1199,7 @@ class PdoOne
      *
      * @throws Exception
      */
-    public function cliEngine()
+    public function cliEngine(): void
     {
         $database = self::getParameterCli('database');
         $server = self::getParameterCli('server');
@@ -1236,7 +1265,7 @@ eot;
      *
      * @return string
      */
-    protected static function getParameterCli($key, $default = '')
+    protected static function getParameterCli($key, $default = ''): string
     {
         global $argv;
         $p = array_search('-' . $key, $argv);
@@ -1253,7 +1282,7 @@ eot;
         return '';
     }
 
-    protected static function removeTrailSlash($txt)
+    protected static function removeTrailSlash($txt): string
     {
         return rtrim($txt, '/\\');
     }
@@ -1350,7 +1379,7 @@ eot;
      * @param bool|null $alterSession
      * @test exception this(false)
      */
-    public function connect($failIfConnected = true, $alterSession = null)
+    public function connect($failIfConnected = true, $alterSession = null): void
     {
         $this->beginTry();
         if ($this->isOpen) {
@@ -1361,9 +1390,7 @@ eot;
             $this->throwError('Already connected', '');
         }
         try {
-            if ($this->logLevel >= 2) {
-                $this->storeInfo("connecting to $this->server $this->user/*** $this->db");
-            }
+            $this->storeInfo("connecting to $this->server $this->user/*** $this->db");
             $cs = ($this->charset) ? ';charset=' . $this->charset : '';
             $this->service->connect($cs, $alterSession);
             if ($this->conn1 instanceof stdClass) {
@@ -1384,14 +1411,14 @@ eot;
         $this->endTry();
     }
 
-    public function beginTry()
+    public function beginTry(): void
     {
         if ($this->customError) {
             set_exception_handler([$this, 'custom_exception_handler']);
         }
     }
 
-    public function endTry()
+    public function endTry(): void
     {
         if ($this->customError) {
             restore_exception_handler();
@@ -1414,7 +1441,7 @@ eot;
      *
      * @see \eftec\PdoOne::$logLevel
      */
-    public function throwError($txt, $txtExtra, $extraParam = '', $throwError = true, $exception = null)
+    public function throwError($txt, $txtExtra, $extraParam = '', $throwError = true, $exception = null): void
     {
         if ($this->errorText !== '') {
             // there is another error pending to be displayed.
@@ -1450,9 +1477,7 @@ eot;
                     $txt = $this->custom_exception_handler($exception, $txt, true);
                 }
             }
-            if ($this->getMessages() !== null) {
-                $this->getMessages()->addItem($this->db, $txt);
-            }
+            $this->messageContainer->addItem($this->lockerId, $txt);
             $this->debugFile($txt, 'ERROR');
             $this->errorText = $txt;
         }
@@ -1464,12 +1489,10 @@ eot;
         $this->endTry();
     }
 
-    public function clearError()
+    public function clearError(): void
     {
         $this->errorText = '';
-        if ($this->getMessages() !== null) {
-            $this->getMessages()->resetAll();
-        }
+        $this->messageContainer->resetLocker($this->lockerId);
     }
 
     /**
@@ -1477,13 +1500,12 @@ eot;
      *
      * @return string
      */
-    public function lastError()
+    public function lastError(): string
     {
         if (!$this->isOpen) {
             return "It's not connected to the database";
         }
-
-        return $this->conn1->errorInfo()[2];
+        return $this->conn1->errorInfo()[2]??'';
     }
 
     /**
@@ -1492,7 +1514,7 @@ eot;
      * @param false $returnAsString
      * @return string
      */
-    public function custom_exception_handler($exception, $customMessage = null, $returnAsString = false)
+    public function custom_exception_handler($exception, $customMessage = null, $returnAsString = false): string
     {
         $isCli = !http_response_code();
         $customMessage = $customMessage === null ? $exception->getMessage() : $customMessage;
@@ -1552,21 +1574,63 @@ eot;
     }
 
     /**
-     * Injects a Message Container.
+     * It returns the insance of the MessageContainer or null if there is none.
      *
-     * @return MessageList|null
+     * @return MessageContainer
      * @test equals null,this(),'this is not a message container'
      */
-    public function getMessages()
+    public function getMessagesContainer(): MessageContainer
     {
-        if (function_exists('messages')) {
-            return messages();
-        }
-
-        return null;
+        return $this->messageContainer;
+    }
+    public function getMessages($level=null): array
+    {
+        return $this->messageContainer->getLocker($this->lockerId)->all($level);
+    }
+    public function getErrors(): array
+    {
+        return $this->messageContainer->getLocker($this->lockerId)->allError();
+    }
+    public function getFirstError(): ?string
+    {
+        return $this->messageContainer->getLocker($this->lockerId)->firstError();
+    }
+    public function getLastError(): ?string
+    {
+        return $this->messageContainer->getLocker($this->lockerId)->lastError();
+    }
+    public function hasError($includeWarning = false): ?string
+    {
+        return $this->messageContainer->getLocker($this->lockerId)->hasError($includeWarning);
+    }
+    public function getInfos(): array
+    {
+        return $this->messageContainer->getLocker($this->lockerId)->allInfo();
+    }
+    public function getFirstInfo(): ?string
+    {
+        return $this->messageContainer->getLocker($this->lockerId)->firstInfo();
+    }
+    public function getLastInfo(): ?string
+    {
+        return $this->messageContainer->getLocker($this->lockerId)->lastInfo();
     }
 
-    public function debugFile($txt, $level = 'INFO')
+
+
+
+    /**
+     * Inject an instance of a messagecontainer. It is usually injected automatically when the instance of PdoOne is created.
+     *
+     * @param MessageContainer $messageContainer
+     * @return void
+     */
+    public function setMessages($messageContainer): void
+    {
+        $this->messageContainer=$messageContainer;
+    }
+
+    public function debugFile($txt, $level = 'INFO'): void
     {
         if (!$this->logFile) {
             return; // debug file is disabled.
@@ -1579,24 +1643,25 @@ eot;
         if ($this->logLevel === 2) {
             $txtW .= ' param:' . json_encode($this->lastParam);
         }
-        error_log('[PdoOne]' . $level . "\t" . $txtW, 0);
+        error_log('[PdoOne]' . $level . "\t" . $txtW);
     }
 
     //<editor-fold desc="transaction functions">
 
     /**
-     * Write a log line for debug, clean the command chain then throw an error
+     * Write a log line for debug if log level>2, clean the command chain then throw an error
      * (if throwOnError==true)
      *
-     * @param $txt
+     * @param string $txt
      *
      * @throws Exception
      */
-    public function storeInfo($txt)
+    public function storeInfo($txt): void
     {
-        if ($this->getMessages() !== null) {
-            $this->getMessages()->addItem($this->db, $txt, 'info');
+        if ($this->logLevel <2 ) {
+            return;
         }
+        $this->messageContainer->addItem($this->lockerId, $txt, 'info');
         $this->debugFile($txt);
     }
 
@@ -1706,9 +1771,7 @@ eot;
 
         $this->lastParam = $params;
         $this->lastQuery = $rawSql;
-        if ($this->logLevel >= 2) {
-            $this->storeInfo($rawSql);
-        }
+        $this->storeInfo($rawSql);
         if ($params === null) {
             $rows = $this->runRawQueryParamLess($rawSql, $returnArray);
             if ($uid !== false && $returnArray) {
@@ -1811,7 +1874,7 @@ eot;
      * @return string
      *
      */
-    public static function queryCommand($sql, $returnType = false)
+    public static function queryCommand($sql, $returnType = false): string
     {
         if (!$sql) {
             return $returnType ? 'dml' : 'dql';
@@ -1874,33 +1937,32 @@ eot;
     /**
      * Prepare a query. It returns a mysqli statement.
      *
-     * @param string $statement A SQL statement.
+     * @param string $sql A SQL statement.
      *
      * @return PDOStatement returns the statement if correct otherwise null
      * @throws Exception
      */
-    public function prepare($statement)
+    public function prepare($sql)
     {
         $this->beginTry();
         if (!$this->isOpen) {
             $this->throwError("It's not connected to the database", '');
             return null;
         }
-        $this->lastQuery = $statement;
+        $this->lastQuery = $sql;
         if ($this->readonly) {
-            if (stripos($statement, 'insert ') === 0 || stripos($statement, 'update ') === 0
-                || stripos($statement, 'delete ') === 0
+            if (stripos($sql, 'insert ') === 0 || stripos($sql, 'update ') === 0
+                || stripos($sql, 'delete ') === 0
             ) {
                 // we aren't checking SQL-DCL queries.
                 $this->throwError('Database is in READ ONLY MODE', '');
             }
         }
-        if ($this->logLevel >= 2) {
-            $this->storeInfo($statement);
-        }
+
+        $this->storeInfo($sql);
 
         try {
-            $stmt = $this->conn1->prepare($statement);
+            $stmt = $this->conn1->prepare($sql);
         } catch (Exception $ex) {
             $stmt = false;
             $this->throwError('Failed to prepare', $ex->getMessage() . $this->lastError(), ['param' => $this->lastParam], true, $ex);
@@ -1925,7 +1987,7 @@ eot;
      *
      * @return bool
      */
-    private function isAssoc($array)
+    private function isAssoc($array): bool
     {
         if ($array === null) {
             return false;
@@ -1946,7 +2008,7 @@ eot;
      * @test equals PDO::PARAM_STR,(20.3)
      * @test equals PDO::PARAM_STR,('hello')
      */
-    public function getType(&$v)
+    public function getType(&$v): int
     {
         switch (1) {
             case (is_float($v)):
@@ -1991,7 +2053,7 @@ eot;
      *     [1=>1],$this->pdoOne->select('1')->from('dual')->first(),'it
      *       must runs'
      */
-    public function runQuery($stmt, $namedArgument = null, $throwError = true)
+    public function runQuery($stmt, $namedArgument = null, $throwError = true): ?bool
     {
         $this->beginTry();
         if (!$this->isOpen) {
@@ -2025,7 +2087,7 @@ eot;
         return '"' . $value . '"';
     }
 
-    public static function removeDoubleQuotes($value)
+    public static function removeDoubleQuotes($value): ?string
     {
         if (!$value) {
             return null;
@@ -2039,7 +2101,7 @@ eot;
      * @return string
      * @throws Exception
      */
-    public function generateCodeSelect($query)
+    public function generateCodeSelect($query): string
     {
         $this->beginTry();
         $q = self::splitQuery($query);
@@ -2059,7 +2121,7 @@ eot;
         return $code;
     }
 
-    protected static function splitQuery($query)
+    protected static function splitQuery($query): array
     {
         $result = [];
         $parts = [
@@ -2172,7 +2234,7 @@ eot;
         $recursive = false,
         $classRelations = null,
         $relation = []
-    )
+    ): string
     {
         $this->beginTry();
         if ($sql === null) {
@@ -2318,7 +2380,7 @@ eot;
      * @return array
      * @throws Exception
      */
-    public function tableDependency($returnColumn = false, $forceLowerCase = false)
+    public function tableDependency($returnColumn = false, $forceLowerCase = false): ?array
     {
         $this->beginTry();
         if ($returnColumn) {
@@ -2405,7 +2467,7 @@ eot;
      * @param $sql
      * @return PdoOneQuery
      */
-    public function select($sql)
+    public function select($sql): PdoOneQuery
     {
         return (new PdoOneQuery($this))->select($sql);
     }
@@ -2428,7 +2490,7 @@ eot;
      * @return string
      * @throws Exception
      */
-    public function generateCodeCreate($tableName)
+    public function generateCodeCreate($tableName): string
     {
         $this->beginTry();
         $code = "\$pdo->createTable('" . $tableName . "',\n";
@@ -2444,7 +2506,7 @@ eot;
         return $code;
     }
 
-    public static function varExport($input, $indent = "\t")
+    public static function varExport($input, $indent = "\t"): ?string
     {
         switch (gettype($input)) {
             case 'string':
@@ -3335,7 +3397,7 @@ eot;
      * @return string
      * @see \eftec\PdoOne::addDelimiter to considers points
      */
-    public function addQuote($txt)
+    public function addQuote($txt): string
     {
         if (strlen($txt) < 2) {
             return $txt;
@@ -3355,7 +3417,7 @@ eot;
      * @return array
      * @throws Exception
      */
-    public function getDefIdentities($table)
+    public function getDefIdentities($table): array
     {
         $this->beginTry();
         $r = $this->service->getDefTable($table);
@@ -3384,7 +3446,7 @@ eot;
      * @test InstanceOf
      *       PdoOne::class,this('field1=?,field2=?',[20,'hello'])
      */
-    public function set($sqlOrArray, $param = PdoOne::NULL)
+    public function set($sqlOrArray, $param = PdoOne::NULL): PdoOneQuery
     {
         return (new PdoOneQuery($this))->set($sqlOrArray, $param);
     }
@@ -3398,7 +3460,7 @@ eot;
      * @return bool
      * @noinspection PhpUnusedParameterInspection
      */
-    public function hasWhere($having = false)
+    public function hasWhere($having = false): bool
     {
         // there is not a query so it always returns false. This method is keep for compatibility with old code.
         return false;
@@ -3412,7 +3474,7 @@ eot;
      * @posttest execution $this->pdoOne->commit();
      * @example  examples/testdb.php 92,4
      */
-    public function startTransaction()
+    public function startTransaction(): bool
     {
         if ($this->transactionOpen || !$this->isOpen) {
             return false;
@@ -3432,7 +3494,7 @@ eot;
      * @throws Exception
      * @test equals false,(false),'transaction is not open'
      */
-    public function commit($throw = true)
+    public function commit($throw = true): bool
     {
         $this->beginTry();
         if (!$this->transactionOpen && $throw) {
@@ -3457,7 +3519,7 @@ eot;
      * @throws Exception
      * @test equals false,(false),'transaction is not open'
      */
-    public function rollback($throw = true)
+    public function rollback($throw = true): bool
     {
         $this->beginTry();
         if (!$this->transactionOpen && $throw) {
@@ -3510,7 +3572,7 @@ eot;
      * @see  \eftec\PdoOne::generateCodeClass
      * @see  \eftec\PdoOne::setEncryption
      */
-    public function generateCodeClassConversions($conversion = [])
+    public function generateCodeClassConversions($conversion = []): void
     {
         $this->codeClassConversion = $conversion;
     }
@@ -3603,7 +3665,7 @@ eot;
         $columnRelations = [],
         $extraColumns = [],
         $columnRemoves = []
-    )
+    ): array
     {
         $internalCache = $this->useInternalCache;
         $this->setUseInternalCache();
@@ -3738,7 +3800,7 @@ eot;
      * @param bool $useInternalCache
      * @return PdoOne
      */
-    public function setUseInternalCache($useInternalCache = true)
+    public function setUseInternalCache($useInternalCache = true): PdoOne
     {
         $this->useInternalCache = $useInternalCache;
         return $this;
@@ -3746,59 +3808,15 @@ eot;
 
     public function generateBaseClass($baseClassName, $namespace, $classes, $modelUse = false)
     {
-        $r = $this->phpstart . <<<'eot'
-/** @noinspection PhpMissingParamTypeInspection */
-/** @noinspection PhpMissingReturnTypeInspection */
-/** @noinspection PhpMissingFieldTypeInspection */
-/** @noinspection UnknownInspectionInspection */
-/** @noinspection AccessModifierPresentedInspection */
-/** @noinspection PhpIncompatibleReturnTypeInspection
- * @noinspection ReturnTypeCanBeDeclaredInspection
- * @noinspection DuplicatedCode
- * @noinspection PhpUnused
- * @noinspection PhpUndefinedMethodInspection
- * @noinspection PhpUnusedLocalVariableInspection
- * @noinspection PhpUnusedAliasInspection
- * @noinspection NullPointerExceptionInspection
- * @noinspection SenselessProxyMethodInspection
- * @noinspection PhpParameterByRefIsNotUsedAsReferenceInspection
- */
-{namespace}
-use eftec\PdoOne;
-use eftec\_BasePdoOneRepo;
-{exception}
+        $filename=__DIR__ . '/template/template_base.php';
+        $template = @file_get_contents($filename);
+        if ($template=== false) {
+            throw new RuntimeException("Unable to read template file $filename");
+        }
+        // we delete and replace the first line.
+        $template = substr($template, strpos($template, "\n") + 1);
 
-/**
- * Generated by PdoOne Version {version}. 
- * @copyright (c) Jorge Castro C. MIT License  https://github.com/EFTEC/PdoOne
- * Class {class}
- */
-class {class} extends _BasePdoOneRepo
-{
-    const type = '{type}';
-    const COMPILEDVERSION={compiled};
-    const NS = '{namespace2}';
-    
-    /** 
-     * @var bool if true then it uses objects (instead of array) in the 
-     * methods tolist(),first(),insert(),update() and delete() 
-     */
-    public static $useModel={modeluse};      
-    
-    
-    /** @var string[] it is used to set the relations betweeen table (key) and class (value) */
-    const RELATIONS = {relations};
-    /**
-     * With the name of the table, we get the class
-     * @param string $tableName
-     *
-     * @return string[]
-     */
-    protected function tabletoClass($tableName) {        
-        return static::RELATIONS[$tableName];           
-    }    
-}
-eot;
+        $r = $this->phpstart . $template;
         /*foreach($classes as $id=>$entity) {
             foreach($entity as $k=>$class) {
                 $classes[$id][$k] = $namespace . '\\' . $class;
@@ -3864,95 +3882,15 @@ eot;
     )
     {
         $this->beginTry();
-        $r = $this->phpstart . <<<'eot'
-/** @noinspection PhpIncompatibleReturnTypeInspection
- * @noinspection ReturnTypeCanBeDeclaredInspection
- * @noinspection DuplicatedCode
- * @noinspection PhpUnused
- * @noinspection PhpUndefinedMethodInspection
- * @noinspection PhpUnusedLocalVariableInspection
- * @noinspection PhpUnusedAliasInspection
- * @noinspection NullPointerExceptionInspection
- * @noinspection SenselessProxyMethodInspection
- * @noinspection PhpParameterByRefIsNotUsedAsReferenceInspection
- */
-{namespace}
-use eftec\PdoOne;
-{exception}
 
-/**
- * Generated by PdoOne Version {version}. 
- * DO NOT EDIT THIS CODE. THIS CODE WILL SELF GENERATE.
- * @copyright (c) Jorge Castro C. MIT License  https://github.com/EFTEC/PdoOne
- * Class {classname}
- * <pre>
- * $code=$pdoOne->generateAbstractModelClass({args});
- * </pre>
- */
-abstract class Abstract{classname}
-{
-{fields}
-
-{fieldsrel}
-
-
-    /**
-     * Abstract{classname} constructor.
-     *
-     * @param array|null $array
-     */
-    public function __construct($array=null)
-    {
-        if($array===null) {
-            return;
+        $filename=__DIR__ . '/template/template_abstractmodel.php';
+        $template = @file_get_contents($filename);
+        if ($template=== false) {
+            throw new RuntimeException("Unable to read template file $filename");
         }
-        foreach($array as $k=>$v) {
-            $this->{$k}=$v;
-        }
-    }
-
-    //<editor-fold desc="array conversion">
-    public static function fromArray($array) {
-        if($array===null) {
-            return null;
-        }
-        $obj=new {classname}();
-{fieldsfa}
-{fieldsrelfa}
-
-        return $obj;
-    }
-    
-    /**
-     * It converts the current object in an array
-     * 
-     * @return mixed
-     */
-    public function toArray() {
-        return static::objectToArray($this);
-    }
-    
-    /**
-     * It converts an array of arrays into an array of objects.
-     * 
-     * @param array|null $array
-     *
-     * @return array|null
-     */
-    public static function fromArrayMultiple($array) {
-        if($array===null) {
-            return null;
-        }
-        $objs=[];
-        foreach($array as $v) {
-            $objs[]=self::fromArray($v);
-        }
-        return $objs;
-    }
-    //</editor-fold>
-    
-} // end class
-eot;
+        // we delete and replace the first line.
+        $template = substr($template, strpos($template, "\n") + 1);
+        $r = $this->phpstart . $template;
         //$lastns = explode('\\', $namespace);
         //$baseClass = ($baseClass === null) ? end($lastns) : $baseClass;
 
@@ -4649,7 +4587,7 @@ eot;
      *
      * @see \eftec\PdoOne::setUseInternalCache
      */
-    public function flushInternalCache($useInternalCache = false)
+    public function flushInternalCache($useInternalCache = false): void
     {
         $this->internalCacheCounter = 0;
         $this->internalCache = [];
@@ -4670,7 +4608,7 @@ eot;
      *
      * @return void.
      */
-    public function setCache($uid, $family = '', $data = null, $ttl = null)
+    public function setCache($uid, $family = '', $data = null, $ttl = null): void
     {
         if ($family === '*') {
             $family = $this->tables;
@@ -4695,7 +4633,7 @@ eot;
      * @return $this
      * @see \eftec\PdoOneEncryption::$hashType
      */
-    public function invalidateCache($uid = '', $family = '')
+    public function invalidateCache($uid = '', $family = ''): PdoOne
     {
         if ($this->cacheService !== null) {
             if ($family === '*') {
@@ -4713,7 +4651,7 @@ eot;
      *
      * @return int
      */
-    public function affected_rows($stmt = null)
+    public function affected_rows($stmt = null): int
     {
         if ($stmt instanceof PDOStatement && !$this->isOpen) {
             return $stmt->rowCount();
@@ -4739,9 +4677,9 @@ eot;
     }
 
     /**
-     * @return IPdoOneCache
+     * @return IPdoOneCache|null
      */
-    public function getCacheService()
+    public function getCacheService(): ?IPdoOneCache
     {
         return $this->cacheService;
     }
@@ -4753,7 +4691,7 @@ eot;
      *
      * @return $this
      */
-    public function setCacheService($cacheService)
+    public function setCacheService($cacheService): PdoOne
     {
         $this->cacheService = $cacheService;
         return $this;
@@ -4777,7 +4715,7 @@ eot;
      * @throws Exception
      * @test void this('123','somesalt','AES-256-CTR')
      */
-    public function setEncryption($password, $salt, $encMethod = 'AES-256-CTR')
+    public function setEncryption($password, $salt, $encMethod = 'AES-256-CTR'): PdoOne
     {
         $this->beginTry();
         if (!extension_loaded('openssl')) {
@@ -4832,7 +4770,7 @@ eot;
         return $this->encryption->decrypt($data);
     }
 
-    public function render()
+    public function render(): void
     {
         if ($this->logLevel) {
             ob_clean();
@@ -5111,7 +5049,7 @@ TEM1;
         }
     }
 
-    public function bootstrapcss()
+    public function bootstrapcss(): string
     {
         return <<<BOOTS
     	<style>
@@ -5120,7 +5058,7 @@ html{font-family:sans-serif;-webkit-text-size-adjust:100%;-ms-text-size-adjust:1
 BOOTS;
     }
 
-    private function runUtilCombo($array, $select)
+    private function runUtilCombo($array, $select): string
     {
         $r = '';
         foreach ($array as $item) {
@@ -5140,7 +5078,7 @@ BOOTS;
      * @return bool
      * @throws Exception
      */
-    public function dropTable($tableName, $extra = '')
+    public function dropTable($tableName, $extra = ''): bool
     {
         $this->beginTry();
         $r = $this->drop($tableName, 'table', $extra);
@@ -5160,7 +5098,7 @@ BOOTS;
      * @return bool
      * @throws Exception
      */
-    public function drop($objectName, $type, $extra = '')
+    public function drop($objectName, $type, $extra = ''): bool
     {
         $this->beginTry();
         $sql = "drop $type " . $this->addDelimiter($objectName) . " $extra";
@@ -5248,10 +5186,10 @@ BOOTS;
      *                                       based on snowflake<br> sequence= it generates a regular sequence
      *                                       number
      *                                       (1,2,3...)<br>
-     * @return int|bool
+     * @return bool
      * @throws Exception
      */
-    public function createSequence($tableSequence = null, $method = 'snowflake')
+    public function createSequence($tableSequence = null, $method = 'snowflake'): bool
     {
         $this->beginTry();
         $tableSequence = ($tableSequence === null) ? $this->tableSequence : $tableSequence;
@@ -5343,7 +5281,7 @@ BOOTS;
         $primaryKey = null,
         $extra = '',
         $extraOutside = ''
-    )
+    ): bool
     {
         $this->endTry();
         $sql = $this->service->createTable($tableName, $definition, $primaryKey, $extra, $extraOutside);
@@ -5368,7 +5306,7 @@ BOOTS;
      * @return bool
      * @throws Exception
      */
-    public function runMultipleRawQuery($listSql, $continueOnError = false)
+    public function runMultipleRawQuery($listSql, $continueOnError = false): bool
     {
         $this->beginTry();
         if (!$this->isOpen) {
@@ -5392,9 +5330,9 @@ BOOTS;
                     }
                 }
                 $this->lastQuery = $rawSql;
-                if ($this->logLevel >= 2) {
-                    $this->storeInfo($rawSql);
-                }
+
+                $this->storeInfo($rawSql);
+
                 $msgError = '';
                 try {
                     $r = $this->conn1->query($rawSql);
@@ -5432,7 +5370,7 @@ BOOTS;
      * @return bool
      * @throws Exception
      */
-    public function createFK($tableName, $definition)
+    public function createFK($tableName, $definition): bool
     {
         $this->beginTry();
         $sql = $this->service->createFK($tableName, $definition);
@@ -5448,7 +5386,7 @@ BOOTS;
      *
      * @test void this('travisdb')
      */
-    public function db($dbName)
+    public function db($dbName): void
     {
         $this->beginTry();
         if (!$this->isOpen) {
@@ -5468,7 +5406,7 @@ BOOTS;
      * @return bool
      * @test equals false,this(),'the database is read only'
      */
-    public function readonly()
+    public function readonly(): bool
     {
         return $this->readonly;
     }
@@ -5481,7 +5419,7 @@ BOOTS;
      * @test exception this(false)
      * @see  PdoOne::connect()
      */
-    public function open($failIfConnected = true, $alterSession = false)
+    public function open($failIfConnected = true, $alterSession = false): void
     {
         $this->connect($failIfConnected, $alterSession);
     }
@@ -5491,7 +5429,7 @@ BOOTS;
      *
      * @test void this()
      */
-    public function close()
+    public function close(): void
     {
         $this->isOpen = false;
         if ($this->conn1 === null) {
@@ -5571,7 +5509,7 @@ BOOTS;
      * @return string
      * @see \eftec\PdoOne::getSequence
      */
-    public function getSequencePHP($unpredictable = false)
+    public function getSequencePHP($unpredictable = false): string
     {
         $ms = microtime(true);
         //$ms=1000;
@@ -5649,7 +5587,7 @@ BOOTS;
      * @return bool true if the table exist
      * @throws Exception
      */
-    public function tableExist($tableName)
+    public function tableExist($tableName): bool
     {
         $this->beginTry();
         $r = $this->objectExist($tableName);
@@ -5667,7 +5605,7 @@ BOOTS;
      * @return bool
      * @throws Exception
      */
-    public function objectExist($objectName, $type = 'table')
+    public function objectExist($objectName, $type = 'table'): bool
     {
         $this->beginTry();
         $query = $this->service->objectExist($type);
@@ -5701,7 +5639,7 @@ BOOTS;
      * @return array List of table.
      * @throws Exception
      */
-    public function tableSorted($maxLoop = 5, $returnProblems = false, $debugTrace = false)
+    public function tableSorted($maxLoop = 5, $returnProblems = false, $debugTrace = false): array
     {
         $this->beginTry();
         list($tables, $after, $before) = $this->tableDependency();
@@ -5750,7 +5688,7 @@ BOOTS;
         $before,
         &$tableProblems,
         $debugTrace = false
-    )
+    ): bool
     {
         shuffle($tables);
         $tableProblems = [];
@@ -5881,7 +5819,7 @@ BOOTS;
      *
      * @return bool
      */
-    public function isQuery($sql)
+    public function isQuery($sql): bool
     {
         $sql = trim($sql);
         return (stripos($sql, 'select ') === 0 || stripos($sql, 'show ') === 0);
@@ -5974,7 +5912,7 @@ BOOTS;
      * @return PdoOneQuery
      * @see \eftec\PdoOne::$errorText
      */
-    public function genError($error = false)
+    public function genError($error = false): PdoOneQuery
     {
         return (new PdoOneQuery($this))->genError($error);
     }
@@ -5992,7 +5930,7 @@ BOOTS;
      * @param string $sql
      * @param string $arg
      *
-     * @return mixed|null
+     * @return float|int
      * @throws Exception
      */
     public function min($sql = '', $arg = '')
@@ -6016,7 +5954,7 @@ BOOTS;
      * @param string|null $sql [optional]
      * @param string      $arg [optional]
      *
-     * @return PdoOneQuery
+     * @return int|float
      * @throws Exception
      */
     public function count($sql = '', $arg = '*')
@@ -6038,7 +5976,7 @@ BOOTS;
      *                        of the query ("from table..")
      * @param string $arg     [optiona] it could be the name of the column
      *
-     * @return PdoOneQuery
+     * @return float|int
      * @throws Exception
      */
     public function sum($sql = '', $arg = '')
@@ -6059,7 +5997,7 @@ BOOTS;
      * @param string $sql
      * @param string $arg
      *
-     * @return PdoOneQuery
+     * @return float|int
      * @throws Exception
      */
     public function max($sql = '', $arg = '')
@@ -6080,7 +6018,7 @@ BOOTS;
      * @param string $sql
      * @param string $arg
      *
-     * @return PdoOneQuery
+     * @return float|int
      * @throws Exception
      */
     public function avg($sql = '', $arg = '')
@@ -6107,7 +6045,7 @@ BOOTS;
      * @return PdoOneQuery
      * @test InstanceOf PdoOne::class,this('table t1')
      */
-    public function from($sql, $schema = null)
+    public function from($sql, $schema = null): PdoOneQuery
     {
         return (new PdoOneQuery($this))->from($sql, $schema);
     }
@@ -6205,7 +6143,7 @@ BOOTS;
      * @return PdoOneQuery
      * @test InstanceOf PdoOne::class,this('table2 on table1.t1=table2.t2')
      */
-    public function right($sql)
+    public function right($sql): PdoOneQuery
     {
         return (new PdoOneQuery($this))->right($sql);
     }
@@ -6225,7 +6163,7 @@ BOOTS;
      * @return PdoOneQuery
      * @test InstanceOf PdoOne::class,this('table2 on table1.t1=table2.t2')
      */
-    public function left($sql)
+    public function left($sql): PdoOneQuery
     {
         return (new PdoOneQuery($this))->left($sql);
     }
@@ -6258,7 +6196,7 @@ BOOTS;
      * @test InstanceOf
      *       PdoOne::class,this('field1=?,field2=?',[20,'hello'])
      */
-    public function where($sql, $param = PdoOne::NULL, $isHaving = false, $tablePrefix = null)
+    public function where($sql, $param = PdoOne::NULL, $isHaving = false, $tablePrefix = null): PdoOneQuery
     {
         return (new PdoOneQuery($this))->where($sql, $param, $isHaving, $tablePrefix);
     }
@@ -6285,7 +6223,7 @@ BOOTS;
      * @test InstanceOf
      *       PdoOne::class,this('field1=?,field2=?',[20,'hello'])
      */
-    public function having($sql, $param = PdoOne::NULL)
+    public function having($sql, $param = PdoOne::NULL): PdoOneQuery
     {
         return (new PdoOneQuery($this))->having($sql, $param);
     }
@@ -6304,7 +6242,7 @@ BOOTS;
      * @return PdoOneQuery
      * @test InstanceOf PdoOne::class,this('tablejoin on t1.field=t2.field')
      */
-    public function join($sql, $condition = '')
+    public function join($sql, $condition = ''): PdoOneQuery
     {
         return (new PdoOneQuery($this))->join($sql, $condition);
     }
@@ -6319,7 +6257,7 @@ BOOTS;
      * @return PdoOneQuery
      * @test InstanceOf PdoOne::class,this('fieldgroup')
      */
-    public function group($sql)
+    public function group($sql): PdoOneQuery
     {
         return (new PdoOneQuery($this))->group($sql);
     }
@@ -6337,7 +6275,7 @@ BOOTS;
      * @return PdoOneQuery
      * @test InstanceOf PdoOne::class,this('name desc')
      */
-    public function order($sql)
+    public function order($sql): PdoOneQuery
     {
         return (new PdoOneQuery($this))->order($sql);
     }
@@ -6358,7 +6296,7 @@ BOOTS;
      * @throws Exception
      * @test InstanceOf PdoOne::class,this('1,10')
      */
-    public function limit($sql)
+    public function limit($sql): PdoOneQuery
     {
         return (new PdoOneQuery($this))->limit($sql);
     }
@@ -6376,7 +6314,7 @@ BOOTS;
      * @return PdoOneQuery
      * @test InstanceOf PdoOne::class,this()
      */
-    public function distinct($sql = 'distinct')
+    public function distinct($sql = 'distinct'): PdoOneQuery
     {
         return (new PdoOneQuery($this))->distinct($sql);
     }
@@ -6392,7 +6330,7 @@ BOOTS;
      *
      * @return PdoOneQuery
      */
-    public function recursive($rec)
+    public function recursive($rec): PdoOneQuery
     {
         return (new PdoOneQuery($this))->recursive($rec);
     }
@@ -6402,7 +6340,7 @@ BOOTS;
      *
      * @return array
      */
-    public function getRecursive()
+    public function getRecursive(): array
     {
         return (new PdoOneQuery($this))->getRecursive();
     }
@@ -6435,7 +6373,7 @@ BOOTS;
      *
      * @return PdoOneQuery
      */
-    public function useCache($ttl = 0, $family = '')
+    public function useCache($ttl = 0, $family = ''): PdoOneQuery
     {
         return (new PdoOneQuery($this))->useCache($ttl, $family);
     }

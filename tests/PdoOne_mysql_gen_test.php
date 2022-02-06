@@ -71,7 +71,7 @@ class CacheServicesmysql implements IPdoOneCache
      * @param null   $data
      * @param null   $ttl
      */
-    public function setCache($uid, $family = '', $data = null, $ttl = null)
+    public function setCache($uid, $family = '', $data = null, $ttl = null) : void
     {
         $this->track[] = 'set.' . $uid;
         if ($family === '') {
@@ -99,7 +99,7 @@ class CacheServicesmysql implements IPdoOneCache
      *
      * @return void
      */
-    public function invalidateCache($uid = '', $family = '')
+    public function invalidateCache($uid = '', $family = '') : void
     {
         if ($family === '') {
             if ($uid === '') {
@@ -134,6 +134,12 @@ class PdoOne_mysql_gen_test extends TestCase
     /** @var PdoOne */
     protected $pdoOne;
 
+    public function test_ping_ping() {
+        $ping='pong';
+        $this->assertEquals('pong',$ping);
+    }
+
+
     public function setUp() : void
     {
         //$this->pdoOne = new PdoOne("mysql", "127.0.0.1", "travis", "", "pdotest");
@@ -153,7 +159,7 @@ class PdoOne_mysql_gen_test extends TestCase
 
     }
 
-    public function DeleteAll()
+    public function DeleteAll(): void
     {
         TableParentExtRepo::setFalseOnError(true)::dropTable();
         TableParentxCategoryRepo::setFalseOnError(true)::dropTable();
@@ -169,7 +175,7 @@ class PdoOne_mysql_gen_test extends TestCase
         //self::assertEquals(true,TableGrandChildTagRepo::dropTable());
     }
 
-    public function CreateAll()
+    public function CreateAll(): void
     {
         TableParentExtRepo::createTable();
         TableCategoryRepo::createTable();
@@ -187,7 +193,7 @@ class PdoOne_mysql_gen_test extends TestCase
     }
 
 
-    public function InsertAll()
+    public function InsertAll(): void
     {
         $cat = TableCategoryRepo::factory();
         $cat['IdTableCategoryPK'] = 1;
@@ -254,7 +260,7 @@ class PdoOne_mysql_gen_test extends TestCase
 
     }
 
-    public function testFactory()
+    public function testFactory(): void
     {
         //   TODO: FACTORY CON SETRECURSIVE FALLA
         self::assertEquals(['idtablaparentPK' => 0,
@@ -281,7 +287,7 @@ class PdoOne_mysql_gen_test extends TestCase
 
     }
 
-    public function testBuild()
+    public function testBuild(): void
     {
 
         $relations = [
@@ -331,20 +337,20 @@ class PdoOne_mysql_gen_test extends TestCase
 
     }
 
-    public function testValidate()
+    public function testValidate(): void
     {
         $b = TableParentRepo::factory();
         self::assertEquals(true, TableParentRepo::validateModel($b));
     }
 
-    public function testQuery()
+    public function testQuery(): void
     {
         $sql = 'select idtablaparentpk from ' . TableParentRepo::TABLE . ' where idtablaparentpk=?';
         self::assertEquals([0 => ['idtablaparentpk' => 1]], TableParentRepo::query($sql, [1]));
 
     }
 
-    public function testQuery2()
+    public function testQuery2(): void
     {
         $r = TableParentRepo::order('idtablaparentpk')->toListSimple();
         self::assertEquals([1, 2], $r);
@@ -354,7 +360,7 @@ class PdoOne_mysql_gen_test extends TestCase
 
     }
 
-    public function testFirst()
+    public function testFirst(): void
     {
         $r = TableParentRepo::where('idtablaparentpk>?', 0)->toListSimple();
         self::assertEquals([0 => 1,
@@ -375,7 +381,7 @@ class PdoOne_mysql_gen_test extends TestCase
         self::assertEquals(true, $r);
     }
 
-    public function testCount()
+    public function testCount(): void
     {
         $r = TableParentRepo::where('idtablaparentpk>?', 3)->toList();
         $a2 = count($r);
@@ -462,7 +468,7 @@ class PdoOne_mysql_gen_test extends TestCase
     }
     */
 
-    public function testGrandChild()
+    public function testGrandChild(): void
     {
         try {
             if (!TableGrandChildRepo::createTable()) {
@@ -490,7 +496,7 @@ class PdoOne_mysql_gen_test extends TestCase
         self::assertGreaterThan($in, $in2);
     }
 
-    public function test2()
+    public function test2(): void
     {
         try {
             if (!TableGrandChildTagRepo::createTable()) {
@@ -518,7 +524,7 @@ class PdoOne_mysql_gen_test extends TestCase
         }
     }
 
-    public function test3()
+    public function test3(): void
     {
         try {
             if (!TableChildRepo::createTable()) {
@@ -545,7 +551,7 @@ class PdoOne_mysql_gen_test extends TestCase
         }
     }
 
-    public function test4()
+    public function test4(): void
     {
         try {
             if (!TableParentRepo::createTable()) {
@@ -583,7 +589,7 @@ class PdoOne_mysql_gen_test extends TestCase
         }
     }
 
-    public function test4b()
+    public function test4b(): void
     {
         try {
             if (!TableCategoryRepo::createTable()) {
@@ -613,7 +619,7 @@ class PdoOne_mysql_gen_test extends TestCase
         }
     }
 
-    public function test4c()
+    public function test4c(): void
     {
         if (!TableParentxCategoryRepo::createTable()) {
             TableParentxCategoryRepo::truncate(true);
@@ -629,7 +635,7 @@ class PdoOne_mysql_gen_test extends TestCase
     }
 
     /** @noinspection SuspiciousAssignmentsInspection */
-    public function testCacheSimple()
+    public function testCacheSimple(): void
     {
         $rows = TableParentRepo::toList();
         self::assertGreaterThan(0, count($rows));
@@ -647,7 +653,7 @@ class PdoOne_mysql_gen_test extends TestCase
     }
 
     /** @noinspection NullPointerExceptionInspection */
-    public function testCache()
+    public function testCache(): void
     {
         $rows = TableParentRepo::toList();
         self::assertGreaterThan(0, count($rows));
@@ -673,7 +679,7 @@ class PdoOne_mysql_gen_test extends TestCase
 
     }
 
-    public function testCache2()
+    public function testCache2(): void
     {
         $rows = TableParentRepo::toList();
         self::assertGreaterThan(0, count($rows));
@@ -690,7 +696,7 @@ class PdoOne_mysql_gen_test extends TestCase
 
     }
 
-    public function testSelect()
+    public function testSelect(): void
     {
         $rows = TableParentRepo::toList();
         self::assertGreaterThan(0, count($rows));
@@ -800,7 +806,7 @@ class PdoOne_mysql_gen_test extends TestCase
         ], $rows);
     }
 
-    public function testSelectManyToMany()
+    public function testSelectManyToMany(): void
     {
         try {
             $rows = (TableParentRepo::setRecursive([
@@ -832,7 +838,7 @@ class PdoOne_mysql_gen_test extends TestCase
         ], $rows);
     }
 
-    public function testSelectManyToOne_ManyToOne_OneToMany()
+    public function testSelectManyToOne_ManyToOne_OneToMany(): void
     {
         try {
             $rows = (TableParentRepo::setRecursive([
@@ -864,7 +870,7 @@ class PdoOne_mysql_gen_test extends TestCase
         ], $rows);
     }
 
-    public function testOneToMany()
+    public function testOneToMany(): void
     {
         $rows = TableChildRepo::setRecursive(['_TableParent'])->first(1);
         $rows['_TableParent'][0]['fieldDateTime'] = null;
@@ -891,7 +897,7 @@ class PdoOne_mysql_gen_test extends TestCase
         ], $rows);
     }
 
-    public function testUpdateDelete()
+    public function testUpdateDelete(): void
     {
         $p = TableParentRepo::factory();
         $p['idchildFK'] = null;
@@ -921,7 +927,7 @@ class PdoOne_mysql_gen_test extends TestCase
 
     }
 
-    public function testSelectOneToMany_ManyToOne()
+    public function testSelectOneToMany_ManyToOne(): void
     {
         try {
             $rows = (TableParentRepo::setRecursive([

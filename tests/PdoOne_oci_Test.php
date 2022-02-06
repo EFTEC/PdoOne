@@ -945,9 +945,13 @@ class PdoOne_oci_Test extends TestCase
         $this->pdoOne->close();
     }
 
-    public function test_getMessages()
+    public function test_getMessages(): void
     {
-        self::assertEquals(null, $this->pdoOne->getMessages(), 'this is not a message container');
+        try {
+            $this->pdoOne->getMessagesContainer();
+        } catch(Exception $ex) {
+            $this->assertTrue(true);
+        }
     }
 
 

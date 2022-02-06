@@ -38,25 +38,7 @@ use RuntimeException;
 abstract class _BasePdoOneRepo
 {
     // it is used for compatibility.
-    const BINARYVERSION = 6;
-    /** @var PdoOne */
-    public static $pdoOne;
-    /** @var string|null $schema the current schema/database */
-    public static $schema;
-    /** @var PdoOneQuery */
-    public static $pdoOneQuery;
-    /** @var array $gQuery =[['columns'=>[],'joins'=>[],'where'=>[]] */
-    public static $gQuery = [];
-    public static $gQueryCounter = 0;
-    public static $pageSize = 20;
-    public static $lastException = '';
-    /** @var bool if true then it returns a false on error. If false, it throws an exception in case of error */
-    protected static $falseOnError = false;
-
-    /** @var null|string the unique id generate by sha256 and based in the query, arguments, type and methods */
-    private static $uid;
-
-
+    const BINARYVERSION = 7;
     /**
      * If true then it returns false on exception. Otherwise, it throws an exception.
      *
@@ -66,7 +48,7 @@ abstract class _BasePdoOneRepo
      */
     public static function setFalseOnError($falseOnError = true)
     {
-        self::$falseOnError = $falseOnError;
+        static::$falseOnError = $falseOnError;
         return static::ME;
     }
 
@@ -82,14 +64,14 @@ abstract class _BasePdoOneRepo
     public static function createTable($extra = null)
     {
         try {
-            if (!self::getPdoOne()->tableExist(static::TABLE)) {
-                return self::getPdoOne()
+            if (!static::getPdoOne()->tableExist(static::TABLE)) {
+                return static::getPdoOne()
                     ->createTable(static::TABLE, static::getDef('sql'), static::getDefKey(), $extra);
             }
         } catch (Exception $exception) {
             self::reset();
-            if (self::$falseOnError) {
-                self::$lastException = $exception->getMessage();
+            if (static::$falseOnError) {
+                static::$lastException = $exception->getMessage();
                 return false;
             }
             throw $exception;
@@ -99,43 +81,9 @@ abstract class _BasePdoOneRepo
     }
 
 
-    /**
-     * It is used for DI.<br>
-     * If the field is not null, it returns the field self::$pdoOne<br>
-     * If the global function pdoOne exists, then it is used<br>
-     * if the global variable $pdoOne exists, then it is used<br>
-     * Otherwise, it returns null
-     *
-     * @return PdoOne
-     */
-    protected static function getPdoOne()
-    {
-        if (self::$pdoOne !== null) {
-            return self::$pdoOne;
-        }
-        if (self::BINARYVERSION !== static::COMPILEDVERSION) {
-            $p = new PdoOne('test', 'no database', '', '');
-            $p->throwError('Repository classes requires a new version. Please update PdoOne and rebuild'
-                , self::class);
-        }
-        if (function_exists('PdoOne')) {
-            self::$pdoOne = PdoOne();
-        }
-        if (isset($GLOBALS['pdoOne']) && $GLOBALS['pdoOne'] instanceof PdoOne) {
-            self::$pdoOne = $GLOBALS['pdoOne'];
-        }
-        return self::$pdoOne;
-    }
 
-    /**
-     * It sets the field self::$pdoOne
-     *
-     * @param $pdoOne
-     */
-    public static function setPdoOne($pdoOne)
-    {
-        self::$pdoOne = $pdoOne;
-    }
+
+
 
     /**
      * It resets the stack
@@ -143,13 +91,13 @@ abstract class _BasePdoOneRepo
      */
     protected static function reset()
     {
-        self::$uid = null;
-        self::$gQueryCounter = 0;
-        self::$gQuery = [];
-        self::$falseOnError = false;
-        self::$lastException = '';
+        static::$uid = null;
+        static::$gQueryCounter = 0;
+        static::$gQuery = [];
+        static::$falseOnError = false;
+        static::$lastException = '';
         //self::getQuery()->builderReset($forcedPdoOne);
-        self::$pdoOneQuery = null;
+        static::$pdoOneQuery = null;
     }
 
     /**
@@ -159,17 +107,17 @@ abstract class _BasePdoOneRepo
      * $values=self::base()->select('*')->from('table')->toList();
      * </pre>
      *
-     * @return PdoOne|null
+     * @return PdoOne
      * @see \eftec\_BasePdoOneRepo::getPdoOne
      */
     public static function base()
     {
-        if (self::getPdoOne() === null) {
-            self::getPdoOne()
+        if (static::getPdoOne() === null) {
+            static::getPdoOne()
                 ->throwError('PdoOne not set', self::class);
         }
         self::reset();
-        return self::getPdoOne();
+        return static::getPdoOne();
     }
 
     /**
@@ -226,10 +174,10 @@ abstract class _BasePdoOneRepo
      */
     protected static function getQuery()
     {
-        if (self::$pdoOneQuery === null) {
-            self::$pdoOneQuery = new PdoOneQuery(self::getPdoOne(), static::class);
+        if (static::$pdoOneQuery === null) {
+            static::$pdoOneQuery = new PdoOneQuery(static::getPdoOne(), static::class);
         }
-        return self::$pdoOneQuery;
+        return static::$pdoOneQuery;
     }
 
     /**
@@ -243,16 +191,16 @@ abstract class _BasePdoOneRepo
             $def = static::getDefFK(true);
             $def2 = static::getDefFK(false);
             foreach ($def as $k => $v) {
-                $sql = 'ALTER TABLE ' . self::getPdoOne()->addQuote(static::TABLE) . ' ADD CONSTRAINT '
-                    . self::getPdoOne()->addQuote($def2[$k]['name']) . ' ' . $v;
+                $sql = 'ALTER TABLE ' . static::getPdoOne()->addQuote(static::TABLE) . ' ADD CONSTRAINT '
+                    . static::getPdoOne()->addQuote($def2[$k]['name']) . ' ' . $v;
                 $sql = str_ireplace('FOREIGN KEY REFERENCES',
-                    'FOREIGN KEY(' . self::getPdoOne()->addQuote($k) . ') REFERENCES', $sql);
-                self::getPdoOne()->runRawQuery($sql, []);
+                    'FOREIGN KEY(' . static::getPdoOne()->addQuote($k) . ') REFERENCES', $sql);
+                static::getPdoOne()->runRawQuery($sql, []);
             }
         } catch (Exception $exception) {
             self::reset();
-            if (self::$falseOnError) {
-                self::$lastException = $exception->getMessage();
+            if (static::$falseOnError) {
+                static::$lastException = $exception->getMessage();
                 return false;
             }
             throw $exception;
@@ -282,8 +230,8 @@ abstract class _BasePdoOneRepo
         try {
             $query = self::getQuery();
             if ($query->useCache && $query->parent->getCacheService() !== null) {
-                self::$uid = $query->buildUniqueID([$sql, $param], 'query');
-                $getCache = $query->parent->getCacheService()->getCache(self::$uid, static::TABLE);
+                static::$uid = $query->buildUniqueID([$sql, $param], 'query');
+                $getCache = $query->parent->getCacheService()->getCache(static::$uid, static::TABLE);
                 if ($getCache !== false) {
                     self::reset();
                     return $getCache;
@@ -294,15 +242,15 @@ abstract class _BasePdoOneRepo
                 $recursiveClass = null;
                 $usingCache = false;
             }
-            $rowc = self::getPdoOne()->runRawQuery($sql, $param);
+            $rowc = static::getPdoOne()->runRawQuery($sql, $param);
             if ($rowc !== false && $usingCache!==false) {
-                $query->parent->getCacheService()->setCache(self::$uid, $recursiveClass, $rowc, $usingCache);
+                $query->parent->getCacheService()->setCache(static::$uid, $recursiveClass, $rowc, $usingCache);
                 self::reset();
             }
         } catch (Exception $exception) {
             self::reset();
-            if (self::$falseOnError) {
-                self::$lastException = $exception->getMessage();
+            if (static::$falseOnError) {
+                static::$lastException = $exception->getMessage();
                 return false;
             }
             throw $exception;
@@ -387,10 +335,10 @@ abstract class _BasePdoOneRepo
     public static function createFk()
     {
         try {
-            return self::getPdoOne()->createFk(static::TABLE, static::getDefFk(true));
+            return static::getPdoOne()->createFk(static::TABLE, static::getDefFk(true));
         } catch (Exception $exception) {
-            if (self::$falseOnError) {
-                self::$lastException = $exception->getMessage();
+            if (static::$falseOnError) {
+                static::$lastException = $exception->getMessage();
                 return false;
             }
             throw $exception;
@@ -406,12 +354,12 @@ abstract class _BasePdoOneRepo
     public static function validTable()
     {
         try {
-            return self::getPdoOne()
+            return static::getPdoOne()
                 ->validateDefTable(static::TABLE, static::getDef('sql'), static::getDefKey(), static::getDefFk(true));
         } catch (Exception $exception) {
             self::reset();
-            if (self::$falseOnError) {
-                self::$lastException = $exception->getMessage();
+            if (static::$falseOnError) {
+                static::$lastException = $exception->getMessage();
                 return ['exception' => $exception->getMessage()];
             }
             throw $exception;
@@ -429,10 +377,10 @@ abstract class _BasePdoOneRepo
     public static function truncate($force = false)
     {
         try {
-            return self::getPdoOne()->truncate(static::TABLE, '', $force);
+            return static::getPdoOne()->truncate(static::TABLE, '', $force);
         } catch (Exception $exception) {
-            if (self::$falseOnError) {
-                self::$lastException = $exception->getMessage();
+            if (static::$falseOnError) {
+                static::$lastException = $exception->getMessage();
                 return false;
             }
             throw $exception;
@@ -450,10 +398,10 @@ abstract class _BasePdoOneRepo
     public static function resetIdentity($newValue = 0)
     {
         try {
-            return self::getPdoOne()->resetIdentity(static::TABLE, $newValue);
+            return static::getPdoOne()->resetIdentity(static::TABLE, $newValue);
         } catch (Exception $exception) {
-            if (self::$falseOnError) {
-                self::$lastException = $exception->getMessage();
+            if (static::$falseOnError) {
+                static::$lastException = $exception->getMessage();
                 return false;
             }
             throw $exception;
@@ -469,14 +417,14 @@ abstract class _BasePdoOneRepo
     public static function dropTable()
     {
         try {
-            if (self::getPdoOne()->tableExist(static::TABLE)) {
-                return self::getPdoOne()->dropTable(static::TABLE);
+            if (static::getPdoOne()->tableExist(static::TABLE)) {
+                return static::getPdoOne()->dropTable(static::TABLE);
             }
         } catch (Exception $exception) {
-            $fe = self::$falseOnError;
+            $fe = static::$falseOnError;
             self::reset();
             if ($fe) {
-                self::$lastException = $exception->getMessage();
+                static::$lastException = $exception->getMessage();
                 return false;
             }
             throw $exception;
@@ -537,7 +485,7 @@ abstract class _BasePdoOneRepo
 
     protected static function newQuery()
     {
-        return new PdoOneQuery(self::getPdoOne(), static::class);
+        return new PdoOneQuery(static::getPdoOne(), static::class);
     }
 
     /**
@@ -636,8 +584,8 @@ abstract class _BasePdoOneRepo
     {
         $pdoOne = self::getQuery();
         if ($pdoOne->useCache && $pdoOne->parent->getCacheService() !== null) {
-            self::$uid = $pdoOne->buildUniqueID([$where], static::TABLE . '::count');
-            $getCache = $pdoOne->parent->getCacheService()->getCache(self::$uid, static::TABLE);
+            static::$uid = $pdoOne->buildUniqueID([$where], static::TABLE . '::count');
+            $getCache = $pdoOne->parent->getCacheService()->getCache(static::$uid, static::TABLE);
             if ($getCache !== false) {
                 self::reset();
                 return $getCache;
@@ -654,13 +602,13 @@ abstract class _BasePdoOneRepo
         $newQuery['joins'] = static::TABLE . ' as ' . static::TABLE . " \n";
         // we build the query
         static::generationRecursive($newQuery, static::TABLE . '.'); //, '', '', false
-        $from = (isset(self::$gQuery[0]['joins'])) ? self::$gQuery[0]['joins'] : [];
-        $rowc = self::getPdoOne()
+        $from = (isset(static::$gQuery[0]['joins'])) ? static::$gQuery[0]['joins'] : [];
+        $rowc = static::getPdoOne()
             ->from($from,static::$schema)
             ->where($where)
             ->count();
         if ($rowc !== false && $usingCache!==false) {
-            $pdoOne->parent->getCacheService()->setCache(self::$uid, $recursiveClass, (int)$rowc,$usingCache);
+            $pdoOne->parent->getCacheService()->setCache(static::$uid, $recursiveClass, (int)$rowc,$usingCache);
             //self::reset();
         }
         self::reset();
@@ -668,7 +616,7 @@ abstract class _BasePdoOneRepo
     }
 
     /**
-     * The result is stored on self::$gQuery
+     * The result is stored on static::$gQuery
      *
      * @param        $newQuery
      * @param string $pTable prefix table (usually table.)
@@ -690,7 +638,7 @@ abstract class _BasePdoOneRepo
         $pt = $pTable === '' ? static::TABLE . '.' : $pTable;
         // add columns of the current table
         foreach ($cols as $col) {
-            $newQuery['columns'][] = $pt . $col . ' as ' . self::getPdoOne()->addQuote($pColumn . $col);
+            $newQuery['columns'][] = $pt . $col . ' as ' . static::getPdoOne()->addQuote($pColumn . $col);
         }
         $ns = self::getNamespace();
         $pdoQuery = self::getQuery();
@@ -746,14 +694,14 @@ abstract class _BasePdoOneRepo
                             $other['col2'] = $pColumn . $nameCol;
                             $other['name'] = $nameCol;
                             $other['data'] = $keyRel;
-                            //self::$gQuery[]=$other;
+                            //static::$gQuery[]=$other;
                             $class = $ns
                                 . static::RELATIONS[$keyRel['reftable']]; // $ns . PdoOne::camelize($keyRel['reftable']) . $postfix;
                             /** @noinspection PhpUndefinedMethodInspection */
                             /** @see \eftec\_BasePdoOneRepo::generationRecursive */
                             $class::generationRecursive($other, '', '', $pColumn . $recursiveComplete,
                                 false); //$recursiveInit . $nameCol
-                            self::$gQuery[] = $other;
+                            static::$gQuery[] = $other;
                             break;
                         case 'MANYTOMANY':
                             $rec = $pdoQuery->getRecursive();
@@ -781,10 +729,10 @@ abstract class _BasePdoOneRepo
                             //$columns = $other['columns'];
                             $columnFinal = [];
                             $findme = ltrim($keyRel['refcol2'], PdoOne::$prefixBase);
-                            $columnFinal[] = $findme . ' as ' . self::getPdoOne()->addQuote($pColumn . $findme);
+                            $columnFinal[] = $findme . ' as ' . static::getPdoOne()->addQuote($pColumn . $findme);
 
                             $other['columns'] = $columnFinal;
-                            self::$gQuery[] = $other;
+                            static::$gQuery[] = $other;
                             break;
                         case 'PARENT':
                             // parent does not load recursively information.
@@ -796,7 +744,7 @@ abstract class _BasePdoOneRepo
             }
         }
         if ($new) {
-            self::$gQuery[] = $newQuery;
+            static::$gQuery[] = $newQuery;
         }
     }
 
@@ -830,7 +778,7 @@ abstract class _BasePdoOneRepo
                 // if null (or missing) and it is allowed = true
                 // if null (or missing) and not null, and it is not identity = false (identities are generated)
                 if (($curCol === null) && !($def['null'] === false && $def['identity'] === false)) {
-                    self::getPdoOne()->errorText="field $col must not be null";
+                    static::getPdoOne()->errorText="field $col must not be null";
                     return false;
                 }
                 switch ($def['phptype']) {
@@ -838,20 +786,20 @@ abstract class _BasePdoOneRepo
                     case 'string':
                         if (!is_string($curCol)) {
                             // not a string
-                            self::getPdoOne()->errorText="field $col is not a string";
+                            static::getPdoOne()->errorText="field $col is not a string";
                             return false;
                         }
                         break;
                     case 'float':
                         if (!is_float($curCol)) {
-                            self::getPdoOne()->errorText="field $col is not a float";
+                            static::getPdoOne()->errorText="field $col is not a float";
                             return false;
                         }
                         break;
                     case 'timestamp':
                     case 'int':
                         if (!is_int($curCol)) {
-                            self::getPdoOne()->errorText="field $col is not a int";
+                            static::getPdoOne()->errorText="field $col is not a int";
                             return false;
                         }
                         break;
@@ -871,7 +819,7 @@ abstract class _BasePdoOneRepo
                             $r = PdoOne::dateConvertInput($curCol, 'sql', $bool, $time);
                         }
                         if ($r === false) {
-                            self::getPdoOne()->errorText="field $col is not a proper date";
+                            static::getPdoOne()->errorText="field $col is not a proper date";
                             return false;
                         }
                 }
@@ -972,8 +920,8 @@ abstract class _BasePdoOneRepo
 
             //$thowableBackup = $pdoOneQuery->parent->throwOnError;
             if ($pdoOneQuery->useCache && $pdoOneQuery->parent->getCacheService() !== null) {
-                self::$uid = $pdoOneQuery->buildUniqueID([$filter, $filterValue], static::TABLE . '::' . $typeOper);
-                $getCache = $pdoOneQuery->parent->getCacheService()->getCache(self::$uid, static::TABLE);
+                static::$uid = $pdoOneQuery->buildUniqueID([$filter, $filterValue], static::TABLE . '::' . $typeOper);
+                $getCache = $pdoOneQuery->parent->getCacheService()->getCache(static::$uid, static::TABLE);
                 if ($getCache !== false) {
                     self::reset();
                     return $getCache;
@@ -1037,7 +985,7 @@ abstract class _BasePdoOneRepo
                         /** @noinspection PhpUndefinedMethodInspection */
                         $cols = $class::getDefName(); // implode(',', $query['columns']);
                         foreach ($cols as $kcol => $col) {
-                            $cols[$kcol] = 'tj.' . $col . ' as ' . self::getPdoOne()->addQuote($col);
+                            $cols[$kcol] = 'tj.' . $col . ' as ' . static::getPdoOne()->addQuote($col);
                         }
                         $rc = trim($query['data']['refcol2'], PdoOne::$prefixBase);
 
@@ -1092,17 +1040,17 @@ abstract class _BasePdoOneRepo
                 self::convertSQLValueInit($rowc, true);
             }
             if ($rowc !== false && $usingCache!==false) {
-                $pdoOneQuery->parent->getCacheService()->setCache(self::$uid, $usingCacheFamily, $rowc, $usingCache);
+                $pdoOneQuery->parent->getCacheService()->setCache(static::$uid, $usingCacheFamily, $rowc, $usingCache);
             }
             self::reset();
             return $rowc;
         } catch (Exception $exception) {
             self::reset();
-            if (self::$falseOnError) {
-                self::$lastException = $exception->getMessage();
+            if (static::$falseOnError) {
+                static::$lastException = $exception->getMessage();
                 return false;
             }
-            self::getPdoOne()
+            static::getPdoOne()
                 ->throwError("PdoOne: Error in $typeOper", json_encode($filter), '', true, $exception);
             return false;
         }
@@ -1273,7 +1221,7 @@ abstract class _BasePdoOneRepo
                 $entity = static::objectToArray($entity);
             }
             if (!is_array($pks) || count($pks) === 0) {
-                self::getPdoOne()
+                static::getPdoOne()
                     ->throwError('exist: entity not specified as an array or the table lacks a PK', json_encode($entity));
                 return false;
             }
@@ -1287,23 +1235,23 @@ abstract class _BasePdoOneRepo
             } else {
                 $entity = [$pks[0] => $entity];
             }
-            $r = self::getPdoOne()
+            $r = static::getPdoOne()
                 ->genError()
                 ->select('1')
                 ->from(static::TABLE,static::$schema)
                 ->where($entity)
                 ->firstScalar();
-            self::getPdoOne()->genError(true);
+            static::getPdoOne()->genError(true);
             self::reset();
             /** @noinspection TypeUnsafeComparisonInspection */
             return ($r == '1');
         } catch (Exception $exception) {
             self::reset();
-            if (self::$falseOnError) {
-                self::$lastException = $exception->getMessage();
+            if (static::$falseOnError) {
+                static::$lastException = $exception->getMessage();
                 return false;
             }
-            self::getPdoOne()
+            static::getPdoOne()
                 ->throwError('', json_encode($entity), '', true, $exception);
         }
         self::reset();
@@ -1447,7 +1395,7 @@ abstract class _BasePdoOneRepo
                             $pk2 = $item[$def['col2']];
                             /** @noinspection PhpUndefinedMethodInspection */
                             if ($class2::exist($item) === false
-                                && self::getPdoOne()->hasRecursive($key, $recursiveBack)
+                                && static::getPdoOne()->hasRecursive($key, $recursiveBack)
                             ) {
                                 /** @noinspection PhpUndefinedMethodInspection */
                                 $pk2 = $class2::insert($item, false);
@@ -1476,16 +1424,16 @@ abstract class _BasePdoOneRepo
                 }
             }
             if ($transaction) {
-                self::getPdoOne()->commit();
+                static::getPdoOne()->commit();
             }
             return $r;
         } catch (Exception $exception) {
             if ($transaction) {
-                self::getPdoOne()->rollback();
+                static::getPdoOne()->rollback();
             }
             self::reset();
-            if (self::$falseOnError) {
-                self::$lastException = $exception->getMessage();
+            if (static::$falseOnError) {
+                static::$lastException = $exception->getMessage();
                 return false;
             }
             throw $exception;
@@ -1508,11 +1456,11 @@ abstract class _BasePdoOneRepo
      */
     public static function invalidateCache($family = '')
     {
-        if (self::getPdoOne()->getCacheService() !== null) {
+        if (static::getPdoOne()->getCacheService() !== null) {
             if (!$family) {
-                self::getPdoOne()->getCacheService()->invalidateCache('', self::getRecursiveClass());
+                static::getPdoOne()->getCacheService()->invalidateCache('', self::getRecursiveClass());
             } else {
-                self::getPdoOne()->invalidateCache('', $family);
+                static::getPdoOne()->invalidateCache('', $family);
             }
         }
         return self::getQuery();
@@ -1667,7 +1615,7 @@ abstract class _BasePdoOneRepo
             $entityCopy = self::intersectArraysNotNull($entity, static::getDefName());
             $entityCopy = self::diffArrays($entityCopy, static::getDefNoInsert()); // discard some columns
             if (count($entityCopy) === 0) {
-                self::getPdoOne()
+                static::getPdoOne()
                     ->throwError('insert: insert without fields or fields incorrects. Please check the syntax' .
                         ' and case of the fields', $entity);
                 return false;
@@ -1734,7 +1682,7 @@ abstract class _BasePdoOneRepo
                 }
             }
             if ($transaction) {
-                self::getPdoOne()->commit();
+                static::getPdoOne()->commit();
             }
             if ($returnObject !== false) {
                 $entity = $returnObject;
@@ -1742,11 +1690,11 @@ abstract class _BasePdoOneRepo
             return $insert;
         } catch (Exception $exception) {
             if ($transaction) {
-                self::getPdoOne()->rollback();
+                static::getPdoOne()->rollback();
             }
             self::reset();
-            if (self::$falseOnError) {
-                self::$lastException = $exception->getMessage();
+            if (static::$falseOnError) {
+                static::$lastException = $exception->getMessage();
                 if ($returnObject !== false) {
                     $entity = $returnObject;
                 }
@@ -1864,20 +1812,20 @@ abstract class _BasePdoOneRepo
                     self::_setRecursive($recursiveBackup);
                 }
             }
-            $r = self::getPdoOne()->delete(static::TABLE, $entityCopy);
+            $r = static::getPdoOne()->delete(static::TABLE, $entityCopy);
             if ($transaction) {
-                //self::getPdoOne()->rollback();
-                self::getPdoOne()->commit();
+                //static::getPdoOne()->rollback();
+                static::getPdoOne()->commit();
             }
             self::reset();
             return $r;
         } catch (Exception $exception) {
             if ($transaction) {
-                self::getPdoOne()->rollback();
+                static::getPdoOne()->rollback();
             }
             self::reset();
-            if (self::$falseOnError) {
-                self::$lastException = $exception->getMessage();
+            if (static::$falseOnError) {
+                static::$lastException = $exception->getMessage();
                 return false;
             }
             throw $exception;
