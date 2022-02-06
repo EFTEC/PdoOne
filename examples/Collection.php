@@ -120,7 +120,7 @@ class Collection
         $html .= '<thead><tr >';
         if (is_array($array[0])) {
             foreach ($array[0] as $key => $value) {
-                $html .= '<th >' . htmlspecialchars($key) . '</th>';
+                $html .= '<th >' . htmlspecialchars($key??'') . '</th>';
             }
         } else {
                 $html .= '<th >Column</th>';
@@ -134,13 +134,13 @@ class Collection
                 foreach ($value as $key2 => $value2) {
                     if(is_array($value2) ) {
                         $html .= '<td >' .self::generateTable($value2) . '</td>';
-                        //$html .= '<td >' . htmlspecialchars(json_encode($value2)) . '</td>';    
+                        //$html .= '<td >' . htmlspecialchars(json_encode($value2)) . '</td>';
                     } elseif(is_object($value2)) {
                         $html .= '<td >' . htmlspecialchars(json_encode($value2)) . '</td>';
                     } else {
-                        $html .= '<td >' . htmlspecialchars($value2) . '</td>';
+                        $html .= '<td >' . htmlspecialchars($value2??'') . '</td>';
                     }
-                    
+
                 }
             } else {
                 $html .= '<td >' . $value . '</td>';

@@ -1,4 +1,4 @@
-<?php 
+<?php
 
 use eftec\PdoOne;
 use repomysql\TableParentRepo;
@@ -22,7 +22,7 @@ $obj['fieldInt']=50;
 $obj['fieldDateTime']=new DateTime();
 $obj['fielDecimal']=50.4;
 $obj['fieldKey']='abcdef';
-$obj['fieldUnique']=mt_rand(0,5000000);
+$obj['fieldUnique']=random_int(0,5000000);
 echo "<hr>original:<br>";
 new \dBug\dBug($obj);
 
@@ -31,4 +31,4 @@ $id=TableParentRepo::insert($obj);
 echo "<hr>read:<br>";
 new dbug\dBug(TableParentRepo::first($id));
 echo "<hr>time:<br>";
-new dbug\dBug((TableParentRepo::first($id))->fieldDateTime->format('d/m/y'));
+//new dbug\dBug((TableParentRepo::first($id)->fieldDateTime->format('d/m/y')));

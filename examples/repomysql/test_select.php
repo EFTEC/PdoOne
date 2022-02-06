@@ -16,8 +16,7 @@ $result=TableParentRepo::where('idtablaparentPK=2')
 
 //$result=TableParentRepo::where('fieldkey',['key1'])->toList(); // ::setRecursive(['*'])
 new dBug($result);
-die(1);
-echo "<br><br>";
+
 $result=TableParentRepo::where('fieldkey',['key1'])->first(); // ::setRecursive(['*'])
 new dBug($result);
 echo "<br><br>";
@@ -26,16 +25,16 @@ $result=TableParentRepo::toList(); // ::setRecursive(['*'])
 new dBug($result);
 echo "<br><br>";
 
-
+/*
 TableParentRepo::setRecursive([
     '_idchildFK',
     '_TableParentExt',
     '_TableParentxCategory',
     '_idchildFK/_idgrandchildFK',
     '_idchildFK/_idgrandchildFK/_TableChild'
-])::testRecursive();
+])->testRecursive();
 
-
+*/
 
 
 //new dBug(TableParentRepo::base()->runRawQuery('select * from tableparent',[],true));
@@ -46,18 +45,15 @@ $child = TableParentRepo::setRecursive([
     '_TableParentxCategory',
     '_idchildFK/_idgrandchildFK',
     '_idchildFK/_idgrandchildFK/_TableChild'
-])::first(2);
+])->first(2);
 new dBug($child);
 
-die(1);
 
 TableParentRepo::$useModel = false;
 $parent = (TableParentRepo::setRecursive([
     '_TableParentExt' // onetoone
-]))::first(1);
+]))->first(1);
 new dBug($parent);
-
-die(1);
 
 
 $parent = (TableParentRepo::setRecursive([
@@ -68,7 +64,7 @@ $parent = (TableParentRepo::setRecursive([
     '_TableParentxCategory' // manytomany
     ,
     '_TableParentExt'
-]))::first(1);
+]))->first(1);
 new dBug($parent);
 
 
@@ -91,7 +87,7 @@ $r = (TableParentRepo::setRecursive([
     '/tablaparentxcategory/idcategoryPKFK'
     //,'/tablaparentxcategory' // one to many
     //,'/tablaparentxcategory/idcategoryPKFK'
-]))::toList();
+]))->toList();
 
 //new dBug($r);
 
@@ -112,7 +108,7 @@ $parent = (TableParentRepo::setRecursive([
     '/tablaparentxcategory' // one to many
     ,
     '/tablaparentxcategory/idcategoryPKFK'
-]))::first(1);
+]))->first(1);
 //var_dump($parent['/idchildFK']['idtablachildPK']);
 echo "<br>";
 

@@ -15,9 +15,6 @@ var_dump(TestDb::base()->validateDefTable(
     ,TableParentRepo::getDefFK(true)));
 
 echo "</pre>";
-die(1);
-
-
 
 
 $r=TableParentRepo::factory();
@@ -34,7 +31,7 @@ $r=TableParentRepo::setRecursive(
         ,'/idchildFK/idgrandchildFK/TableChild'
         ,'/TableParentxCategory' // one to many
         ,'/TableParentxCategory/idcategoryPKFK'
-    ])::factory();
-    
+    ])->factory();
+
 new dBug\dBug($r);
 

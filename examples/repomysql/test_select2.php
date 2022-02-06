@@ -1,4 +1,4 @@
-<?php 
+<?php
 
 use dBug\dBug;
 use eftec\PdoOne;
@@ -14,7 +14,7 @@ new dBug(TableParentRepo::base()->runRawQuery('select * from tableparent',[],tru
 
 $random='';
 for($i=0;$i<10;$i++) {
-    $random.=chr(mt_rand(64,90));
+    $random.=chr(random_int(64,90));
 }
 
 $m=new TableParentModel();
@@ -35,7 +35,7 @@ $parent= (TableParentRepo::setRecursive(
         '_idchildFK/_idgrandchildFK/_TableGrandChildTag',
         '_TableParentxCategory' // manytomany
         ,'_TableParentExt'
-    ]))::first(1);
+    ]))->first(1);
 new dBug($parent);
 
 
@@ -64,7 +64,7 @@ $r=(TableParentRepo::setRecursive(
         ,'/tablaparentxcategory/idcategoryPKFK'
         //,'/tablaparentxcategory' // one to many
         //,'/tablaparentxcategory/idcategoryPKFK'
-    ])) ::toList();
+    ]))->toList();
 
 //new dBug($r);
 
@@ -85,7 +85,7 @@ $parent= (TableParentRepo::setRecursive(
         //,'/tablaparentxcategory/idgrandchildFK'
         ,'/tablaparentxcategory' // one to many
         ,'/tablaparentxcategory/idcategoryPKFK'
-    ]))::first(1);
+    ]))->first(1);
 //var_dump($parent['/idchildFK']['idtablachildPK']);
 echo "<br>";
 

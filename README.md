@@ -1589,9 +1589,11 @@ $dao->render();
 
 ## ORM
 
-This library also allows to create and use it as an ORM. To use it as an ORM, you must create the classes.
+This library also allows creating and use it as an ORM. To use it as an ORM, you must create the classes.
 
 #### What is an ORM?
+
+An ORM transforms queries to the database in objects serializables.
 
 Let's say the next example
 
@@ -1599,7 +1601,7 @@ Let's say the next example
 $result=$pdoOne->runRawQuery('select IdCustomer,Name from Customers where IdCustomer=?',1); 
 ```
 
-You can also runs using the Query Builder
+You can also run using the Query Builder
 
 ```php
 $result=$pdoOne->select('IdCustomer,Name')->from('Customers')->where('IdCustomer=?',1)->toList();
@@ -1611,7 +1613,7 @@ What if you use the same table over and over.  You can generate a new class call
 $result=CustomerRepo::where('IdCustomer=?',1)::toList();
 ```
 
-While it is simple but it also hides part of the implementation.  It could hurts the performance but it adds more simplicity and consistency.
+While it is simple, but it also hides part of the implementation.  It could hurt the performance a bit, but it adds more simplicity and consistency.
 
 
 
@@ -1713,7 +1715,7 @@ It will generate the next classes:
 ```
 
 * Abstract Classes are classes with all the definitions of the tables, indexes and such. They contain the whole definition of a class.
-  * This class should be rebuild if the table changes. How? You must run the method **generateAllClasses**() again.
+  * This class should be rebuilded if the table changes. How? You must run the method **generateAllClasses**() again.
 * Repo Classes are classes that works as a placeholder of the Abstract class. These classes are safe for edit, so we could add our own methods and logic.
   * Note: if you run **generateAllClasses**() again, then those classes are not touched unless we force it (argument **$forced**) or we delete those files.
 * Base Class is a unique class (per schema) where it contains the definition of all the tables and the relations between them.
@@ -1745,10 +1747,10 @@ var_dump($errors);
 
 For started, the library must know to know where to connect, so you must set an instance of the PdoOne and there are 3 ways to instance it.
 
-The repository class is smart and it does the next operation:
+The repository class is smart, and it does the next operation:
 
-1. If the Repository base doesn't have a connection, then it will try to use the latest connection available.
-2. 
+> If the Repository base doesn't have a connection, then it will try to use the latest connection available.
+
 
 The easiest way is to create an instance of PdoOne();
 
