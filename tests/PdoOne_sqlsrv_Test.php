@@ -568,16 +568,48 @@ class PdoOne_sqlsrv_Test extends TestCase
 		$this->assertLessThan(3639088446091303982,$this->pdoOne->getSequence(true),"sequence must be greater than 3639088446091303982");
 	}
 
+    public function test_kv() {
+        $this->pdoOne->setKvDefaultTable('KVTABLA');
+        try {
+            $this->assertEquals(true, $this->pdoOne->dropTableKV());
+        } catch(Exception $ex) {
+
+        }
+        $this->assertEquals(true,$this->pdoOne->createTableKV());
+
+        $this->assertEquals(true,$this->pdoOne->setKV('hello','it is a value',2));
+        $this->assertEquals('it is a value',$this->pdoOne->getKV('hello'));
+        $this->assertEquals(true,$this->pdoOne->existKV('hello'));
+        $this->assertEquals(true,$this->pdoOne->delKV('hello'));
+        $this->assertEquals(false,$this->pdoOne->existKV('hello'));
+        $this->assertEquals(true,$this->pdoOne->setKV('hello','it is a value',2));
+        $this->assertEquals('it is a value',$this->pdoOne->getKV('hello'));
+        $this->assertEquals('it is a value',$this->pdoOne->kv('KVTABLA')->getKV('hello'));
+        sleep(3);
+        $this->assertEquals(null,$this->pdoOne->getKV('hello'));
+        // it never expires:
+        $this->assertEquals(true,$this->pdoOne->setKV('hello2','it is a value'));
+        $this->assertEquals('it is a value',$this->pdoOne->getKV('hello2'));
+        $this->assertEquals(true,$this->pdoOne->existKV('hello2'));
+        $this->assertEquals(true,$this->pdoOne->delKV('hello2'));
+
+        // it never expires:
+        $this->assertEquals(true,$this->pdoOne->setKV('hello2','it is a value'));
+        $this->assertEquals('it is a value',$this->pdoOne->getKV('hello2'));
+        $this->assertEquals(true,$this->pdoOne->existKV('hello2'));
+        $this->assertEquals(true,$this->pdoOne->delKV('hello2'));
+    }
+
 	public function test_sequence2(): void
     {
 		$this->assertLessThan(3639088446091303982,$this->pdoOne->getSequencePHP(false),"sequence must be greater than 3639088446091303982");
 		$s1=$this->pdoOne->getSequencePHP(false);
 		$s2=$this->pdoOne->getSequencePHP(false);
-		$this->assertTrue($s1!=$s2,"sequence must not be the same");
+		$this->assertNotEquals($s1, $s2, "sequence must not be the same");
 		$this->pdoOne->encryption->encPassword=1020304050;
 		$s1=$this->pdoOne->getSequencePHP(true);
 		$s2=$this->pdoOne->getSequencePHP(true);
-		$this->assertTrue($s1!=$s2,"sequence must not be the same");
+		$this->assertNotEquals($s1, $s2, "sequence must not be the same");
 
 
 
@@ -754,12 +786,12 @@ class PdoOne_sqlsrv_Test extends TestCase
 	    // iv =true
 	    $value1=$this->pdoOne->encrypt("abc");
 	    $value2=$this->pdoOne->encrypt("abc");
-	    $this->assertTrue($value1!=$value2,"Values must be different");
+	    $this->assertNotEquals($value1, $value2, "Values must be different");
 	    // iv =true
 	    $this->pdoOne->encryption->iv=false;
 	    $value1=$this->pdoOne->encrypt("abc_ABC/abc*abc1234567890[]{[");
 	    $value2=$this->pdoOne->encrypt("abc_ABC/abc*abc1234567890[]{[");
-	    $this->assertTrue($value1==$value2,"Values must be equals");
+	    $this->assertEquals($value1, $value2, "Values must be equals");
     }
 	/**
 	 * @throws Exception

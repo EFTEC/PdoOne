@@ -473,10 +473,10 @@ class PdoOne_Sqlsrv implements PdoOne_IExt
         return $sql;
     }
 
-    public function createFK($tableName, $foreignKey): ?string
+    public function createFK($tableName, $foreignKeys): ?string
     {
         $sql = '';
-        foreach ($foreignKey as $key => $value) {
+        foreach ($foreignKeys as $key => $value) {
             $p0 = stripos($value . ' ', 'KEY ');
             if ($p0 === false) {
                 trigger_error('createFK: Key with a wrong syntax. Example: "PRIMARY KEY.." ,
@@ -488,6 +488,15 @@ class PdoOne_Sqlsrv implements PdoOne_IExt
             if ($type === 'FOREIGN') {
                 $sql .= "ALTER TABLE $tableName ADD FOREIGN KEY ($key) $value;";
             }
+        }
+        return $sql;
+    }
+    public function createIndex($tableName, $indexesAndDef): string
+    {
+        $sql = '';
+        foreach ($indexesAndDef as $key => $typeIndex) {
+            // CREATE INDEX index1 ON schema1.table1 (column1);
+            $sql .= "CREATE INDEX [idx_{$tableName}_$key] ON [$tableName] ([$key]);";
         }
         return $sql;
     }
@@ -505,13 +514,26 @@ class PdoOne_Sqlsrv implements PdoOne_IExt
         return " OFFSET 0 ROWS FETCH NEXT $sql ROWS ONLY";
     }
 
+    /**
+     *
+     * @param string $tableKV
+     * @param bool $memoryKV it requires a filegroup for memory.
+     * @return string
+     */
+    public function createTableKV($tableKV,$memoryKV=false): string
+    {
+        return $this->createTable($tableKV
+            , ['KEYT' => 'VARCHAR(256) NOT NULL', 'VALUE' => 'VARCHAR(MAX)', 'TIMESTAMP' => 'BIGINT']
+            , 'KEYT', '', $memoryKV ? '(MEMORY_OPTIMIZED = ON,DURABILITY = SCHEMA_AND_DATA)' : '');
+    }
+
     public function getPK($query, $pk = null)
     {
         try {
             $pkResult = [];
             if ($this->parent->isQuery($query)) {
                 if (!$pk) {
-                    return 'SQLSRV: unable to fin pk via query. Use the name of the table';
+                    return 'SQLSRV: unable to find pk via query. Use the name of the table';
                 }
             } else {
 

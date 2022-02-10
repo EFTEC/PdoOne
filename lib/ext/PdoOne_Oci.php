@@ -476,10 +476,10 @@ class PdoOne_Oci implements PdoOne_IExt
         return $sql;
     }
 
-    public function createFK($tableName, $foreignKey): ?string
+    public function createFK($tableName, $foreignKeys): ?string
     {
         $sql = '';
-        foreach ($foreignKey as $key => $value) {
+        foreach ($foreignKeys as $key => $value) {
 
             $p0 = stripos($value . ' ', 'KEY ');
             if ($p0 === false) {
@@ -492,6 +492,15 @@ class PdoOne_Oci implements PdoOne_IExt
             if($type==='FOREIGN') {
                 $sql .= "ALTER TABLE \"$tableName\" ADD CONSTRAINT {$tableName}_fk_$key FOREIGN KEY (\"$key\") $value;";
             }
+        }
+        return $sql;
+    }
+    public function createIndex($tableName, $indexesAndDef): string
+    {
+        throw new RuntimeException('not tested');
+        $sql = '';
+        foreach ($indexesAndDef as $key => $typeIndex) {
+            $sql .= "ALTER TABLE `$tableName` ADD $typeIndex `idx_{$tableName}_$key` (`$key`) ;";
         }
         return $sql;
     }
@@ -508,8 +517,20 @@ class PdoOne_Oci implements PdoOne_IExt
             $arr = explode(',', $sql);
             return " OFFSET $arr[0] ROWS FETCH NEXT $arr[1] ROWS ONLY";
         }
-
         return " OFFSET 0 ROWS FETCH NEXT $sql ROWS ONLY";
+    }
+
+    /**
+     *
+     * @param string $tableKV
+     * @param bool $memoryKV You must set this value in the tablespace and not here.
+     * @return string
+     */
+    public function createTableKV($tableKV,$memoryKV=false): string
+    {
+        return $this->createTable($tableKV
+            , ['KEYT' => 'VARCHAR2(256)', 'VALUE' => 'CLOB', 'TIMESTAMP' => 'BIGINT']
+            , 'KEYT', '');
     }
 
     public function getPK($query, $pk=null)

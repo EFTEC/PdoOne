@@ -237,14 +237,21 @@ interface PdoOne_IExt
     /**
      * Create foreign keys (other keys are ignored).
      *
-     * @param string $tableName  The name of the table
-     * @param array  $foreignKey Associative array with the foreign key.
+     * @param string $tableName   The name of the table
+     * @param array  $foreignKeys Associative array with the foreign key ['column'='FOREIGN KEY'].
      *
-     * @return mixed
+     * @return null|string the sql resultant
      * @throws Exception
      */
-    public function createFK($tableName, $foreignKey);
+    public function createFK($tableName, $foreignKeys): ?string;
 
+    /**
+     * Function to create a sql to create indexes.
+     * @param string $tableName   The name of the table
+     * @param array $indexesAndDef Associative array with the indexes ['COLUMN'=>'TYPE INDEX'].
+     * @return string the sql
+     */
+    public function createIndex($tableName, $indexesAndDef): string;
 
     /**
      * It adds a limit operation for the query. It depends on the type of the database.
@@ -259,6 +266,8 @@ interface PdoOne_IExt
      * @throws Exception
      */
     public function limit($sql): string;
+
+    public function createTableKV($tableKV,$memoryKV=false): string;
 
     /**
      * It gets a primary key based in a query.<br>

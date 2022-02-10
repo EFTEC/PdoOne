@@ -2022,14 +2022,18 @@ In a nutshell:
 >
 > Every decimal version means that it patches/fixes/refactoring a previous functionality i.e. 1.5.0 -> 1.5.1 (fix)
 
-* 2.24.1 2022-06-06
+* 2.25 2022-02-01
+  * **[core]** **[new]** Key-Value functionalities:setKvDefaultTable(),kv(),createTableKV(),dropTableKV(),getKV(),setKV(),garbageCollectorKV(),delKV(),flushKV(),existKV()
+  * **[core]** **[new]** createIndex()
+
+* 2.24.1 2022-02-06
   
   * **[core]** **[fix]** Now, most generation of classes are defined in templates instead of the code. It will keep the code clean while it will also save a few bits of memories (old: 6446 lines, current: 5963 lines).
   
 * 2.24 2022-02-06
 
   * **[repo]** Now the library allows multiple connections using different repository class bases.
-  * **[_BasePdoOne]** Updated to version 7. You must rebuild the repository classes to rebuild the base class.
+  * **[_BasePdoOne]** Updated to version 7. **You must rebuild the repository classes to rebuild the base class.**
   * **[core]** **[new]** Now **MessageContainer** is injected automatically
   * **[core]** **[new]** You can obtain an instance of PdoOne using the static method PdoOne::instance()
   * **[core]** **[fix]** Method lastError() always returns a string (empty if not error) instead of a NULL.

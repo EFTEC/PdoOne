@@ -247,9 +247,17 @@ class PdoOne_TestMockup implements PdoOne_IExt
         return $sql;
     }
 
-    public function createFK($tableName, $foreignKey): string
+    public function createFK($tableName, $foreignKeys): ?string
     {
         return "ALTER TABLE `$tableName` ADD CONSTRAINT `fk_{$tableName}_{key1}` FOREIGN KEY(`key1`);";
+    }
+    public function createIndex($tableName, $indexesAndDef): string
+    {
+        $sql = '';
+        foreach ($indexesAndDef as $key => $typeIndex) {
+            $sql .= "ALTER TABLE `$tableName` ADD $typeIndex `idx_{$tableName}_$key` (`$key`) ;";
+        }
+        return $sql;
     }
 
     public function limit($sql) : string
@@ -261,8 +269,13 @@ class PdoOne_TestMockup implements PdoOne_IExt
             $arr = explode(',', $sql);
             return " OFFSET $arr[0] ROWS FETCH NEXT $arr[1] ROWS ONLY";
         }
-
         return " OFFSET 0 ROWS FETCH NEXT $sql ROWS ONLY";
+    }
+    public function createTableKV($tableKV,$memoryKV=false): string
+    {
+        return $this->createTable($tableKV
+            , ['KEYT' => 'VARCHAR(256)', 'VALUE' => 'MEDIUMTEXT', 'TIMESTAMP' => 'BIGINT']
+            , 'KEYT', '', $memoryKV ? 'ENGINE = MEMORY' : '');
     }
 
     public function getPK($query, $pk=null) : string

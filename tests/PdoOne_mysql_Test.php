@@ -878,6 +878,34 @@ class PdoOne_mysql_Test extends TestCase
         self::assertLessThan(3639088446091303982, $this->pdoOne->getSequence(true),
             'sequence must be greater than 3639088446091303982');
     }
+    public function test_kv() {
+        $this->pdoOne->setKvDefaultTable('KVTABLA');
+        try {
+            $this->assertEquals(true, $this->pdoOne->dropTableKV());
+
+        } catch(Exception $ex) {
+            var_dump('warning:'.$ex->getMessage());
+            var_dump('table not deleted');
+        }
+        $t=$this->pdoOne->createTableKV();
+        $this->assertEquals(true,$t);
+
+        $this->assertEquals(true,$this->pdoOne->setKV('hello','it is a value',2));
+        $this->assertEquals('it is a value',$this->pdoOne->getKV('hello'));
+        $this->assertEquals(true,$this->pdoOne->existKV('hello'));
+        $this->assertEquals(true,$this->pdoOne->delKV('hello'));
+        $this->assertEquals(false,$this->pdoOne->existKV('hello'));
+        $this->assertEquals(true,$this->pdoOne->setKV('hello','it is a value',2));
+        $this->assertEquals('it is a value',$this->pdoOne->getKV('hello'));
+        $this->assertEquals('it is a value',$this->pdoOne->kv('KVTABLA')->getKV('hello'));
+        sleep(3);
+        $this->assertEquals(null,$this->pdoOne->getKV('hello'));
+        // it never expires:
+        $this->assertEquals(true,$this->pdoOne->setKV('hello2','it is a value'));
+        $this->assertEquals('it is a value',$this->pdoOne->getKV('hello2'));
+        $this->assertEquals(true,$this->pdoOne->existKV('hello2'));
+        $this->assertEquals(true,$this->pdoOne->delKV('hello2'));
+    }
 
     /** @noinspection PhpUnitTestsInspection
      * @noinspection TypeUnsafeComparisonInspection

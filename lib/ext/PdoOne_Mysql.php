@@ -490,10 +490,10 @@ class PdoOne_Mysql implements PdoOne_IExt
     }
 
     /** @noinspection SqlResolve */
-    public function createFK($tableName, $foreignKey): string
+    public function createFK($tableName, $foreignKeys): string
     {
         $sql = '';
-        foreach ($foreignKey as $key => $value) {
+        foreach ($foreignKeys as $key => $value) {
             $p0 = stripos($value . ' ', 'KEY ');
             if ($p0 === false) {
                 trigger_error('createTable: Key with a wrong syntax: "FOREIGN KEY.." ');
@@ -507,12 +507,25 @@ class PdoOne_Mysql implements PdoOne_IExt
         }
         return $sql;
     }
+    public function createIndex($tableName, $indexesAndDef): string
+    {
+        $sql = '';
+        foreach ($indexesAndDef as $key => $typeIndex) {
+            $sql .= "ALTER TABLE `$tableName` ADD $typeIndex `idx_{$tableName}_$key` (`$key`) ;";
+        }
+        return $sql;
+    }
 
     public function limit($sql): string
     {
         return ($sql) ? ' limit ' . $sql : '';
     }
-
+    public function createTableKV($tableKV,$memoryKV=false): string
+    {
+        return $this->createTable($tableKV
+            , ['KEYT' => 'VARCHAR(256)', 'VALUE' => 'MEDIUMTEXT', 'TIMESTAMP' => 'BIGINT']
+            , 'KEYT', '', $memoryKV ? 'ENGINE = MEMORY' : '');
+    }
 
     public function getPK($query, $pk=null)
     {

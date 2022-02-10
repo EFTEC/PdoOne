@@ -52,11 +52,11 @@ use stdClass;
  * @package       eftec
  * @author        Jorge Castro Castillo
  * @copyright (c) Jorge Castro C. MIT License  https://github.com/EFTEC/PdoOne
- * @version       2.24.1
+ * @version       2.25
  */
 class PdoOne
 {
-    const VERSION = '2.24.1';
+    const VERSION = '2.25';
     /** @var int We need this value because null and false could be a valid value. */
     const NULL = PHP_INT_MAX;
     /** @var string Prefix of the tables */
@@ -153,8 +153,9 @@ class PdoOne
      */
     public $customError = true;
     /** @var string[] PHP classes excluded by the custom error log */
-    public $traceBlackList = ['PdoOne.php', 'PdoOneQuery.php', 'PdoOne_Mysql.php', 'PdoOne.Sqlsrv.php', 'PdoOne.Oci.php'
-        , 'PdoOneTestMockup.php', '_BasePdoOneRepo.php'];
+    //todo: quitar comentarios
+    public $traceBlackList =[]; //['PdoOne.php', 'PdoOneQuery.php', 'PdoOne_Mysql.php', 'PdoOne.Sqlsrv.php', 'PdoOne.Oci.php'
+        //, 'PdoOneTestMockup.php', '_BasePdoOneRepo.php'];
     /** @var  PDO */
     public $conn1;
     /** @var  bool True if the transaction is open */
@@ -4631,7 +4632,8 @@ BOOTS;
     }
 
     /**
-     * It drops a table. It ises the method $this->drop();
+     * It drops a table. It uses the method $this->drop();<br>
+     * Note: if the table does not exists, then it could throw an exception or return false.
      *
      * @param string $tableName the name of the table to drop
      * @param string $extra     (optional) an extra value.
@@ -4925,16 +4927,37 @@ BOOTS;
      * $this->createFK('table',['col'=>"FOREIGN KEY REFERENCES TABLE1(COL1)"]); // oci
      * </pre>
      *
-     * @param string $tableName  The name of the table.
-     * @param array  $definition Associative array with the definition (SQL) of the foreign keys.
+     * @param string $tableName   The name of the table.
+     * @param array  $definitions Associative array with the definition (SQL) of the foreign keys.
      *
      * @return bool
      * @throws Exception
      */
-    public function createFK($tableName, $definition): bool
+    public function createFK($tableName, $definitions): bool
     {
         $this->beginTry();
-        $sql = $this->service->createFK($tableName, $definition);
+        $sql = $this->service->createFK($tableName, $definitions);
+        $r = $this->runMultipleRawQuery($sql);
+        $this->endTry();
+        return $r;
+    }
+
+    /**
+     * It creates indexes. It doesn't replace previous indexes. The definition could depend in the type of database<br>
+     * <b>Example:</b><br>
+     * <pre>
+     * $this->createIndex('table',['col1'=>'INDEX','col2=>'UNIQUE INDEX']);
+     * </pre>
+     *
+     * @param string $tableName   the name of the table.
+     * @param array  $definitions An associative array
+     * @return bool true if the operation was successful, otherwise false.
+     * @throws Exception
+     */
+    public function createIndex($tableName, $definitions): bool
+    {
+        $this->beginTry();
+        $sql = $this->service->createIndex($tableName, $definitions);
         $r = $this->runMultipleRawQuery($sql);
         $this->endTry();
         return $r;
@@ -5937,6 +5960,209 @@ BOOTS;
     public function useCache($ttl = 0, $family = ''): PdoOneQuery
     {
         return (new PdoOneQuery($this))->useCache($ttl, $family);
+    }
+    //</editor-fold>
+
+    //<editor-fold desc="key value">
+    protected $tableKV='';
+    protected $defaultTableKV='';
+
+    public function setKvDefaultTable($table): PdoOne
+    {
+        $this->defaultTableKV=$table;
+        $this->tableKV=$table;
+        return $this;
+    }
+    public function kv($table): PdoOne
+    {
+        $this->tableKV=$table;
+        return $this;
+    }
+    protected function resetKVChain(): void
+    {
+        $this->tableKV=$this->defaultTableKV;
+    }
+
+
+    /**
+     * It creates the table for Key/Value database. If the table exists or it is unable to create, then it returns false.
+     * @param bool $memoryKV
+     * @return bool
+     */
+    public function createTableKV($memoryKV=false): bool
+    {
+        if($this->tableKV==='') {
+            throw new RuntimeException('CreateTableKV,ou must set the table so you can use it');
+        }
+        try {
+            if (!$this->tableExist($this->tableKV)) {
+                $sql =$this->service->createTableKV($this->tableKV,$memoryKV);
+                $this->runRawQuery($sql);
+                $sql=$this->service->createIndex($this->tableKV,['TIMESTAMP'=>'INDEX']);
+                $this->runRawQuery($sql);
+                return true;
+            }
+        } catch(Exception $ex) {
+        }
+        return false;
+    }
+
+    /**
+     * It drops the table key-value. If the table doesn't exist, then it could throw an exception or returns false.
+     * @return bool
+     * @throws Exception
+     */
+    public function dropTableKV(): bool
+    {
+        if($this->tableKV==='') {
+            throw new RuntimeException('CreateTableKV,ou must set the table so you can use it');
+        }
+        return $this->dropTable($this->tableKV);
+    }
+
+    /**
+     * It gets a value from a key-value storage
+     * @param string $key
+     * @return mixed The value if found. the valueIfNotfound if not found, or null in case of error.
+     * @throws Exception
+     */
+    public function getKV($key,$valueIfNotFound=null) {
+        $sql="select KEYT,VALUE,TIMESTAMP from $this->tableKV where KEYT=?";
+        // ["KEYT"]=> string(5) "hello" ["VALUE"]=> string(13) "it is a value" ["TIMESTAMP"]=> string(19) "2022-02-09 19:08:20"
+        try {
+            $r = $this->runRawQuery($sql, [$key]);
+        } catch (Exception $e) {
+            if($this->throwOnError) {
+                throw $e;
+            }
+            $r=null;
+        }
+        if(!isset($r[0])) {
+            return $valueIfNotFound;
+        }
+        $timestamp=$r[0]['TIMESTAMP'];
+        if($timestamp!==null && $timestamp<time()) {
+            // expired
+            $this->delKV($key);
+            return null;
+        }
+        return $r[0]['VALUE'];
+    }
+
+    /**
+     * It sets a new key in the Key-Value storage. If the key exists, then it is replaced.<br>
+     *
+     * @param string $key
+     * @param string $value
+     * @param null $timeout
+     * @return bool
+     * @throws Exception
+     */
+    public function setKV($key, $value, $timeout = null): bool
+    {
+        $t=time();
+        $row=$this->runRawQuery("select 1 from $this->tableKV where KEYT=:KEYT"
+            , ['KEYT' => $key]);
+        $exist=isset($row[0]);
+        if($exist) {
+            if ($timeout === null) {
+                $this->set(['VALUE' => $value, 'TIMESTAMP' => null])->where(['KEYT' => $key])->update($this->tableKV);
+            } else {
+                $d = $t + $timeout;
+                $this->set(['VALUE' => $value, 'TIMESTAMP' => $d])->where(['KEYT' => $key])->update($this->tableKV);
+            }
+        } else if ($timeout === null) {
+            $this->insert($this->tableKV, ['KEYT' => $key, 'VALUE' => $value, 'TIMESTAMP' => null]);
+        } else {
+            $d = $t + $timeout;
+            $this->insert($this->tableKV, ['KEYT' => $key, 'VALUE' => $value, 'TIMESTAMP' => $d]);
+        }
+        try {
+            $r = random_int(1, 1000);
+            if ($r === 10) {
+                $this->garbageCollectorKV();
+            }
+        } catch(Exception $ex) {
+            if($this->throwOnError) {
+                throw $ex;
+            }
+        }
+        return true;
+    }
+
+    /**
+     * It deletes all the expired keys. setkv() call this method with a probability of 1/1000.
+     * @return bool
+     * @throws Exception
+     */
+    public function garbageCollectorKV():bool {
+        try {
+            $t=time();
+            $this->runRawQuery("delete from $this->tableKV where TIMESTAMP is null or TIMESTAMP<:TIMESTAMP",['TIMESTAMP'=>$t]);
+            return true;
+        } catch(Exception $ex) {
+            if($this->throwOnError) {
+                throw $ex;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * @param string $key
+     * @return bool
+     * @throws Exception
+     */
+    public function delKV($key): bool
+    {
+        try {
+            $this->runRawQuery("delete from $this->tableKV where KEYT=:KEYT",['KEYT'=>$key]);
+            return true;
+        } catch(Exception $ex) {
+            if($this->throwOnError) {
+                throw $ex;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Delete all the values from a key-value storage.
+     * @return bool
+     * @throws Exception
+     */
+    public function flushKV(): bool
+    {
+        try {
+            $r = $this->runRawQuery("delete from $this->tableKV where 1=1");
+            return true;
+        } catch(Exception $ex) {
+            if($this->throwOnError) {
+                throw $ex;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * It returns true if the key exists and it hasn't expired.
+     *
+     * @param string $key
+     * @return bool|null
+     * @throws Exception
+     */
+    public function existKV($key) : ?bool {
+        try {
+            $t=time();
+            $row = $this->runRawQuery("select 1 from $this->tableKV where KEYT=:KEYT and (TIMESTAMP is null or TIMESTAMP>:TIMESTAMP)"
+                , ['KEYT' => $key,'TIMESTAMP'=>$t]);
+        } catch (Exception $e) {
+            if($this->throwOnError) {
+                throw $e;
+            }
+            return null;
+        }
+        return isset($row[0]);
     }
     //</editor-fold>
 
