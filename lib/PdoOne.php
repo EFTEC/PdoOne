@@ -1,4 +1,5 @@
-<?php
+<?php /** @noinspection PhpConditionAlreadyCheckedInspection */
+
 /** @noinspection GrazieInspection
  * @noinspection GrazieInspection
  * @noinspection PhpSameParameterValueInspection
@@ -33,6 +34,7 @@
 namespace eftec;
 
 use DateTime;
+use eftec\CliOne\CliOne;
 use eftec\ext\PdoOne_IExt;
 use eftec\ext\PdoOne_Mysql;
 use eftec\ext\PdoOne_Oci;
@@ -62,7 +64,7 @@ class PdoOne
     /** @var string Prefix of the tables */
     public static $prefixBase = '_';
     /** @var int Used for the method page() */
-    public static $pageSize=20;
+    public static $pageSize = 20;
     /** @var string|null Static date (when the date is empty) */
     public static $dateEpoch = '2000-01-01 00:00:00.00000';
     /**
@@ -154,8 +156,8 @@ class PdoOne
     public $customError = true;
     /** @var string[] PHP classes excluded by the custom error log */
     //todo: quitar comentarios
-    public $traceBlackList =[]; //['PdoOne.php', 'PdoOneQuery.php', 'PdoOne_Mysql.php', 'PdoOne.Sqlsrv.php', 'PdoOne.Oci.php'
-        //, 'PdoOneTestMockup.php', '_BasePdoOneRepo.php'];
+    public $traceBlackList = []; //['PdoOne.php', 'PdoOneQuery.php', 'PdoOne_Mysql.php', 'PdoOne.Sqlsrv.php', 'PdoOne.Oci.php'
+    //, 'PdoOneTestMockup.php', '_BasePdoOneRepo.php'];
     /** @var  PDO */
     public $conn1;
     /** @var  bool True if the transaction is open */
@@ -209,6 +211,8 @@ class PdoOne
     protected static $instance;
 
     //</editor-fold>
+    /** @var CliOne */
+    private $cli;
 
     /**
      * PdoOne constructor.  It doesn't open the connection to the database.
@@ -242,14 +246,12 @@ class PdoOne
         $this->construct($database, $server, $user, $pwd, $db, $logFile, $charset, $nodeId);
         if (!class_exists('eftec\MessageContainer')) {
             throw new RuntimeException('MessageContainer class does not exist');
-
         }
         // autowire MessageContainer if the method exists.
-        $this->messageContainer=MessageContainer::instance();
-        if(self::$instance===null) {
-            self::$instance=$this;
+        $this->messageContainer = MessageContainer::instance();
+        if (self::$instance === null) {
+            self::$instance = $this;
         }
-
     }
 
     /**
@@ -257,12 +259,12 @@ class PdoOne
      * @param bool $throwIfNull
      * @return PdoOne|null
      */
-    public static function instance($throwIfNull=true): ?PdoOne
+    public static function instance($throwIfNull = true): ?PdoOne
     {
-            if(self::$instance===null && $throwIfNull) {
-                throw new RuntimeException('instance not created for PdoOne');
-            }
-            return self::$instance;
+        if (self::$instance === null && $throwIfNull) {
+            throw new RuntimeException('instance not created for PdoOne');
+        }
+        return self::$instance;
     }
 
     protected function construct(
@@ -292,13 +294,15 @@ class PdoOne
             case 'test':
                 $this->service = new PdoOne_TestMockup($this);
                 break;
+            default:
+                throw new RuntimeException('no value selected');
         }
         $charset = $this->service->construct($charset, []);
         $this->server = $server;
         $this->user = $user;
         $this->pwd = $pwd;
         $this->db = $db;
-        $this->lockerId='Pdo::'.$this->db;
+        $this->lockerId = 'Pdo::' . $this->db;
         $this->tableDependencyArray = null;
         $this->tableDependencyArrayCol = null;
         $this->logFile = $logFile;
@@ -364,7 +368,6 @@ class PdoOne
         if ($dateNum === null) {
             return self::$dateEpoch;
         }
-
         return date(self::$isoDateTimeMs, $dateNum);
     }
 
@@ -408,10 +411,8 @@ class PdoOne
             if (self::$dateEpoch === null) {
                 return null;
             }
-
             return DateTime::createFromFormat(self::$isoDateTimeMs, self::$dateEpoch);
         }
-
         if (strpos($sqlField, '.')) {
             // with date with time and microseconds
             //2018-02-06 05:06:07.123
@@ -420,7 +421,6 @@ class PdoOne
             //$x = DateTime::createFromFormat("Y-m-d H:i:s.u", "2018-02-06 05:06:07.1234");
             return DateTime::createFromFormat(self::$isoDateTimeMs, $sqlField);
         }
-
         if (strpos($sqlField, ':')) {
             // date with time
             $hasTime = true;
@@ -428,7 +428,6 @@ class PdoOne
         }
         // only date
         $hasTime = false;
-
         return DateTime::createFromFormat(self::$isoDate, $sqlField);
     }
 
@@ -493,7 +492,6 @@ class PdoOne
                 if ($time) {
                     return $tmpDate->format(self::$dateTimeHumanFormat);
                 }
-
                 return $tmpDate->format(self::$dateHumanFormat);
             case 'sql':
                 if ($ms) {
@@ -502,7 +500,6 @@ class PdoOne
                 if ($time) {
                     return $tmpDate->format(self::$isoDateInputTime);
                 }
-
                 return $tmpDate->format(self::$isoDateInput);
             case 'class':
                 return $tmpDate;
@@ -559,7 +556,6 @@ class PdoOne
                     $tmpDate = DateTime::createFromFormat(self::$dateTimeHumanFormat, $inputValue);
                 } else {
                     $tmpDate = DateTime::createFromFormat(self::$dateHumanFormat, $inputValue);
-
                     if ($tmpDate === false) {
                         return false;
                     }
@@ -620,12 +616,10 @@ class PdoOne
         } else {
             $tmpFormat = self::$dateFormat;
         }
-
         $tmpDate = DateTime::createFromFormat($tmpFormat, $textDate);
         if (!$hasTime && $tmpDate) {
             $tmpDate->setTime(0, 0);
         }
-
         return self::dateTimePHP2Sql($tmpDate); // it always returns a date with time. Mysql Ignores it.
     }
 
@@ -647,7 +641,6 @@ class PdoOne
         if ($date->format('u') !== '000000') {
             return $date->format(self::$isoDateTimeMs);
         }
-
         return $date->format(self::$isoDateTime);
     }
 
@@ -710,7 +703,6 @@ class PdoOne
         if ($hasTime) {
             return $tmpDate->format(($hasMicroseconds !== false) ? self::$isoDateTimeMs : self::$isoDateTime);
         }
-
         return $tmpDate->format(self::$isoDate);
     }
 
@@ -794,7 +786,6 @@ class PdoOne
             $len = $p1 + strlen($endNeedle) - $ini;
             $offset = $ini + $len;
             return substr_replace($haystack, $replaceText, $ini, $len);
-
         }
         $len = $p1 - $ini2;
         $offset = $ini2 + $len;
@@ -833,7 +824,6 @@ class PdoOne
         }
         if (strpos($txt, '_') !== false || strpos($txt, ' ') !== false) {
             $txt = strtolower($txt);
-
             $result = '';
             $l = strlen($txt);
             for ($i = 0; $i < $l; $i++) {
@@ -849,7 +839,6 @@ class PdoOne
                     $result .= $c;
                 }
             }
-
             return self::singularTable(ucfirst($result));
         }
         // the text is simple.
@@ -857,7 +846,8 @@ class PdoOne
     }
 
     /**
-     * It converts a name to singular. This method is used automatically for the generation of the repository classes<br>
+     * It converts a name to singular. This method is used automatically for the generation of the repository
+     * classes<br>
      * <b>Example:</b><br>
      * <pre>
      * self::singularTable('categories'); // category
@@ -871,13 +861,13 @@ class PdoOne
     public static function singularTable($tableName)
     {
         $l = strlen($tableName);
-        if ($l>=3 && substr($tableName,-3)==='ies') {
+        if ($l >= 3 && substr($tableName, -3) === 'ies') {
             // categories => category
-            $tableName = substr($tableName, 0, $l - 3).'y';
-        } else if ($l>=2 && substr($tableName,-2)==='es') {
+            $tableName = substr($tableName, 0, $l - 3) . 'y';
+        } else if ($l >= 2 && substr($tableName, -2) === 'es') {
             // churches => church (however it fails with prices => pric)
             $tableName = substr($tableName, 0, $l - 2);
-        } else if($l>=1 && substr($tableName,-1)==='s') {
+        } else if ($l >= 1 && substr($tableName, -1) === 's') {
             // users => user
             $tableName = substr($tableName, 0, $l - 1);
         }
@@ -955,7 +945,6 @@ class PdoOne
                 $error[$k] = "fk: $dc , $defFK[$k] are different";
             }
         }
-
         return $error;
     }
 
@@ -996,12 +985,12 @@ class PdoOne
             $type = $t[0];
             $conversion = $specialConversion[$k] ?? null;
             $extra = (count($t) > 1) ? $t[1] : null;
-            if ($extra!==null && stripos($extra, 'not null') !== false) {
+            if ($extra !== null && stripos($extra, 'not null') !== false) {
                 $null = false;
             } else {
                 $null = true;
             }
-            if ($extra!==null && stripos($extra, $this->database_identityName) !== false) {
+            if ($extra !== null && stripos($extra, $this->database_identityName) !== false) {
                 $identity = true;
             } else {
                 $identity = false;
@@ -1023,7 +1012,6 @@ class PdoOne
                 'sql' => $v
             ];
         }
-
         return $r;
     }
 
@@ -1130,7 +1118,7 @@ class PdoOne
      *
      * @param string $table            The name of the table to analize.
      * @param bool   $returnSimple     true= returns as a simple associative
-     *                                 array<br> example:['id'=>'PRIMARY
+     *                                 array<br> Example:['id'=>'PRIMARY
      *                                 KEY','name'=>'FOREIGN KEY...']<br> false=
      *                                 returns as an associative array separated
      *                                 by parts<br>
@@ -1149,7 +1137,7 @@ class PdoOne
     /**
      * @param string $table            The name of the table to analize.
      * @param bool   $returnSimple     true= returns as a simple associative
-     *                                 array<br> example:['id'=>'PRIMARY
+     *                                 array<br> Example:['id'=>'PRIMARY
      *                                 KEY','name'=>'FOREIGN KEY...']<br> false=
      *                                 returns as an associative array separated
      *                                 by parts<br>
@@ -1202,16 +1190,143 @@ class PdoOne
      */
     public function cliEngine(): void
     {
-        $database = self::getParameterCli('database');
-        $server = self::getParameterCli('server');
-        $user = self::getParameterCli('user');
-        $pwd = self::getParameterCli('pwd');
-        $db = self::getParameterCli('db');
-        $input = self::getParameterCli('input');
-        $output = self::getParameterCli('output');
-        $namespace = self::getParameterCli('namespace');
-        $v = self::VERSION;
+        $this->cli = new CliOne(__FILE__);
+        $this->cli->createParam('database')
+            ->setRequired(false)
+            ->setDescription('The type of database', 'Select the type of database', [
+                'Values allowed: <option/>'])
+            ->setInput(false, 'optionshort', ['mysql', 'sqlsrv', 'oci', 'test'])
+            ->add();
+        $this->cli->createParam('server')
+            ->setRequired(false)
+            ->setDefault('127.0.0.1')
+            ->setDescription('The type of database', 'Select the type of database', [
+                'Example mysql: 127.0.0.1 , 127.0.0.1:3306',
+                'Example sqlsrv: (local)\sqlexpress 127.0.0.1\sqlexpress'])
+            ->setInput(false)
+            ->add();
+        $this->cli->createParam('user')
+            ->setDescription('The username to access to the database', 'Select the username', ['Example: sa, root'])
+            ->setRequired(false)
+            ->setDefault('')
+            ->setInput(false)
+            ->add();
+        $this->cli->createParam('pwd')
+            ->setRequired(false)
+            ->setDescription('The password to access to the database', '', ['Example:12345'])
+            ->setDefault('')
+            ->setInput(false, 'password')
+            ->add();
+        $this->cli->createParam('db')
+            ->setRequired(false)
+            ->setDescription('The database/schema', 'Select the database/schema', [
+                'Example: sakila,contoso,adventureworks'])
+            ->setDefault('')
+            ->setInput(false)
+            ->add();
+        $this->cli->createParam('input')
+            ->setRequired(false)
+            ->setDescription('The type of input', '', [
+                'Example: -input "select * from table" = it runs a query',
+                'Example: -input "table" = it runs a table (it could generates a query automatically)'
+            ])
+            ->setDefault('')
+            ->setInput(false)
+            ->add();
+        $this->cli->createParam('output')
+            ->setRequired(false)
+            ->setDescription('The type of output', '', [
+                'Values allowed: <option/>',
+                '<bold>classcode</bold>: it returns php code with a CRUDL class',
+                '<bold>selectcode</bold>: it shows a php code with a select',
+                '<bold>arraycode</bold>: it shows a php code with the definition of an array Ex: ["idfield"=0,"name"=>""]',
+                '<bold>csv</bold>: it returns a csv result',
+                '<bold>json</bold>: it returns the value of the queries as json'])
+            ->setDefault('')
+            ->setInput(false, 'optionshort', ['classcode', 'selectcode', 'arraycode', 'csv', 'json'])
+            ->add();
+        $this->cli->createParam('namespace')
+            ->setRequired(false)
+            ->setDescription('The namespace', '', [
+                'Example: "customers"'])
+            ->setDefault('')
+            ->setInput(false)
+            ->add();
+        $scanned_directory = array_diff(scandir('.'), array('..', '.'));
+        $scanned2=[];
+        foreach($scanned_directory as $k) {
+            if(@pathinfo($k)['extension']==='php') {
+                $scanned2[$k] = $k;
+            }
+        }
+        $this->cli->createParam('loadconfig')
+            ->setRequired(false)
+            ->setDescription('Select the configuration file to load', '', [
+                'Example: "-loadconfig myconfig"'])
+            ->setDefault('')
+            ->setInput(true,'string',$scanned2)
+            ->add();
 
+
+        $this->cli->createParam('saveconfig')
+            ->setRequired(false)
+            ->setDescription('save a configuration file', 'Select the configuration file to save', [
+                'Example: "-saveconfig myconfig"'])
+            ->setDefault('')
+            ->setInput(true,'string',$scanned2)
+            ->add();
+        $this->cli->createParam('cli')
+            ->setRequired(false)
+            ->setAllowEmpty()
+            ->setDescription('It start the cli', '', [
+                'Example: "-cli"'])
+            ->setDefault('')
+            ->setInput(false)
+            ->add();
+        $v = self::VERSION;
+        $this->cli->show("
+ _____    _       _____           
+|  _  | _| | ___ |     | ___  ___ 
+|   __|| . || . ||  |  ||   || -_|
+|__|   |___||___||_____||_|_||___|  $v
+
+<yellow>Syntax:php PdoOne.php <args></yellow>
+
+");
+        $database = $this->cli->evalParam('database', false, true);
+        if($database) {
+            // if the user is inputting some values, then it doesn't ask to load parameters
+            $this->cli->getParameter('loadconfig')->setInput(false,'string',[]);
+        }
+
+        $loadconfig = $this->cli->evalParam('loadconfig', false);
+        if ($loadconfig->value) {
+            [$ok, $data] = $this->cli->readData($loadconfig->value);
+            if ($ok === false) {
+                $this->cli->showCheck('ERROR', 'red', "unable to open file $loadconfig->value");
+            } else {
+                $this->cli->setArrayParam($data);
+            }
+        }
+        $clip = $this->cli->evalParam('cli', false);
+        if (!$clip->missing) {
+            $this->runCliGeneration();
+            return;
+        }
+
+        $server = $this->cli->evalParam('server', false, true);
+        $user = $this->cli->evalParam('user', false, true);
+        $pwd = $this->cli->evalParam('pwd', false, true);
+        $db = $this->cli->evalParam('db', false, true);
+        $input = $this->cli->evalParam('input', false, true);
+        $output = $this->cli->evalParam('output', false, true);
+        $namespace = $this->cli->evalParam('namespace', false, true);
+
+        $result = $this->RunCliConnection();
+        echo "quatro";
+        $this->runCliSaveConfig();
+
+        $this->cli->showLine();
         if ($database === '' || $server === '' || $user === '' || $pwd === '' || $input === '' || $output === '') {
             $databasem = self::messageCli($database === '' ? '*missing*' : $database, $database === '' ? 'e' : 'g', false);
             $serverm = self::messageCli($server === '' ? '*missing*' : $server, $server === '' ? 'e' : 'g', false);
@@ -1219,45 +1334,512 @@ class PdoOne
             $pwdm = self::messageCli('***', $pwd === '' ? 'e' : 'g', false);
             $inputm = self::messageCli($input === '' ? '*missing*' : $input, $input === '' ? 'e' : 'g', false);
             $outputm = self::messageCli($output === '' ? '*missing*' : $output, $output === '' ? 'e' : 'g', false);
-
-
-            echo <<<eot
- _____    _       _____           
-|  _  | _| | ___ |     | ___  ___ 
-|   __|| . || . ||  |  ||   || -_|
-|__|   |___||___||_____||_|_||___|  $v
-
-Syntax:php PdoOne.php <args>
--database [$databasem]
-    Example: (mysql/sqlsrv/oracle/test)
--server [$serverm]
-    Example mysql: 127.0.0.1 , 127.0.0.1:3306
-    Example sqlsrv: (local)\sqlexpress 127.0.0.1\sqlexpress
--user The username to access to the database [$userm]
-    Example: root, su
--pwd The password to access to the database [$pwdm]
-    Example: abc.123
--db The database/schema [$db]
-    Example: sakila
--input The input value.[$inputm]
-    Example: -input "select * from table" = it runs a query
-    Example: -input "table" = it runs a table (it could generates a query automatically)
--output The result value. [$outputm]
-    classcode: it returns php code with a CRUDL class
-    selectcode: it shows a php code with a select
-    arraycode: it shows a php code with the definition of an array Ex: ['idfield'=0,'name'=>'']
-    csv: it returns a csv result
-    json: it returns the value of the queries as json
--namespace [optional] the namespace  [$namespace]
-    Example: "customerid"    
-
-eot;
-
+            $this->cli->showParamSyntax('*', 0, 1, ['retry']);
             return;
         }
-
         echo self::messageCli($this->run($database, $server, $user, $pwd, $db, $input, $output, $namespace), 'e');
     }
+    protected function runCliSaveConfig():void
+    {
+        if($this->cli->createParam('dosave','none')
+                ->setRequired(false)
+                ->setDefault('false')
+                ->setInput(true,'optionshort',['yes','no'])
+                ->setDescription('','Do you want to save?')
+                ->evalParam(true,true)==='yes') {
+
+
+        $saveconfig = $this->cli->evalParam('saveconfig', false);
+        if ($saveconfig->value) {
+            $arr = $this->cli->getArrayParams(['saveconfig', 'loadconfig', 'cli', 'retry']);
+            $r = $this->cli->saveData($saveconfig->value, $arr);
+            if ($r === '') {
+                $this->cli->showCheck('OK', 'green', 'file saved correctly');
+            }
+        }
+        }
+    }
+
+    /**
+     * @return void
+     * @throws Exception
+     */
+    protected function runCliGeneration(): void
+    {
+        [$configOk, $config] = $this->cli->readData('myconfig');
+        if (!$configOk) {
+            $config = [
+                'tablexclass' => '',
+                'conversion' => [],
+                'extracolumn' => [],
+                'removecolumn' => [],
+                'db' => $this->cli->getValue('db'),
+                'classnamespace' => '',
+                'classdirectory' => '',
+                'classoverride' => '',
+                'columnsTable' => '',
+                'classes' => []
+            ];
+        }
+
+        $this->cli->createParam('savegen')
+            ->setRequired(false)
+            ->setDescription('save a configuration file', 'Do you want to save the generation', [
+                'Example: "-savegen myconfig"'])
+            ->setDefault('yes')
+            ->setInput(true, 'optionshort', ['yes', 'no'])
+            ->add();
+        $this->cli->createParam('namerepo')
+            ->setDescription('', 'Select the name of the class repository')
+            ->setInput(true)->add();
+        $this->cli->createParam('command')
+            ->setDescription('', 'Select a command (empty for exit)')
+            ->setAllowEmpty()
+            ->setInput(true, 'option', [
+                'select' => 'Select the tables to work',
+                'configure' => 'Configure per table',
+                'convertxtype' => 'Configure per type of column',
+                'end' => 'End this menu and save the project'])->add();
+        $this->cli->createParam('tables')
+            ->setDescription('', '')
+            ->setInput(true, 'options', [])->add();
+        $this->cli->createParam('tablescolumns')
+            ->setDescription('', '')
+            ->setAllowEmpty(false)
+            ->setInput(true, 'options', [])->add();
+        $this->cli->createParam('tablescolumnsvalue')
+            ->setDescription('', '')
+            ->setRequired(false)
+            ->setAllowEmpty(true)
+            ->setInput(true, 'string', [])->add();
+        $this->cli->createParam('classselected')
+            ->setDescription('', 'Select a table to configure')
+            ->setAllowEmpty()
+            ->setInput(true, 'option3', [])->add();
+        $this->cli->createParam('tablecommand')
+            ->setDescription('', 'Select the command for the table')
+            ->setAllowEmpty(true)
+            ->setInput(true, 'option', [
+                'rename' => 'rename the class from the table',
+                'conversion' => 'column conversion',
+                'extracolumn' => 'configure extra columns that could be read',
+                'remove' => 'remove a column'
+            ])->add();
+        $this->cli->createParam('convertionselected')
+            ->setDescription('', 'Select a type of data to convert')
+            ->setAllowEmpty()
+            ->setInput(true, 'option3', [])->add();
+        $this->cli->createParam('convertionnewvalue')
+            ->setDescription('', 'Select the conversion')
+            ->setAllowEmpty()
+            ->setInput(true, 'option', [
+                'encrypt' => 'encrypt and decrypt the value',
+                'decrypt' => 'encrypt and decrypt the value',
+                'datetime3' => 'convert an human readable date to SQL',
+                'datetime4' => 'no conversion, it keeps the format of SQL',
+                'datetime2' => 'convert between ISO standard and SQL',
+                'datetime' => 'convert between PHP Datetime object and SQL',
+                'timestamp' => 'convert between a timestamp number and sql',
+                'bool' => 'the value will be converted into a boolean (0,"" or null=false,other=true)',
+                'int' => 'the value will be cast into a int',
+                'float' => 'the value will be cast into a float',
+                'decimal' => 'the value will be cast into a float',
+                'null' => 'the value will be null',
+                'nothing'=>"it does nothing"])->add();
+        $this->cli->createParam('newclassname')
+            ->setDescription('', 'Select the name of the class')
+            ->setInput(true, 'string', [])->add();
+        $this->cli->createParam('classdirectory')
+            ->setDescription('', 'Select the relative directory to create the classes')
+            ->setInput(true)->add();
+        $this->cli->createParam('classnamespace')
+            ->setDescription('', 'Select the namespace of the classes')
+            ->setInput(true)->add();
+        $this->cli->createParam('classoverride')
+            ->setDescription('', 'Do you want to override previous generated classes?')
+            ->setInput(true, 'optionshort', ['yes', 'no'])->add();
+        $this->cli->getParameter('database')->setInput(true, 'optionshort', ['mysql', 'sqlsrv', 'oci', 'test']);
+        $this->cli->getParameter('server')->setInput(true);
+        $this->cli->getParameter('user')->setInput(true);
+        $this->cli->getParameter('pwd')->setInput(true);
+        $this->cli->getParameter('db')->setInput(true);
+        $this->cli->evalParam('database', false);
+        $this->cli->evalParam('server', false);
+        $this->cli->evalParam('user', false);
+        $this->cli->evalParam('pwd', false);
+        $this->cli->evalParam('db', false);
+        echo "segunda";
+        $pdo = $this->RunCliGenerationTest1();
+        if ($pdo === null) {
+            $this->cli->showCheck('CRITICAL', 'error', 'No connection');
+            die(1);
+        }
+        try {
+            $tables = $pdo->objectList('table', true);
+        } catch (Exception $e) {
+            $this->cli->showCheck('CRITICAL', 'error', 'Unable to read tables');
+            die(1);
+        }
+        $tablesmarked = $tables;
+        //$classes=[];
+        $tablexclass = [];
+        $columnsTable = [];
+        $conversion = [];
+        $extracolumn=[];
+        $removecolumn=[];
+        $def2 = [];
+        $pk = [];
+        $this->cli->show('<yellow>Please wait, reading structure of tables... </yellow>');
+        $this->cli->showWaitCursor(true);
+        foreach ($tablesmarked as $table) {
+            /** @noinspection DisconnectedForeachInstructionInspection */
+            $this->cli->showWaitCursor(false);
+            $class = self::tableCase($table) . 'Repo';
+            //$classes[] = $class;
+            $tablexclass[$table] = $class;
+            $columns = $pdo->columnTable($table);
+            foreach ($columns as $k => $v) {
+                $conversion[$v['coltype']] = null;
+                $columnsTable[$table][$v['colname']] = null;
+                //var_dump($def2);
+            }
+            $pk[$table] = $pdo->getPK($table);
+            $def2[$table] = $pdo->xxx($table, $pk[$table][0]);
+            foreach ($def2[$table] as $k => $v) {
+                if (isset($v['key']) && $v['key'] !== 'FOREIGN KEY') {
+                    $columnsTable[$table][$k] = $v['key'];
+                }
+            }
+        }
+        $this->cli->showLine();
+        ksort($conversion);
+        if ($configOk !== false) {
+            $tablexclass = $config['tablexclass'];
+            $conversion = $config['conversion'] ?? $conversion;
+            $extracolumn = $config['extracolumn'] ?? $extracolumn;
+            $removecolumn = $config['removecolumn'] ?? $removecolumn;
+            //$classes=$config['classes'];
+            $this->cli->getParameter('db')->value = $config['db'];
+            $columnsTable = $config['columnsTable'];
+            $this->cli->getParameter('classnamespace')->setDefault($config['classnamespace']);
+            $this->cli->getParameter('classdirectory')->setDefault($config['classdirectory']);
+            $this->cli->getParameter('classoverride')->setDefault($config['classoverride']);
+        }
+        $this->cli->upLevel($this->cli->getParameter('db')->value,' (db)');
+        while (true) {
+            $this->cli->setColor(['byellow'])->showBread();
+            $com = $this->cli->evalParam('command', true);
+
+            switch ($com->valueKey) {
+                case 'end':
+                case $this->cli->emptyValue:
+                case '':
+                    break 2;
+                case 'convertxtype':
+                    $this->cli->upLevel('convertxtype');
+                    while(true) {
+                        $this->cli->setColor(['byellow'])->showBread();
+                        $this->cli->getParameter('convertionselected')
+                            ->setInput(true, 'option3', $conversion);
+                        $convertionselected = $this->cli->evalParam('convertionselected', true);
+                        if($convertionselected->valueKey===$this->cli->emptyValue) {
+                            break;
+                        }
+                        $this->cli->upLevel($convertionselected->valueKey, ' (type)');
+                        $this->cli->setColor(['byellow'])->showBread();
+                        $convertionnewvalue = $this->cli->getParameter('convertionnewvalue')
+                            ->setDefault($convertionselected->value ?? '')
+                            ->evalParam(true);
+                        $conversion[$convertionselected->valueKey] = $convertionnewvalue->valueKey;
+                        $this->cli->downLevel();
+                    }
+                    $this->cli->downLevel();
+                    break;
+                case 'select':
+                    $this->cli->upLevel('select');
+                    $this->cli->setColor(['byellow'])->showBread();
+                    $this->cli->getParameter('tables')
+                        ->setDefault($tablesmarked ?? [])
+                        ->setDescription('', 'Select or de-select a table to process')
+                        ->setInput(true, 'multiple2', $tables);
+                    $this->cli->evalParam('tables', true);
+                    $this->cli->downLevel();
+                    break;
+                case 'configure':
+                    $this->cli->upLevel('configure');
+                    while(true) {
+                        $this->cli->setColor(['byellow'])->showBread();
+                        $tmp = $this->cli->getValue('tables');
+                        $this->cli->getParameter('classselected')
+                            ->setDescription('', 'Select a table to configure')
+                            ->setInput(true, 'option3', $tablexclass);
+                        $classselected = $this->cli->evalParam('classselected', true);
+                        if ($classselected->value === '') {
+                            $this->cli->downLevel();
+                            break; // return to command
+                        }
+                        $oldnameclass = $classselected->value;
+                        $ktable = $classselected->valueKey;
+                        $this->cli->upLevel($ktable, '(table)');
+                        while (true) { // tablecommand
+                            $this->cli->setColor(['byellow'])->showBread();
+                            $tablecommand = $this->cli->evalParam('tablecommand', true);
+                            switch ($tablecommand->valueKey) {
+                                case $this->cli->emptyValue:
+                                    //$this->cli->downLevel();
+                                    $this->cli->downLevel();
+                                    break 2; // while tablecommand
+                                case 'rename':
+                                    $this->cli->upLevel('rename');
+                                    $this->cli->setColor(['byellow'])->showBread();
+                                    $this->cli->getParameter('newclassname')->setDefault($classselected->value);
+                                    $newclassname = $this->cli->evalParam('newclassname', true);
+                                    //$k=array_search($classselected->value,$classes,true);
+                                    //$classes[$k]=$newclassname->value;
+                                    $tablexclass[$ktable] = $newclassname->value;
+                                    $this->cli->downLevel();
+                                    break;
+                                case 'remove':
+                                    $this->cli->upLevel('remove');
+                                    while (true) {
+                                        $this->cli->setColor(['byellow'])->showBread();
+                                        if (isset($removecolumn[$ktable])) {
+                                            $this->cli->showValuesColumn($removecolumn[$ktable], 'option3');
+                                        }
+                                        $ecc = $this->cli->createParam('extracolumncommand')
+                                            ->setAllowEmpty()
+                                            ->setInput(true, 'optionshort', ['add', 'remove'])
+                                            ->setDescription('', 'Do you want to add or remove a column from the remove-list')
+                                            ->evalParam(true);
+                                        switch ($ecc->value) {
+                                            case '':
+                                                break 2;
+                                            case 'add':
+                                                $tmp = $this->cli->createParam('extracolumn_name')
+                                                    //->setAllowEmpty()
+                                                    ->setInput(true, 'option3', array_keys($columnsTable[$ktable]))
+                                                    ->setDescription('', 'Select a name of the column to remove')
+                                                    ->evalParam(true);
+                                                $removecolumn[$ktable][] = $tmp->value;
+                                                break;
+                                            case 'remove':
+                                                $tmp = $this->cli->createParam('extracolumn_delete')
+                                                    ->setAllowEmpty()
+                                                    ->setInput(true, 'option2', $removecolumn[$ktable])
+                                                    ->setDescription('', 'Select a columne to delete')
+                                                    ->evalParam(true);
+                                                if ($tmp->valueKey !== $this->cli->emptyValue) {
+                                                    unset($removecolumn[$ktable][$tmp->valueKey - 1]);
+                                                }
+                                                // renumerate
+                                                $removecolumn[$ktable] = array_values($removecolumn[$ktable]);
+                                                break;
+                                        }
+                                    }
+                                    $this->cli->downLevel();
+                                    break;
+                                case 'extracolumn':
+                                    $this->cli->upLevel('extracolumn');
+                                    while (true) {
+                                        $this->cli->setColor(['byellow'])->showBread();
+                                        $this->cli->showValuesColumn($extracolumn[$ktable],'option2');
+                                        $ecc = $this->cli->createParam('extracolumncommand')
+                                            ->setAllowEmpty()
+                                            ->setInput(true, 'optionshort', ['add', 'remove'])
+                                            ->setDescription('', 'Select an operation')
+                                            ->evalParam(true);
+                                        switch ($ecc->value) {
+                                            case '':
+                                                break 2;
+                                            case 'add':
+                                                $tmp = $this->cli->createParam('extracolumn_name')
+                                                    //->setAllowEmpty()
+                                                    ->setInput(true)
+                                                    ->setDescription('', 'Select a name for the new column')
+                                                    ->evalParam(true);
+                                                $tmp2 = $this->cli->createParam('extracolumn_sql')
+                                                    //->setAllowEmpty()
+                                                    ->setInput(true)
+                                                    ->setDescription('', 'Select a sql for the new column')
+                                                    ->evalParam(true);
+                                                $extracolumn[$ktable][$tmp->value] = $tmp2->value;
+                                                break;
+                                            case 'remove':
+                                                $tmp = $this->cli->createParam('extracolumn_delete')
+                                                    ->setAllowEmpty()
+                                                    ->setInput(true, 'option2', $extracolumn[$ktable])
+                                                    ->setDescription('', 'Select a columne to delete')
+                                                    ->evalParam(true);
+                                                if ($tmp->valueKey !== $this->cli->emptyValue) {
+                                                    unset($extracolumn[$ktable][$tmp->valueKey]);
+                                                }
+                                                break;
+                                        }
+                                    }
+                                    $this->cli->downLevel();
+                                    break;
+                                case 'conversion':
+                                    $this->cli->upLevel('conversion');
+                                    while (true) {
+                                        $this->cli->setColor(['byellow'])->showBread();
+                                        $this->cli->getParameter('tablescolumns')
+                                            ->setDescription('', 'Select a column (or empty for end)')
+                                            ->setAllowEmpty()
+                                            ->setInput(true, 'option3', $columnsTable[$ktable]);
+                                        $tablecolumn = $this->cli->evalParam('tablescolumns', true);
+                                        if ($tablecolumn->value === '') {
+                                            // exit
+                                            break;
+                                        }
+                                        $this->cli->upLevel($tablecolumn->valueKey, ' (column)');
+                                        $this->cli->setColor(['byellow'])->showBread();
+                                        if ($tablecolumn->valueKey[0] === '_') {
+                                            $this->cli->getParameter('tablescolumnsvalue')
+                                                ->setDescription('', 'Select a relation')
+                                                ->setAllowEmpty(true)
+                                                ->setRequired(false)
+                                                ->setDefault($tablecolumn->value)
+                                                ->setPattern('<cyan>[{key}]</cyan> {value}')
+                                                ->setInput(true, 'option', [
+                                                    'PARENT' => 'Same than MANYTONE without the recursivity',
+                                                    'MANYTOMANY' => 'Many to many',
+                                                    'ONETOMANY' => 'One to many relation',
+                                                    'MANYTOONE' => 'Many to one',
+                                                    'ONETOONE' => 'One to one'
+                                                ]);
+                                        } else {
+                                            $this->cli->getParameter('tablescolumnsvalue')
+                                                ->setDescription('', 'Select a conversion')
+                                                ->setDefault($tablecolumn->value)
+                                                ->setAllowEmpty()
+                                                ->setInput(true, 'option', [
+                                                    'encrypt' => 'encrypt the value',
+                                                    'decrypt' => 'decrypt the value',
+                                                    'datetime3' => 'datetime3',
+                                                    'datetime4' => 'datetime3',
+                                                    'datetime2' => 'datetime3',
+                                                    'datetime' => 'datetime3',
+                                                    'timestamp' => 'datetime3',
+                                                    'bool' => 'the value will be converted into a boolean (0=false,other=true)',
+                                                    'int' => 'the value will be converted into a int',
+                                                    'float' => 'the value will be converted into a float',
+                                                    'decimal' => 'the value will be converted into a float',
+                                                    'null' => 'pending.',
+                                                    'nothing'=>"it does nothing"]);
+                                        }
+                                        $tablecolumnsvalue = $this->cli->evalParam('tablescolumnsvalue', true);
+                                        //var_dump($tablecolumn->valueKey);
+                                        //var_dump($tablecolumn->valueKey);
+                                        if ($tablecolumnsvalue->valueKey !== $this->cli->emptyValue) {
+                                            $columnsTable[$ktable][$tablecolumn->valueKey] = $tablecolumnsvalue->valueKey;
+                                        }
+                                        $this->cli->downLevel();
+                                    }
+                                    $this->cli->downLevel();
+                                    break;
+                            }
+                        } // end while tablecommand
+                    } // end while table
+
+                    //var_dump($pdo->columnTable($ktable));
+
+                    break;
+            }
+        }
+        $this->cli->evalParam('classdirectory', true);
+        $this->cli->evalParam('classnamespace', true);
+        $this->cli->evalParam('classoverride', true);
+        try {
+            $configOk = @mkdir($this->cli->getValue('classdirectory'));
+            if (!$configOk) {
+                throw new RuntimeException('failed to create folder, maybe the folder already exists');
+            }
+            $this->cli->showCheck('OK', 'green', 'directory created');
+        } catch (Exception $ex) {
+            $this->cli->show('<yellow>');
+            $this->cli->showMessageBox('unable to create directory ' . $ex->getMessage(),'warning');
+            $this->cli->show('</yellow>');
+            // $this->cli->showCheck('WARNING', 'yellow', 'unable to create directory ' . $ex->getMessage());
+        }
+        $results = $pdo->generateAllClasses($tablexclass, ucfirst($this->cli->getValue('db')),
+            $this->cli->getValue('classnamespace'),
+            $this->cli->getValue('classdirectory'),
+            $this->cli->getValue('classoverride') === 'yes',
+            $columnsTable,
+            $extracolumn,
+            $removecolumn
+        );
+        $sg = $this->cli->evalParam('savegen', true);
+        if ($sg->value === 'no') {
+            $this->cli->showLine('Done');
+        }
+        $config = [
+            'tablexclass' => $tablexclass,
+            'conversion' => $conversion,
+            'extracolumn' => $extracolumn,
+            'removecolumn' => $removecolumn,
+            //'classes' => $classes,
+            'db' => $this->cli->getValue('db'),
+            'classnamespace' => $this->cli->getValue('classnamespace'),
+            'classdirectory' => $this->cli->getValue('classdirectory'),
+            'classoverride' => $this->cli->getValue('classoverride'),
+            'columnsTable' => $columnsTable
+        ];
+        $this->cli->saveData('myconfig', $config);
+    }
+    protected function RunCliConnection() : ?PdoOne {
+        $result= null;
+        while (true) {
+            try {
+                $pdo = new PdoOne($this->cli->getValue('database'),
+                    $this->cli->getValue('server'),
+                    $this->cli->getValue('user'),
+                    $this->cli->getValue('pwd'),
+                    $this->cli->getValue('db'));
+                $pdo->logLevel = 3;
+                $pdo->connect();
+                $this->cli->showCheck('OK', 'green', 'Connected to the database');
+                $result = $pdo;
+                break;
+            } catch (Exception $ex) {
+                $this->cli->showCheck('ERROR', 'red', 'Unable to connect to the database: '.$ex->getMessage());
+            }
+            $rt=$this->cli->createParam('retry')
+                ->setDescription('', 'Do you want to retry?')
+                ->setInput(true, 'optionshort', ['yes', 'no'])->evalParam(true);
+            if ($rt->value === 'no') {
+                break;
+            }
+            $this->cli->evalParam('database', true);
+            $this->cli->evalParam('server', true);
+            $this->cli->evalParam('user', true);
+            $this->cli->evalParam('pwd', true);
+            $this->cli->evalParam('db', true);
+        }
+        return $result;
+    }
+
+    protected function RunCliGenerationTest1(): ?PdoOne
+    {
+        $result = $this->RunCliConnection();
+
+        if (!$this->cli->getValue('loadconfig')) {
+            $sg = $this->cli->evalParam('savegen', true);
+            if ($sg->value === 'yes') {
+                echo "tres";
+                $saveconfig = $this->cli->evalParam('saveconfig', false);
+                if ($saveconfig->value) {
+                    $arr = $this->cli->getArrayParams(['saveconfig', 'loadconfig', 'cli', 'retry']);
+                    $r = $this->cli->saveData($saveconfig->value, $arr);
+                    if ($r === '') {
+                        $this->cli->showCheck('OK', 'green', 'file saved correctly');
+                    }
+                }
+            }
+        }
+        return $result;
+    }
+
 
     /**
      * @param           $key
@@ -1279,7 +1861,6 @@ eot;
         if (count($argv) >= $p + 1) {
             return self::removeTrailSlash($argv[$p + 1]);
         }
-
         return '';
     }
 
@@ -1318,7 +1899,6 @@ eot;
         if (!$this->isOpen) {
             $r = "Unable to open database $database $server $user **** $db\n";
             $r .= $this->lastError();
-
             return $r;
         }
         if (stripos($input, 'select ') !== false || stripos($input, 'show ') !== false) {
@@ -1346,7 +1926,6 @@ eot;
                     $line = rtrim($line, ',') . "\n";
                     $r .= $line;
                 }
-
                 return $r;
             case 'json':
                 try {
@@ -1357,7 +1936,6 @@ eot;
                 if (!is_array($result)) {
                     return "No result or result error\n";
                 }
-
                 return json_encode($result);
             case 'selectcode':
                 return $this->generateCodeSelect($query);
@@ -1401,9 +1979,7 @@ eot;
             }
             $this->conn1->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
             $this->conn1->setAttribute(PDO::ATTR_STRINGIFY_FETCHES, false);
-
             //$this->conn1->setAttribute(PDO::ATTR_STRINGIFY_FETCHES, false); It is not required.
-
             $this->isOpen = true;
         } catch (Exception $ex) {
             $this->isOpen = false;
@@ -1484,7 +2060,6 @@ eot;
         }
         if ($throwError && $this->throwOnError && $this->genError) {
             // endtry() invalidates this call (it is never called)
-
             throw new RuntimeException($txt);
         }
         $this->endTry();
@@ -1506,7 +2081,7 @@ eot;
         if (!$this->isOpen) {
             return "It's not connected to the database";
         }
-        return $this->conn1->errorInfo()[2]??'';
+        return $this->conn1->errorInfo()[2] ?? '';
     }
 
     /**
@@ -1556,7 +2131,6 @@ eot;
                     } else {
                         $function = @$error['function'];
                     }
-
                     $r .= $file . ':' . @$error['line'] . "\t" . $function . '('
                         . @implode(' , ', $args) . ')' . "\n";
                 }
@@ -1584,51 +2158,58 @@ eot;
     {
         return $this->messageContainer;
     }
-    public function getMessages($level=null): array
+
+    public function getMessages($level = null): array
     {
         return $this->messageContainer->getLocker($this->lockerId)->all($level);
     }
+
     public function getErrors(): array
     {
         return $this->messageContainer->getLocker($this->lockerId)->allError();
     }
+
     public function getFirstError(): ?string
     {
         return $this->messageContainer->getLocker($this->lockerId)->firstError();
     }
+
     public function getLastError(): ?string
     {
         return $this->messageContainer->getLocker($this->lockerId)->lastError();
     }
+
     public function hasError($includeWarning = false): ?string
     {
         return $this->messageContainer->getLocker($this->lockerId)->hasError($includeWarning);
     }
+
     public function getInfos(): array
     {
         return $this->messageContainer->getLocker($this->lockerId)->allInfo();
     }
+
     public function getFirstInfo(): ?string
     {
         return $this->messageContainer->getLocker($this->lockerId)->firstInfo();
     }
+
     public function getLastInfo(): ?string
     {
         return $this->messageContainer->getLocker($this->lockerId)->lastInfo();
     }
 
 
-
-
     /**
-     * Inject an instance of a messagecontainer. It is usually injected automatically when the instance of PdoOne is created.
+     * Inject an instance of a messagecontainer. It is usually injected automatically when the instance of PdoOne is
+     * created.
      *
      * @param MessageContainer $messageContainer
      * @return void
      */
     public function setMessages($messageContainer): void
     {
-        $this->messageContainer=$messageContainer;
+        $this->messageContainer = $messageContainer;
     }
 
     public function debugFile($txt, $level = 'INFO'): void
@@ -1659,7 +2240,7 @@ eot;
      */
     public function storeInfo($txt): void
     {
-        if ($this->logLevel <2 ) {
+        if ($this->logLevel < 2) {
             return;
         }
         $this->messageContainer->addItem($this->lockerId, $txt, 'info');
@@ -1707,7 +2288,6 @@ eot;
         if (empty($chr)) {
             return false;
         }
-
         return min($chr);
     }
 
@@ -1744,10 +2324,8 @@ eot;
             return false;
         }
         $writeCommand = self::queryCommand($rawSql, true) !== 'dql';
-
         /** @var bool|string $uid it stores the unique identifier of the query */
         $uid = false;
-
         if ($this->readonly && $writeCommand) {
             // we aren't checking SQL-DLC queries. Also, "insert into" is stopped but "  insert into" not.
             $this->throwError('Database is in READ ONLY MODE', '');
@@ -1769,7 +2347,6 @@ eot;
                 return $this->internalCache[$uid];
             }
         }
-
         $this->lastParam = $params;
         $this->lastQuery = $rawSql;
         $this->storeInfo($rawSql);
@@ -1781,7 +2358,6 @@ eot;
             $this->endTry();
             return $rows;
         }
-
         // the "where" has parameters.
         $stmt = $this->prepare($rawSql);
         if ($stmt === false) {
@@ -1806,7 +2382,7 @@ eot;
                 foreach ($params as $param) {
                     $this->lastBindParam[$counter] = $param[0];
                     // note: the second field is & so we could not use $v
-                    $param[3]=$param[3]??0;
+                    $param[3] = $param[3] ?? 0;
                     $stmt->bindParam(...$param);
                 }
             } else {
@@ -1816,7 +2392,7 @@ eot;
                     //$typeP = $this->stringToPdoParam($param[$i]);
                     $this->lastBindParam[$i] = $iValue;
                     //$stmt->bindParam($counter, $param[$i + 1], $typeP);
-                    $stmt->bindParam($i + 1, $params[$i], $this->getType($params[$i]),0);
+                    $stmt->bindParam($i + 1, $params[$i], $this->getType($params[$i]), 0);
                 }
             }
         }
@@ -1840,7 +2416,6 @@ eot;
             $this->uid = null;
         }
         $this->runQuery($stmt);
-
         if ($returnArray && $stmt instanceof PDOStatement) {
             $rows = ($stmt->columnCount() > 0) ? $stmt->fetchAll(PDO::FETCH_ASSOC) : [];
             $this->affected_rows = $stmt->rowCount();
@@ -1851,7 +2426,6 @@ eot;
             $this->endTry();
             return $rows;
         }
-
         if ($stmt instanceof PDOStatement) {
             $this->affected_rows = $stmt->rowCount();
         } else {
@@ -1913,7 +2487,6 @@ eot;
             $rows = false;
             $this->throwError('Exception in runRawQueryParamLess :', $rawSql, ['param' => $this->lastParam], true, $ex);
         }
-
         if ($returnArray && $rows instanceof PDOStatement) {
             if ($rows->columnCount() > 0) {
                 $result = @$rows->fetchAll(PDO::FETCH_ASSOC);
@@ -1921,7 +2494,6 @@ eot;
                 $this->endTry();
                 return $result;
             }
-
             $this->affected_rows = $rows->rowCount();
             $this->endTry();
             return true;
@@ -1959,9 +2531,7 @@ eot;
                 $this->throwError('Database is in READ ONLY MODE', '');
             }
         }
-
         $this->storeInfo($sql);
-
         try {
             $stmt = $this->conn1->prepare($sql);
         } catch (Exception $ex) {
@@ -1969,7 +2539,6 @@ eot;
             $this->throwError('Failed to prepare', $ex->getMessage() . $this->lastError(), ['param' => $this->lastParam], true, $ex);
         }
         if (($stmt === false) && $this->errorText === '') {
-
             $this->throwError('Unable to prepare query', $this->lastQuery, ['param' => $this->lastParam]);
         }
         $this->endTry();
@@ -1996,7 +2565,6 @@ eot;
         if (!is_array($array)) {
             return false;
         }
-
         return (array_values($array) !== $array);
     }
 
@@ -2020,7 +2588,6 @@ eot;
                 $vt = PDO::PARAM_INT;
                 break;
             case (is_bool($v)):
-
                 $vt = PDO::PARAM_INT;
                 $v = ($v) ? 1 : 0;
                 break;
@@ -2031,7 +2598,6 @@ eot;
             default:
                 $vt = PDO::PARAM_STR;
         }
-
         return $vt;
     }
 
@@ -2084,7 +2650,6 @@ eot;
             return $value;
         }
         $value = str_replace('"', '""', $value);
-
         return '"' . $value . '"';
     }
 
@@ -2107,7 +2672,6 @@ eot;
         $this->beginTry();
         $q = self::splitQuery($query);
         $code = '/** @var array $result=array(' . $this->generateCodeArray($query, $query) . ') */' . "\n";
-
         $code .= '$result=$pdo' . "\n";
         foreach ($q as $k => $v) {
             if ($v !== null) {
@@ -2211,7 +2775,6 @@ eot;
                 }
             }
         }
-
         return $result;
     }
 
@@ -2243,7 +2806,6 @@ eot;
         }
         $query = new PdoOneQuery($this);
         $r = $query->toMeta($sql);
-
         $ln = ($inline) ? '' : "\n";
         if ($recursive) {
             /** @noinspection PhpUnusedLocalVariableInspection */
@@ -2280,11 +2842,9 @@ eot;
                                     $default = 'null';
                                 }
                                 if (!in_array($colName, $norepeat)) {
-
                                     if (isset($relation[$colName])) {
                                         $rc =& $relation[$colName];
                                         $key = $rc['key'];
-
                                         if ($key === 'PARENT') {
                                             $default = 'null';
                                         }
@@ -2349,7 +2909,6 @@ eot;
                     }
                 }
             }
-
             $used[] = $name;
         }
         $result .= ']' . $ln;
@@ -2358,7 +2917,6 @@ eot;
     }
 
     /** @noinspection PhpSameParameterValueInspection */
-
     /**
      * It returns an array with all the tables of the schema, also the foreign key and references  of each table<br>
      * <b>Example:</b>
@@ -2455,9 +3013,9 @@ eot;
         // query has an argument
         if ($onlyName) {
             $values = $this->runRawQuery($query, [$this->db]);
-            $final=[];
-            foreach($values as $v) {
-                $final[]=reset($v);
+            $final = [];
+            foreach ($values as $v) {
+                $final[] = reset($v);
             }
             return $final;
         }
@@ -2474,7 +3032,6 @@ eot;
     }
 
     //</editor-fold>
-
     private function typeDict($row)
     {
         return $this->service->typeDict($row, true);
@@ -2520,7 +3077,6 @@ eot;
                     $r[] = "$indent    " . ($indexed ? '' : self::varExport($key) . ' => ') . self::varExport($value,
                             "$indent    ");
                 }
-
                 $r = "[\n" . implode(",\n", $r) . "\n" . $indent . ']';
                 break;
             case 'boolean':
@@ -2593,10 +3149,9 @@ eot;
     )
     {
         $this->beginTry();
-        $filename=__DIR__ . '/template/template_abstractclassrepo.php';
+        $filename = __DIR__ . '/template/template_abstractclassrepo.php';
         $r = $this->phpstart . $this->openTemplate($filename);
         $lastns = explode('\\', $namespace);
-
         if ($modelfullClass) {
             $arr = explode('\\', $modelfullClass);
             $modelClass = end($arr);
@@ -2605,12 +3160,10 @@ eot;
             $modelClass = false;
             $modelUse = false;
         }
-
         if ($baseClass === null) {
             $tmp3 = end($lastns);
             $baseClass = $tmp3 === false ? '' : $tmp3;
         }
-
         $fa = func_get_args();
         foreach ($fa as $f => $k) {
             if (is_array($k)) {
@@ -2624,13 +3177,11 @@ eot;
         } else {
             $className = $classRelations[$tableName];
         }
-
         $extraColArray = '';
         foreach ($extraCols as $k => $v) {
             $extraColArray .= $v . ' as ' . $this->addQuote($k) . ',';
         }
         $extraColArray = rtrim($extraColArray, ',');
-
         $r = str_replace(array(
             '{version}',
             '{classname}',
@@ -2661,14 +3212,12 @@ eot;
         $pk = '??';
         $pk = $this->service->getPK($tableName, $pk);
         $pkFirst = (is_array($pk) && count($pk) > 0) ? $pk[0] : null;
-
         try {
             $relation = $this->getDefTableFK($tableName, false, true);
         } catch (Exception $e) {
             $this->endTry();
             return 'Error: Unable read fk of table ' . $e->getMessage();
         }
-
         // many to many
         /*foreach ($relation as $rel) {
             $tableMxM = $rel['reftable'];
@@ -2740,7 +3289,6 @@ eot;
                         if ($pks !== false || count($pks) === 2) {
                             $relation[$k]['key'] = 'MANYTOMANY';
                             $refcol2 = (self::$prefixBase . $pks[0] === $relation[$k]['refcol']) ? $pks[1] : $pks[0];
-
                             try {
                                 $defsFK = $this->service->getDefTableFK($relation[$k]['reftable'], false);
                             } catch (Exception $e) {
@@ -2755,7 +3303,7 @@ eot;
                                 return 'Error: Unable read table dependencies' . $e->getMessage();
                             }
                             $relation[$k]['refcol2'] = self::$prefixBase . $refcol2;
-                            if (count($keys2)>0) {
+                            if (count($keys2) > 0) {
                                 $keys2 = array_keys($keys2);
                                 $relation[$k]['col2'] = $keys2[0];
                             } else {
@@ -2772,16 +3320,12 @@ eot;
         $convertOutput = '';
         $convertInput = '';
         $getDefTable = $this->getDefTable($tableName, $specialConversion);
-
         foreach ($columnRemove as $v) {
             unset($getDefTable[$v]);
         }
         //die(1);
-
         // we forced the conversion but only if it is not specified explicit
-
         $allColumns = array_merge($getDefTable, $extraCols); // $extraColArray does not has type
-
         foreach ($allColumns as $kcol => $colDef) {
             $type = $colDef['type'] ?? null;
             $conversion = null;
@@ -2798,7 +3342,6 @@ eot;
                 $conversion = $this->codeClassConversion[$type];
                 $getDefTable[$kcol]['conversion'] = $conversion;
             }
-
             if ($conversion !== null) {
                 if (is_array($conversion)) {
                     list($input, $output) = $conversion;
@@ -2806,7 +3349,6 @@ eot;
                     $input = $conversion;
                     $output = $input;
                 }
-
                 switch ($input) {
                     case 'encrypt':
                         $tmp2 = "isset(%s) and %s=self::getPdoOne()->encrypt(%s);";
@@ -2881,6 +3423,8 @@ eot;
                         $tmp = "%s=isset(%s) ? (float)%s : null;";
                         break;
                     case null:
+                    case 'nothing':
+                    case 'null':
                         $tmp = "!isset(%s) and %s=null; // no conversion";
                         break;
                     default:
@@ -2890,7 +3434,6 @@ eot;
                             $tmp = '// type ' . $output . ' not defined';
                         }
                 }
-
                 if ($tmp !== '') {
                     $convertOutput .= "\t\t" . str_replace('%s', "\$row['$kcol']", $tmp) . "\n";
                     $convertInput .= "\t\t" . str_replace('%s', "\$row['$kcol']", $tmp2) . "\n";
@@ -2900,7 +3443,6 @@ eot;
                 $convertOutput .= "\t\t" . str_replace('%s', "\$row['$kcol']", $tmp) . "\n";
             }
         }
-
         $linked = '';
         foreach ($relation as $k => $v) {
             $key = $v['key'];
@@ -2918,10 +3460,8 @@ eot;
             }
         }
         //$convertOutput.=$linked;
-
         $convertOutput = rtrim($convertOutput, "\n");
         $convertInput = rtrim($convertInput, "\n");
-
         // discard columns
         //$identities=$this->getDefTableKeys($tableName,);
         $identities = $this->getDefIdentities($tableName);
@@ -2945,7 +3485,6 @@ eot;
             /** @noinspection AdditionOperationOnArraysInspection */
             $noUpdate += $pk; // it adds and replaces duplicates, indexes are ignored.
         }
-
         $relation2 = [];
         foreach ($relation as $col => $arr) {
             if ($arr['key'] !== 'FOREIGN KEY' && $arr['key'] !== 'PARENT' && $arr['key'] !== 'NONE') {
@@ -2955,7 +3494,6 @@ eot;
             //    $relation2[]=$col;
             // }
         }
-
         try {
             $r = str_replace(array(
                 '{pk}',
@@ -3001,6 +3539,77 @@ eot;
         }
         $this->endTry();
         return $r;
+    }
+
+    /**
+     * @param string $tableName
+     * @param string $pkFirst the first primary key (if any)
+     * @return array=['key','refcol','reftable','extra','name'][$i] where the key of the array is the name of the column
+     */
+    public function xxx($tableName, $pkFirst): array
+    {
+        try {
+            $relation = $this->getDefTableFK($tableName, false, true);
+        } catch (Exception $e) {
+            $this->endTry();
+            throw new RuntimeException('Error: Unable read fk of table ' . $e->getMessage());
+        }
+        // many to many
+        /*foreach ($relation as $rel) {
+            $tableMxM = $rel['reftable'];
+            $tableFK = $this->getDefTableFK($tableMxM, false, true);
+        }
+        */
+        try {
+            $deps = $this->tableDependency(true);
+        } catch (Exception $e) {
+            $this->endTry();
+            throw new RuntimeException('Error: Unable read table dependencies ' . $e->getMessage());
+        } //  ["city"]=> {["city_id"]=> "address"}
+        $after = @$deps[1][$tableName];
+        if ($after === null) {
+            $after = @$deps[1][strtolower($tableName)];
+        }
+        $before = @$deps[2][$tableName];
+        if ($before === null) {
+            $before = @$deps[2][strtolower($tableName)];
+        }
+        if (is_array($after) && is_array($before)) {
+            foreach ($before as $key => $rows) { // $value is [relcol,table]
+                foreach ($rows as $value) {
+                    $relation[self::$prefixBase . $value[1]] = [
+                        'key' => 'ONETOMANY',
+                        'col' => $key,
+                        'reftable' => $value[1],
+                        'refcol' => $value[0] //, ltrim( $value[0],self::$prefixBase)
+                    ];
+                }
+            }
+        }
+        // converts relations to ONETOONE
+        foreach ($relation as $k => $rel) {
+            if ($rel['key'] === 'ONETOMANY') {
+                $pkref = null;
+                $pkref = $this->service->getPK($rel['reftable'], $pkref);
+                if (self::$prefixBase . $pkref[0] === $rel['refcol'] && count($pkref) === 1) {
+                    $relation[$k]['key'] = 'ONETOONE';
+                    $relation[$k]['refcol'] = ltrim($relation[$k]['refcol'], self::$prefixBase);
+                }
+            }
+            if ($rel['key'] === 'MANYTOONE') {
+                $pkref = null;
+                $pkref = $this->service->getPK($rel['reftable'], $pkref);
+                if ($pkref[0] === $rel['refcol'] && count($pkref) === 1
+                    && (strcasecmp($k, self::$prefixBase . $pkFirst) === 0)
+                ) {
+                    // if they are linked by the pks and the pks are only 1.
+                    $relation[$k]['key'] = 'ONETOONE';
+                    $relation[$k]['col'] = $pkFirst;
+                    $relation[$k]['refcol'] = ltrim($relation[$k]['refcol'], self::$prefixBase);
+                }
+            }
+        }
+        return $relation;
     }
 
     /**
@@ -3100,7 +3709,6 @@ eot;
         }
         $this->transactionOpen = true;
         $this->conn1->beginTransaction();
-
         return true;
     }
 
@@ -3182,7 +3790,7 @@ eot;
      * <li>int (integer)</li>
      * <li>float (decimal)</li>
      * <li>custom function are defined by expression plus %s. Example trim(%s)</li>
-     * <li>null (no conversion)</li>
+     * <li>null/nothing (no conversion)</li>
      * </ul>
      *
      * @param array $conversion An associative array where the key is the type and the value is the conversion.
@@ -3196,13 +3804,9 @@ eot;
         $this->codeClassConversion = $conversion;
     }
     //</editor-fold>
-
     //<editor-fold desc="DML" defaultstate="collapsed" >
-
-
     //</editor-fold>
     //<editor-fold desc="Cache" defaultstate="collapsed" >
-
     /**
      * It builds (generates source code) of the base, repo and repoext classes of the current schema.<br>
      * <b>Example:</b><br>
@@ -3288,7 +3892,6 @@ eot;
     {
         $internalCache = $this->useInternalCache;
         $this->setUseInternalCache();
-
         if (is_array($folders)) {
             list($folder, $folderModel) = $folders;
         } else {
@@ -3302,7 +3905,6 @@ eot;
             $namespaceModel = $namespaces;
         }
         $firstKeyRelation = array_keys($relations)[0];
-
         $firstRelation = $relations[$firstKeyRelation]; // the first value of the relation arrays.
         if (is_array($firstRelation)) {
             $useModel = true;
@@ -3331,7 +3933,6 @@ eot;
         } catch (Exception $exception) {
             $result = false;
         }
-
         if ($result === false) {
             $logs[] = "Unable to save Base Class file '$folder$baseClass.php'";
         }
@@ -3346,7 +3947,6 @@ eot;
                 $custom = (isset($columnRelations[$tableName])) ? $columnRelations[$tableName] : [];
                 $extraCols = (isset($extraColumns[$tableName])) ? $extraColumns[$tableName] : [];
                 $columnRem = (isset($columnRemoves[$tableName])) ? $columnRemoves[$tableName] : [];
-
                 $classCode1 = $this->generateCodeClass($tableName, $namespace, $custom, $relationsRepo, [], null, null,
                     $baseClass, $modelname, $extraCols, $columnRem);
                 $result = @file_put_contents($folder . "Abstract$className.php", $classCode1);
@@ -3363,7 +3963,6 @@ eot;
                     //$custom = (isset($customRelation[$tableName])) ? $customRelation[$tableName] : [];
                     $classModel1 = $this->generateAbstractModelClass($tableName, $namespaceModel, $custom,
                         $relationsModel, [], null, null, $baseClass, $extraCols, $columnRem);
-
                     $result = @file_put_contents($folderModel . 'Abstract' . $relationsModel[$tableName] . '.php',
                         $classModel1);
                 } catch (Exception $e) {
@@ -3392,7 +3991,6 @@ eot;
             try {
                 $filename = $folder . $className . '.php';
                 $classCode2 = $this->generateCodeClassRepo($tableName, $namespace, $relationsRepo, $modelname);
-
                 if ($force || @!file_exists($filename)) {
                     // if the file exists then, we don't want to replace this class
                     $result = @file_put_contents($filename, $classCode2);
@@ -3424,9 +4022,11 @@ eot;
         $this->useInternalCache = $useInternalCache;
         return $this;
     }
-    protected function openTemplate($filename) {
+
+    protected function openTemplate($filename)
+    {
         $template = @file_get_contents($filename);
-        if ($template=== false) {
+        if ($template === false) {
             throw new RuntimeException("Unable to read template file $filename");
         }
         // we delete and replace the first line.
@@ -3435,7 +4035,7 @@ eot;
 
     public function generateBaseClass($baseClassName, $namespace, $classes, $modelUse = false)
     {
-        $filename=__DIR__ . '/template/template_base.php';
+        $filename = __DIR__ . '/template/template_base.php';
         $r = $this->phpstart . $this->openTemplate($filename);
         /*foreach($classes as $id=>$entity) {
             foreach($entity as $k=>$class) {
@@ -3444,7 +4044,6 @@ eot;
         }
         */
         $namespace = trim($namespace, '\\');
-
         return str_replace([
             '{type}',
             '{class}',
@@ -3471,7 +4070,6 @@ eot;
 
     //</editor-fold>
     //<editor-fold desc="Log functions" defaultstate="collapsed" >
-
     /**
      * @param string $tableName
      * @param string $namespace
@@ -3502,13 +4100,10 @@ eot;
     )
     {
         $this->beginTry();
-
-        $filename=__DIR__ . '/template/template_abstractmodel.php';
+        $filename = __DIR__ . '/template/template_abstractmodel.php';
         $r = $this->phpstart . $this->openTemplate($filename);
-
         //$lastns = explode('\\', $namespace);
         //$baseClass = ($baseClass === null) ? end($lastns) : $baseClass;
-
         $fa = func_get_args();
         foreach ($fa as $f => $k) {
             if (is_array($k)) {
@@ -3522,7 +4117,6 @@ eot;
         } else {
             $className = $classRelations[$tableName];
         }
-
         $r = str_replace(array(
             '{version}',
             '{classname}',
@@ -3537,65 +4131,7 @@ eot;
         $pk = '??';
         $pk = $this->service->getPK($tableName, $pk);
         $pkFirst = (is_array($pk) && count($pk) > 0) ? $pk[0] : null;
-
-        try {
-            $relation = $this->getDefTableFK($tableName, false, true);
-        } catch (Exception $e) {
-            $this->endTry();
-            return 'Error: Unable read fk of table ' . $e->getMessage();
-        }
-
-        try {
-            $deps = $this->tableDependency(true);
-        } catch (Exception $e) {
-            $this->endTry();
-            return 'Error: Unable read table dependencies ' . $e->getMessage();
-        } //  ["city"]=> {["city_id"]=> "address"}
-        $after = @$deps[1][$tableName];
-        if ($after === null) {
-            $after = @$deps[1][strtolower($tableName)];
-        }
-        $before = @$deps[2][$tableName];
-        if ($before === null) {
-            $before = @$deps[2][strtolower($tableName)];
-        }
-        if (is_array($after) && is_array($before)) {
-            foreach ($before as $key => $rows) { // $value is [relcol,table]
-                foreach ($rows as $value) {
-                    $relation[self::$prefixBase . $value[1]] = [
-                        'key' => 'ONETOMANY',
-                        'col' => $key,
-                        'reftable' => $value[1],
-                        'refcol' => $value[0]
-                    ];
-                }
-            }
-        }
-        // converts relations to ONETOONE
-        foreach ($relation as $k => $rel) {
-            if ($rel['key'] === 'ONETOMANY') {
-                $pkref = null;
-                $pkref = $this->service->getPK($rel['reftable'], $pkref);
-                if (self::$prefixBase . $pkref[0] === $rel['refcol'] && count($pkref) === 1) {
-                    $relation[$k]['key'] = 'ONETOONE';
-                    $relation[$k]['col'] = 'xxx1';
-                    $relation[$k]['refcol'] = ltrim($relation[$k]['refcol'], self::$prefixBase);
-                }
-            }
-            if ($rel['key'] === 'MANYTOONE') {
-                $pkref = null;
-                $pkref = $this->service->getPK($rel['reftable'], $pkref);
-
-                if ($pkref[0] === $rel['refcol'] && count($pkref) === 1
-                    && (strcasecmp($k, self::$prefixBase . $pkFirst) === 0)
-                ) {
-                    // if they are linked by the pks and the pks are only 1.
-                    $relation[$k]['key'] = 'ONETOONE';
-                    $relation[$k]['col'] = 'xxx2';
-                    $relation[$k]['refcol'] = ltrim($relation[$k]['refcol'], self::$prefixBase);
-                }
-            }
-        }
+        $relation = $this->xxx($tableName, $pkFirst);
         if ($customRelation) {
             foreach ($relation as $k => $rel) {
                 if (isset($customRelation[$k])) {
@@ -3613,7 +4149,6 @@ eot;
                             $relation[$k]['key'] = 'MANYTOMANY';
                             $refcol2 = (self::$prefixBase . $pks[0] === $relation[$k]['refcol']) ? $pks[1]
                                 : $pks[0];
-
                             try {
                                 $defsFK = $this->service->getDefTableFK($relation[$k]['reftable'], false);
                             } catch (Exception $e) {
@@ -3628,7 +4163,7 @@ eot;
                                 return 'Error: Unable read table dependencies' . $e->getMessage();
                             }
                             $relation[$k]['refcol2'] = self::$prefixBase . $refcol2;
-                            if (count($keys2)>0) {
+                            if (count($keys2) > 0) {
                                 $keys2 = array_keys($keys2);
                                 $relation[$k]['col2'] = $keys2[0];
                             } else {
@@ -3642,13 +4177,10 @@ eot;
             }
         }
         //die(1);
-
         $gdf = $this->getDefTable($tableName, $specialConversion);
-
         foreach ($columnRemove as $v) {
             unset($gdf[$v]);
         }
-
         $fields = [];
         $fieldsb = [];
         foreach ($gdf as $varn => $field) {
@@ -3673,7 +4205,6 @@ eot;
         }
         $fieldsArr = implode("\n", $fields);
         $fieldsbArr = implode("\n", $fieldsb);
-
         $field2s = [];
         $field2sb = [];
         foreach ($relation as $varn => $field) {
@@ -3716,20 +4247,15 @@ eot;
                     $field2sb[] = "\t\t\$obj->$varn=isset(\$array['$varn']) ?  
             \$obj->$varn=$class::fromArray(\$array['$varn']) 
             : null; // onetoone";
-
                     $col = $field['col'] ?? $pkFirst;
-
                     $rcol = $field['refcol'];
-
                     $field2sb[] = "\t\t(\$obj->$varn !== null) 
             and \$obj->$varn->$rcol=&\$obj->$col; // linked onetoone";
                     break;
             }
         }
-
         $fields2Arr = implode("\n", $field2s);
         $fields2Arrb = implode("\n", $field2sb);
-
         $r = str_replace(['{fields}', '{fieldsrel}', '{fieldsfa}', '{fieldsrelfa}'],
             [$fieldsArr, $fields2Arr, $fieldsbArr, $fields2Arrb], $r);
         if (@count($this->codeClassConversion) > 0) {
@@ -3741,7 +4267,6 @@ eot;
                 }
             }
         }
-
         // discard columns
         $identities = $this->getDefIdentities($tableName);
         if ($defNoInsert !== null) {
@@ -3754,7 +4279,6 @@ eot;
         } else {
             $noUpdate = $identities;
         }
-
         try {
             $r = str_replace(array(
                 '{pk}',
@@ -3819,11 +4343,10 @@ eot;
     {
         $this->beginTry();
         //
-        $filename=__DIR__ . '/template/template_classrepo.php';
+        $filename = __DIR__ . '/template/template_classrepo.php';
         $r = $this->phpstart . $this->openTemplate($filename);
         //$lastns = explode('\\', $namespace);
         //$baseClass = ($baseClass === null) ? end($lastns) : $baseClass;
-
         $fa = func_get_args();
         foreach ($fa as $f => $k) {
             if (is_array($k)) {
@@ -3837,7 +4360,6 @@ eot;
         } else {
             $className = $classRelations[$tableName];
         }
-
         $r = str_replace(array(
             '{version}',
             '{classname}',
@@ -3852,13 +4374,11 @@ eot;
         $pk = '??';
         $pk = $this->service->getPK($tableName, $pk);
         $pkFirst = (is_array($pk) && count($pk) > 0) ? $pk[0] : null;
-
         try {
             $relation = $this->getDefTableFK($tableName, false, true);
         } catch (Exception $e) {
             return 'Error: Unable read fk of table ' . $e->getMessage();
         }
-
         try {
             $deps = $this->tableDependency(true);
         } catch (Exception $e) {
@@ -3899,7 +4419,6 @@ eot;
             if ($rel['key'] === 'MANYTOONE') {
                 $pkref = null;
                 $pkref = $this->service->getPK($rel['reftable'], $pkref);
-
                 if ($pkref[0] === $rel['refcol'] && count($pkref) === 1
                     && (strcasecmp($k, self::$prefixBase . $pkFirst) === 0)
                 ) {
@@ -3926,7 +4445,6 @@ eot;
                             $relation[$k]['key'] = 'MANYTOMANY';
                             $refcol2 = (self::$prefixBase . $pks[0] === $relation[$k]['refcol']) ? $pks[1]
                                 : $pks[0];
-
                             try {
                                 $defsFK = $this->service->getDefTableFK($relation[$k]['reftable'], false);
                             } catch (Exception $e) {
@@ -3941,7 +4459,7 @@ eot;
                                 return 'Error: Unable read table dependencies' . $e->getMessage();
                             }
                             $relation[$k]['refcol2'] = self::$prefixBase . $refcol2;
-                            if (count($keys2)>0) {
+                            if (count($keys2) > 0) {
                                 $keys2 = array_keys($keys2);
                                 $relation[$k]['col2'] = $keys2[0];
                             } else {
@@ -3955,7 +4473,6 @@ eot;
             }
         }
         //die(1);
-
         $gdf = $this->getDefTable($tableName, $specialConversion);
         $fields = [];
         $fieldsb = [];
@@ -3977,7 +4494,6 @@ eot;
         }
         $fieldsArr = implode("\n", $fields);
         $fieldsbArr = implode("\n", $fieldsb);
-
         $field2s = [];
         $field2sb = [];
         foreach ($relation as $varn => $field) {
@@ -4019,10 +4535,8 @@ eot;
                     break;
             }
         }
-
         $fields2Arr = implode("\n", $field2s);
         $fields2Arrb = implode("\n", $field2sb);
-
         $r = str_replace(['{fields}', '{fieldsrel}', '{fieldsfa}', '{fieldsrelfa}'],
             [$fieldsArr, $fields2Arr, $fieldsbArr, $fields2Arrb], $r);
         if (@count($this->codeClassConversion) > 0) {
@@ -4034,7 +4548,6 @@ eot;
                 }
             }
         }
-
         // discard columns
         $identities = $this->getDefIdentities($tableName);
         if ($defNoInsert !== null) {
@@ -4047,7 +4560,6 @@ eot;
         } else {
             $noUpdate = $identities;
         }
-
         try {
             $r = str_replace(array(
                 '{pk}',
@@ -4088,7 +4600,6 @@ eot;
 
     //</editor-fold>
     //<editor-fold desc="cli functions" defaultstate="collapsed" >
-
     public function generateCodeClassRepo(
         $tableClassName,
         $namespace = '',
@@ -4098,9 +4609,8 @@ eot;
     {
         $this->beginTry();
         //
-        $filename=__DIR__ . '/template/template_codeclassrepo.php';
+        $filename = __DIR__ . '/template/template_codeclassrepo.php';
         $r = $this->phpstart . $this->openTemplate($filename);
-
         $fa = func_get_args();
         foreach ($fa as $f => $k) {
             if (is_array($k)) {
@@ -4109,7 +4619,6 @@ eot;
                 $fa[$f] = "'$k'";
             }
         }
-
         if ($modelfullClass) {
             $arr = explode('\\', $modelfullClass);
             $modelClass = end($arr);
@@ -4233,7 +4742,6 @@ eot;
         if (!$this->isOpen) {
             return -1;
         }
-
         $id = $this->conn1->lastInsertId($sequenceName);
         return $id === false ? false : (int)$id;
     }
@@ -4264,7 +4772,7 @@ eot;
      *                                  INTEGER</p>
      * @param string     $salt          <p>Salt is not used by SIMPLE or
      *                                  INTEGER</p>
-     * @param string     $encMethod     <p>Example : AES-256-CTR See
+     * @param string     $encMethod     <p>Example: AES-256-CTR See
      *                                  http://php.net/manual/en/function.openssl-get-cipher-methods.php
      *                                  </p>
      *                                  <p>if SIMPLE then the encryption is
@@ -4302,7 +4810,6 @@ eot;
      * @return int|string|null
      * @see \eftec\PdoOneEncryption::encrypt
      */
-
     public function encrypt($data)
     {
         return $this->encryption->encrypt($data);
@@ -4337,7 +4844,6 @@ eot;
         if ($this->logLevel) {
             ob_clean();
         }
-
         /** @noinspection PhpIfWithCommonPartsInspection */
         if (!$this->logLevel) {
             $web = <<<'LOGS'
@@ -4569,7 +5075,6 @@ TEM1;
 
 </html> 
 TEM1;
-
             $database = @$_POST['database'];
             $server = @$_POST['server'];
             $user = @$_POST['user'];
@@ -4587,10 +5092,8 @@ TEM1;
                     $log = $e->getMessage();
                 }
             }
-
             $web = str_replace('{{version}}', $this::VERSION, $web);
             $valid = ['mysql', 'sqlsrv', 'oci'];
-
             $web = str_replace(array('{{database}}', '{{server}}', '{{user}}', '{{pwd}}', '{{db}}', '{{input}}'),
                 array($this->runUtilCombo($valid, $database), $server, $user, $pwd, $db, $input), $web);
             $valid = [
@@ -4603,9 +5106,7 @@ TEM1;
             ];
             $web = str_replace(array('{{output}}', '{{namespace}}', '{{log}}'),
                 array($this->runUtilCombo($valid, $output), $namespace, $log), $web);
-
             $ms = 1;
-
             $web = str_replace('{{ms}}', $ms, $web);
             echo $web;
         }
@@ -4627,7 +5128,6 @@ BOOTS;
             /** @noinspection TypeUnsafeComparisonInspection */
             $r .= "<option value='$item' " . (($select == $item) ? 'selected' : '') . " >$item</option>";
         }
-
         return $r;
     }
 
@@ -4701,7 +5201,7 @@ BOOTS;
      * @param array  $arguments     An associative array with the name of the argument and it's value
      * @param array  $outputColumns [optional] the name of the columns that must be returned.
      * @return mixed|false returns a value if success, otherwise false. You can find the error message at
-     *                     $this->errorText
+     *                              $this->errorText
      * @throws Exception
      */
     public function callProcedure($procName, &$arguments = [], $outputColumns = [])
@@ -4757,9 +5257,9 @@ BOOTS;
         $this->beginTry();
         $tableSequence = ($tableSequence === null) ? $this->tableSequence : $tableSequence;
         $sqls = $this->service->createSequence($tableSequence, $method);
-        $r=true;
-        foreach($sqls as $sql) {
-            $r = $r && ($this->conn1->exec($sql)!==false);
+        $r = true;
+        foreach ($sqls as $sql) {
+            $r = $r && ($this->conn1->exec($sql) !== false);
         }
         $this->endTry();
         return $r;
@@ -4893,9 +5393,7 @@ BOOTS;
                     }
                 }
                 $this->lastQuery = $rawSql;
-
                 $this->storeInfo($rawSql);
-
                 $msgError = '';
                 try {
                     $r = $this->conn1->query($rawSql);
@@ -5019,7 +5517,6 @@ BOOTS;
         if ($this->conn1 === null) {
             return;
         } // its already close
-
         @$this->conn1 = null;
     }
 
@@ -5108,7 +5605,6 @@ BOOTS;
             // $r is always a 32 bit number so it will fail in PHP 32bits
             return '' . $this->encryption->encryptInteger($calc);
         }
-
         return '' . $calc;
     }
 
@@ -5128,7 +5624,6 @@ BOOTS;
     {
         $string = '' . $number;
         $maskSize = count($this->masks0);
-
         for ($i = 0; $i < $maskSize; $i++) {
             $init = $this->masks0[$i];
             $end = $this->masks1[$i];
@@ -5136,7 +5631,6 @@ BOOTS;
             $string = substr_replace($string, $string[$init], $end, 1);
             $string = substr_replace($string, $tmp, $init, 1);
         }
-
         return $string;
     }
 
@@ -5159,7 +5653,6 @@ BOOTS;
             $number = substr_replace($number, $number[$init], $end, 1);
             $number = substr_replace($number, $tmp, $init, 1);
         }
-
         return $number;
     }
 
@@ -5193,20 +5686,17 @@ BOOTS;
     {
         $this->beginTry();
         $query = $this->service->objectExist($type);
-
         if ($this->databaseType === 'oci') {
             $arr = $this->runRawQuery($query, [$objectName, $this->db]);
         } else {
             $arr = $this->runRawQuery($query, [$objectName]);
         }
-
         $r = is_array($arr) && count($arr) > 0;
         $this->endTry();
         return $r;
     }
 
     /** @noinspection TypeUnsafeComparisonInspection */
-
     /**
      * It returns a list of tables ordered by dependency (from no dependent to
      * more dependent)<br>
@@ -5248,7 +5738,6 @@ BOOTS;
 
     //</editor-fold>
     //<editor-fold desc="chain calls">
-
     /**
      * Resort the tableSorted list based in dependencies.
      *
@@ -5356,7 +5845,6 @@ BOOTS;
 						,sum($columnName) sum
 						,count($columnName) count
 						 from $tableName";
-
         $r = $this->runRawQuery($query);
         $this->endTry();
         return $r;
@@ -5417,7 +5905,6 @@ BOOTS;
         }
         $result = [];
         foreach ($columns as $key => $col) {
-
             if ($returnSimple) {
                 if ($col == $condition) {
                     $result[$key] = $col;
@@ -5650,7 +6137,6 @@ BOOTS;
      */
     public function insertObject($tableName, &$object, $excludeColumn = [])
     {
-
         return (new PdoOneQuery($this))->insertObject($tableName, $object, $excludeColumn);
     }
 
@@ -5866,7 +6352,6 @@ BOOTS;
 
     //</editor-fold>
     //<editor-fold desc="cli utils">
-
     /**
      * It adds an "limit" in a query. It depends on the type of database<br>
      * <b>Example:</b><br>
@@ -5905,7 +6390,7 @@ BOOTS;
 
     /**
      * It sets a recursive array.<br>
-     * <b>example:</b>:<br>
+     * <b>Example:</b>:<br>
      * <pre>
      * $this->recursive(['field1','field2']);
      * </pre>
@@ -5962,47 +6447,49 @@ BOOTS;
         return (new PdoOneQuery($this))->useCache($ttl, $family);
     }
     //</editor-fold>
-
     //<editor-fold desc="key value">
-    protected $tableKV='';
-    protected $defaultTableKV='';
+    protected $tableKV = '';
+    protected $defaultTableKV = '';
 
     public function setKvDefaultTable($table): PdoOne
     {
-        $this->defaultTableKV=$table;
-        $this->tableKV=$table;
+        $this->defaultTableKV = $table;
+        $this->tableKV = $table;
         return $this;
     }
+
     public function kv($table): PdoOne
     {
-        $this->tableKV=$table;
+        $this->tableKV = $table;
         return $this;
     }
+
     protected function resetKVChain(): void
     {
-        $this->tableKV=$this->defaultTableKV;
+        $this->tableKV = $this->defaultTableKV;
     }
 
 
     /**
-     * It creates the table for Key/Value database. If the table exists or it is unable to create, then it returns false.
+     * It creates the table for Key/Value database. If the table exists or it is unable to create, then it returns
+     * false.
      * @param bool $memoryKV
      * @return bool
      */
-    public function createTableKV($memoryKV=false): bool
+    public function createTableKV($memoryKV = false): bool
     {
-        if($this->tableKV==='') {
+        if ($this->tableKV === '') {
             throw new RuntimeException('CreateTableKV,ou must set the table so you can use it');
         }
         try {
             if (!$this->tableExist($this->tableKV)) {
-                $sql =$this->service->createTableKV($this->tableKV,$memoryKV);
+                $sql = $this->service->createTableKV($this->tableKV, $memoryKV);
                 $this->runRawQuery($sql);
-                $sql=$this->service->createIndex($this->tableKV,['TIMESTAMP'=>'INDEX']);
+                $sql = $this->service->createIndex($this->tableKV, ['TIMESTAMP' => 'INDEX']);
                 $this->runRawQuery($sql);
                 return true;
             }
-        } catch(Exception $ex) {
+        } catch (Exception $ex) {
         }
         return false;
     }
@@ -6014,7 +6501,7 @@ BOOTS;
      */
     public function dropTableKV(): bool
     {
-        if($this->tableKV==='') {
+        if ($this->tableKV === '') {
             throw new RuntimeException('CreateTableKV,ou must set the table so you can use it');
         }
         return $this->dropTable($this->tableKV);
@@ -6026,22 +6513,23 @@ BOOTS;
      * @return mixed The value if found. the valueIfNotfound if not found, or null in case of error.
      * @throws Exception
      */
-    public function getKV($key,$valueIfNotFound=null) {
-        $sql="select KEYT,VALUE,TIMESTAMP from $this->tableKV where KEYT=?";
+    public function getKV($key, $valueIfNotFound = null)
+    {
+        $sql = "select KEYT,VALUE,TIMESTAMP from $this->tableKV where KEYT=?";
         // ["KEYT"]=> string(5) "hello" ["VALUE"]=> string(13) "it is a value" ["TIMESTAMP"]=> string(19) "2022-02-09 19:08:20"
         try {
             $r = $this->runRawQuery($sql, [$key]);
         } catch (Exception $e) {
-            if($this->throwOnError) {
+            if ($this->throwOnError) {
                 throw $e;
             }
-            $r=null;
+            $r = null;
         }
-        if(!isset($r[0])) {
+        if (!isset($r[0])) {
             return $valueIfNotFound;
         }
-        $timestamp=$r[0]['TIMESTAMP'];
-        if($timestamp!==null && $timestamp<time()) {
+        $timestamp = $r[0]['TIMESTAMP'];
+        if ($timestamp !== null && $timestamp < time()) {
             // expired
             $this->delKV($key);
             return null;
@@ -6054,17 +6542,17 @@ BOOTS;
      *
      * @param string $key
      * @param string $value
-     * @param null $timeout
+     * @param null   $timeout
      * @return bool
      * @throws Exception
      */
     public function setKV($key, $value, $timeout = null): bool
     {
-        $t=time();
-        $row=$this->runRawQuery("select 1 from $this->tableKV where KEYT=:KEYT"
+        $t = time();
+        $row = $this->runRawQuery("select 1 from $this->tableKV where KEYT=:KEYT"
             , ['KEYT' => $key]);
-        $exist=isset($row[0]);
-        if($exist) {
+        $exist = isset($row[0]);
+        if ($exist) {
             if ($timeout === null) {
                 $this->set(['VALUE' => $value, 'TIMESTAMP' => null])->where(['KEYT' => $key])->update($this->tableKV);
             } else {
@@ -6082,8 +6570,8 @@ BOOTS;
             if ($r === 10) {
                 $this->garbageCollectorKV();
             }
-        } catch(Exception $ex) {
-            if($this->throwOnError) {
+        } catch (Exception $ex) {
+            if ($this->throwOnError) {
                 throw $ex;
             }
         }
@@ -6095,13 +6583,14 @@ BOOTS;
      * @return bool
      * @throws Exception
      */
-    public function garbageCollectorKV():bool {
+    public function garbageCollectorKV(): bool
+    {
         try {
-            $t=time();
-            $this->runRawQuery("delete from $this->tableKV where TIMESTAMP is null or TIMESTAMP<:TIMESTAMP",['TIMESTAMP'=>$t]);
+            $t = time();
+            $this->runRawQuery("delete from $this->tableKV where TIMESTAMP is null or TIMESTAMP<:TIMESTAMP", ['TIMESTAMP' => $t]);
             return true;
-        } catch(Exception $ex) {
-            if($this->throwOnError) {
+        } catch (Exception $ex) {
+            if ($this->throwOnError) {
                 throw $ex;
             }
         }
@@ -6116,10 +6605,10 @@ BOOTS;
     public function delKV($key): bool
     {
         try {
-            $this->runRawQuery("delete from $this->tableKV where KEYT=:KEYT",['KEYT'=>$key]);
+            $this->runRawQuery("delete from $this->tableKV where KEYT=:KEYT", ['KEYT' => $key]);
             return true;
-        } catch(Exception $ex) {
-            if($this->throwOnError) {
+        } catch (Exception $ex) {
+            if ($this->throwOnError) {
                 throw $ex;
             }
         }
@@ -6136,8 +6625,8 @@ BOOTS;
         try {
             $r = $this->runRawQuery("delete from $this->tableKV where 1=1");
             return true;
-        } catch(Exception $ex) {
-            if($this->throwOnError) {
+        } catch (Exception $ex) {
+            if ($this->throwOnError) {
                 throw $ex;
             }
         }
@@ -6151,21 +6640,37 @@ BOOTS;
      * @return bool|null
      * @throws Exception
      */
-    public function existKV($key) : ?bool {
+    public function existKV($key): ?bool
+    {
         try {
-            $t=time();
+            $t = time();
             $row = $this->runRawQuery("select 1 from $this->tableKV where KEYT=:KEYT and (TIMESTAMP is null or TIMESTAMP>:TIMESTAMP)"
-                , ['KEYT' => $key,'TIMESTAMP'=>$t]);
+                , ['KEYT' => $key, 'TIMESTAMP' => $t]);
         } catch (Exception $e) {
-            if($this->throwOnError) {
+            if ($this->throwOnError) {
                 throw $e;
             }
             return null;
         }
         return isset($row[0]);
     }
-    //</editor-fold>
 
+    public static function findVendorPath($initPath = null): string
+    {
+        $initPath = $initPath ?: __DIR__;
+        $prefix = '';
+        $defaultvendor = $initPath;
+        // finding vendor
+        for ($i = 0; $i < 6; $i++) {
+            if (@file_exists("$initPath/{$prefix}vendor/autoload.php")) {
+                $defaultvendor = "{$prefix}vendor";
+                break;
+            }
+            $prefix .= '../';
+        }
+        return $defaultvendor;
+    }
+    //</editor-fold>
 }
 
 // this code only runs on CLI but only if PdoOne is called directly and via command line.
@@ -6174,14 +6679,9 @@ if (!defined('PHPUNIT_COMPOSER_INSTALL') && !defined('__PHPUNIT_PHAR__')
     && PdoOne::isCli()
 ) {
     // we also excluded it if it is called by phpunit.
-    include 'PdoOneEncryption.php';
-    include 'IPdoOneCache.php';
-    include 'PdoOneQuery.php';
-    include 'ext/PdoOne_IExt.php';
-    include 'ext/PdoOne_TestMockup.php';
-    include 'ext/PdoOne_Mysql.php';
-    include 'ext/PdoOne_Sqlsrv.php';
-    include 'ext/PdoOne_Oci.php';
+    $path = PdoOne::findVendorPath();
+    /** @noinspection PhpIncludeInspection */
+    include __DIR__ . '/' . $path . '/autoload.php';
     $pdo = new PdoOne('test', '127.0.0.1', 'root', 'root', 'db'); // mockup database connection
     /** @noinspection PhpUnhandledExceptionInspection */
     $pdo->cliEngine();

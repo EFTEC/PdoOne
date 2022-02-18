@@ -64,9 +64,8 @@ abstract class Abstract{classname} extends {baseclass}
     * @return array|array[]
     */
     public static function getDef($column = null, $filter = null)
-{
-    $r = {
-    def};
+    {
+        $r = {def};
         if ($column !== null) {
             if ($filter === null) {
                 foreach ($r as $k => $v) {
@@ -96,10 +95,8 @@ abstract class Abstract{classname} extends {baseclass}
         if ($row === false || $row === null) {
             return;
         }
-        {
-            convertoutput}
-        {
-            linked}
+        {convertoutput}
+        {linked}
     }
 
     /**
