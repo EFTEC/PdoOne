@@ -1,4 +1,5 @@
-<?php
+<?php /** @noinspection SqlNoDataSourceInspection */
+
 /** @noinspection PhpPropertyOnlyWrittenInspection
  * @noinspection StrContainsCanBeUsedInspection
  * @noinspection JsonEncodingApiUsageInspection
@@ -1002,8 +1003,8 @@ abstract class _BasePdoOneRepo
                         }
                         //$row['/' . $query['table']] = $partialRows;
                         $row[$query['col2']] = $partialRows;
-
                     }
+                    unset($row);
                 }
                 if ($query['type'] === 'ONETOMANY') {
                     foreach ($rows as &$row) {
@@ -1026,6 +1027,7 @@ abstract class _BasePdoOneRepo
                         //$row['/' . $query['table']] = $partialRows;
                         $row[$query['col2']] = $partialRows;
                     }
+                    unset($row);
                 }
             }
 
@@ -1142,6 +1144,7 @@ abstract class _BasePdoOneRepo
                 }
             }
         }
+        unset($row);
         if (!$list) {
             $rows = $rows[0];
         }
@@ -1157,7 +1160,8 @@ abstract class _BasePdoOneRepo
     public static function first($pk = PdoOne::NULL)
     {
         if (static::$useModel) {
-            return TableParentModel::fromArray(self::_first($pk));
+            /** @noinspection PhpUndefinedMethodInspection */
+            return static::fromArray(self::_first($pk));
         }
         return self::_first($pk);
     }
@@ -1410,7 +1414,7 @@ abstract class _BasePdoOneRepo
                     }
                     // delete
                     foreach ($newRows as $item) {
-                        if (in_array($item[$col2], $deleteKeys)) {
+                        if (in_array($item[$col2], $deleteKeys,false)) {
                             $pk2 = $item[$def['col2']];
                             if ($query->hasRecursive($key, $recursiveBack)) {
                                 /** @noinspection PhpUndefinedMethodInspection */
@@ -1482,7 +1486,7 @@ abstract class _BasePdoOneRepo
     {
         $result = [];
         foreach ($arrayValues as $k => $v) {
-            if (in_array($k, $arrayIndex)) {
+            if (in_array($k, $arrayIndex,false)) {
                 $result[$k] = $v;
             }
         }
@@ -1506,7 +1510,7 @@ abstract class _BasePdoOneRepo
     {
         $result = [];
         foreach ($arrayValues as $k => $v) {
-            if (!$indexIsKey && !in_array($k, $arrayIndex)) {
+            if (!$indexIsKey && !in_array($k, $arrayIndex,false)) {
                 $result[$k] = $v;
             }
             if ($indexIsKey && !array_key_exists($k, $arrayIndex)) {

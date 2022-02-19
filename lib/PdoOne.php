@@ -1,6 +1,6 @@
-<?php /** @noinspection PhpConditionAlreadyCheckedInspection */
-
-/** @noinspection GrazieInspection
+<?php /** @noinspection PhpUnused */
+/** @noinspection PhpConditionAlreadyCheckedInspection */
+/**
  * @noinspection GrazieInspection
  * @noinspection PhpSameParameterValueInspection
  * @noinspection StrStartsWithCanBeUsedInspection
@@ -16,9 +16,7 @@
  * @noinspection PhpArrayShapeAttributeCanBeAddedInspection
  * @noinspection PhpPureAttributeCanBeAddedInspection
  * @noinspection UnnecessaryCastingInspection
- * @noinspection PhpUnused
  * @noinspection OnlyWritesOnParameterInspection
- * @noinspection PhpMissingParamTypeInspection
  * @noinspection PhpRedundantVariableDocTypeInspection
  * @ noinspection UnknownInspectionInspection
  * @ noinspection OnlyWritesOnParameterInspection
@@ -34,7 +32,6 @@
 namespace eftec;
 
 use DateTime;
-use eftec\CliOne\CliOne;
 use eftec\ext\PdoOne_IExt;
 use eftec\ext\PdoOne_Mysql;
 use eftec\ext\PdoOne_Oci;
@@ -54,13 +51,13 @@ use stdClass;
  * @package       eftec
  * @author        Jorge Castro Castillo
  * @copyright (c) Jorge Castro C. MIT License  https://github.com/EFTEC/PdoOne
- * @version       2.25
+ * @version       2.26
  */
 class PdoOne
 {
-    const VERSION = '2.25';
+    public const VERSION = '2.26';
     /** @var int We need this value because null and false could be a valid value. */
-    const NULL = PHP_INT_MAX;
+    public const NULL = PHP_INT_MAX;
     /** @var string Prefix of the tables */
     public static $prefixBase = '_';
     /** @var int Used for the method page() */
@@ -210,9 +207,6 @@ class PdoOne
     /** @var PdoOne */
     protected static $instance;
 
-    //</editor-fold>
-    /** @var CliOne */
-    private $cli;
 
     /**
      * PdoOne constructor.  It doesn't open the connection to the database.
@@ -233,14 +227,14 @@ class PdoOne
      * @see PdoOne::connect()
      */
     public function __construct(
-        $database,
-        $server,
-        $user,
-        $pwd,
-        $db = '',
-        $logFile = false,
-        $charset = null,
-        $nodeId = 1
+        string  $database,
+        string  $server,
+        string  $user,
+        string  $pwd,
+        string  $db = '',
+        bool    $logFile = false,
+        ?string $charset = null,
+        int     $nodeId = 1
     )
     {
         $this->construct($database, $server, $user, $pwd, $db, $logFile, $charset, $nodeId);
@@ -259,7 +253,7 @@ class PdoOne
      * @param bool $throwIfNull
      * @return PdoOne|null
      */
-    public static function instance($throwIfNull = true): ?PdoOne
+    public static function instance(bool $throwIfNull = true): ?PdoOne
     {
         if (self::$instance === null && $throwIfNull) {
             throw new RuntimeException('instance not created for PdoOne');
@@ -328,13 +322,13 @@ class PdoOne
     /**
      * It returns true if the text has parenthesis.
      *
-     * @param string       $txt
+     * @param string|null  $txt
      * @param string|array $start
      * @param string|array $end
      *
      * @return bool
      */
-    public static function hasParenthesis($txt, $start = '(', $end = ')'): bool
+    public static function hasParenthesis(?string $txt, $start = '(', $end = ')'): bool
     {
         if (!$txt) {
             return false;
@@ -362,7 +356,7 @@ class PdoOne
      *
      * @return string
      */
-    public static function unixtime2Sql($dateNum): ?string
+    public static function unixtime2Sql(int $dateNum): ?string
     {
         // 31/01/2016 20:20:00 --> 2016-01-31 00:00
         if ($dateNum === null) {
@@ -379,7 +373,7 @@ class PdoOne
      *
      * @return string Returns a text with the date formatted (human readable)
      */
-    public static function dateSql2Text($sqlField, $hasTime = false)
+    public static function dateSql2Text(string $sqlField, bool $hasTime = false)
     {
         $tmpDate = self::dateTimeSql2PHP($sqlField, $hasTime);
         if ($tmpDate === null) {
@@ -403,7 +397,7 @@ class PdoOne
      *
      * @return bool|DateTime|null
      */
-    public static function dateTimeSql2PHP($sqlField, &$hasTime = false)
+    public static function dateTimeSql2PHP(string $sqlField, bool &$hasTime = false)
     {
         // 3  2016-01-31 00:00:00 -> 01/01/2016 00:00:00
         // mysql always returns the date/datetime/timestmamp in ansi format.
@@ -443,10 +437,10 @@ class PdoOne
      * <b>class</b> it is an instance of a DateClass object<br>
      * <b>timestamp:</b> the time is presented as a timestamp value (integer)<br>
      *
-     * @param string      $sqlField     The date to convert (the input value)
+     * @param mixed       $sqlField     The date to convert (the input value)
      * @param string      $inputFormat  =['iso','human','sql','class','timestamp'][$i] the input value type
      * @param string      $outputFormat =['iso','human','sql','class','timestamp'][$i] the output value type
-     * @param null|string $force        =[null,'time','ms','none'][$i] It forces if the result gets time or
+     * @param string|null $force        =[null,'time','ms','none'][$i] It forces if the result gets time or
      *                                  microseconds<br>
      *                                  null = no force the result (it is calculated automatically)<br>
      *                                  time = returns with a precision of seconds<br>
@@ -455,7 +449,7 @@ class PdoOne
      *
      * @return bool|DateTime
      */
-    public static function dateConvert($sqlField, $inputFormat, $outputFormat, $force = null)
+    public static function dateConvert($sqlField, string $inputFormat, string $outputFormat, ?string $force = null)
     {
         /** @var boolean $ms if true then the value has microseconds */
         $ms = false;
@@ -529,7 +523,7 @@ class PdoOne
      * @noinspection PhpUnhandledExceptionInspection
      * @noinspection PhpDocMissingThrowsInspection
      */
-    public static function dateConvertInput($inputValue, $inputFormat, &$ms, &$time)
+    public static function dateConvertInput($inputValue, string $inputFormat, bool &$ms, bool &$time)
     {
         switch ($inputFormat) {
             case 'iso':
@@ -609,7 +603,7 @@ class PdoOne
      *
      * @return string
      */
-    public static function dateText2Sql($textDate, $hasTime = true): ?string
+    public static function dateText2Sql(string $textDate, bool $hasTime = true): ?string
     {
         if (($hasTime)) {
             $tmpFormat = strpos($textDate, '.') === false ? self::$dateTimeFormat : self::$dateTimeMicroFormat;
@@ -632,7 +626,7 @@ class PdoOne
      *
      * @return string
      */
-    public static function dateTimePHP2Sql($date): ?string
+    public static function dateTimePHP2Sql(DateTime $date): ?string
     {
         // 31/01/2016 20:20:00 --> 2016-01-31 00:00
         if ($date == null) {
@@ -655,8 +649,8 @@ class PdoOne
      * @see PdoOne::$dateTimeFormat
      */
     public static function dateTextNow(
-        $hasTime = true,
-        $hasMicroseconds = false
+        bool $hasTime = true,
+        bool $hasMicroseconds = false
     ): string
     {
         $tmpDate = new DateTime();
@@ -678,8 +672,8 @@ class PdoOne
      * @see PdoOne::$dateTimeFormat
      */
     public static function dateNow(
-        $hasTime = true,
-        $hasMicroseconds = false
+        bool $hasTime = true,
+        bool $hasMicroseconds = false
     ): string
     {
         $tmpDate = new DateTime();
@@ -697,7 +691,7 @@ class PdoOne
      *
      * @return string
      */
-    public static function dateSqlNow($hasTime = true, $hasMicroseconds = false): string
+    public static function dateSqlNow(bool $hasTime = true, bool $hasMicroseconds = false): string
     {
         $tmpDate = new DateTime();
         if ($hasTime) {
@@ -706,63 +700,6 @@ class PdoOne
         return $tmpDate->format(self::$isoDate);
     }
 
-    public static function isCli(): bool
-    {
-        return !http_response_code();
-    }
-
-    public static function inputCli($description, $default, $alternatives = null)
-    {
-        $temp = '';
-        if ($alternatives !== null) {
-            $opts = implode(',', $alternatives);
-            $fail = true;
-            while ($fail) {
-                $temp = readline("$description ($opts): [$default] ");
-                $temp = (!$temp) ? $default : $temp;
-                if (in_array($temp, $alternatives, true)) {
-                    $fail = false;
-                } else {
-                    echo self::messageCli('The value is not correct', 'w');
-                }
-            }
-        } else {
-            $temp = readline("$description : [$default] ");
-            $temp = (!$temp) ? $default : $temp;
-        }
-        return $temp;
-    }
-
-    /**
-     * @param string $str   The message to show
-     * @param string $color =['e','s','w','i',''][$i]
-     * @param bool   $lineCarriage
-     * @return string
-     */
-    public static function messageCli($str, $color = '', $lineCarriage = true): string
-    {
-        switch ($color) {
-            case 'e': //error
-                $r = "\033[31m$str\033[0m";
-                break;
-            case 's': //success
-                $r = "\033[32m$str\033[0m";
-                break;
-            case 'w': //warning
-                $r = "\033[33m$str\033[0m";
-                break;
-            case 'g': //green
-                $r = "\033[32m$str\033[0m";
-                break;
-            case 'i': //info
-                $r = "\033[36m$str\033[0m";
-                break;
-            default:
-                $r = "\033[0m$str\033[0m";
-                break;
-        }
-        return $r . ($lineCarriage ? "\n" : '');
-    }
 
     public static function replaceBetween(
         $haystack,
@@ -885,7 +822,7 @@ class PdoOne
      * @return array An array with all the errors or an empty array (if both matches).
      * @throws Exception
      */
-    public function validateDefTable($table, $defArray, $defKeys, $defFK): array
+    public function validateDefTable(string $table, array $defArray, $defKeys, array $defFK): array
     {
         // columns
         $defCurrent = $this->getDefTable($table);
@@ -966,15 +903,15 @@ class PdoOne
      * // ,'null'=>false,'identity'=>true,'sql'='int not null auto_increment'
      * </pre>
      *
-     * @param string $table             The name of the table
-     * @param null   $specialConversion An associative array to set special conversion of values with the key as the
-     *                                  column.
+     * @param string     $table             The name of the table
+     * @param array|null $specialConversion An associative array to set special conversion of values with the key as the
+     *                                      column.
      *
      * @return array=[0]['phptype'=>null,'conversion'=>null,'type'=>null,'size'=>null,'null'=>null
      *              ,'identity'=>null,'sql'=null]
      * @throws Exception
      */
-    public function getDefTable($table, $specialConversion = null): array
+    public function getDefTable(string $table, ?array $specialConversion = null): array
     {
         $r = $this->service->getDefTable($table); // ['col1'=>'int not null','col2'=>'varchar(50)']
         foreach ($r as $k => $v) {
@@ -1029,7 +966,7 @@ class PdoOne
      *
      * @return array
      */
-    public function dbTypeToPHP($type): array
+    public function dbTypeToPHP(string $type): array
     {
         $type = strtolower($type);
         switch ($type) {
@@ -1116,20 +1053,20 @@ class PdoOne
      * // ["IndexName"=>'',"ColumnName"=>'',"is_unique"=>0,"is_primary_key"=>0,"TYPE"=>'']
      * </pre>
      *
-     * @param string $table            The name of the table to analize.
-     * @param bool   $returnSimple     true= returns as a simple associative
-     *                                 array<br> Example:['id'=>'PRIMARY
-     *                                 KEY','name'=>'FOREIGN KEY...']<br> false=
-     *                                 returns as an associative array separated
-     *                                 by parts<br>
-     *                                 ['key','refcol','reftable','extra']<br>
+     * @param string      $table        The name of the table to analize.
+     * @param bool        $returnSimple true= returns as a simple associative
+     *                                  array<br> Example:['id'=>'PRIMARY
+     *                                  KEY','name'=>'FOREIGN KEY...']<br> false=
+     *                                  returns as an associative array separated
+     *                                  by parts<br>
+     *                                  ['key','refcol','reftable','extra']<br>
      *
-     * @param null   $filter
+     * @param null|string $filter       if not null then it only returns keys that match the condition
      *
      * @return array=["IndexName"=>'',"ColumnName"=>'',"is_unique"=>0,"is_primary_key"=>0,"TYPE"=>0]
      * @throws Exception
      */
-    public function getDefTableKeys($table, $returnSimple = true, $filter = null): array
+    public function getDefTableKeys(string $table, bool $returnSimple = true, ?string $filter = null): array
     {
         return $this->service->getDefTableKeys($table, $returnSimple, $filter);
     }
@@ -1148,7 +1085,7 @@ class PdoOne
      * @return array
      * @throws Exception
      */
-    public function getDefTableFK($table, $returnSimple = true, $assocArray = false): array
+    public function getDefTableFK(string $table, bool $returnSimple = true, bool $assocArray = false): array
     {
         return $this->service->getDefTableFK($table, $returnSimple, null, $assocArray);
     }
@@ -1177,691 +1114,11 @@ class PdoOne
      *
      * @return array|string|null
      * @throws Exception
+     * @noinspection PhpUnused
      */
-    public function getDefTableExtended($table, $onlyDescription = false)
+    public function getDefTableExtended(string $table, bool $onlyDescription = false)
     {
         return $this->service->getDefTableExtended($table, $onlyDescription);
-    }
-
-    /**
-     * It executes the cli Engine.
-     *
-     * @throws Exception
-     */
-    public function cliEngine(): void
-    {
-        $this->cli = new CliOne(__FILE__);
-        $this->cli->createParam('database')
-            ->setRequired(false)
-            ->setDescription('The type of database', 'Select the type of database', [
-                'Values allowed: <option/>'])
-            ->setInput(false, 'optionshort', ['mysql', 'sqlsrv', 'oci', 'test'])
-            ->add();
-        $this->cli->createParam('server')
-            ->setRequired(false)
-            ->setDefault('127.0.0.1')
-            ->setDescription('The type of database', 'Select the type of database', [
-                'Example mysql: 127.0.0.1 , 127.0.0.1:3306',
-                'Example sqlsrv: (local)\sqlexpress 127.0.0.1\sqlexpress'])
-            ->setInput(false)
-            ->add();
-        $this->cli->createParam('user')
-            ->setDescription('The username to access to the database', 'Select the username', ['Example: sa, root'])
-            ->setRequired(false)
-            ->setDefault('')
-            ->setInput(false)
-            ->add();
-        $this->cli->createParam('pwd')
-            ->setRequired(false)
-            ->setDescription('The password to access to the database', '', ['Example:12345'])
-            ->setDefault('')
-            ->setInput(false, 'password')
-            ->add();
-        $this->cli->createParam('db')
-            ->setRequired(false)
-            ->setDescription('The database/schema', 'Select the database/schema', [
-                'Example: sakila,contoso,adventureworks'])
-            ->setDefault('')
-            ->setInput(false)
-            ->add();
-        $this->cli->createParam('input')
-            ->setRequired(false)
-            ->setDescription('The type of input', '', [
-                'Example: -input "select * from table" = it runs a query',
-                'Example: -input "table" = it runs a table (it could generates a query automatically)'
-            ])
-            ->setDefault('')
-            ->setInput(false)
-            ->add();
-        $this->cli->createParam('output')
-            ->setRequired(false)
-            ->setDescription('The type of output', '', [
-                'Values allowed: <option/>',
-                '<bold>classcode</bold>: it returns php code with a CRUDL class',
-                '<bold>selectcode</bold>: it shows a php code with a select',
-                '<bold>arraycode</bold>: it shows a php code with the definition of an array Ex: ["idfield"=0,"name"=>""]',
-                '<bold>csv</bold>: it returns a csv result',
-                '<bold>json</bold>: it returns the value of the queries as json'])
-            ->setDefault('')
-            ->setInput(false, 'optionshort', ['classcode', 'selectcode', 'arraycode', 'csv', 'json'])
-            ->add();
-        $this->cli->createParam('namespace')
-            ->setRequired(false)
-            ->setDescription('The namespace', '', [
-                'Example: "customers"'])
-            ->setDefault('')
-            ->setInput(false)
-            ->add();
-        $scanned_directory = array_diff(scandir('.'), array('..', '.'));
-        $scanned2=[];
-        foreach($scanned_directory as $k) {
-            if(@pathinfo($k)['extension']==='php') {
-                $scanned2[$k] = $k;
-            }
-        }
-        $this->cli->createParam('loadconfig')
-            ->setRequired(false)
-            ->setDescription('Select the configuration file to load', '', [
-                'Example: "-loadconfig myconfig"'])
-            ->setDefault('')
-            ->setInput(true,'string',$scanned2)
-            ->add();
-
-
-        $this->cli->createParam('saveconfig')
-            ->setRequired(false)
-            ->setDescription('save a configuration file', 'Select the configuration file to save', [
-                'Example: "-saveconfig myconfig"'])
-            ->setDefault('')
-            ->setInput(true,'string',$scanned2)
-            ->add();
-        $this->cli->createParam('cli')
-            ->setRequired(false)
-            ->setAllowEmpty()
-            ->setDescription('It start the cli', '', [
-                'Example: "-cli"'])
-            ->setDefault('')
-            ->setInput(false)
-            ->add();
-        $v = self::VERSION;
-        $this->cli->show("
- _____    _       _____           
-|  _  | _| | ___ |     | ___  ___ 
-|   __|| . || . ||  |  ||   || -_|
-|__|   |___||___||_____||_|_||___|  $v
-
-<yellow>Syntax:php PdoOne.php <args></yellow>
-
-");
-        $database = $this->cli->evalParam('database', false, true);
-        if($database) {
-            // if the user is inputting some values, then it doesn't ask to load parameters
-            $this->cli->getParameter('loadconfig')->setInput(false,'string',[]);
-        }
-
-        $loadconfig = $this->cli->evalParam('loadconfig', false);
-        if ($loadconfig->value) {
-            [$ok, $data] = $this->cli->readData($loadconfig->value);
-            if ($ok === false) {
-                $this->cli->showCheck('ERROR', 'red', "unable to open file $loadconfig->value");
-            } else {
-                $this->cli->setArrayParam($data);
-            }
-        }
-        $clip = $this->cli->evalParam('cli', false);
-        if (!$clip->missing) {
-            $this->runCliGeneration();
-            return;
-        }
-
-        $server = $this->cli->evalParam('server', false, true);
-        $user = $this->cli->evalParam('user', false, true);
-        $pwd = $this->cli->evalParam('pwd', false, true);
-        $db = $this->cli->evalParam('db', false, true);
-        $input = $this->cli->evalParam('input', false, true);
-        $output = $this->cli->evalParam('output', false, true);
-        $namespace = $this->cli->evalParam('namespace', false, true);
-
-        $result = $this->RunCliConnection();
-        echo "quatro";
-        $this->runCliSaveConfig();
-
-        $this->cli->showLine();
-        if ($database === '' || $server === '' || $user === '' || $pwd === '' || $input === '' || $output === '') {
-            $databasem = self::messageCli($database === '' ? '*missing*' : $database, $database === '' ? 'e' : 'g', false);
-            $serverm = self::messageCli($server === '' ? '*missing*' : $server, $server === '' ? 'e' : 'g', false);
-            $userm = self::messageCli($user === '' ? '*missing*' : $user, $user === '' ? 'e' : 'g', false);
-            $pwdm = self::messageCli('***', $pwd === '' ? 'e' : 'g', false);
-            $inputm = self::messageCli($input === '' ? '*missing*' : $input, $input === '' ? 'e' : 'g', false);
-            $outputm = self::messageCli($output === '' ? '*missing*' : $output, $output === '' ? 'e' : 'g', false);
-            $this->cli->showParamSyntax('*', 0, 1, ['retry']);
-            return;
-        }
-        echo self::messageCli($this->run($database, $server, $user, $pwd, $db, $input, $output, $namespace), 'e');
-    }
-    protected function runCliSaveConfig():void
-    {
-        if($this->cli->createParam('dosave','none')
-                ->setRequired(false)
-                ->setDefault('false')
-                ->setInput(true,'optionshort',['yes','no'])
-                ->setDescription('','Do you want to save?')
-                ->evalParam(true,true)==='yes') {
-
-
-        $saveconfig = $this->cli->evalParam('saveconfig', false);
-        if ($saveconfig->value) {
-            $arr = $this->cli->getArrayParams(['saveconfig', 'loadconfig', 'cli', 'retry']);
-            $r = $this->cli->saveData($saveconfig->value, $arr);
-            if ($r === '') {
-                $this->cli->showCheck('OK', 'green', 'file saved correctly');
-            }
-        }
-        }
-    }
-
-    /**
-     * @return void
-     * @throws Exception
-     */
-    protected function runCliGeneration(): void
-    {
-        [$configOk, $config] = $this->cli->readData('myconfig');
-        if (!$configOk) {
-            $config = [
-                'tablexclass' => '',
-                'conversion' => [],
-                'extracolumn' => [],
-                'removecolumn' => [],
-                'db' => $this->cli->getValue('db'),
-                'classnamespace' => '',
-                'classdirectory' => '',
-                'classoverride' => '',
-                'columnsTable' => '',
-                'classes' => []
-            ];
-        }
-
-        $this->cli->createParam('savegen')
-            ->setRequired(false)
-            ->setDescription('save a configuration file', 'Do you want to save the generation', [
-                'Example: "-savegen myconfig"'])
-            ->setDefault('yes')
-            ->setInput(true, 'optionshort', ['yes', 'no'])
-            ->add();
-        $this->cli->createParam('namerepo')
-            ->setDescription('', 'Select the name of the class repository')
-            ->setInput(true)->add();
-        $this->cli->createParam('command')
-            ->setDescription('', 'Select a command (empty for exit)')
-            ->setAllowEmpty()
-            ->setInput(true, 'option', [
-                'select' => 'Select the tables to work',
-                'configure' => 'Configure per table',
-                'convertxtype' => 'Configure per type of column',
-                'end' => 'End this menu and save the project'])->add();
-        $this->cli->createParam('tables')
-            ->setDescription('', '')
-            ->setInput(true, 'options', [])->add();
-        $this->cli->createParam('tablescolumns')
-            ->setDescription('', '')
-            ->setAllowEmpty(false)
-            ->setInput(true, 'options', [])->add();
-        $this->cli->createParam('tablescolumnsvalue')
-            ->setDescription('', '')
-            ->setRequired(false)
-            ->setAllowEmpty(true)
-            ->setInput(true, 'string', [])->add();
-        $this->cli->createParam('classselected')
-            ->setDescription('', 'Select a table to configure')
-            ->setAllowEmpty()
-            ->setInput(true, 'option3', [])->add();
-        $this->cli->createParam('tablecommand')
-            ->setDescription('', 'Select the command for the table')
-            ->setAllowEmpty(true)
-            ->setInput(true, 'option', [
-                'rename' => 'rename the class from the table',
-                'conversion' => 'column conversion',
-                'extracolumn' => 'configure extra columns that could be read',
-                'remove' => 'remove a column'
-            ])->add();
-        $this->cli->createParam('convertionselected')
-            ->setDescription('', 'Select a type of data to convert')
-            ->setAllowEmpty()
-            ->setInput(true, 'option3', [])->add();
-        $this->cli->createParam('convertionnewvalue')
-            ->setDescription('', 'Select the conversion')
-            ->setAllowEmpty()
-            ->setInput(true, 'option', [
-                'encrypt' => 'encrypt and decrypt the value',
-                'decrypt' => 'encrypt and decrypt the value',
-                'datetime3' => 'convert an human readable date to SQL',
-                'datetime4' => 'no conversion, it keeps the format of SQL',
-                'datetime2' => 'convert between ISO standard and SQL',
-                'datetime' => 'convert between PHP Datetime object and SQL',
-                'timestamp' => 'convert between a timestamp number and sql',
-                'bool' => 'the value will be converted into a boolean (0,"" or null=false,other=true)',
-                'int' => 'the value will be cast into a int',
-                'float' => 'the value will be cast into a float',
-                'decimal' => 'the value will be cast into a float',
-                'null' => 'the value will be null',
-                'nothing'=>"it does nothing"])->add();
-        $this->cli->createParam('newclassname')
-            ->setDescription('', 'Select the name of the class')
-            ->setInput(true, 'string', [])->add();
-        $this->cli->createParam('classdirectory')
-            ->setDescription('', 'Select the relative directory to create the classes')
-            ->setInput(true)->add();
-        $this->cli->createParam('classnamespace')
-            ->setDescription('', 'Select the namespace of the classes')
-            ->setInput(true)->add();
-        $this->cli->createParam('classoverride')
-            ->setDescription('', 'Do you want to override previous generated classes?')
-            ->setInput(true, 'optionshort', ['yes', 'no'])->add();
-        $this->cli->getParameter('database')->setInput(true, 'optionshort', ['mysql', 'sqlsrv', 'oci', 'test']);
-        $this->cli->getParameter('server')->setInput(true);
-        $this->cli->getParameter('user')->setInput(true);
-        $this->cli->getParameter('pwd')->setInput(true);
-        $this->cli->getParameter('db')->setInput(true);
-        $this->cli->evalParam('database', false);
-        $this->cli->evalParam('server', false);
-        $this->cli->evalParam('user', false);
-        $this->cli->evalParam('pwd', false);
-        $this->cli->evalParam('db', false);
-        echo "segunda";
-        $pdo = $this->RunCliGenerationTest1();
-        if ($pdo === null) {
-            $this->cli->showCheck('CRITICAL', 'error', 'No connection');
-            die(1);
-        }
-        try {
-            $tables = $pdo->objectList('table', true);
-        } catch (Exception $e) {
-            $this->cli->showCheck('CRITICAL', 'error', 'Unable to read tables');
-            die(1);
-        }
-        $tablesmarked = $tables;
-        //$classes=[];
-        $tablexclass = [];
-        $columnsTable = [];
-        $conversion = [];
-        $extracolumn=[];
-        $removecolumn=[];
-        $def2 = [];
-        $pk = [];
-        $this->cli->show('<yellow>Please wait, reading structure of tables... </yellow>');
-        $this->cli->showWaitCursor(true);
-        foreach ($tablesmarked as $table) {
-            /** @noinspection DisconnectedForeachInstructionInspection */
-            $this->cli->showWaitCursor(false);
-            $class = self::tableCase($table) . 'Repo';
-            //$classes[] = $class;
-            $tablexclass[$table] = $class;
-            $columns = $pdo->columnTable($table);
-            foreach ($columns as $k => $v) {
-                $conversion[$v['coltype']] = null;
-                $columnsTable[$table][$v['colname']] = null;
-                //var_dump($def2);
-            }
-            $pk[$table] = $pdo->getPK($table);
-            $def2[$table] = $pdo->xxx($table, $pk[$table][0]);
-            foreach ($def2[$table] as $k => $v) {
-                if (isset($v['key']) && $v['key'] !== 'FOREIGN KEY') {
-                    $columnsTable[$table][$k] = $v['key'];
-                }
-            }
-        }
-        $this->cli->showLine();
-        ksort($conversion);
-        if ($configOk !== false) {
-            $tablexclass = $config['tablexclass'];
-            $conversion = $config['conversion'] ?? $conversion;
-            $extracolumn = $config['extracolumn'] ?? $extracolumn;
-            $removecolumn = $config['removecolumn'] ?? $removecolumn;
-            //$classes=$config['classes'];
-            $this->cli->getParameter('db')->value = $config['db'];
-            $columnsTable = $config['columnsTable'];
-            $this->cli->getParameter('classnamespace')->setDefault($config['classnamespace']);
-            $this->cli->getParameter('classdirectory')->setDefault($config['classdirectory']);
-            $this->cli->getParameter('classoverride')->setDefault($config['classoverride']);
-        }
-        $this->cli->upLevel($this->cli->getParameter('db')->value,' (db)');
-        while (true) {
-            $this->cli->setColor(['byellow'])->showBread();
-            $com = $this->cli->evalParam('command', true);
-
-            switch ($com->valueKey) {
-                case 'end':
-                case $this->cli->emptyValue:
-                case '':
-                    break 2;
-                case 'convertxtype':
-                    $this->cli->upLevel('convertxtype');
-                    while(true) {
-                        $this->cli->setColor(['byellow'])->showBread();
-                        $this->cli->getParameter('convertionselected')
-                            ->setInput(true, 'option3', $conversion);
-                        $convertionselected = $this->cli->evalParam('convertionselected', true);
-                        if($convertionselected->valueKey===$this->cli->emptyValue) {
-                            break;
-                        }
-                        $this->cli->upLevel($convertionselected->valueKey, ' (type)');
-                        $this->cli->setColor(['byellow'])->showBread();
-                        $convertionnewvalue = $this->cli->getParameter('convertionnewvalue')
-                            ->setDefault($convertionselected->value ?? '')
-                            ->evalParam(true);
-                        $conversion[$convertionselected->valueKey] = $convertionnewvalue->valueKey;
-                        $this->cli->downLevel();
-                    }
-                    $this->cli->downLevel();
-                    break;
-                case 'select':
-                    $this->cli->upLevel('select');
-                    $this->cli->setColor(['byellow'])->showBread();
-                    $this->cli->getParameter('tables')
-                        ->setDefault($tablesmarked ?? [])
-                        ->setDescription('', 'Select or de-select a table to process')
-                        ->setInput(true, 'multiple2', $tables);
-                    $this->cli->evalParam('tables', true);
-                    $this->cli->downLevel();
-                    break;
-                case 'configure':
-                    $this->cli->upLevel('configure');
-                    while(true) {
-                        $this->cli->setColor(['byellow'])->showBread();
-                        $tmp = $this->cli->getValue('tables');
-                        $this->cli->getParameter('classselected')
-                            ->setDescription('', 'Select a table to configure')
-                            ->setInput(true, 'option3', $tablexclass);
-                        $classselected = $this->cli->evalParam('classselected', true);
-                        if ($classselected->value === '') {
-                            $this->cli->downLevel();
-                            break; // return to command
-                        }
-                        $oldnameclass = $classselected->value;
-                        $ktable = $classselected->valueKey;
-                        $this->cli->upLevel($ktable, '(table)');
-                        while (true) { // tablecommand
-                            $this->cli->setColor(['byellow'])->showBread();
-                            $tablecommand = $this->cli->evalParam('tablecommand', true);
-                            switch ($tablecommand->valueKey) {
-                                case $this->cli->emptyValue:
-                                    //$this->cli->downLevel();
-                                    $this->cli->downLevel();
-                                    break 2; // while tablecommand
-                                case 'rename':
-                                    $this->cli->upLevel('rename');
-                                    $this->cli->setColor(['byellow'])->showBread();
-                                    $this->cli->getParameter('newclassname')->setDefault($classselected->value);
-                                    $newclassname = $this->cli->evalParam('newclassname', true);
-                                    //$k=array_search($classselected->value,$classes,true);
-                                    //$classes[$k]=$newclassname->value;
-                                    $tablexclass[$ktable] = $newclassname->value;
-                                    $this->cli->downLevel();
-                                    break;
-                                case 'remove':
-                                    $this->cli->upLevel('remove');
-                                    while (true) {
-                                        $this->cli->setColor(['byellow'])->showBread();
-                                        if (isset($removecolumn[$ktable])) {
-                                            $this->cli->showValuesColumn($removecolumn[$ktable], 'option3');
-                                        }
-                                        $ecc = $this->cli->createParam('extracolumncommand')
-                                            ->setAllowEmpty()
-                                            ->setInput(true, 'optionshort', ['add', 'remove'])
-                                            ->setDescription('', 'Do you want to add or remove a column from the remove-list')
-                                            ->evalParam(true);
-                                        switch ($ecc->value) {
-                                            case '':
-                                                break 2;
-                                            case 'add':
-                                                $tmp = $this->cli->createParam('extracolumn_name')
-                                                    //->setAllowEmpty()
-                                                    ->setInput(true, 'option3', array_keys($columnsTable[$ktable]))
-                                                    ->setDescription('', 'Select a name of the column to remove')
-                                                    ->evalParam(true);
-                                                $removecolumn[$ktable][] = $tmp->value;
-                                                break;
-                                            case 'remove':
-                                                $tmp = $this->cli->createParam('extracolumn_delete')
-                                                    ->setAllowEmpty()
-                                                    ->setInput(true, 'option2', $removecolumn[$ktable])
-                                                    ->setDescription('', 'Select a columne to delete')
-                                                    ->evalParam(true);
-                                                if ($tmp->valueKey !== $this->cli->emptyValue) {
-                                                    unset($removecolumn[$ktable][$tmp->valueKey - 1]);
-                                                }
-                                                // renumerate
-                                                $removecolumn[$ktable] = array_values($removecolumn[$ktable]);
-                                                break;
-                                        }
-                                    }
-                                    $this->cli->downLevel();
-                                    break;
-                                case 'extracolumn':
-                                    $this->cli->upLevel('extracolumn');
-                                    while (true) {
-                                        $this->cli->setColor(['byellow'])->showBread();
-                                        $this->cli->showValuesColumn($extracolumn[$ktable],'option2');
-                                        $ecc = $this->cli->createParam('extracolumncommand')
-                                            ->setAllowEmpty()
-                                            ->setInput(true, 'optionshort', ['add', 'remove'])
-                                            ->setDescription('', 'Select an operation')
-                                            ->evalParam(true);
-                                        switch ($ecc->value) {
-                                            case '':
-                                                break 2;
-                                            case 'add':
-                                                $tmp = $this->cli->createParam('extracolumn_name')
-                                                    //->setAllowEmpty()
-                                                    ->setInput(true)
-                                                    ->setDescription('', 'Select a name for the new column')
-                                                    ->evalParam(true);
-                                                $tmp2 = $this->cli->createParam('extracolumn_sql')
-                                                    //->setAllowEmpty()
-                                                    ->setInput(true)
-                                                    ->setDescription('', 'Select a sql for the new column')
-                                                    ->evalParam(true);
-                                                $extracolumn[$ktable][$tmp->value] = $tmp2->value;
-                                                break;
-                                            case 'remove':
-                                                $tmp = $this->cli->createParam('extracolumn_delete')
-                                                    ->setAllowEmpty()
-                                                    ->setInput(true, 'option2', $extracolumn[$ktable])
-                                                    ->setDescription('', 'Select a columne to delete')
-                                                    ->evalParam(true);
-                                                if ($tmp->valueKey !== $this->cli->emptyValue) {
-                                                    unset($extracolumn[$ktable][$tmp->valueKey]);
-                                                }
-                                                break;
-                                        }
-                                    }
-                                    $this->cli->downLevel();
-                                    break;
-                                case 'conversion':
-                                    $this->cli->upLevel('conversion');
-                                    while (true) {
-                                        $this->cli->setColor(['byellow'])->showBread();
-                                        $this->cli->getParameter('tablescolumns')
-                                            ->setDescription('', 'Select a column (or empty for end)')
-                                            ->setAllowEmpty()
-                                            ->setInput(true, 'option3', $columnsTable[$ktable]);
-                                        $tablecolumn = $this->cli->evalParam('tablescolumns', true);
-                                        if ($tablecolumn->value === '') {
-                                            // exit
-                                            break;
-                                        }
-                                        $this->cli->upLevel($tablecolumn->valueKey, ' (column)');
-                                        $this->cli->setColor(['byellow'])->showBread();
-                                        if ($tablecolumn->valueKey[0] === '_') {
-                                            $this->cli->getParameter('tablescolumnsvalue')
-                                                ->setDescription('', 'Select a relation')
-                                                ->setAllowEmpty(true)
-                                                ->setRequired(false)
-                                                ->setDefault($tablecolumn->value)
-                                                ->setPattern('<cyan>[{key}]</cyan> {value}')
-                                                ->setInput(true, 'option', [
-                                                    'PARENT' => 'Same than MANYTONE without the recursivity',
-                                                    'MANYTOMANY' => 'Many to many',
-                                                    'ONETOMANY' => 'One to many relation',
-                                                    'MANYTOONE' => 'Many to one',
-                                                    'ONETOONE' => 'One to one'
-                                                ]);
-                                        } else {
-                                            $this->cli->getParameter('tablescolumnsvalue')
-                                                ->setDescription('', 'Select a conversion')
-                                                ->setDefault($tablecolumn->value)
-                                                ->setAllowEmpty()
-                                                ->setInput(true, 'option', [
-                                                    'encrypt' => 'encrypt the value',
-                                                    'decrypt' => 'decrypt the value',
-                                                    'datetime3' => 'datetime3',
-                                                    'datetime4' => 'datetime3',
-                                                    'datetime2' => 'datetime3',
-                                                    'datetime' => 'datetime3',
-                                                    'timestamp' => 'datetime3',
-                                                    'bool' => 'the value will be converted into a boolean (0=false,other=true)',
-                                                    'int' => 'the value will be converted into a int',
-                                                    'float' => 'the value will be converted into a float',
-                                                    'decimal' => 'the value will be converted into a float',
-                                                    'null' => 'pending.',
-                                                    'nothing'=>"it does nothing"]);
-                                        }
-                                        $tablecolumnsvalue = $this->cli->evalParam('tablescolumnsvalue', true);
-                                        //var_dump($tablecolumn->valueKey);
-                                        //var_dump($tablecolumn->valueKey);
-                                        if ($tablecolumnsvalue->valueKey !== $this->cli->emptyValue) {
-                                            $columnsTable[$ktable][$tablecolumn->valueKey] = $tablecolumnsvalue->valueKey;
-                                        }
-                                        $this->cli->downLevel();
-                                    }
-                                    $this->cli->downLevel();
-                                    break;
-                            }
-                        } // end while tablecommand
-                    } // end while table
-
-                    //var_dump($pdo->columnTable($ktable));
-
-                    break;
-            }
-        }
-        $this->cli->evalParam('classdirectory', true);
-        $this->cli->evalParam('classnamespace', true);
-        $this->cli->evalParam('classoverride', true);
-        try {
-            $configOk = @mkdir($this->cli->getValue('classdirectory'));
-            if (!$configOk) {
-                throw new RuntimeException('failed to create folder, maybe the folder already exists');
-            }
-            $this->cli->showCheck('OK', 'green', 'directory created');
-        } catch (Exception $ex) {
-            $this->cli->show('<yellow>');
-            $this->cli->showMessageBox('unable to create directory ' . $ex->getMessage(),'warning');
-            $this->cli->show('</yellow>');
-            // $this->cli->showCheck('WARNING', 'yellow', 'unable to create directory ' . $ex->getMessage());
-        }
-        $results = $pdo->generateAllClasses($tablexclass, ucfirst($this->cli->getValue('db')),
-            $this->cli->getValue('classnamespace'),
-            $this->cli->getValue('classdirectory'),
-            $this->cli->getValue('classoverride') === 'yes',
-            $columnsTable,
-            $extracolumn,
-            $removecolumn
-        );
-        $sg = $this->cli->evalParam('savegen', true);
-        if ($sg->value === 'no') {
-            $this->cli->showLine('Done');
-        }
-        $config = [
-            'tablexclass' => $tablexclass,
-            'conversion' => $conversion,
-            'extracolumn' => $extracolumn,
-            'removecolumn' => $removecolumn,
-            //'classes' => $classes,
-            'db' => $this->cli->getValue('db'),
-            'classnamespace' => $this->cli->getValue('classnamespace'),
-            'classdirectory' => $this->cli->getValue('classdirectory'),
-            'classoverride' => $this->cli->getValue('classoverride'),
-            'columnsTable' => $columnsTable
-        ];
-        $this->cli->saveData('myconfig', $config);
-    }
-    protected function RunCliConnection() : ?PdoOne {
-        $result= null;
-        while (true) {
-            try {
-                $pdo = new PdoOne($this->cli->getValue('database'),
-                    $this->cli->getValue('server'),
-                    $this->cli->getValue('user'),
-                    $this->cli->getValue('pwd'),
-                    $this->cli->getValue('db'));
-                $pdo->logLevel = 3;
-                $pdo->connect();
-                $this->cli->showCheck('OK', 'green', 'Connected to the database');
-                $result = $pdo;
-                break;
-            } catch (Exception $ex) {
-                $this->cli->showCheck('ERROR', 'red', 'Unable to connect to the database: '.$ex->getMessage());
-            }
-            $rt=$this->cli->createParam('retry')
-                ->setDescription('', 'Do you want to retry?')
-                ->setInput(true, 'optionshort', ['yes', 'no'])->evalParam(true);
-            if ($rt->value === 'no') {
-                break;
-            }
-            $this->cli->evalParam('database', true);
-            $this->cli->evalParam('server', true);
-            $this->cli->evalParam('user', true);
-            $this->cli->evalParam('pwd', true);
-            $this->cli->evalParam('db', true);
-        }
-        return $result;
-    }
-
-    protected function RunCliGenerationTest1(): ?PdoOne
-    {
-        $result = $this->RunCliConnection();
-
-        if (!$this->cli->getValue('loadconfig')) {
-            $sg = $this->cli->evalParam('savegen', true);
-            if ($sg->value === 'yes') {
-                echo "tres";
-                $saveconfig = $this->cli->evalParam('saveconfig', false);
-                if ($saveconfig->value) {
-                    $arr = $this->cli->getArrayParams(['saveconfig', 'loadconfig', 'cli', 'retry']);
-                    $r = $this->cli->saveData($saveconfig->value, $arr);
-                    if ($r === '') {
-                        $this->cli->showCheck('OK', 'green', 'file saved correctly');
-                    }
-                }
-            }
-        }
-        return $result;
-    }
-
-
-    /**
-     * @param           $key
-     * @param string    $default  is the defalut value is the parameter is set
-     *                            without value.
-     *
-     * @return string
-     */
-    protected static function getParameterCli($key, $default = ''): string
-    {
-        global $argv;
-        $p = array_search('-' . $key, $argv);
-        if ($p === false) {
-            return '';
-        }
-        if ($default !== '') {
-            return $default;
-        }
-        if (count($argv) >= $p + 1) {
-            return self::removeTrailSlash($argv[$p + 1]);
-        }
-        return '';
     }
 
     protected static function removeTrailSlash($txt): string
@@ -1883,14 +1140,14 @@ class PdoOne
      * @throws Exception
      */
     public function run(
-        $database,
-        $server,
-        $user,
-        $pwd,
-        $db,
-        $input,
-        $output,
-        $namespace
+        string $database,
+        string $server,
+        string $user,
+        string $pwd,
+        string $db,
+        string $input,
+        string $output,
+        string $namespace
     )
     {
         $this->construct($database, $server, $user, $pwd, $db);
@@ -1931,7 +1188,7 @@ class PdoOne
                 try {
                     $result = $this->runRawQuery($query, []);
                 } catch (Exception $ex) {
-                    return self::messageCli($this->lastError(), 'e');
+                    return json_encode(['error' => $this->lastError()]);
                 }
                 if (!is_array($result)) {
                     return "No result or result error\n";
@@ -1958,7 +1215,7 @@ class PdoOne
      * @param bool|null $alterSession
      * @test exception this(false)
      */
-    public function connect($failIfConnected = true, $alterSession = null): void
+    public function connect(bool $failIfConnected = true, ?bool $alterSession = null): void
     {
         $this->beginTry();
         if ($this->isOpen) {
@@ -2014,11 +1271,11 @@ class PdoOne
      *
      * @param bool           $throwError        if true then it throw error (is enabled). Otherwise it store the error.
      *
-     * @param null|Exception $exception
+     * @param Exception|null $exception
      *
      * @see \eftec\PdoOne::$logLevel
      */
-    public function throwError($txt, $txtExtra, $extraParam = '', $throwError = true, $exception = null): void
+    public function throwError(string $txt, $txtExtra, $extraParam = '', bool $throwError = true, ?Exception $exception = null): void
     {
         if ($this->errorText !== '') {
             // there is another error pending to be displayed.
@@ -2085,12 +1342,12 @@ class PdoOne
     }
 
     /**
-     * @param       $exception
-     * @param null  $customMessage
-     * @param false $returnAsString
+     * @param             $exception
+     * @param string|null $customMessage
+     * @param false       $returnAsString
      * @return string
      */
-    public function custom_exception_handler($exception, $customMessage = null, $returnAsString = false): string
+    public function custom_exception_handler($exception, ?string $customMessage = null, bool $returnAsString = false): string
     {
         $isCli = !http_response_code();
         $customMessage = $customMessage === null ? $exception->getMessage() : $customMessage;
@@ -2207,7 +1464,7 @@ class PdoOne
      * @param MessageContainer $messageContainer
      * @return void
      */
-    public function setMessages($messageContainer): void
+    public function setMessages(MessageContainer $messageContainer): void
     {
         $this->messageContainer = $messageContainer;
     }
@@ -2225,6 +1482,7 @@ class PdoOne
         if ($this->logLevel === 2) {
             $txtW .= ' param:' . json_encode($this->lastParam);
         }
+        /** @noinspection ForgottenDebugOutputInspection */
         error_log('[PdoOne]' . $level . "\t" . $txtW);
     }
 
@@ -2238,7 +1496,7 @@ class PdoOne
      *
      * @throws Exception
      */
-    public function storeInfo($txt): void
+    public function storeInfo(string $txt): void
     {
         if ($this->logLevel < 2) {
             return;
@@ -2303,16 +1561,17 @@ class PdoOne
      ** $values=$con->runRawQuery('select * from table where id=?,[[1,20,PDO::PARAM_INT]]',true); // a full parameter.
      * </pr>
      *
-     * @param string     $rawSql      The query to execute
-     * @param array|null $params      [type1,value1,type2,value2] or [name1=>value,name2=value2]
-     * @param bool       $returnArray if true then it returns an array. If false then it returns a PDOStatement
-     * @param bool       $useCache    if true then it uses cache (if the service is available).
-     * @param null       $cacheFamily if use cache, then it is used to set the family or group of the cache.
+     * @param string               $rawSql      The query to execute
+     * @param array|null           $params      [type1,value1,type2,value2] or [name1=>value,name2=value2]
+     * @param bool                 $returnArray if true then it returns an array. If false then it returns a
+     *                                          PDOStatement
+     * @param bool                 $useCache    if true then it uses cache (if the service is available).
+     * @param null|string|string[] $cacheFamily if use cache, then it is used to set the family or group of the cache.
      * @return bool|PDOStatement|array an array of associative or a pdo statement. False is the operation fails
      * @throws Exception
      * @test equals [0=>[1=>1]],this('select 1',null,true)
      */
-    public function runRawQuery($rawSql, $params = null, $returnArray = true, $useCache = false, $cacheFamily = null)
+    public function runRawQuery(string $rawSql, ?array $params = null, ?bool $returnArray = true, bool $useCache = false, $cacheFamily = null)
     {
         $this->beginTry();
         if (!$this->isOpen) {
@@ -2372,6 +1631,7 @@ class PdoOne
             foreach ($params as $k => &$v) {
                 $stmt->bindParam($k, $v, $this->getType($v)); // note, the second argument is &
             }
+            unset($v);
         } else {
             // parameters numeric (aka col=?)
             $this->lastBindParam = [];
@@ -2449,7 +1709,7 @@ class PdoOne
      * @return string
      *
      */
-    public static function queryCommand($sql, $returnType = false): string
+    public static function queryCommand(string $sql, bool $returnType = false): string
     {
         if (!$sql) {
             return $returnType ? 'dml' : 'dql';
@@ -2474,7 +1734,7 @@ class PdoOne
      * @throws Exception
      * @see \eftec\PdoOne::runRawQuery
      */
-    private function runRawQueryParamLess($rawSql, $returnArray)
+    private function runRawQueryParamLess(string $rawSql, bool $returnArray)
     {
         $this->beginTry();
         // the "where" chain doesn't have parameters.
@@ -2515,7 +1775,7 @@ class PdoOne
      * @return PDOStatement returns the statement if correct otherwise null
      * @throws Exception
      */
-    public function prepare($sql)
+    public function prepare(string $sql)
     {
         $this->beginTry();
         if (!$this->isOpen) {
@@ -2620,7 +1880,7 @@ class PdoOne
      *     [1=>1],$this->pdoOne->select('1')->from('dual')->first(),'it
      *       must runs'
      */
-    public function runQuery($stmt, $namedArgument = null, $throwError = true): ?bool
+    public function runQuery(PDOStatement $stmt, ?array $namedArgument = null, bool $throwError = true): ?bool
     {
         $this->beginTry();
         if (!$this->isOpen) {
@@ -2667,7 +1927,7 @@ class PdoOne
      * @return string
      * @throws Exception
      */
-    public function generateCodeSelect($query): string
+    public function generateCodeSelect(string $query): string
     {
         $this->beginTry();
         $q = self::splitQuery($query);
@@ -2780,24 +2040,24 @@ class PdoOne
 
     /**
      * @param string      $table
-     * @param null|string $sql
+     * @param string|null $sql
      * @param bool        $defaultNull
      * @param bool        $inline
      * @param bool        $recursive
-     * @param null|array  $classRelations [optional] The relation table=>classname
+     * @param array|null  $classRelations [optional] The relation table=>classname
      * @param array       $relation       [optional] An optional custom relation of columns
      *
      * @return string
      * @throws Exception
      */
     public function generateCodeArray(
-        $table,
-        $sql = null,
-        $defaultNull = false,
-        $inline = true,
-        $recursive = false,
-        $classRelations = null,
-        $relation = []
+        string  $table,
+        ?string $sql = null,
+        bool    $defaultNull = false,
+        bool    $inline = true,
+        bool    $recursive = false,
+        ?array  $classRelations = null,
+        array   $relation = []
     ): string
     {
         $this->beginTry();
@@ -2841,7 +2101,7 @@ class PdoOne
                                 } else {
                                     $default = 'null';
                                 }
-                                if (!in_array($colName, $norepeat)) {
+                                if (!in_array($colName, $norepeat, true)) {
                                     if (isset($relation[$colName])) {
                                         $rc =& $relation[$colName];
                                         $key = $rc['key'];
@@ -2860,9 +2120,9 @@ class PdoOne
                             ? ' . $className . '::factory(null,$recursivePrefix.\'' . $colName . '\') 
                             : null';
                                         }
-                                        $result .= "'" . $colName . "'=>" . $default . ', /* ' . $key . '! */' . $ln;
+                                        $result .= "'$colName'=>$default, /* $key! */$ln";
                                     } else {
-                                        $result .= "'" . $colName . "'=>" . $default . ', /* onetomany */' . $ln;
+                                        $result .= "'$colName'=>$default, /* onetomany */$ln";
                                     }
                                     $norepeat[] = $colName;
                                 }
@@ -2880,7 +2140,7 @@ class PdoOne
                             ? ' . $className . '::factory(null,$recursivePrefix.\'' . self::$prefixBase . $name . '\') 
                             : null';
                         }
-                        if (!in_array($name, $norepeat)) {
+                        if (!in_array($name, $norepeat, true)) {
                             $namep = self::$prefixBase . $name;
                             if (isset($relation[$namep])) {
                                 /*array(5) {
@@ -2916,7 +2176,6 @@ class PdoOne
         return str_replace(",$ln]", "$ln]", $result);
     }
 
-    /** @noinspection PhpSameParameterValueInspection */
     /**
      * It returns an array with all the tables of the schema, also the foreign key and references  of each table<br>
      * <b>Example:</b>
@@ -2939,7 +2198,7 @@ class PdoOne
      * @return array
      * @throws Exception
      */
-    public function tableDependency($returnColumn = false, $forceLowerCase = false): ?array
+    public function tableDependency(bool $returnColumn = false, bool $forceLowerCase = false): ?array
     {
         $this->beginTry();
         if ($returnColumn) {
@@ -2998,7 +2257,7 @@ class PdoOne
      * @return bool|array
      * @throws Exception
      */
-    public function objectList($type = 'table', $onlyName = false)
+    public function objectList(string $type = 'table', bool $onlyName = false)
     {
         $this->beginTry();
         $query = $this->service->objectList($type, $onlyName);
@@ -3048,7 +2307,7 @@ class PdoOne
      * @return string
      * @throws Exception
      */
-    public function generateCodeCreate($tableName): string
+    public function generateCodeCreate(string $tableName): string
     {
         $this->beginTry();
         $code = "\$pdo->createTable('" . $tableName . "',\n";
@@ -3112,7 +2371,7 @@ class PdoOne
      * @param array|null    $columnRelations      An associative array to specific custom relations, such as PARENT<br>
      *                                            The key is the name of the columns and the value is the type of
      *                                            relation<br>
-     * @param null|string[] $classRelations       The postfix of the class. Usually it is Repo or Dao.
+     * @param string[]|null $classRelations       The postfix of the class. Usually it is Repo or Dao.
      *
      * @param array         $specialConversion    An associative array to specify a custom conversion<br>
      *                                            The key is the name of the columns and the value is the type of
@@ -3136,16 +2395,16 @@ class PdoOne
      */
     public function generateCodeClass(
         $tableName,
-        $namespace = '',
-        $columnRelations = null,
-        $classRelations = null,
-        $specialConversion = [],
-        $defNoInsert = null,
-        $defNoUpdate = null,
-        $baseClass = null,
-        $modelfullClass = '',
-        $extraCols = [],
-        $columnRemove = []
+        string $namespace = '',
+        ?array $columnRelations = null,
+        ?array $classRelations = null,
+        array $specialConversion = [],
+        ?array $defNoInsert = null,
+        ?array $defNoUpdate = null,
+        ?string $baseClass = null,
+        string $modelfullClass = '',
+        array $extraCols = [],
+        array $columnRemove = []
     )
     {
         $this->beginTry();
@@ -3546,7 +2805,7 @@ class PdoOne
      * @param string $pkFirst the first primary key (if any)
      * @return array=['key','refcol','reftable','extra','name'][$i] where the key of the array is the name of the column
      */
-    public function xxx($tableName, $pkFirst): array
+    public function xxx(string $tableName, string $pkFirst): array
     {
         try {
             $relation = $this->getDefTableFK($tableName, false, true);
@@ -3625,7 +2884,7 @@ class PdoOne
      * @return string
      * @see \eftec\PdoOne::addDelimiter to considers points
      */
-    public function addQuote($txt): string
+    public function addQuote(string $txt): string
     {
         if (strlen($txt) < 2) {
             return $txt;
@@ -3645,7 +2904,7 @@ class PdoOne
      * @return array
      * @throws Exception
      */
-    public function getDefIdentities($table): array
+    public function getDefIdentities(string $table): array
     {
         $this->beginTry();
         $r = $this->service->getDefTable($table);
@@ -3673,6 +2932,7 @@ class PdoOne
      * @return PdoOneQuery
      * @test InstanceOf
      *       PdoOne::class,this('field1=?,field2=?',[20,'hello'])
+     * @throws Exception
      */
     public function set($sqlOrArray, $param = PdoOne::NULL): PdoOneQuery
     {
@@ -3688,7 +2948,7 @@ class PdoOne
      * @return bool
      * @noinspection PhpUnusedParameterInspection
      */
-    public function hasWhere($having = false): bool
+    public function hasWhere(bool $having = false): bool
     {
         // there is not a query so it always returns false. This method is keep for compatibility with old code.
         return false;
@@ -3721,7 +2981,7 @@ class PdoOne
      * @throws Exception
      * @test equals false,(false),'transaction is not open'
      */
-    public function commit($throw = true): bool
+    public function commit(bool $throw = true): bool
     {
         $this->beginTry();
         if (!$this->transactionOpen && $throw) {
@@ -3746,7 +3006,7 @@ class PdoOne
      * @throws Exception
      * @test equals false,(false),'transaction is not open'
      */
-    public function rollback($throw = true): bool
+    public function rollback(bool $throw = true): bool
     {
         $this->beginTry();
         if (!$this->transactionOpen && $throw) {
@@ -3799,7 +3059,7 @@ class PdoOne
      * @see  \eftec\PdoOne::generateCodeClass
      * @see  \eftec\PdoOne::setEncryption
      */
-    public function generateCodeClassConversions($conversion = []): void
+    public function generateCodeClassConversions(array $conversion = []): void
     {
         $this->codeClassConversion = $conversion;
     }
@@ -3880,14 +3140,14 @@ class PdoOne
      * @see \eftec\PdoOne::generateCodeClassConversions
      */
     public function generateAllClasses(
-        $relations,
-        $baseClass,
-        $namespaces = '',
-        $folders = '',
-        $force = false,
-        $columnRelations = [],
-        $extraColumns = [],
-        $columnRemoves = []
+        array  $relations,
+        string $baseClass,
+               $namespaces = '',
+               $folders = '',
+        bool   $force = false,
+        array  $columnRelations = [],
+        array  $extraColumns = [],
+        array  $columnRemoves = []
     ): array
     {
         $internalCache = $this->useInternalCache;
@@ -4017,7 +3277,7 @@ class PdoOne
      * @param bool $useInternalCache
      * @return PdoOne
      */
-    public function setUseInternalCache($useInternalCache = true): PdoOne
+    public function setUseInternalCache(bool $useInternalCache = true): PdoOne
     {
         $this->useInternalCache = $useInternalCache;
         return $this;
@@ -4087,16 +3347,16 @@ class PdoOne
      * @noinspection PhpUnnecessaryCurlyVarSyntaxInspection
      */
     public function generateAbstractModelClass(
-        $tableName,
-        $namespace = '',
-        $customRelation = null,
-        $classRelations = null,
-        $specialConversion = [],
-        $defNoInsert = null,
-        $defNoUpdate = null,
-        $baseClass = null,
-        $extraColumn = [],
-        $columnRemove = []
+        string $tableName,
+        string $namespace = '',
+               $customRelation = null,
+               $classRelations = null,
+        array  $specialConversion = [],
+               $defNoInsert = null,
+               $defNoUpdate = null,
+               $baseClass = null,
+        array  $extraColumn = [],
+        array  $columnRemove = []
     )
     {
         $this->beginTry();
@@ -4331,14 +3591,14 @@ class PdoOne
      * @noinspection PhpUnnecessaryCurlyVarSyntaxInspection
      */
     public function generateModelClass(
-        $tableName,
-        $namespace = '',
-        $customRelation = null,
-        $classRelations = null,
-        $specialConversion = [],
-        $defNoInsert = null,
-        $defNoUpdate = null,
-        $baseClass = null
+        string $tableName,
+        string $namespace = '',
+               $customRelation = null,
+               $classRelations = null,
+        array  $specialConversion = [],
+               $defNoInsert = null,
+               $defNoUpdate = null,
+               $baseClass = null
     )
     {
         $this->beginTry();
@@ -4658,7 +3918,7 @@ class PdoOne
      *
      * @see \eftec\PdoOne::setUseInternalCache
      */
-    public function flushInternalCache($useInternalCache = false): void
+    public function flushInternalCache(bool $useInternalCache = false): void
     {
         $this->internalCacheCounter = 0;
         $this->internalCache = [];
@@ -4679,7 +3939,7 @@ class PdoOne
      *
      * @return void.
      */
-    public function setCache($uid, $family = '', $data = null, $ttl = null): void
+    public function setCache(string $uid, $family = '', $data = null, $ttl = null): void
     {
         if ($family === '*') {
             $family = $this->tables;
@@ -4733,11 +3993,11 @@ class PdoOne
     /**
      * Returns the last inserted identity.
      *
-     * @param null|string $sequenceName [optional] the name of the sequence
+     * @param string|null $sequenceName [optional] the name of the sequence
      *
      * @return int|bool a number or 0 if it is not found
      */
-    public function insert_id($sequenceName = null)
+    public function insert_id(?string $sequenceName = null)
     {
         if (!$this->isOpen) {
             return -1;
@@ -4757,11 +4017,11 @@ class PdoOne
     /**
      * It sets the cache service (optional).
      *
-     * @param IPdoOneCache $cacheService Instance of an object that implements IPdoOneCache
+     * @param IPdoOneCache|null $cacheService Instance of an object that implements IPdoOneCache
      *
      * @return $this
      */
-    public function setCacheService($cacheService): PdoOne
+    public function setCacheService(?IPdoOneCache $cacheService): PdoOne
     {
         $this->cacheService = $cacheService;
         return $this;
@@ -4785,7 +4045,7 @@ class PdoOne
      * @throws Exception
      * @test void this('123','somesalt','AES-256-CTR')
      */
-    public function setEncryption($password, $salt, $encMethod = 'AES-256-CTR'): PdoOne
+    public function setEncryption($password, string $salt, string $encMethod = 'AES-256-CTR'): PdoOne
     {
         $this->beginTry();
         if (!extension_loaded('openssl')) {
@@ -5141,7 +4401,7 @@ BOOTS;
      * @return bool
      * @throws Exception
      */
-    public function dropTable($tableName, $extra = ''): bool
+    public function dropTable(string $tableName, string $extra = ''): bool
     {
         $this->beginTry();
         $r = $this->drop($tableName, 'table', $extra);
@@ -5161,7 +4421,7 @@ BOOTS;
      * @return bool
      * @throws Exception
      */
-    public function drop($objectName, $type, $extra = ''): bool
+    public function drop(string $objectName, string $type, string $extra = ''): bool
     {
         $this->beginTry();
         $sql = "drop $type " . $this->addDelimiter($objectName) . " $extra";
@@ -5181,7 +4441,7 @@ BOOTS;
      * @return array|bool
      * @throws Exception
      */
-    public function truncate($tableName, $extra = '', $forced = false)
+    public function truncate(string $tableName, string $extra = '', bool $forced = false)
     {
         $this->beginTry();
         $r = $this->service->truncate($tableName, $extra, $forced);
@@ -5204,7 +4464,7 @@ BOOTS;
      *                              $this->errorText
      * @throws Exception
      */
-    public function callProcedure($procName, &$arguments = [], $outputColumns = [])
+    public function callProcedure(string $procName, array &$arguments = [], array $outputColumns = [])
     {
         $this->beginTry();
         try {
@@ -5227,7 +4487,7 @@ BOOTS;
      * @return array|bool|null
      * @throws Exception
      */
-    public function resetIdentity($tableName, $newValue = 0)
+    public function resetIdentity(string $tableName, int $newValue = 0)
     {
         $this->beginTry();
         $r = $this->service->resetIdentity($tableName, $newValue);
@@ -5252,7 +4512,7 @@ BOOTS;
      * @return bool
      * @throws Exception
      */
-    public function createSequence($tableSequence = null, $method = 'snowflake'): bool
+    public function createSequence(?string $tableSequence = null, string $method = 'snowflake'): bool
     {
         $this->beginTry();
         $tableSequence = ($tableSequence === null) ? $this->tableSequence : $tableSequence;
@@ -5298,7 +4558,7 @@ BOOTS;
      * @return false|int
      * @throws Exception
      */
-    public function createProcedure($procedureName, $arguments = [], $body = '', $extra = '')
+    public function createProcedure(string $procedureName, $arguments = [], string $body = '', string $extra = '')
     {
         $this->beginTry();
         $sql = $this->service->createProcedure($procedureName, $arguments, $body, $extra);
@@ -5327,9 +4587,9 @@ BOOTS;
      *                                            null']
      * @param string|null|array $primaryKey       The column's name that is primary key.<br>
      *                                            If the value is an associative array then it generates all keys
-     * @param string            $extra            An extra operation inside of
+     * @param string|null       $extra            An extra operation inside of
      *                                            the definition of the table.
-     * @param string            $extraOutside     An extra operation outside of
+     * @param string|null       $extraOutside     An extra operation outside of
      *                                            the definition of the
      *                                            table.<br> It replaces the
      *                                            default values outside of the
@@ -5339,11 +4599,11 @@ BOOTS;
      * @throws Exception
      */
     public function createTable(
-        $tableName,
-        $definition,
-        $primaryKey = null,
-        $extra = '',
-        $extraOutside = ''
+        string  $tableName,
+        array   $definition,
+                $primaryKey = null,
+        ?string $extra = '',
+        ?string $extraOutside = ''
     ): bool
     {
         $this->endTry();
@@ -5369,7 +4629,7 @@ BOOTS;
      * @return bool
      * @throws Exception
      */
-    public function runMultipleRawQuery($listSql, $continueOnError = false): bool
+    public function runMultipleRawQuery($listSql, bool $continueOnError = false): bool
     {
         $this->beginTry();
         if (!$this->isOpen) {
@@ -5431,7 +4691,7 @@ BOOTS;
      * @return bool
      * @throws Exception
      */
-    public function createFK($tableName, $definitions): bool
+    public function createFK(string $tableName, array $definitions): bool
     {
         $this->beginTry();
         $sql = $this->service->createFK($tableName, $definitions);
@@ -5452,7 +4712,7 @@ BOOTS;
      * @return bool true if the operation was successful, otherwise false.
      * @throws Exception
      */
-    public function createIndex($tableName, $definitions): bool
+    public function createIndex(string $tableName, array $definitions): bool
     {
         $this->beginTry();
         $sql = $this->service->createIndex($tableName, $definitions);
@@ -5501,7 +4761,7 @@ BOOTS;
      * @test exception this(false)
      * @see  PdoOne::connect()
      */
-    public function open($failIfConnected = true, $alterSession = false): void
+    public function open(bool $failIfConnected = true, bool $alterSession = false): void
     {
         $this->connect($failIfConnected, $alterSession);
     }
@@ -5523,11 +4783,11 @@ BOOTS;
     /**
      * It gets the primary key of a table
      *
-     * @param string $table     The name of the table
-     * @param string $pkDefault The default pk if the key is not found.
+     * @param string      $table     The name of the table
+     * @param string|null $pkDefault The default pk if the key is not found.
      * @return array|false|mixed|string
      */
-    public function getPK($table, $pkDefault = null)
+    public function getPK(string $table, ?string $pkDefault = null)
     {
         $this->beginTry();
         $r = $this->service->getPK($table, $pkDefault);
@@ -5556,9 +4816,9 @@ BOOTS;
      * @throws Exception
      */
     public function getSequence(
-        $asFloat = false,
-        $unpredictable = false,
-        $sequenceName = ''
+        bool   $asFloat = false,
+        bool   $unpredictable = false,
+        string $sequenceName = ''
     )
     {
         $this->beginTry();
@@ -5590,7 +4850,7 @@ BOOTS;
      * @return string
      * @see \eftec\PdoOne::getSequence
      */
-    public function getSequencePHP($unpredictable = false): string
+    public function getSequencePHP(bool $unpredictable = false): string
     {
         $ms = microtime(true);
         //$ms=1000;
@@ -5664,7 +4924,7 @@ BOOTS;
      * @return bool true if the table exist
      * @throws Exception
      */
-    public function tableExist($tableName): bool
+    public function tableExist(string $tableName): bool
     {
         $this->beginTry();
         $r = $this->objectExist($tableName);
@@ -5682,7 +4942,7 @@ BOOTS;
      * @return bool
      * @throws Exception
      */
-    public function objectExist($objectName, $type = 'table'): bool
+    public function objectExist(string $objectName, string $type = 'table'): bool
     {
         $this->beginTry();
         $query = $this->service->objectExist($type);
@@ -5713,7 +4973,7 @@ BOOTS;
      * @return array List of table.
      * @throws Exception
      */
-    public function tableSorted($maxLoop = 5, $returnProblems = false, $debugTrace = false): array
+    public function tableSorted(int $maxLoop = 5, bool $returnProblems = false, bool $debugTrace = false): array
     {
         $this->beginTry();
         list($tables, $after, $before) = $this->tableDependency();
@@ -5755,24 +5015,24 @@ BOOTS;
      * @return bool true if the sort is finished and there is nothing wrong.
      */
     protected function reSort(
-        $tables,
-        &$tableSorted,
-        $after,
-        $before,
-        &$tableProblems,
-        $debugTrace = false
+        array $tables,
+        array &$tableSorted,
+        array $after,
+        array $before,
+        array &$tableProblems,
+        bool  $debugTrace = false
     ): bool
     {
         shuffle($tables);
         $tableProblems = [];
         $nothingWrong = true;
         foreach ($tables as $k => $table) {
-            $pos = array_search($table, $tableSorted);
+            $pos = array_search($table, $tableSorted, true);
             // search for after in the wrong position
             $wrong = false;
             $pairProblem = '';
             for ($i = 0; $i < $pos; $i++) {
-                if (in_array($tableSorted[$i], $before[$table])) {
+                if (in_array($tableSorted[$i], $before[$table], true)) {
                     $wrong = true;
                     $nothingWrong = false;
                     $pairProblem = $tableSorted[$i];
@@ -5792,14 +5052,14 @@ BOOTS;
                 // We found the initial position to add.
                 $pInitial = 0;
                 foreach ($tableSorted as $k2 => $v2) {
-                    if (in_array($v2, $after[$table])) {
+                    if (in_array($v2, $after[$table], true)) {
                         $pInitial = $k2 + 1;
                     }
                 }
                 // we found the last position
                 $pEnd = count($tableSorted);
                 foreach ($tableSorted as $k2 => $v2) {
-                    if (in_array($v2, $before[$table])) {
+                    if (in_array($v2, $before[$table], true)) {
                         $pEnd = $k2 - 1;
                     }
                 }
@@ -5836,7 +5096,7 @@ BOOTS;
      *                    ['min','max','avg','sum','count']
      * @throws Exception
      */
-    public function statValue($tableName, $columnName)
+    public function statValue(string $tableName, string $columnName)
     {
         $this->beginTry();
         $query = "select min($columnName) min
@@ -5858,7 +5118,7 @@ BOOTS;
      * @return array|bool=['colname','coltype','colsize','colpres','colscale','iskey','isidentity','isnullable']
      * @throws Exception
      */
-    public function columnTable($tableName)
+    public function columnTable(string $tableName)
     {
         $this->beginTry();
         $query = $this->service->columnTable($tableName);
@@ -5875,7 +5135,7 @@ BOOTS;
      * @return array|bool
      * @throws Exception
      */
-    public function foreignKeyTable($tableName)
+    public function foreignKeyTable(string $tableName)
     {
         $this->beginTry();
         $query = $this->service->foreignKeyTable($tableName);
@@ -5891,7 +5151,7 @@ BOOTS;
      *
      * @return bool
      */
-    public function isQuery($sql): bool
+    public function isQuery(string $sql): bool
     {
         $sql = trim($sql);
         return (stripos($sql, 'select ') === 0 || stripos($sql, 'show ') === 0);
@@ -5930,7 +5190,7 @@ BOOTS;
      *      ->insert();
      *</pre>
      *
-     * @param null|string       $tableName
+     * @param string|null       $tableName
      * @param string[]|null     $tableDef
      * @param string[]|int|null $values
      *
@@ -5938,9 +5198,9 @@ BOOTS;
      * @throws Exception
      */
     public function insert(
-        $tableName = null,
-        $tableDef = null,
-        $values = PdoOne::NULL
+        ?string $tableName = null,
+        ?array  $tableDef = null,
+               $values = PdoOne::NULL
     )
     {
         $this->beginTry();
@@ -5954,7 +5214,7 @@ BOOTS;
      * It returns an array with the metadata of each columns (i.e. name, type,
      * size, etc.) or false if error.
      *
-     * @param null|string $sql     If null then it uses the generation of query
+     * @param string|null $sql     If null then it uses the generation of query
      *                             (if any).<br> if string then get the
      *                             statement of the query
      *
@@ -5963,7 +5223,7 @@ BOOTS;
      * @return array|bool
      * @throws Exception
      */
-    public function toMeta($sql = null, $args = [])
+    public function toMeta(?string $sql = null, array $args = [])
     {
         $this->beginTry();
         $query = new PdoOneQuery($this);
@@ -5983,7 +5243,7 @@ BOOTS;
      * @return PdoOneQuery
      * @see \eftec\PdoOne::$errorText
      */
-    public function genError($error = false): PdoOneQuery
+    public function genError(bool $error = false): PdoOneQuery
     {
         return (new PdoOneQuery($this))->genError($error);
     }
@@ -6004,7 +5264,7 @@ BOOTS;
      * @return float|int
      * @throws Exception
      */
-    public function min($sql = '', $arg = '')
+    public function min(string $sql = '', string $arg = '')
     {
         return (new PdoOneQuery($this))->_aggFn('min', $sql, $arg);
     }
@@ -6028,7 +5288,7 @@ BOOTS;
      * @return int|float
      * @throws Exception
      */
-    public function count($sql = '', $arg = '*')
+    public function count(?string $sql = '', string $arg = '*')
     {
         return (new PdoOneQuery($this))->_aggFn('count', $sql, $arg);
     }
@@ -6050,7 +5310,7 @@ BOOTS;
      * @return float|int
      * @throws Exception
      */
-    public function sum($sql = '', $arg = '')
+    public function sum(string $sql = '', string $arg = '')
     {
         return (new PdoOneQuery($this))->_aggFn('sum', $sql, $arg);
     }
@@ -6071,7 +5331,7 @@ BOOTS;
      * @return float|int
      * @throws Exception
      */
-    public function max($sql = '', $arg = '')
+    public function max(string $sql = '', string $arg = '')
     {
         return (new PdoOneQuery($this))->_aggFn('max', $sql, $arg);
     }
@@ -6092,7 +5352,7 @@ BOOTS;
      * @return float|int
      * @throws Exception
      */
-    public function avg($sql = '', $arg = '')
+    public function avg(string $sql = '', string $arg = '')
     {
         return (new PdoOneQuery($this))->_aggFn('avg', $sql, $arg);
     }
@@ -6110,13 +5370,13 @@ BOOTS;
      * </pre>
      *
      * @param string      $sql    Input SQL query
-     * @param null|string $schema The schema/database of the table without trailing dot.<br>
+     * @param string|null $schema The schema/database of the table without trailing dot.<br>
      *                            Example 'database' or 'database.dbo'
      *
      * @return PdoOneQuery
      * @test InstanceOf PdoOne::class,this('table t1')
      */
-    public function from($sql, $schema = null): PdoOneQuery
+    public function from(string $sql, ?string $schema = null): PdoOneQuery
     {
         return (new PdoOneQuery($this))->from($sql, $schema);
     }
@@ -6135,7 +5395,7 @@ BOOTS;
      * @return false|int
      * @throws Exception
      */
-    public function insertObject($tableName, &$object, $excludeColumn = [])
+    public function insertObject(string $tableName, &$object, array $excludeColumn = [])
     {
         return (new PdoOneQuery($this))->insertObject($tableName, $object, $excludeColumn);
     }
@@ -6158,9 +5418,9 @@ BOOTS;
      * @throws Exception
      */
     public function delete(
-        $tableName = null,
-        $tableDefWhere = null,
-        $valueWhere = PdoOne::NULL
+        ?string $tableName = null,
+        ?array  $tableDefWhere = null,
+               $valueWhere = PdoOne::NULL
     )
     {
         return (new PdoOneQuery($this))->delete($tableName, $tableDefWhere, $valueWhere);
@@ -6190,11 +5450,11 @@ BOOTS;
      * @throws Exception
      */
     public function update(
-        $tableName = null,
-        $tableDef = null,
-        $values = PdoOne::NULL,
-        $tableDefWhere = null,
-        $valueWhere = PdoOne::NULL
+        ?string $tableName = null,
+        ?array  $tableDef = null,
+               $values = PdoOne::NULL,
+        ?array  $tableDefWhere = null,
+               $valueWhere = PdoOne::NULL
     )
     {
         return (new PdoOneQuery($this))->update($tableName, $tableDef, $values, $tableDefWhere, $valueWhere);
@@ -6213,7 +5473,7 @@ BOOTS;
      * @return PdoOneQuery
      * @test InstanceOf PdoOne::class,this('table2 on table1.t1=table2.t2')
      */
-    public function right($sql): PdoOneQuery
+    public function right(string $sql): PdoOneQuery
     {
         return (new PdoOneQuery($this))->right($sql);
     }
@@ -6233,7 +5493,7 @@ BOOTS;
      * @return PdoOneQuery
      * @test InstanceOf PdoOne::class,this('table2 on table1.t1=table2.t2')
      */
-    public function left($sql): PdoOneQuery
+    public function left(string $sql): PdoOneQuery
     {
         return (new PdoOneQuery($this))->left($sql);
     }
@@ -6259,14 +5519,14 @@ BOOTS;
      * @param bool         $isHaving     if true then it is a HAVING sql commando
      *                                   instead of a WHERE.
      *
-     * @param null|string  $tablePrefix
+     * @param string|null  $tablePrefix
      *
      * @return PdoOneQuery
      * @see  http://php.net/manual/en/mysqli-stmt.bind-param.php for types
      * @test InstanceOf
      *       PdoOne::class,this('field1=?,field2=?',[20,'hello'])
      */
-    public function where($sql, $param = PdoOne::NULL, $isHaving = false, $tablePrefix = null): PdoOneQuery
+    public function where($sql, $param = PdoOne::NULL, bool $isHaving = false, ?string $tablePrefix = null): PdoOneQuery
     {
         return (new PdoOneQuery($this))->where($sql, $param, $isHaving, $tablePrefix);
     }
@@ -6312,7 +5572,7 @@ BOOTS;
      * @return PdoOneQuery
      * @test InstanceOf PdoOne::class,this('tablejoin on t1.field=t2.field')
      */
-    public function join($sql, $condition = ''): PdoOneQuery
+    public function join(string $sql, string $condition = ''): PdoOneQuery
     {
         return (new PdoOneQuery($this))->join($sql, $condition);
     }
@@ -6327,7 +5587,7 @@ BOOTS;
      * @return PdoOneQuery
      * @test InstanceOf PdoOne::class,this('fieldgroup')
      */
-    public function group($sql): PdoOneQuery
+    public function group(string $sql): PdoOneQuery
     {
         return (new PdoOneQuery($this))->group($sql);
     }
@@ -6345,7 +5605,7 @@ BOOTS;
      * @return PdoOneQuery
      * @test InstanceOf PdoOne::class,this('name desc')
      */
-    public function order($sql): PdoOneQuery
+    public function order(string $sql): PdoOneQuery
     {
         return (new PdoOneQuery($this))->order($sql);
     }
@@ -6365,7 +5625,7 @@ BOOTS;
      * @throws Exception
      * @test InstanceOf PdoOne::class,this('1,10')
      */
-    public function limit($sql): PdoOneQuery
+    public function limit(string $sql): PdoOneQuery
     {
         return (new PdoOneQuery($this))->limit($sql);
     }
@@ -6383,7 +5643,7 @@ BOOTS;
      * @return PdoOneQuery
      * @test InstanceOf PdoOne::class,this()
      */
-    public function distinct($sql = 'distinct'): PdoOneQuery
+    public function distinct(string $sql = 'distinct'): PdoOneQuery
     {
         return (new PdoOneQuery($this))->distinct($sql);
     }
@@ -6476,7 +5736,7 @@ BOOTS;
      * @param bool $memoryKV
      * @return bool
      */
-    public function createTableKV($memoryKV = false): bool
+    public function createTableKV(bool $memoryKV = false): bool
     {
         if ($this->tableKV === '') {
             throw new RuntimeException('CreateTableKV,ou must set the table so you can use it');
@@ -6510,10 +5770,11 @@ BOOTS;
     /**
      * It gets a value from a key-value storage
      * @param string $key
+     * @param mixed  $valueIfNotFound
      * @return mixed The value if found. the valueIfNotfound if not found, or null in case of error.
      * @throws Exception
      */
-    public function getKV($key, $valueIfNotFound = null)
+    public function getKV(string $key, $valueIfNotFound = null)
     {
         $sql = "select KEYT,VALUE,TIMESTAMP from $this->tableKV where KEYT=?";
         // ["KEYT"]=> string(5) "hello" ["VALUE"]=> string(13) "it is a value" ["TIMESTAMP"]=> string(19) "2022-02-09 19:08:20"
@@ -6546,7 +5807,7 @@ BOOTS;
      * @return bool
      * @throws Exception
      */
-    public function setKV($key, $value, $timeout = null): bool
+    public function setKV(string $key, string $value, $timeout = null): bool
     {
         $t = time();
         $row = $this->runRawQuery("select 1 from $this->tableKV where KEYT=:KEYT"
@@ -6602,7 +5863,7 @@ BOOTS;
      * @return bool
      * @throws Exception
      */
-    public function delKV($key): bool
+    public function delKV(string $key): bool
     {
         try {
             $this->runRawQuery("delete from $this->tableKV where KEYT=:KEYT", ['KEYT' => $key]);
@@ -6640,7 +5901,7 @@ BOOTS;
      * @return bool|null
      * @throws Exception
      */
-    public function existKV($key): ?bool
+    public function existKV(string $key): ?bool
     {
         try {
             $t = time();
@@ -6655,34 +5916,6 @@ BOOTS;
         return isset($row[0]);
     }
 
-    public static function findVendorPath($initPath = null): string
-    {
-        $initPath = $initPath ?: __DIR__;
-        $prefix = '';
-        $defaultvendor = $initPath;
-        // finding vendor
-        for ($i = 0; $i < 6; $i++) {
-            if (@file_exists("$initPath/{$prefix}vendor/autoload.php")) {
-                $defaultvendor = "{$prefix}vendor";
-                break;
-            }
-            $prefix .= '../';
-        }
-        return $defaultvendor;
-    }
-    //</editor-fold>
-}
 
-// this code only runs on CLI but only if PdoOne is called directly and via command line.
-if (!defined('PHPUNIT_COMPOSER_INSTALL') && !defined('__PHPUNIT_PHAR__')
-    && isset($_SERVER['PHP_SELF']) && basename($_SERVER['PHP_SELF']) === 'PdoOne.php'
-    && PdoOne::isCli()
-) {
-    // we also excluded it if it is called by phpunit.
-    $path = PdoOne::findVendorPath();
-    /** @noinspection PhpIncludeInspection */
-    include __DIR__ . '/' . $path . '/autoload.php';
-    $pdo = new PdoOne('test', '127.0.0.1', 'root', 'root', 'db'); // mockup database connection
-    /** @noinspection PhpUnhandledExceptionInspection */
-    $pdo->cliEngine();
+    //</editor-fold>
 }

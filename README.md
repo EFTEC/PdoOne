@@ -1357,50 +1357,39 @@ $pdoOne->logFile=true;
 ![](examples/cli.jpg)
 
 
-```
- _____    _       _____
-|  _  | _| | ___ |     | ___  ___
-|   __|| . || . ||  |  ||   || -_|
-|__|   |___||___||_____||_|_||___|  1.28.1
-
-Syntax:php PdoOne.php <args>
--database [$database]
-    Example: (mysql/sqlsrv/oracle/test)
--server [$server]
-    Example mysql: 127.0.0.1 , 127.0.0.1:3306
-    Example sqlsrv: (local)\sqlexpress 127.0.0.1\sqlexpress
--user The username to access to the database [$user]
-    Example: root, su
--pwd The password to access to the database [***]
-    Example: abc.123
--db The database/schema [$db]
-    Example: sakila
--input The input value.[$input]
-    Example: "select * from table" = it runs a query
-    Example: "table" = it runs a table (it could generates a query automatically)
--output The result value. [$output]
-    classcode: it returns php code with a CRUDL class
-    selectcode: it shows a php code with a select
-    arraycode: it shows a php code with the definition of an array Ex: ['idfield'=0,'name'=>'']
-    csv: it returns a csv result
-    json: it returns the value of the queries as json
--pk [optional] the primary key. It is requerido for SQLSERVER and output classcode [$pk]
-    Example: "customerid"    
-
-```
 
 
 ### Run as cli
 
 Execute the next line (in the lib folder)
 
-> php PdoOne.php <arg>
+> php pdoonecli.php <arg>
 
 (or pointing to the right folder)
 
-> php /var/web/vendor/eftec/lib/PdoOne.php <arg>
+> php /var/web/vendor/eftec/lib/pdoonecli.php <arg>
 
-Note: It requires entering all arguments (-database, -server, etc.)
+### Run as CLI interative
+
+You could use the flag "-i" to enter in interactive mode.
+
+You could use the TAB key to autocomplete values (if any).
+
+
+
+![](examples/cli2.jpg)
+
+Note: You could also save and load the configuration.
+
+### Run CLI to generate repository classes.
+
+You could use the flag "-cli" to generate the repository classes
+
+![](examples/cli3.jpg)
+
+The CLI is interactive and it allows to load and save the configuration.
+
+
 
 ### cli-classcode
 
@@ -1409,9 +1398,9 @@ The functionality will generate a ready-to-use repository class.
 Let's say the next example
 
 > mysql:  
-> php pdoone.php -database mysql -server 127.0.0.1:3306 -user root -pwd abc.123 -db sakila -input "Actor" -output classcode  
+> php pdoone.php --database mysql --server 127.0.0.1:3306 --user root -p abc.123 -db sakila --input "Actor" --output classcode  
 > sqlsrv:  
-> php pdoone.php -database sqlsrv -server PCJC\SQLEXPRESS -user sa -pwd abc.123 -db sakila -input "Actor" -output classcode
+> php pdoone.php --database sqlsrv --server PCJC\SQLEXPRESS --user sa -p abc.123 -db sakila --input "Actor" --output classcode
 
 It will connect to the database mysql, ip: 127.0.0.1 and database sakila, and it will read the "actor" table.
 
@@ -2022,6 +2011,9 @@ In a nutshell:
 >
 > Every decimal version means that it patches/fixes/refactoring a previous functionality i.e. 1.5.0 -> 1.5.1 (fix)
 
+* 2.26 2022-02-19
+  * **[core]** **[new]** added more type hiting for the arguments for safety and stability of the tool.
+  * **[cli]** now the CLI is located a different file called pdoonecli.php.  Also the CLI has more features than before, including the generation of the OOP classes.
 * 2.25 2022-02-01
   * **[core]** **[new]** Key-Value functionalities:setKvDefaultTable(),kv(),createTableKV(),dropTableKV(),getKV(),setKV(),garbageCollectorKV(),delKV(),flushKV(),existKV()
   * **[core]** **[new]** createIndex()

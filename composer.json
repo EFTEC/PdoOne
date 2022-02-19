@@ -22,13 +22,14 @@
   },
   "autoload-dev": {
     "psr-4": {
-      "eftec\\tests\\": "tests/"
+      "eftec\\tests\\": "tests/",
+      "eftec\\examples\\": "examples/"
     }
   },
   "require": {
     "php": ">=7.2.5",
     "ext-json": "*",
-    "eftec/clione": "^1.5",
+    "eftec/clione": "^1.6.1",
     "ext-pdo": "*",
     "ext-readline": "*",
     "eftec/messagecontainer": "^2.4"

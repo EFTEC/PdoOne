@@ -1,4 +1,5 @@
-<?php /** @noinspection ReturnTypeCanBeDeclaredInspection */
+<?php /** @noinspection UnnecessaryCastingInspection */
+/** @noinspection ReturnTypeCanBeDeclaredInspection */
 /** @noinspection PhpMissingReturnTypeInspection */
 /** @noinspection PhpMissingParamTypeInspection */
 /** @noinspection PhpComposerExtensionStubsInspection */
