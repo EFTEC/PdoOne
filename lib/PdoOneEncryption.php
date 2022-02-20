@@ -18,7 +18,7 @@ use RuntimeException;
  * @version 2.22.1 2022-01-30
  * @package eftec
  * @author Jorge Castro Castillo
- * @copyright (c) Jorge Castro C. MIT License  https://github.com/EFTEC/PdoOne
+ * @copyright (c) Jorge Castro C. Dual Licence: MIT and Commercial License  https://github.com/EFTEC/PdoOne
  * @see https://github.com/EFTEC/PdoOne
  */
 class PdoOneEncryption

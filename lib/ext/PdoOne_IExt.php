@@ -9,7 +9,7 @@ use Exception;
  *
  * @package       eftec\ext
  * @author        Jorge Castro Castillo
- * @copyright (c) Jorge Castro C. MIT License  https://github.com/EFTEC/PdoOne
+ * @copyright (c) Jorge Castro C. Dual Licence: MIT and Commercial License  https://github.com/EFTEC/PdoOne
  * @see           https://github.com/EFTEC/PdoOne
  */
 interface PdoOne_IExt

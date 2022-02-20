@@ -118,7 +118,7 @@ abstract class AbstractTableGrandChildRepo extends TestDb
         }
         		$row['idgrandchildPK']=isset($row['idgrandchildPK']) ? (int)$row['idgrandchildPK'] : null;
 		!isset($row['NameGrandChild']) and $row['NameGrandChild']=null; // varchar
-        
+
     }
 
     /**
@@ -243,7 +243,7 @@ abstract class AbstractTableGrandChildRepo extends TestDb
     * @return array|bool|null
     * @throws Exception
     */
-    public static function toList($filter=PdoOne::NULL,$filterValue=null) {
+    public static function toList($filter=PdoOne::NULL, array $filterValue=null) {
         if(self::$useModel) {
             return TableGrandChildModel::fromArrayMultiple( self::_toList($filter, $filterValue));
         }
@@ -289,7 +289,7 @@ abstract class AbstractTableGrandChildRepo extends TestDb
     * @throws Exception
     * @test InstanceOf PdoOne::class,this('1,10')
     */
-    public static function limit($sql)
+    public static function limit(string $sql)
     {
         return static::newQuery()->limit($sql);
     }
@@ -408,11 +408,11 @@ abstract class AbstractTableGrandChildRepo extends TestDb
         $row= [
 		'idgrandchildPK'=>0,
 		'_TableChild'=>(in_array($recursivePrefix.'_TableChild',$recursive,true))
-		                            ? [] 
+		                            ? []
 		                            : null, /* ONETOMANY! */
 		'NameGrandChild'=>''
 		];
-        
+
         if ($values !== null) {
             $row = array_merge($row, $values);
         }

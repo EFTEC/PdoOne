@@ -1,33 +1,9 @@
-<?php /** @noinspection PhpUnused */
+<?php /** @noinspection PhpRedundantVariableDocTypeInspection */
+/** @noinspection SqlDialectInspection */
+/** @noinspection SqlNoDataSourceInspection */
+/** @noinspection PhpUnused */
 /** @noinspection PhpConditionAlreadyCheckedInspection */
-/**
- * @noinspection GrazieInspection
- * @noinspection PhpSameParameterValueInspection
- * @noinspection StrStartsWithCanBeUsedInspection
- * @noinspection ShortListSyntaxCanBeUsedInspection
- * @noinspection PhpSwitchCanBeReplacedWithMatchExpressionInspection
- * @noinspection StrContainsCanBeUsedInspection
- * @noinspection AccessModifierPresentedInspection
- * @noinspection PhpStrFunctionsInspection
- * @noinspection JsonEncodingApiUsageInspection
- * @noinspection NullCoalescingOperatorCanBeUsedInspection
- * @noinspection PhpMissingFieldTypeInspection
- * @noinspection PhpUnusedLocalVariableInspection
- * @noinspection PhpArrayShapeAttributeCanBeAddedInspection
- * @noinspection PhpPureAttributeCanBeAddedInspection
- * @noinspection UnnecessaryCastingInspection
- * @noinspection OnlyWritesOnParameterInspection
- * @noinspection PhpRedundantVariableDocTypeInspection
- * @ noinspection UnknownInspectionInspection
- * @ noinspection OnlyWritesOnParameterInspection
- * @ noinspection TypeUnsafeComparisonInspection
- * @ noinspection NestedTernaryOperatorInspection
- * @ noinspection DuplicatedCode
- * @ noinspection SqlDialectInspection
- * @ noinspection SqlWithoutWhere
- * @ noinspection SqlResolve
- * @ noinspection SqlNoDataSourceInspection
- */
+
 
 namespace eftec;
 
@@ -50,7 +26,7 @@ use stdClass;
  * @see           https://github.com/EFTEC/PdoOne
  * @package       eftec
  * @author        Jorge Castro Castillo
- * @copyright (c) Jorge Castro C. MIT License  https://github.com/EFTEC/PdoOne
+ * @copyright (c) Jorge Castro C. Dual Licence: MIT and Commercial License  https://github.com/EFTEC/PdoOne
  * @version       2.26
  */
 class PdoOne
@@ -183,7 +159,7 @@ class PdoOne
     /**
      * @var array
      * @see \eftec\PdoOne::generateCodeClassConversions
-     * @see \eftec\PdoOne::generateCodeClass
+     * @see \eftec\PdoOne::generateAbstractClass
      */
     public $codeClassConversion = [];
     //</editor-fold>
@@ -1175,7 +1151,7 @@ class PdoOne
                 }
                 $head = rtrim($head, ',') . "\n";
                 $r = $head;
-                foreach ($result as $k => $row) {
+                foreach ($result as $row) {
                     $line = '';
                     foreach ($row as $cell) {
                         $line .= self::fixCsv($cell) . ',';
@@ -1201,7 +1177,7 @@ class PdoOne
             case 'createcode':
                 return $this->generateCodeCreate($input);
             case 'classcode':
-                return $this->generateCodeClass($input, $namespace);
+                return $this->generateAbstractClass($input, $namespace);
             default:
                 return "Output $output not defined. Use csv/json/selectcode/arraycode/createcode/classcode";
         }
@@ -1350,7 +1326,7 @@ class PdoOne
     public function custom_exception_handler($exception, ?string $customMessage = null, bool $returnAsString = false): string
     {
         $isCli = !http_response_code();
-        $customMessage = $customMessage === null ? $exception->getMessage() : $customMessage;
+        $customMessage = $customMessage ?? $exception->getMessage();
         $r = "Uncaught Exception: [" . get_class($exception) . "] code:" . $exception->getCode() . "\n"
             . $customMessage . "\n";
         if ($this->logLevel > 2) {
@@ -1534,11 +1510,11 @@ class PdoOne
         return $txt;
     }
 
-    private function strposa($haystack, $needles = [], $offset = 0)
+    private function strposa($haystack, $needles = [])
     {
         $chr = [];
         foreach ($needles as $needle) {
-            $res = strpos($haystack, $needle, $offset);
+            $res = strpos($haystack, $needle);
             if ($res !== false) {
                 $chr[$needle] = $res;
             }
@@ -1888,7 +1864,7 @@ class PdoOne
             return null;
         }
         try {
-            $r = $stmt->execute($namedArgument);
+            $r = @$stmt->execute($namedArgument);
         } catch (Exception $ex) {
             //@$stmt->closeCursor();
             $this->throwError($this->databaseType . ':Failed to run query', $this->lastQuery,
@@ -2049,6 +2025,8 @@ class PdoOne
      *
      * @return string
      * @throws Exception
+     * @noinspection OnlyWritesOnParameterInspection
+     * @noinspection PhpUnusedLocalVariableInspection
      */
     public function generateCodeArray(
         string  $table,
@@ -2068,8 +2046,7 @@ class PdoOne
         $r = $query->toMeta($sql);
         $ln = ($inline) ? '' : "\n";
         if ($recursive) {
-            /** @noinspection PhpUnusedLocalVariableInspection */
-            list($tables, $after, $before) = $this->tableDependency(true);
+            [$tables, $after, $before] = $this->tableDependency(true);
         } else {
             $tables = null;
             $after = null;
@@ -2089,7 +2066,7 @@ class PdoOne
                 $result .= "'" . $name . "'=>" . $default . ',' . $ln;
                 if ($recursive) {
                     if (isset($before[$table][$name])) {
-                        foreach ($before[$table][$name] as $k => $v3) {
+                        foreach ($before[$table][$name] as $v3) {
                             if ($v3[1]
                                 && $v3[0][0] !== self::$prefixBase
                             ) { // before is defined as [colremote,tableremote]
@@ -2393,7 +2370,7 @@ class PdoOne
      * @return string|string[]
      * @throws Exception
      */
-    public function generateCodeClass(
+    public function generateAbstractClass(
         $tableName,
         string $namespace = '',
         ?array $columnRelations = null,
@@ -2603,7 +2580,7 @@ class PdoOne
             }
             if ($conversion !== null) {
                 if (is_array($conversion)) {
-                    list($input, $output) = $conversion;
+                    [$input, $output] = $conversion;
                 } else {
                     $input = $conversion;
                     $output = $input;
@@ -2741,7 +2718,6 @@ class PdoOne
         }
         if ($pk) {
             // we never update the primary key.
-            /** @noinspection AdditionOperationOnArraysInspection */
             $noUpdate += $pk; // it adds and replaces duplicates, indexes are ignored.
         }
         $relation2 = [];
@@ -2805,7 +2781,7 @@ class PdoOne
      * @param string $pkFirst the first primary key (if any)
      * @return array=['key','refcol','reftable','extra','name'][$i] where the key of the array is the name of the column
      */
-    public function xxx(string $tableName, string $pkFirst): array
+    public function getRelations(string $tableName, string $pkFirst): array
     {
         try {
             $relation = $this->getDefTableFK($tableName, false, true);
@@ -2985,7 +2961,7 @@ class PdoOne
     {
         $this->beginTry();
         if (!$this->transactionOpen && $throw) {
-            $this->throwError('Transaction not open to commit()', '');
+            $this->throwError('Transaction is not open to commit()', '');
             return false;
         }
         if (!$this->isOpen) {
@@ -3056,7 +3032,7 @@ class PdoOne
      * @param array $conversion An associative array where the key is the type and the value is the conversion.
      *
      * @link https://github.com/EFTEC/PdoOne
-     * @see  \eftec\PdoOne::generateCodeClass
+     * @see  \eftec\PdoOne::generateAbstractClass
      * @see  \eftec\PdoOne::setEncryption
      */
     public function generateCodeClassConversions(array $conversion = []): void
@@ -3153,13 +3129,13 @@ class PdoOne
         $internalCache = $this->useInternalCache;
         $this->setUseInternalCache();
         if (is_array($folders)) {
-            list($folder, $folderModel) = $folders;
+            [$folder, $folderModel] = $folders;
         } else {
             $folder = $folders;
             $folderModel = $folders;
         }
         if (is_array($namespaces)) {
-            list($namespace, $namespaceModel) = $namespaces;
+            [$namespace, $namespaceModel] = $namespaces;
         } else {
             $namespace = $namespaces;
             $namespaceModel = $namespaces;
@@ -3204,10 +3180,10 @@ class PdoOne
                 $modelname = '';
             }
             try {
-                $custom = (isset($columnRelations[$tableName])) ? $columnRelations[$tableName] : [];
-                $extraCols = (isset($extraColumns[$tableName])) ? $extraColumns[$tableName] : [];
-                $columnRem = (isset($columnRemoves[$tableName])) ? $columnRemoves[$tableName] : [];
-                $classCode1 = $this->generateCodeClass($tableName, $namespace, $custom, $relationsRepo, [], null, null,
+                $custom = $columnRelations[$tableName] ?? [];
+                $extraCols = $extraColumns[$tableName] ?? [];
+                $columnRem = $columnRemoves[$tableName] ?? [];
+                $classCode1 = $this->generateAbstractClass($tableName, $namespace, $custom, $relationsRepo, [], null, null,
                     $baseClass, $modelname, $extraCols, $columnRem);
                 $result = @file_put_contents($folder . "Abstract$className.php", $classCode1);
             } catch (Exception $e) {
@@ -3218,11 +3194,23 @@ class PdoOne
                     . json_encode(error_get_last());
             }
             // creating model
+            $resultcolumns=[];
+            try {
+                // we need to generate it to obtain resultcolumns
+                $classModel1 = $this->generateAbstractModelClass($tableName, $namespaceModel, $custom,
+                    $relationsModel, [], null, null, $baseClass, $extraCols, $columnRem, $resultcolumns);
+            } catch (Exception $e) {
+                $result = false;
+                $classModel1='error '.$e->getMessage();
+            }
+            if ($result === false) {
+                $logs[] = "Error: Unable to save Abstract Model Class file '{$folder}Abstract"
+                    . $relationsModel[$tableName] . ".php' " . json_encode(error_get_last());
+            }
             if ($useModel) {
                 try {
                     //$custom = (isset($customRelation[$tableName])) ? $customRelation[$tableName] : [];
-                    $classModel1 = $this->generateAbstractModelClass($tableName, $namespaceModel, $custom,
-                        $relationsModel, [], null, null, $baseClass, $extraCols, $columnRem);
+
                     $result = @file_put_contents($folderModel . 'Abstract' . $relationsModel[$tableName] . '.php',
                         $classModel1);
                 } catch (Exception $e) {
@@ -3250,7 +3238,12 @@ class PdoOne
             }
             try {
                 $filename = $folder . $className . '.php';
-                $classCode2 = $this->generateCodeClassRepo($tableName, $namespace, $relationsRepo, $modelname);
+                $classCode2 = $this->generateCodeClassRepo($tableName,
+                    $namespace,
+                    $relationsRepo,
+                    $modelname,
+                    $resultcolumns
+                );
                 if ($force || @!file_exists($filename)) {
                     // if the file exists then, we don't want to replace this class
                     $result = @file_put_contents($filename, $classCode2);
@@ -3341,7 +3334,7 @@ class PdoOne
      * @param null   $baseClass
      * @param array  $extraColumn
      * @param array  $columnRemove
-     *
+     * @param array  $resultColumns
      * @return string|string[]
      * @throws Exception
      * @noinspection PhpUnnecessaryCurlyVarSyntaxInspection
@@ -3356,9 +3349,11 @@ class PdoOne
                $defNoUpdate = null,
                $baseClass = null,
         array  $extraColumn = [],
-        array  $columnRemove = []
+        array  $columnRemove = [],
+        array  &$resultColumns = []
     )
     {
+        $resultColumns=[];
         $this->beginTry();
         $filename = __DIR__ . '/template/template_abstractmodel.php';
         $r = $this->phpstart . $this->openTemplate($filename);
@@ -3391,7 +3386,7 @@ class PdoOne
         $pk = '??';
         $pk = $this->service->getPK($tableName, $pk);
         $pkFirst = (is_array($pk) && count($pk) > 0) ? $pk[0] : null;
-        $relation = $this->xxx($tableName, $pkFirst);
+        $relation = $this->getRelations($tableName, $pkFirst);
         if ($customRelation) {
             foreach ($relation as $k => $rel) {
                 if (isset($customRelation[$k])) {
@@ -3454,12 +3449,14 @@ class PdoOne
                 case 'string':
                 case 'time':
                 case 'timestamp':
+                    $resultColumns[]=[$varn,$field['phptype'],null];
                     $fields[] = "\t/** @var " . $field['phptype'] . " \$$varn  */\n\tpublic \$$varn;";
                     $fieldsb[] = "\t\t\$obj->$varn=isset(\$array['$varn']) ?  \$array['$varn'] : null;";
                     break;
             }
         }
         foreach ($extraColumn as $varn => $value) {
+            $resultColumns[]=[$varn,'mixed',null];
             $fields[] = "\t/** @var mixed \$$varn extra column: $value */\n\tpublic \$$varn;";
             $fieldsb[] = "\t\t\$obj->$varn=isset(\$array['$varn']) ?  \$array['$varn'] : null;";
         }
@@ -3474,43 +3471,33 @@ class PdoOne
                     break;
                 case 'MANYTOONE':
                     $class = $classRelations[$field['reftable']];
-                    $field2s[] = "\t/** @var $class \$$varn manytoone */
-    public \$$varn;";
-                    $field2sb[] = "\t\t\$obj->$varn=isset(\$array['$varn']) ? 
-            \$obj->$varn=$class::fromArray(\$array['$varn']) 
-            : null; // manytoone";
+                    $resultColumns[]=[$varn,$field['key'],$class];
+                    $field2s[] = "\t/** @var $class \$$varn manytoone */\n\tpublic \$$varn;";
+                    $field2sb[] = "\t\t\$obj->$varn=isset(\$array['$varn']) ? \n\t\t\t\$obj->$varn=$class::fromArray(\$array['$varn']) \n\t\t\t: null; // manytoone";
                     $col = ltrim($varn, self::$prefixBase);
                     $rcol = $field['refcol'];
-                    $field2sb[] = "\t\t(\$obj->$varn !== null) 
-            and \$obj->$varn->$rcol=&\$obj->$col; // linked manytoone";
+                    $field2sb[] = "\t\t(\$obj->$varn !== null) \n\t\t\tand \$obj->$varn->$rcol=&\$obj->$col; // linked manytoone";
                     break;
                 case 'MANYTOMANY':
                     $class = $classRelations[$field['reftable']];
-                    $field2s[] = "\t/** @var {$class}[] \$$varn manytomany */
-    public \$$varn;";
-                    $field2sb[] = "\t\t\$obj->$varn=isset(\$array['$varn']) ?  
-            \$obj->$varn=$class::fromArrayMultiple(\$array['$varn']) 
-            : null; // manytomany";
+                    $resultColumns[]=[$varn,$field['key'],$class];
+                    $field2s[] = "\t/** @var {$class}[] \$$varn manytomany */\n\tpublic \$$varn;";
+                    $field2sb[] = "\t\t\$obj->$varn=isset(\$array['$varn']) ?  \n\t\t\t\$obj->$varn=$class::fromArrayMultiple(\$array['$varn']) \n\t\t\t: null; // manytomany";
                     break;
                 case 'ONETOMANY':
                     $class = $classRelations[$field['reftable']];
-                    $field2s[] = "\t/** @var {$class}[] \$$varn onetomany */
-    public \$$varn;";
-                    $field2sb[] = "\t\t\$obj->$varn=isset(\$array['$varn']) ?  
-            \$obj->$varn=$class::fromArrayMultiple(\$array['$varn']) 
-            : null; // onetomany";
+                    $resultColumns[]=[$varn,$field['key'],$class];
+                    $field2s[] = "\t/** @var {$class}[] \$$varn onetomany */\n\tpublic \$$varn;";
+                    $field2sb[] = "\t\t\$obj->$varn=isset(\$array['$varn']) ?  \n\t\t\t\$obj->$varn=$class::fromArrayMultiple(\$array['$varn']) \n\t\t\t: null; // onetomany";
                     break;
                 case 'ONETOONE':
                     $class = $classRelations[$field['reftable']];
-                    $field2s[] = "\t/** @var $class \$$varn onetoone */
-    public \$$varn;";
-                    $field2sb[] = "\t\t\$obj->$varn=isset(\$array['$varn']) ?  
-            \$obj->$varn=$class::fromArray(\$array['$varn']) 
-            : null; // onetoone";
+                    $resultColumns[]=[$varn,$field['key'],$class];
+                    $field2s[] = "\t/** @var $class \$$varn onetoone */\n\tpublic \$$varn;";
+                    $field2sb[] = "\t\t\$obj->$varn=isset(\$array['$varn']) ?  \n\t\t\t\$obj->$varn=$class::fromArray(\$array['$varn']) \n\t\t\t: null; // onetoone";
                     $col = $field['col'] ?? $pkFirst;
                     $rcol = $field['refcol'];
-                    $field2sb[] = "\t\t(\$obj->$varn !== null) 
-            and \$obj->$varn->$rcol=&\$obj->$col; // linked onetoone";
+                    $field2sb[] = "\t\t(\$obj->$varn !== null) \n\t\t\tand \$obj->$varn->$rcol=&\$obj->$col; // linked onetoone";
                     break;
             }
         }
@@ -3602,8 +3589,8 @@ class PdoOne
     )
     {
         $this->beginTry();
-        //
-        $filename = __DIR__ . '/template/template_classrepo.php';
+
+        $filename = __DIR__ . '/template/template_model.php';
         $r = $this->phpstart . $this->openTemplate($filename);
         //$lastns = explode('\\', $namespace);
         //$baseClass = ($baseClass === null) ? end($lastns) : $baseClass;
@@ -3861,15 +3848,16 @@ class PdoOne
     //</editor-fold>
     //<editor-fold desc="cli functions" defaultstate="collapsed" >
     public function generateCodeClassRepo(
-        $tableClassName,
+        $tableName,
         $namespace = '',
         $classRelations = [],
-        $modelfullClass = ''
+        $modelfullClass = '',
+        $resultColumns = []
     )
     {
         $this->beginTry();
         //
-        $filename = __DIR__ . '/template/template_codeclassrepo.php';
+        $filename = __DIR__ . '/template/template_classrepo.php';
         $r = $this->phpstart . $this->openTemplate($filename);
         $fa = func_get_args();
         foreach ($fa as $f => $k) {
@@ -3887,6 +3875,18 @@ class PdoOne
             $modelClass = false;
             $modelUse = false;
         }
+        $helpcolumns='';
+        $related='';
+        foreach($resultColumns as $v) {
+            if ($v[2]) {
+                $related.=" * @see $v[2]\n";
+                $c = '(' . $v[2] . ')';
+            } else {
+                $c = '';
+            }
+            $helpcolumns.=" * <li>$v[0] $v[1] $c</li>\n";
+        }
+
         $this->endTry();
         return str_replace(array(
             '{version}',
@@ -3897,17 +3897,21 @@ class PdoOne
             '{namespace}',
             '{modelnamespace}',
             '{modelclass}',
-            '{modeluse}'
+            '{modeluse}',
+            '{helpcolumns}',
+            '{related}'
         ), array(
             self::VERSION . ' Date generated ' . date('r'), // {version}
-            $classRelations[$tableClassName], // {class}
+            $classRelations[$tableName], // {class}
             ($namespace) ? 'use Exception;' : '',
             "'" . implode("','", $fa) . "'", // {args}
-            $tableClassName, //{table}
+            $tableName, //{table}
             ($namespace) ? "namespace $namespace;" : '', // {namespace}
             $modelfullClass ? "use $modelfullClass;" : '', // {modelnamespace}
             $modelClass ? "const MODEL= $modelClass::class;" : '', // {modelclass}
-            $modelUse ? 'true' : 'false' // {modeluse}
+            $modelUse ? 'true' : 'false', // {modeluse},
+            rtrim($helpcolumns),
+            rtrim($related)
         ), $r);
     }
 
@@ -4515,7 +4519,7 @@ BOOTS;
     public function createSequence(?string $tableSequence = null, string $method = 'snowflake'): bool
     {
         $this->beginTry();
-        $tableSequence = ($tableSequence === null) ? $this->tableSequence : $tableSequence;
+        $tableSequence = $tableSequence ?? $this->tableSequence;
         $sqls = $this->service->createSequence($tableSequence, $method);
         $r = true;
         foreach ($sqls as $sql) {
@@ -4976,10 +4980,10 @@ BOOTS;
     public function tableSorted(int $maxLoop = 5, bool $returnProblems = false, bool $debugTrace = false): array
     {
         $this->beginTry();
-        list($tables, $after, $before) = $this->tableDependency();
+        [$tables, $after, $before] = $this->tableDependency();
         $tableSorted = [];
         // initial load
-        foreach ($tables as $k => $table) {
+        foreach ($tables as $table) {
             $tableSorted[] = $table;
         }
         $problems = [];
@@ -5026,7 +5030,7 @@ BOOTS;
         shuffle($tables);
         $tableProblems = [];
         $nothingWrong = true;
-        foreach ($tables as $k => $table) {
+        foreach ($tables as $table) {
             $pos = array_search($table, $tableSorted, true);
             // search for after in the wrong position
             $wrong = false;
@@ -5157,6 +5161,7 @@ BOOTS;
         return (stripos($sql, 'select ') === 0 || stripos($sql, 'show ') === 0);
     }
 
+    /** @noinspection TypeUnsafeComparisonInspection */
     public function filterKey($condition, $columns, $returnSimple)
     {
         if ($condition === null) {
@@ -5884,8 +5889,7 @@ BOOTS;
     public function flushKV(): bool
     {
         try {
-            $r = $this->runRawQuery("delete from $this->tableKV where 1=1");
-            return true;
+            return $this->runRawQuery("delete from $this->tableKV where 1=1")!==false;
         } catch (Exception $ex) {
             if ($this->throwOnError) {
                 throw $ex;

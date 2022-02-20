@@ -118,7 +118,7 @@ abstract class AbstractTableCategoryRepo extends TestDb
         }
         		$row['IdTableCategoryPK']=isset($row['IdTableCategoryPK']) ? (int)$row['IdTableCategoryPK'] : null;
 		!isset($row['Name']) and $row['Name']=null; // varchar
-        
+
     }
 
     /**
@@ -243,7 +243,7 @@ abstract class AbstractTableCategoryRepo extends TestDb
     * @return array|bool|null
     * @throws Exception
     */
-    public static function toList($filter=PdoOne::NULL,$filterValue=null) {
+    public static function toList($filter=PdoOne::NULL, array $filterValue=null) {
         if(self::$useModel) {
             return TableCategoryModel::fromArrayMultiple( self::_toList($filter, $filterValue));
         }
@@ -289,7 +289,7 @@ abstract class AbstractTableCategoryRepo extends TestDb
     * @throws Exception
     * @test InstanceOf PdoOne::class,this('1,10')
     */
-    public static function limit($sql)
+    public static function limit(string $sql)
     {
         return static::newQuery()->limit($sql);
     }
@@ -408,11 +408,11 @@ abstract class AbstractTableCategoryRepo extends TestDb
         $row= [
 		'IdTableCategoryPK'=>0,
 		'_TableParentxCategory'=>(in_array($recursivePrefix.'_TableParentxCategory',$recursive,true))
-		                            ? [] 
+		                            ? []
 		                            : null, /* ONETOMANY! */
 		'Name'=>''
 		];
-        
+
         if ($values !== null) {
             $row = array_merge($row, $values);
         }

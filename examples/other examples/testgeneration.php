@@ -11,7 +11,7 @@ $dao->logLevel = 3;
 $dao->throwOnError = true;
 $dao->open();
 //header("Content-Type: plain/text");
-echo $dao->generateCodeClass('tablachild');
+echo $dao->generateAbstractClass('tablachild');
 
 die(1);
 actorRepo::setPdoOne($dao);
@@ -44,7 +44,7 @@ CustomersRepo::update(['CustomerId' => 2, 'Name' => 'ANNAAA', 'Enabled' => 0]);
 CustomersRepo::delete(3);
 $x=CustomersRepo::get(1);
 
-    
+
 var_dump(CustomersRepo::get(1));
 echo '<pre>';
 $list=CustomersRepo::select();
@@ -104,7 +104,7 @@ class CustomersRepo
 
     /**
      * It sets the field self::$pdoOne
-     * 
+     *
      * @param $pdoOne
      */
     public static function setPdoOne($pdoOne) {
@@ -113,7 +113,7 @@ class CustomersRepo
 
     /**
      * It cleans the whole table (delete all rows)
-     * 
+     *
      * @return array|bool|PDOStatement
      * @throws Exception
      */
@@ -123,7 +123,7 @@ class CustomersRepo
 
     /**
      * It drops the table (structure and values)
-     * 
+     *
      * @return array|bool|PDOStatement
      * @throws Exception
      */
@@ -136,7 +136,7 @@ class CustomersRepo
 
     /**
      * Insert an new row
-     * 
+     *
      * @param array $obj =array('CustomerId'=>0, 'Name'=>'', 'Enabled'=>0)
      *
      * @return mixed
@@ -148,7 +148,7 @@ class CustomersRepo
 
     /**
      * Update an registry
-     * 
+     *
      * @param array $obj =array('CustomerId'=>0, 'Name'=>'', 'Enabled'=>0)
      *
      * @return mixed
@@ -163,7 +163,7 @@ class CustomersRepo
 
     /**
      * It delete a registry
-     * 
+     *
      * @param mixed $pk
      *
      * @return mixed
@@ -177,7 +177,7 @@ class CustomersRepo
 
     /**
      * It gets a registry using the primary key.
-     * 
+     *
      * @param mixed $pk
      *
      * @return ['CustomerId'=>0, 'Name'=>'', 'Enabled'=>0]
@@ -192,7 +192,7 @@ class CustomersRepo
 
     /**
      * It returns a list of rows
-     * 
+     *
      * @param null|array $where =array('CustomerId'=>0, 'Name'=>'', 'Enabled'=>0)
      * @param null|string $order
      * @param null|string $limit
@@ -211,7 +211,7 @@ class CustomersRepo
 
     /**
      * It returns the number of rows
-     * 
+     *
      * @param null|array $where =array('CustomerId'=>0, 'Name'=>'', 'Enabled'=>0)
      *
      * @return int
@@ -243,20 +243,20 @@ class actorRepo
         'last_update' => 'timestamp not null default CURRENT_TIMESTAMP on update CURRENT_TIMESTAMP',
     );
 
-    
+
     /** @var PdoOne */
     public static $pdoOne = null;
 
     /**
      * It validates the table and returns an associative array with the errors.
-     * 
+     *
      * @return array If valid then it returns an empty array
      * @throws Exception
      */
     public function validTable() {
         return $this->validateDefTable(self::TABLE,self::DEF);
     }
-    
+
     /**
      * It creates a new table<br>
      * If the table exists then the operation is ignored (and it returns false)

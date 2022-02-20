@@ -278,7 +278,7 @@ abstract class AbstractTableParentxCategoryRepo extends TestDb
     * @return array|bool|null
     * @throws Exception
     */
-    public static function toList($filter=PdoOne::NULL,$filterValue=null) {
+    public static function toList($filter=PdoOne::NULL, array $filterValue=null) {
         if(self::$useModel) {
             return TableParentxCategoryModel::fromArrayMultiple( self::_toList($filter, $filterValue));
         }
@@ -324,7 +324,7 @@ abstract class AbstractTableParentxCategoryRepo extends TestDb
     * @throws Exception
     * @test InstanceOf PdoOne::class,this('1,10')
     */
-    public static function limit($sql)
+    public static function limit(string $sql)
     {
         return static::newQuery()->limit($sql);
     }
@@ -442,12 +442,12 @@ abstract class AbstractTableParentxCategoryRepo extends TestDb
         static::setRecursive(); // reset the recursivity.
         $row= [
 		'idtablaparentPKFK'=>0,
-		'_idtablaparentPKFK'=>(in_array($recursivePrefix.'_idtablaparentPKFK',$recursive,true)) 
-		                            ? TableParentRepo::factory(null,$recursivePrefix.'_idtablaparentPKFK') 
+		'_idtablaparentPKFK'=>(in_array($recursivePrefix.'_idtablaparentPKFK',$recursive,true))
+		                            ? TableParentRepo::factory(null,$recursivePrefix.'_idtablaparentPKFK')
 		                            : null, /* ONETOONE!! */
 		'idcategoryPKFK'=>0,
-		'_idcategoryPKFK'=>(in_array($recursivePrefix.'_idcategoryPKFK',$recursive,true)) 
-		                            ? TableCategoryRepo::factory(null,$recursivePrefix.'_idcategoryPKFK') 
+		'_idcategoryPKFK'=>(in_array($recursivePrefix.'_idcategoryPKFK',$recursive,true))
+		                            ? TableCategoryRepo::factory(null,$recursivePrefix.'_idcategoryPKFK')
 		                            : null, /* MANYTOONE!! */
 		];
         		isset($row['_idcategoryPKFK'])

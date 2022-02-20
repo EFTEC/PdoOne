@@ -118,7 +118,7 @@ abstract class AbstractTableParentExtRepo extends TestDb
         }
         		$row['idtablaparentExtPK']=isset($row['idtablaparentExtPK']) ? (int)$row['idtablaparentExtPK'] : null;
 		!isset($row['fieldExt']) and $row['fieldExt']=null; // varchar
-        
+
     }
 
     /**
@@ -250,7 +250,7 @@ abstract class AbstractTableParentExtRepo extends TestDb
     * @return array|bool|null
     * @throws Exception
     */
-    public static function toList($filter=PdoOne::NULL,$filterValue=null) {
+    public static function toList($filter=PdoOne::NULL, array $filterValue=null) {
         if(self::$useModel) {
             return TableParentExtModel::fromArrayMultiple( self::_toList($filter, $filterValue));
         }
@@ -296,7 +296,7 @@ abstract class AbstractTableParentExtRepo extends TestDb
     * @throws Exception
     * @test InstanceOf PdoOne::class,this('1,10')
     */
-    public static function limit($sql)
+    public static function limit(string $sql)
     {
         return static::newQuery()->limit($sql);
     }
@@ -416,7 +416,7 @@ abstract class AbstractTableParentExtRepo extends TestDb
 		'idtablaparentExtPK'=>0,
 		'fieldExt'=>''
 		];
-        
+
         if ($values !== null) {
             $row = array_merge($row, $values);
         }

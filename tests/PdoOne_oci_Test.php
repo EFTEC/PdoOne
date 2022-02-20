@@ -260,7 +260,7 @@ class PdoOne_oci_Test extends TestCase
         if (!$this->pdoOne->tableExist('TABLE1')) {
             $this->pdoOne->createTable('TABLE1', ['id' => 'int']);
         }
-        self::assertNotEquals('', $this->pdoOne->generateCodeClass('TABLE1'));
+        self::assertNotEquals('', $this->pdoOne->generateAbstractClass('TABLE1'));
         self::assertEquals("['id'=>0]", $this->pdoOne->generateCodeArray('TABLE1'));
         self::assertContains("array \$result=array(['id'=>0])",
             $this->pdoOne->generateCodeSelect('select * from TABLE1'));

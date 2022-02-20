@@ -167,7 +167,7 @@ class PdoOne_mysql_Test extends TestCase
                 'col' => 'countryid',
                 'reftable' => 'city',
                 'refcol' => '_countryfk'
-            ]], $this->pdoOne->xxx('country', 'countryid'));
+            ]], $this->pdoOne->getRelations('country', 'countryid'));
         $this->assertEquals([
             '_countryfk' => [
                 'key' => 'MANYTOONE',
@@ -181,7 +181,7 @@ class PdoOne_mysql_Test extends TestCase
                 'reftable' => 'country',
                 'extra' => '',
                 'name' => 'fk_city_countryfk'
-            ]], $this->pdoOne->xxx('city', 'cityid'));
+            ]], $this->pdoOne->getRelations('city', 'cityid'));
         echo str_replace(["\n", "\t", '    ', '   ', '  ', ' '], '',
             PdoOne::varExport($this->pdoOne->tableDependency(true), ''));
     }
@@ -270,7 +270,7 @@ class PdoOne_mysql_Test extends TestCase
         if (!$this->pdoOne->tableExist('table1')) {
             $this->pdoOne->createTable('table1', ['id' => 'int']);
         }
-        self::assertNotEquals('', $this->pdoOne->generateCodeClass('table1'));
+        self::assertNotEquals('', $this->pdoOne->generateAbstractClass('table1'));
         self::assertEquals("['id'=>0]", $this->pdoOne->generateCodeArray('table1'));
         self::assertStringContainsString("array \$result=array(['id'=>0])",
             $this->pdoOne->generateCodeSelect('select * from table1'));

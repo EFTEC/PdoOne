@@ -192,7 +192,7 @@ abstract class AbstractTableParentRepo extends TestDb
 		!isset($row['fieldUnique']) and $row['fieldUnique']=null; // varchar
 		!isset($row['fieldKey']) and $row['fieldKey']=null; // no conversion
 		$row['extracol']=isset($row['extracol']) ? PdoOne::dateConvert($row['extracol'], 'sql', 'human') : null;
-		!isset($row['extracol2']) and $row['extracol2']=null; // 
+		!isset($row['extracol2']) and $row['extracol2']=null; //
         		isset($row['_idchildFK'])
             and $row['_idchildFK']['idtablachildPK']=&$row['idchildFK']; // linked MANYTOONE
 		isset($row['_TableParentExt'])
@@ -383,7 +383,7 @@ abstract class AbstractTableParentRepo extends TestDb
     * @return array|bool|null
     * @throws Exception
     */
-    public static function toList($filter=PdoOne::NULL,$filterValue=null) {
+    public static function toList($filter=PdoOne::NULL, array $filterValue=null) {
         if(self::$useModel) {
             return TableParentModel::fromArrayMultiple( self::_toList($filter, $filterValue));
         }
@@ -429,7 +429,7 @@ abstract class AbstractTableParentRepo extends TestDb
     * @throws Exception
     * @test InstanceOf PdoOne::class,this('1,10')
     */
-    public static function limit($sql)
+    public static function limit(string $sql)
     {
         return static::newQuery()->limit($sql);
     }
@@ -548,15 +548,15 @@ abstract class AbstractTableParentRepo extends TestDb
         $row= [
 		'idtablaparentPK'=>0,
 		'_TableParentExt'=>(in_array($recursivePrefix.'_TableParentExt',$recursive,true))
-		                            ? TableParentExtRepo::factory(null,$recursivePrefix.'_TableParentExt') 
+		                            ? TableParentExtRepo::factory(null,$recursivePrefix.'_TableParentExt')
 		                            : null, /* ONETOONE! */
 		'_TableParentxCategory'=>(in_array($recursivePrefix.'_TableParentxCategory',$recursive,true))
-		                            ? [] 
+		                            ? []
 		                            : null, /* MANYTOMANY! */
 		'fieldVarchar'=>'',
 		'idchildFK'=>0,
-		'_idchildFK'=>(in_array($recursivePrefix.'_idchildFK',$recursive,true)) 
-		                            ? TableChildRepo::factory(null,$recursivePrefix.'_idchildFK') 
+		'_idchildFK'=>(in_array($recursivePrefix.'_idchildFK',$recursive,true))
+		                            ? TableChildRepo::factory(null,$recursivePrefix.'_idchildFK')
 		                            : null, /* MANYTOONE!! */
 		'idchild2FK'=>0,
 		'fieldInt'=>0,

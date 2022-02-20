@@ -23,7 +23,8 @@
   "autoload-dev": {
     "psr-4": {
       "eftec\\tests\\": "tests/",
-      "eftec\\examples\\": "examples/"
+      "eftec\\examples\\": "examples/",
+      "reposqlsrv\\": "examples/reposqlsrv/"
     }
   },
   "require": {

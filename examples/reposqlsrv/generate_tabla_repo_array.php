@@ -7,7 +7,7 @@ include '../Collection.php';
 include '../dBug.php';
 
 // connecting to database sakila at 127.0.0.1 with user root and password abc.123
-$dao = new PdoOne('sqlsrv', 'PCJC\SQLEXPRESS', 'sa', 'abc.123', 'testdb', '');
+$dao = new PdoOne('sqlsrv', 'PCJC\SQLSERVER2017', 'sa', 'abc.123', 'testdb', '');
 //$dao = new PdoOne('mysql', '127.0.0.1', 'root', 'abc.123', 'testdb', '');
 $dao->logLevel = 3;
 try {
@@ -57,7 +57,7 @@ $dao->generateCodeClassConversions([
     'decimal'  => 'decimal'
 ]);
 
-$logs = $dao->generateAllClasses($relations, 'TestDb', ['reposqlsrv', 'sqlsrv\repomodel'],
+$logs = $dao->generateAllClasses($relations, 'TestDb', ['reposqlsrv\\generated', 'sqlsrv\repomodel'],
     [__DIR__ . '/generated', __DIR__ . '/generatedmodel'], true, $columnRelation,$extraColumn);
 
 echo "errors:<br>";

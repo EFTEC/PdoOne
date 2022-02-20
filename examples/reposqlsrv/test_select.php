@@ -3,13 +3,12 @@
 use dBug\dBug;
 use eftec\PdoOne;
 use mapache_commons\Collection;
-use reposqlsrv\TableParentRepo;
-use reposqlsrv\TestDb;
-
+use reposqlsrv\generated\TableParentRepo;
+use reposqlsrv\generated\TestDb;
 
 include "common.php";
 
-$parent= (TableParentRepo::setRecursive(
+$parent= TableParentRepo::setRecursive(
     [
         '_idchildFK',
         '_idchild2FK',
@@ -17,12 +16,12 @@ $parent= (TableParentRepo::setRecursive(
         '_idchildFK/_idgrandchildFK/_TableGrandChildTag',
         '_TableParentxCategory' // manytomany
         ,'_TableParentExt'
-    ]))::first(1);
+    ])->first(1);
 
 new dBug($parent);
 
 
-$dummies= TestDb::base()->setThrowOnError(false)->select('*')->from('tableparent')->toList();
+$dummies= TestDb::base()->select('*')->from('tableparent')->toList();
 var_dump(TestDb::base()->errorText);
 echo Collection::generateTable($dummies);
 
@@ -63,7 +62,7 @@ echo Collection::generateTable($r);
 
 
 
-$parent= (TableParentRepo::setRecursive(
+$parent= TableParentRepo::setRecursive(
     [
         '_idchildFK'
         ,'_idchild2FK'
@@ -71,13 +70,13 @@ $parent= (TableParentRepo::setRecursive(
         ,'_idchildFK/_idgrandchildFK/_tablachild'
         ,'_idchildFK/_idgrandchildFK/_TableGrandChildTag'
         //,'_idchildFK/idgrandchildFK/tablachild'
-        
+
         //,'_tablaparentxcategory/idgrandchildFK'
         ,'_tablaparentxcategory' // one to many
         ,'_tablaparentxcategory/_idcategoryPKFK'
         ,'_TableParentxCategory'
         ,'_TableParentExt'
-    ]))::first(1);
+    ])->first(1);
 //var_dump($parent['_idchildFK']['idtablachildPK']);
 echo "<br>";
 new dBug($parent);

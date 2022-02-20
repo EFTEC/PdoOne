@@ -15,7 +15,7 @@ use PDO;
  *
  * @see           https://github.com/EFTEC/PdoOne
  * @author        Jorge Castro Castillo
- * @copyright (c) Jorge Castro C. MIT License  https://github.com/EFTEC/PdoOne
+ * @copyright (c) Jorge Castro C. Dual Licence: MIT and Commercial License  https://github.com/EFTEC/PdoOne
  * @package       eftec
  */
 class PdoOne_Mysql implements PdoOne_IExt

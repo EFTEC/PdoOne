@@ -21,7 +21,7 @@ use RuntimeException;
  * @see           https://github.com/EFTEC/PdoOne
  * @package       eftec
  * @author        Jorge Castro Castillo
- * @copyright (c) Jorge Castro C. MIT License  https://github.com/EFTEC/PdoOne
+ * @copyright (c) Jorge Castro C. Dual Licence: MIT and Commercial License  https://github.com/EFTEC/PdoOne
  * @version       0.9
  */
 class pdoonecli
@@ -678,7 +678,7 @@ PdoOne: $v  Cli: $vc
                 $this->columnsTable[$table][$v['colname']] = null;
             }
             $pk[$table] = $pdo->getPK($table);
-            $def2[$table] = $pdo->xxx($table, $pk[$table][0]);
+            $def2[$table] = $pdo->getRelations($table, $pk[$table][0]);
             foreach ($def2[$table] as $k => $v) {
                 if (isset($v['key']) && $v['key'] !== 'FOREIGN KEY') {
                     $this->columnsTable[$table][$k] = $v['key'];

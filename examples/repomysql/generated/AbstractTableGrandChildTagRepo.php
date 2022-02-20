@@ -128,7 +128,7 @@ abstract class AbstractTableGrandChildTagRepo extends TestDb
         		$row['IdTablaGrandChildTagPK']=isset($row['IdTablaGrandChildTagPK']) ? (int)$row['IdTablaGrandChildTagPK'] : null;
 		!isset($row['Name']) and $row['Name']=null; // varchar
 		$row['IdgrandchildFK']=isset($row['IdgrandchildFK']) ? (int)$row['IdgrandchildFK'] : null;
-        
+
     }
 
     /**
@@ -249,7 +249,7 @@ abstract class AbstractTableGrandChildTagRepo extends TestDb
     * @return array|bool|null
     * @throws Exception
     */
-    public static function toList($filter=PdoOne::NULL,$filterValue=null) {
+    public static function toList($filter=PdoOne::NULL, array $filterValue=null) {
         if(self::$useModel) {
             return TableGrandChildTagModel::fromArrayMultiple( self::_toList($filter, $filterValue));
         }
@@ -295,7 +295,7 @@ abstract class AbstractTableGrandChildTagRepo extends TestDb
     * @throws Exception
     * @test InstanceOf PdoOne::class,this('1,10')
     */
-    public static function limit($sql)
+    public static function limit(string $sql)
     {
         return static::newQuery()->limit($sql);
     }
@@ -416,7 +416,7 @@ abstract class AbstractTableGrandChildTagRepo extends TestDb
 		'Name'=>'',
 		'IdgrandchildFK'=>0
 		];
-        
+
         if ($values !== null) {
             $row = array_merge($row, $values);
         }

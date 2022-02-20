@@ -16,7 +16,7 @@ use RuntimeException;
  * @version       2.3 2022-02-04
  * @package       eftec
  * @author        Jorge Castro Castillo
- * @copyright (c) Jorge Castro C. MIT License  https://github.com/EFTEC/PdoOne
+ * @copyright (c) Jorge Castro C. Dual Licence: MIT and Commercial License  https://github.com/EFTEC/PdoOne
  */
 class PdoOneQuery
 {
@@ -948,6 +948,7 @@ class PdoOneQuery
     }
 
     /**
+     * It runs a toList() without transformation. It is used internally.
      * @throws Exception
      */
     public function _toList($pdoMode = PDO::FETCH_ASSOC)

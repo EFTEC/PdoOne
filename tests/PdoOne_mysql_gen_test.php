@@ -1,4 +1,5 @@
-<?php /** @noinspection PhpUnhandledExceptionInspection */
+<?php /** @noinspection ForgottenDebugOutputInspection */
+/** @noinspection PhpUnhandledExceptionInspection */
 /** @noinspection PhpDeprecationInspection */
 
 /** @noinspection PhpIllegalPsrClassPathInspection */
@@ -66,34 +67,6 @@ class CacheServicesmysql implements IPdoOneCache
     }
 
     /**
-     * @param string $uid
-     * @param string $family
-     * @param null   $data
-     * @param null   $ttl
-     */
-    public function setCache($uid, $family = '', $data = null, $ttl = null) : void
-    {
-        $this->track[] = 'set.' . $uid;
-        if ($family === '') {
-            $this->cacheData[$uid] = $data;
-        } else {
-            if (!is_array($family)) {
-                $family = [$family];
-            }
-            foreach ($family as $fam) {
-                if (!isset($this->cacheDataFamily[$fam])) {
-                    $this->cacheDataFamily[$fam] = [];
-                }
-
-                $this->cacheDataFamily[$fam][] = $uid;
-                $this->cacheData[$uid] = $data;
-                //var_dump($fam);
-                //var_dump($this->cacheDataFamily[$fam]);
-            }
-        }
-    }
-
-    /**
      * @param string       $uid
      * @param string|array $family
      *
@@ -121,6 +94,34 @@ class CacheServicesmysql implements IPdoOneCache
         }
         //unset($this->cacheData[$uid]);
     }
+
+    /**
+     * @param string $uid
+     * @param string $family
+     * @param null   $data
+     * @param null   $ttl
+     */
+    public function setCache($uid, $family = '', $data = null, $ttl = null) : void
+    {
+        $this->track[] = 'set.' . $uid;
+        if ($family === '') {
+            $this->cacheData[$uid] = $data;
+        } else {
+            if (!is_array($family)) {
+                $family = [$family];
+            }
+            foreach ($family as $fam) {
+                if (!isset($this->cacheDataFamily[$fam])) {
+                    $this->cacheDataFamily[$fam] = [];
+                }
+
+                $this->cacheDataFamily[$fam][] = $uid;
+                $this->cacheData[$uid] = $data;
+                //var_dump($fam);
+                //var_dump($this->cacheDataFamily[$fam]);
+            }
+        }
+    }
 }
 
 
@@ -133,47 +134,6 @@ class PdoOne_mysql_gen_test extends TestCase
 {
     /** @var PdoOne */
     protected $pdoOne;
-
-    public function test_ping_ping() {
-        $ping='pong';
-        $this->assertEquals('pong',$ping);
-    }
-
-
-    public function setUp() : void
-    {
-        //$this->pdoOne = new PdoOne("mysql", "127.0.0.1", "travis", "", "pdotest");
-        $this->pdoOne = new PdoOne("mysql", "127.0.0.1", "travis", "", "testdb");
-        try {
-            $this->pdoOne->connect();
-        } catch (Exception $e) {
-        }
-        $this->pdoOne->logLevel = 3;
-        TableGrandChildRepo::$useModel = false;
-        TableGrandChildRepo::setPdoOne($this->pdoOne);
-        TableGrandChildTagRepo::setPdoOne($this->pdoOne);
-        $this->DeleteAll();
-        $this->CreateAll();
-        $this->InsertAll();
-
-
-    }
-
-    public function DeleteAll(): void
-    {
-        TableParentExtRepo::setFalseOnError(true)::dropTable();
-        TableParentxCategoryRepo::setFalseOnError(true)::dropTable();
-        TableCategoryRepo::setFalseOnError(true)::dropTable();
-
-        TableParentRepo::setFalseOnError(true)::dropTable();
-        TableChildRepo::setFalseOnError(true)::dropTable();
-        TableGrandChildRepo::setFalseOnError(true)::dropTable();
-        self::assertEquals(false, TableGrandChildRepo::setFalseOnError(true)::dropTable());
-
-        //TableGrandChildTagRepo::setFalseOnError(true)::dropTable();
-        //self::assertEquals(true,TableGrandChildTagRepo::setFalseOnError(true)::dropTable());
-        //self::assertEquals(true,TableGrandChildTagRepo::dropTable());
-    }
 
     public function CreateAll(): void
     {
@@ -192,6 +152,21 @@ class PdoOne_mysql_gen_test extends TestCase
         TableGrandChildRepo::createFk();
     }
 
+    public function DeleteAll(): void
+    {
+        TableParentExtRepo::setFalseOnError(true)::dropTable();
+        TableParentxCategoryRepo::setFalseOnError(true)::dropTable();
+        TableCategoryRepo::setFalseOnError(true)::dropTable();
+
+        TableParentRepo::setFalseOnError(true)::dropTable();
+        TableChildRepo::setFalseOnError(true)::dropTable();
+        TableGrandChildRepo::setFalseOnError(true)::dropTable();
+        self::assertEquals(false, TableGrandChildRepo::setFalseOnError(true)::dropTable());
+
+        //TableGrandChildTagRepo::setFalseOnError(true)::dropTable();
+        //self::assertEquals(true,TableGrandChildTagRepo::setFalseOnError(true)::dropTable());
+        //self::assertEquals(true,TableGrandChildTagRepo::dropTable());
+    }
 
     public function InsertAll(): void
     {
@@ -260,240 +235,23 @@ class PdoOne_mysql_gen_test extends TestCase
 
     }
 
-    public function testFactory(): void
+    public function setUp() : void
     {
-        //   TODO: FACTORY CON SETRECURSIVE FALLA
-        self::assertEquals(['idtablaparentPK' => 0,
-            '_TableParentExt' => [
-                'idtablaparentExtPK' => 0,
-                'fieldExt' => ''
-            ],
-            '_TableParentxCategory' => [],
-            'fieldVarchar' => '',
-            'idchildFK' => 0,
-            '_idchildFK' => [
-                'idtablachildPK' => 0,
-                '_TableParent' => null,
-                'NameChild' => '',
-                'idgrandchildFK' => 0,
-                '_idgrandchildFK' => null
-            ],
-            'idchild2FK' => 0,
-            'fieldInt' => 0,
-            'fielDecimal' => 0.0,
-            'fieldDateTime' => '',
-            'fieldUnique' => '',
-            'fieldKey' => ''], TableParentRepo::setRecursive('*')->factory());
-
-    }
-
-    public function testBuild(): void
-    {
-
-        $relations = [
-            'TableParent' => ['TableParentRepo', 'TableParentModel'],
-            'TableChild' => ['TableChildRepo', 'TableChildModel'],
-            'TableGrandChild' => ['TableGrandChildRepo', 'TableGrandChildModel'],
-            'TableGrandChildTag' => ['TableGrandChildTagRepo', 'TableGrandChildTagModel'],
-            'TableParentxCategory' => ['TableParentxCategoryRepo', 'TableParentxCategoryModel'],
-            'TableCategory' => ['TableCategoryRepo', 'TableCategoryModel'],
-            'TableParentExt' => ['TableParentExtRepo', 'TableParentExtModel'],
-        ];
-        $columnRelation = [
-            'TableParent' => [
-                '_idchild2FK' => 'PARENT',
-                '_TableParentxCategory' => 'MANYTOMANY',
-                'fieldKey' => ['encrypt', null],
-                'extracol' => 'datetime3'
-            ],
-            'TableParentExt' => ['_idtablaparentExtPK' => 'PARENT']
-        ];
-        $columnRemove = [
-            //'TableParent'=>['idchild2FK']
-        ];
-        $extraColumn = [
-            'TableParent' => ['extracol' => 'CURRENT_TIMESTAMP', 'extracol2' => '20']
-        ];
-
-        $tables = $this->pdoOne->tableSorted();
-        self::assertEquals([0 => 'TableGrandChild',
-            1 => 'TableCategory',
-            2 => 'TableChild',
-            3 => 'TableGrandChildTag',
-            4 => 'TableParent',
-            5 => 'TableParentExt',
-            6 => 'TableParentxCategory'], $tables);
-
-        $this->pdoOne->generateCodeClassConversions([
-            'datetime' => 'datetime',
-            'tinyint' => 'bool',
-            'int' => 'int',
-            'decimal' => 'decimal'
-        ]);
-        $errors = $this->pdoOne->generateAllClasses($relations, 'TestDb', ['repomysql', 'mysql\repomodel'],
-            [__DIR__ . '/../examples/repomysql/generated', __DIR__ . '/../examples/repomysql/generatedmodel'], true, $columnRelation, $extraColumn
-            , $columnRemove);
-        self::assertEquals([], $errors);
-
-    }
-
-    public function testValidate(): void
-    {
-        $b = TableParentRepo::factory();
-        self::assertEquals(true, TableParentRepo::validateModel($b));
-    }
-
-    public function testQuery(): void
-    {
-        $sql = 'select idtablaparentpk from ' . TableParentRepo::TABLE . ' where idtablaparentpk=?';
-        self::assertEquals([0 => ['idtablaparentpk' => 1]], TableParentRepo::query($sql, [1]));
-
-    }
-
-    public function testQuery2(): void
-    {
-        $r = TableParentRepo::order('idtablaparentpk')->toListSimple();
-        self::assertEquals([1, 2], $r);
-        $r = TableParentRepo::where('idtablaparentpk<?', 3)->order('idtablaparentpk desc')->toListSimple();
-        self::assertEquals([2, 1], $r);
-
-
-    }
-
-    public function testFirst(): void
-    {
-        $r = TableParentRepo::where('idtablaparentpk>?', 0)->toListSimple();
-        self::assertEquals([0 => 1,
-            1 => 2], $r);
-        $r = TableParentRepo::where('idtablaparentpk>?', 0)->firstScalar();
-        self::assertEquals(1, $r);
-        $r = TableParentRepo::exist(1);
-        self::assertEquals(true, $r);
-        $r = TableParentRepo::exist(-1);
-        self::assertEquals(false, $r);
-        $obj = TableParentRepo::factory();
-        $obj['idtablaparentPK'] = 1;
-        $r = TableParentRepo::exist($obj);
-        $obj = new stdClass();
-        self::assertEquals(true, $r);
-        $obj->idtablaparentPK = 1;
-        $r = TableParentRepo::exist($obj);
-        self::assertEquals(true, $r);
-    }
-
-    public function testCount(): void
-    {
-        $r = TableParentRepo::where('idtablaparentpk>?', 3)->toList();
-        $a2 = count($r);
-
-
-        $a1 = TableParentRepo::where('idtablaparentpk>?', 3)->count();
-        self::assertEquals($a2, $a1);
-        //echo "----\n";
-
-        $a1 = TableParentRepo::where('idtablaparentpk>?', 3)->count();
-        self::assertEquals($a2, $a1);
-
-    }
-
-    /*public function testDef() {
-        $dep = $this->pdoOne->tableDependency(true, false);
-        $this->assertEquals([
-                                [
-                                    0 => 'tablacategory',
-                                    1 => 'tablachild',
-                                    2 => 'tablagrandchild',
-                                    3 => 'tablagrandchildcat',
-                                    4 => 'tablaParent',
-                                    5 => 'tablaparentxcategory',
-                                    6 => 'typetable'
-                                ],
-                                [
-                                    'tablacategory' => array(),
-                                    'tablachild' => array(
-                                        'idgrandchildFK' => 'tablagrandchild',
-                                        '/idgrandchildFK' => 'tablagrandchild'
-                                    ),
-                                    'tablagrandchild' => array(),
-                                    'tablagrandchildcat' => array(
-                                        'IdgrandchildFK' => 'tablagrandchild',
-                                        '/IdgrandchildFK' => 'tablagrandchild'
-                                    ),
-                                    'tablaParent' => array(
-                                        'idchild2FK' => 'tablachild',
-                                        '/idchild2FK' => 'tablachild',
-                                        'idchildFK' => 'tablachild',
-                                        '/idchildFK' => 'tablachild'
-                                    ),
-                                    'tablaparentxcategory' => array(
-                                        'idcategoryPKFK' => 'tablacategory',
-                                        '/idcategoryPKFK' => 'tablacategory',
-                                        'idtablaparentPKFK' => 'tablaParent',
-                                        '/idtablaparentPKFK' => 'tablaParent'
-                                    ),
-                                    'typetable' => array()
-                                ],
-                                [
-                                    'tablacategory' => array(
-                                        'IdTableCategoryPK' => array(
-                                            0 => '/idcategoryPKFK',
-                                            1 => 'tablaparentxcategory'
-                                        )
-                                    ),
-                                    'tablachild' => array(
-                                        'idtablachildPK' => array(
-                                            0 => '/idchildFK',
-                                            1 => 'tablaParent'
-                                        )
-                                    ),
-                                    'tablagrandchild' => array(
-                                        'idgrandchildPK' => array(
-                                            0 => '/IdgrandchildFK',
-                                            1 => 'tablagrandchildcat'
-                                        )
-                                    ),
-                                    'tablagrandchildcat' => array(),
-                                    'tablaParent' => array(
-                                        'idtablaparentPK' => array(
-                                            0 => '/idtablaparentPKFK',
-                                            1 => 'tablaparentxcategory'
-                                        )
-                                    ),
-                                    'tablaparentxcategory' => array(),
-                                    'typetable' => array()
-                                ]
-                            ], $dep);
-
-
-    }
-    */
-
-    public function testGrandChild(): void
-    {
+        //$this->pdoOne = new PdoOne("mysql", "127.0.0.1", "travis", "", "pdotest");
+        $this->pdoOne = new PdoOne("mysql", "127.0.0.1", "travis", "", "testdb");
         try {
-            if (!TableGrandChildRepo::createTable()) {
-                (TableGrandChildRepo::setFalseOnError(true))::truncate();
-            }
+            $this->pdoOne->connect();
         } catch (Exception $e) {
         }
-        $gc = TableGrandChildRepo::factoryNull();
-        $gc['idgrandchildPK'] = 1;
-        $gc['NameGrandChild'] = 'GrandChild #1';
-        try {
-            $in = TableGrandChildRepo::insert($gc);
-        } catch (Exception $e) {
-            $in = $e->getMessage();
-        }
-        self::assertGreaterThan(1, $in);
+        $this->pdoOne->logLevel = 3;
+        TableGrandChildRepo::$useModel = false;
+        TableGrandChildRepo::setPdoOne($this->pdoOne);
+        TableGrandChildTagRepo::setPdoOne($this->pdoOne);
+        $this->DeleteAll();
+        $this->CreateAll();
+        $this->InsertAll();
 
-        $gc['idgrandchildPK'] = 2;
-        $gc['NameGrandChild'] = 'GrandChild #2';
-        try {
-            $in2 = TableGrandChildRepo::insert($gc);
-        } catch (Exception $e) {
-            $in2 = $e->getMessage();
-        }
-        self::assertGreaterThan($in, $in2);
+
     }
 
     public function test2(): void
@@ -634,25 +392,56 @@ class PdoOne_mysql_gen_test extends TestCase
         self::assertEquals(1, TableParentxCategoryRepo::insert($gc));
     }
 
-    /** @noinspection SuspiciousAssignmentsInspection */
-    public function testCacheSimple(): void
+    public function testBuild(): void
     {
-        $rows = TableParentRepo::toList();
-        self::assertGreaterThan(0, count($rows));
-        $cs = new CacheServicesmysql();
-        TableParentRepo::base()->setCacheService($cs);
-        $row = TableParentRepo::useCache(2000)->first();
-        $row = TableParentRepo::useCache(2000)->first();
-        self::assertEquals([
-            0 => 'getfail.TableParent::first70d697ea4281195ebedfb784d13aa2241760521ee792326129f609e8da713127',
-            1 => 'set.TableParent::first70d697ea4281195ebedfb784d13aa2241760521ee792326129f609e8da713127',
-            2 => 'getok.TableParent::first70d697ea4281195ebedfb784d13aa2241760521ee792326129f609e8da713127'
-        ], $cs->track);
 
-        TableParentRepo::base()->setCacheService(null);
+        $relations = [
+            'TableParent' => ['TableParentRepo', 'TableParentModel'],
+            'TableChild' => ['TableChildRepo', 'TableChildModel'],
+            'TableGrandChild' => ['TableGrandChildRepo', 'TableGrandChildModel'],
+            'TableGrandChildTag' => ['TableGrandChildTagRepo', 'TableGrandChildTagModel'],
+            'TableParentxCategory' => ['TableParentxCategoryRepo', 'TableParentxCategoryModel'],
+            'TableCategory' => ['TableCategoryRepo', 'TableCategoryModel'],
+            'TableParentExt' => ['TableParentExtRepo', 'TableParentExtModel'],
+        ];
+        $columnRelation = [
+            'TableParent' => [
+                '_idchild2FK' => 'PARENT',
+                '_TableParentxCategory' => 'MANYTOMANY',
+                'fieldKey' => ['encrypt', null],
+                'extracol' => 'datetime3'
+            ],
+            'TableParentExt' => ['_idtablaparentExtPK' => 'PARENT']
+        ];
+        $columnRemove = [
+            //'TableParent'=>['idchild2FK']
+        ];
+        $extraColumn = [
+            'TableParent' => ['extracol' => 'CURRENT_TIMESTAMP', 'extracol2' => '20']
+        ];
+
+        $tables = $this->pdoOne->tableSorted();
+        self::assertEquals([0 => 'TableGrandChild',
+            1 => 'TableCategory',
+            2 => 'TableChild',
+            3 => 'TableGrandChildTag',
+            4 => 'TableParent',
+            5 => 'TableParentExt',
+            6 => 'TableParentxCategory'], $tables);
+
+        $this->pdoOne->generateCodeClassConversions([
+            'datetime' => 'datetime',
+            'tinyint' => 'bool',
+            'int' => 'int',
+            'decimal' => 'decimal'
+        ]);
+        $errors = $this->pdoOne->generateAllClasses($relations, 'TestDb', ['repomysql', 'mysql\repomodel'],
+            [__DIR__ . '/../examples/repomysql/generated', __DIR__ . '/../examples/repomysql/generatedmodel'], true, $columnRelation, $extraColumn
+            , $columnRemove);
+        self::assertEquals([], $errors);
+
     }
 
-    /** @noinspection NullPointerExceptionInspection */
     public function testCache(): void
     {
         $rows = TableParentRepo::toList();
@@ -693,6 +482,234 @@ class PdoOne_mysql_gen_test extends TestCase
             "getfail.TableParent::firstc47e9fda10c3e9581450d888d6d47ddbd239765657977d3b6e76d751d918a7a3",
             "set.TableParent::firstc47e9fda10c3e9581450d888d6d47ddbd239765657977d3b6e76d751d918a7a3"
         ], $cs->track);
+
+    }
+
+    /*public function testDef() {
+        $dep = $this->pdoOne->tableDependency(true, false);
+        $this->assertEquals([
+                                [
+                                    0 => 'tablacategory',
+                                    1 => 'tablachild',
+                                    2 => 'tablagrandchild',
+                                    3 => 'tablagrandchildcat',
+                                    4 => 'tablaParent',
+                                    5 => 'tablaparentxcategory',
+                                    6 => 'typetable'
+                                ],
+                                [
+                                    'tablacategory' => array(),
+                                    'tablachild' => array(
+                                        'idgrandchildFK' => 'tablagrandchild',
+                                        '/idgrandchildFK' => 'tablagrandchild'
+                                    ),
+                                    'tablagrandchild' => array(),
+                                    'tablagrandchildcat' => array(
+                                        'IdgrandchildFK' => 'tablagrandchild',
+                                        '/IdgrandchildFK' => 'tablagrandchild'
+                                    ),
+                                    'tablaParent' => array(
+                                        'idchild2FK' => 'tablachild',
+                                        '/idchild2FK' => 'tablachild',
+                                        'idchildFK' => 'tablachild',
+                                        '/idchildFK' => 'tablachild'
+                                    ),
+                                    'tablaparentxcategory' => array(
+                                        'idcategoryPKFK' => 'tablacategory',
+                                        '/idcategoryPKFK' => 'tablacategory',
+                                        'idtablaparentPKFK' => 'tablaParent',
+                                        '/idtablaparentPKFK' => 'tablaParent'
+                                    ),
+                                    'typetable' => array()
+                                ],
+                                [
+                                    'tablacategory' => array(
+                                        'IdTableCategoryPK' => array(
+                                            0 => '/idcategoryPKFK',
+                                            1 => 'tablaparentxcategory'
+                                        )
+                                    ),
+                                    'tablachild' => array(
+                                        'idtablachildPK' => array(
+                                            0 => '/idchildFK',
+                                            1 => 'tablaParent'
+                                        )
+                                    ),
+                                    'tablagrandchild' => array(
+                                        'idgrandchildPK' => array(
+                                            0 => '/IdgrandchildFK',
+                                            1 => 'tablagrandchildcat'
+                                        )
+                                    ),
+                                    'tablagrandchildcat' => array(),
+                                    'tablaParent' => array(
+                                        'idtablaparentPK' => array(
+                                            0 => '/idtablaparentPKFK',
+                                            1 => 'tablaparentxcategory'
+                                        )
+                                    ),
+                                    'tablaparentxcategory' => array(),
+                                    'typetable' => array()
+                                ]
+                            ], $dep);
+
+
+    }
+    */
+
+    public function testCacheSimple(): void
+    {
+        $rows = TableParentRepo::toList();
+        self::assertGreaterThan(0, count($rows));
+        $cs = new CacheServicesmysql();
+        TableParentRepo::base()->setCacheService($cs);
+        TableParentRepo::useCache(2000)->first();
+        TableParentRepo::useCache(2000)->first();
+        self::assertEquals([
+            0 => 'getfail.TableParent::first70d697ea4281195ebedfb784d13aa2241760521ee792326129f609e8da713127',
+            1 => 'set.TableParent::first70d697ea4281195ebedfb784d13aa2241760521ee792326129f609e8da713127',
+            2 => 'getok.TableParent::first70d697ea4281195ebedfb784d13aa2241760521ee792326129f609e8da713127'
+        ], $cs->track);
+
+        TableParentRepo::base()->setCacheService(null);
+    }
+
+    public function testCount(): void
+    {
+        $r = TableParentRepo::where('idtablaparentpk>?', 3)->toList();
+        $a2 = count($r);
+
+
+        $a1 = TableParentRepo::where('idtablaparentpk>?', 3)->count();
+        self::assertEquals($a2, $a1);
+        //echo "----\n";
+
+        $a1 = TableParentRepo::where('idtablaparentpk>?', 3)->count();
+        self::assertEquals($a2, $a1);
+
+    }
+
+    public function testFactory(): void
+    {
+        //   TODO: FACTORY CON SETRECURSIVE FALLA
+        self::assertEquals(['idtablaparentPK' => 0,
+            '_TableParentExt' => [
+                'idtablaparentExtPK' => 0,
+                'fieldExt' => ''
+            ],
+            '_TableParentxCategory' => [],
+            'fieldVarchar' => '',
+            'idchildFK' => 0,
+            '_idchildFK' => [
+                'idtablachildPK' => 0,
+                '_TableParent' => null,
+                'NameChild' => '',
+                'idgrandchildFK' => 0,
+                '_idgrandchildFK' => null
+            ],
+            'idchild2FK' => 0,
+            'fieldInt' => 0,
+            'fielDecimal' => 0.0,
+            'fieldDateTime' => '',
+            'fieldUnique' => '',
+            'fieldKey' => ''], TableParentRepo::setRecursive('*')->factory());
+
+    }
+
+    public function testFirst(): void
+    {
+        $r = TableParentRepo::where('idtablaparentpk>?', 0)->toListSimple();
+        self::assertEquals([0 => 1,
+            1 => 2], $r);
+        $r = TableParentRepo::where('idtablaparentpk>?', 0)->firstScalar();
+        self::assertEquals(1, $r);
+        $r = TableParentRepo::exist(1);
+        self::assertEquals(true, $r);
+        $r = TableParentRepo::exist(-1);
+        self::assertEquals(false, $r);
+        $obj = TableParentRepo::factory();
+        $obj['idtablaparentPK'] = 1;
+        $r = TableParentRepo::exist($obj);
+        $obj = new stdClass();
+        self::assertEquals(true, $r);
+        $obj->idtablaparentPK = 1;
+        $r = TableParentRepo::exist($obj);
+        self::assertEquals(true, $r);
+    }
+
+    public function testGrandChild(): void
+    {
+        try {
+            if (!TableGrandChildRepo::createTable()) {
+                (TableGrandChildRepo::setFalseOnError(true))::truncate();
+            }
+        } catch (Exception $e) {
+        }
+        $gc = TableGrandChildRepo::factoryNull();
+        $gc['idgrandchildPK'] = 1;
+        $gc['NameGrandChild'] = 'GrandChild #1';
+        try {
+            $in = TableGrandChildRepo::insert($gc);
+        } catch (Exception $e) {
+            $in = $e->getMessage();
+        }
+        self::assertGreaterThan(1, $in);
+
+        $gc['idgrandchildPK'] = 2;
+        $gc['NameGrandChild'] = 'GrandChild #2';
+        try {
+            $in2 = TableGrandChildRepo::insert($gc);
+        } catch (Exception $e) {
+            $in2 = $e->getMessage();
+        }
+        self::assertGreaterThan($in, $in2);
+    }
+
+    public function testOneToMany(): void
+    {
+        $rows = TableChildRepo::setRecursive(['_TableParent'])->first(1);
+        $rows['_TableParent'][0]['fieldDateTime'] = null;
+        $rows['_TableParent'][1] = null;
+        self::assertEquals([
+            'idtablachildPK' => 1,
+            'NameChild' => 'ch1',
+            'idgrandchildFK' => 1,
+            '_TableParent' => array(0 => [
+                'idtablaparentPK' => 1,
+                'fieldVarchar' => 'varchar',
+                'idchildFK' => 1,
+                'idchild2FK' => 1,
+                'fieldInt' => 123,
+                'fielDecimal' => 123.123,
+                'fieldDateTime' => null,
+                'fieldUnique' => 'u1',
+                'fieldKey' => '1',
+                'extracol' => null,
+                'extracol2' => null,
+
+            ]
+            , 1 => null)
+        ], $rows);
+    }
+
+    /** @noinspection SuspiciousAssignmentsInspection */
+
+    public function testQuery(): void
+    {
+        $sql = 'select idtablaparentpk from ' . TableParentRepo::TABLE . ' where idtablaparentpk=?';
+        self::assertEquals([0 => ['idtablaparentpk' => 1]], TableParentRepo::query($sql, [1]));
+
+    }
+
+    /** @noinspection NullPointerExceptionInspection */
+
+    public function testQuery2(): void
+    {
+        $r = TableParentRepo::order('idtablaparentpk')->toListSimple();
+        self::assertEquals([1, 2], $r);
+        $r = TableParentRepo::where('idtablaparentpk<?', 3)->order('idtablaparentpk desc')->toListSimple();
+        self::assertEquals([2, 1], $r);
+
 
     }
 
@@ -870,63 +887,6 @@ class PdoOne_mysql_gen_test extends TestCase
         ], $rows);
     }
 
-    public function testOneToMany(): void
-    {
-        $rows = TableChildRepo::setRecursive(['_TableParent'])->first(1);
-        $rows['_TableParent'][0]['fieldDateTime'] = null;
-        $rows['_TableParent'][1] = null;
-        self::assertEquals([
-            'idtablachildPK' => 1,
-            'NameChild' => 'ch1',
-            'idgrandchildFK' => 1,
-            '_TableParent' => array(0 => [
-                'idtablaparentPK' => 1,
-                'fieldVarchar' => 'varchar',
-                'idchildFK' => 1,
-                'idchild2FK' => 1,
-                'fieldInt' => 123,
-                'fielDecimal' => 123.123,
-                'fieldDateTime' => null,
-                'fieldUnique' => 'u1',
-                'fieldKey' => '1',
-                'extracol' => null,
-                'extracol2' => null,
-
-            ]
-            , 1 => null)
-        ], $rows);
-    }
-
-    public function testUpdateDelete(): void
-    {
-        $p = TableParentRepo::factory();
-        $p['idchildFK'] = null;
-        $p['idchild2FK'] = null;
-        $p['fieldUnique'] = 'uni';
-        self::assertGreaterThan(0, TableParentRepo::insert($p));
-
-        $p['fieldInt'] = 123;
-        $p['fielDecimal'] = 123.123;
-        $p['fieldVarchar'] = 'vc';
-        self::assertGreaterThan(0, TableParentRepo::update($p));
-
-        $p2 = TableParentRepo::first($p['idtablaparentPK']);
-        // delete the values that we don't want to compare
-        $p2['fieldDateTime'] = false;
-        $p2['_TableParentExt'] = null;
-        $p2['_TableParentxCategory'] = null;
-        $p2['_idchildFK'] = null;
-        $p2['extracol'] = null;
-        $p2['extracol2'] = null;
-        $p['extracol'] = null;
-        $p['extracol2'] = null;
-        self::assertEquals($p2, $p);
-
-        self::assertEquals(true, TableParentRepo::deleteById($p['idtablaparentPK']));
-
-
-    }
-
     public function testSelectOneToMany_ManyToOne(): void
     {
         try {
@@ -961,6 +921,47 @@ class PdoOne_mysql_gen_test extends TestCase
                 'idchild2FK' => 1
             )
             , $rows);
+    }
+
+    public function testUpdateDelete(): void
+    {
+        $p = TableParentRepo::factory();
+        $p['idchildFK'] = null;
+        $p['idchild2FK'] = null;
+        $p['fieldUnique'] = 'uni';
+        self::assertGreaterThan(0, TableParentRepo::insert($p));
+
+        $p['fieldInt'] = 123;
+        $p['fielDecimal'] = 123.123;
+        $p['fieldVarchar'] = 'vc';
+        self::assertGreaterThan(0, TableParentRepo::update($p));
+
+        $p2 = TableParentRepo::first($p['idtablaparentPK']);
+        // delete the values that we don't want to compare
+        $p2['fieldDateTime'] = false;
+        $p2['_TableParentExt'] = null;
+        $p2['_TableParentxCategory'] = null;
+        $p2['_idchildFK'] = null;
+        $p2['extracol'] = null;
+        $p2['extracol2'] = null;
+        $p['extracol'] = null;
+        $p['extracol2'] = null;
+        self::assertEquals($p2, $p);
+
+        self::assertEquals(true, TableParentRepo::deleteById($p['idtablaparentPK']));
+
+
+    }
+
+    public function testValidate(): void
+    {
+        $b = TableParentRepo::factory();
+        self::assertEquals(true, TableParentRepo::validateModel($b));
+    }
+
+    public function test_ping_ping() {
+        $ping='pong';
+        $this->assertEquals('pong',$ping);
     }
 
 }

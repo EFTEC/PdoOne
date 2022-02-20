@@ -1,4 +1,5 @@
-<?php /** @noinspection PhpUnusedLocalVariableInspection */
+<?php /** @noinspection ForgottenDebugOutputInspection */
+/** @noinspection PhpUnusedLocalVariableInspection */
 /** @noinspection SuspiciousAssignmentsInspection */
 /** @noinspection PhpUndefinedClassInspection */
 /** @noinspection PhpUnhandledExceptionInspection */
@@ -9,6 +10,7 @@ namespace eftec\tests;
 
 
 use eftec\IPdoOneCache;
+use eftec\MessageContainer;
 use eftec\PdoOne;
 use eftec\PdoOneQuery;
 use Exception;
@@ -137,7 +139,7 @@ class PdoOne_sqlsrv_Test extends TestCase
         if(!$this->pdoOne->tableExist('table1')) {
             $this->pdoOne->createTable('table1', ['id' => 'int']);
         }
-        $this->assertNotEquals('', $this->pdoOne->generateCodeClass('table1'));
+        $this->assertNotEquals('', $this->pdoOne->generateAbstractClass('table1'));
         $this->assertEquals("['id'=>0]",$this->pdoOne->generateCodeArray('table1'));
         $this->assertStringContainsString("array \$result=array(['id'=>0])",$this->pdoOne->generateCodeSelect('select * from table1'));
         $this->assertStringContainsString('$pdo->createTable(\'table1',$this->pdoOne->generateCodeCreate('table1'));
@@ -367,7 +369,7 @@ class PdoOne_sqlsrv_Test extends TestCase
 	    }
 	    $this->assertEquals(true,$r,"failed to create table");
 
-        $this->assertGreaterThan(1,count($this->pdoOne->objectList('table')));
+        $this->assertGreaterThan(1,count($this->pdoOne->objectList()));
 	    // we add some values
 	    $this->pdoOne->set(['id_category' => 123, 'catname' => 'cheap'])
 		    ->from('product_category')->insert();
@@ -624,10 +626,14 @@ class PdoOne_sqlsrv_Test extends TestCase
 
     public function test_getMessages(): void
     {
+        $this->assertInstanceOf(MessageContainer::class, $this->pdoOne->getMessagesContainer());
+
+        $this->pdoOne->clearError();
         try {
-            $this->pdoOne->getMessagesContainer();
-        } catch(Exception $ex) {
-            $this->assertTrue(true);
+            $this->pdoOne->select('*')->from('wrongtable')->where('1=1')->toList();
+        } catch (Exception $ex) {
+            $this->assertNotEmpty($this->pdoOne->getErrors());
+            $this->assertStringContainsString('Uncaught Exception', $this->pdoOne->getFirstError());
         }
     }
 
@@ -771,7 +777,7 @@ class PdoOne_sqlsrv_Test extends TestCase
 	 */
     public function test_setEncryption(): void
     {
-        $this->pdoOne->setEncryption('123//*/*saass11___1212fgbl@#€€"','123//*/*saass11___1212fgbl@#€€"','AES-256-CTR');
+        $this->pdoOne->setEncryption('123//*/*saass11___1212fgbl@#€€"','123//*/*saass11___1212fgbl@#€€"');
         $value=$this->pdoOne->encrypt("bv lfg+hlc ,vc´,c35'ddl ld_vcvñvc +*=/\\");
         $this->assertTrue(strlen($value)>10,"Encrypted");
         $return=$this->pdoOne->decrypt($value);
