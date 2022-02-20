@@ -36,7 +36,7 @@
     "eftec/messagecontainer": "^2.4"
   },
   "bin": [
-    "lib/pdoonecli.php"
+    "lib/pdoonecli"
   ],
   "suggest": {
     "eftec/validationone": "For keeping and storing the messages"

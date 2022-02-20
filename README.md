@@ -4,7 +4,6 @@ PdoOne. It's a simple wrapper for PHP's PDO library compatible with SQL Server (
 
 This library tries to **work as fast as possible**. Most of the operations are simple string/array managements and work in the bare metal of the PDO library, but it also allows to create an ORM.
 
-
 [![Packagist](https://img.shields.io/packagist/v/eftec/PdoOne.svg)](https://packagist.org/packages/eftec/PdoOne)
 [![Total Downloads](https://poser.pugx.org/eftec/PdoOne/downloads)](https://packagist.org/packages/eftec/PdoOne)
 [![Maintenance](https://img.shields.io/maintenance/yes/2022.svg)]()
@@ -40,7 +39,7 @@ $products=$pdoOne
 or using the ORM.
 
 ```php
-ProductRepo // this class was generated with echo $pdoOne()->generateCodeClass(['Product']);
+ProductRepo // this class was generated with echo $pdoOne()->generateCodeClass(['Product']); or using the cli.
     ::where("name = ?",[$_POST['name']])
     ::toList();
 ```
@@ -1367,7 +1366,7 @@ Execute the next line (in the lib folder)
 
 (or pointing to the right folder)
 
-> php /var/web/vendor/eftec/lib/pdoonecli.php <arg>
+> php /var/web/vendor/eftec/lib/pdoonecli <arg>
 
 ### Run as CLI interative
 
@@ -2011,20 +2010,27 @@ In a nutshell:
 >
 > Every decimal version means that it patches/fixes/refactoring a previous functionality i.e. 1.5.0 -> 1.5.1 (fix)
 
+* 2.29 2022-02-20
+  
+  * Added as a binary file
+  
 * 2.27 2022-02-19
+
   * **[core]** lots of cleanups.
   * **[_BasePdoOneRepo]** update to binary version 8.  **You must rebuild the repository classes to rebuild the base class.**
+
 * 2.26 2022-02-19
   * **[core]** **[new]** added more type hiting for the arguments for safety and stability of the tool.
-  * **[cli]** now the CLI is located a different file called pdoonecli.php.  Also the CLI has more features than before, including the generation of the OOP classes.
+  * **[cli]** now the CLI is located a different file called pdoonecli  Also the CLI has more features than before, including the generation of the OOP classes.
+
 * 2.25 2022-02-01
   * **[core]** **[new]** Key-Value functionalities:setKvDefaultTable(),kv(),createTableKV(),dropTableKV(),getKV(),setKV(),garbageCollectorKV(),delKV(),flushKV(),existKV()
   * **[core]** **[new]** createIndex()
 
 * 2.24.1 2022-02-06
-  
+
   * **[core]** **[fix]** Now, most generation of classes are defined in templates instead of the code. It will keep the code clean while it will also save a few bits of memories (old: 6446 lines, current: 5963 lines).
-  
+
 * 2.24 2022-02-06
 
   * **[repo]** Now the library allows multiple connections using different repository class bases.
