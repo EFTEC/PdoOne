@@ -13,7 +13,7 @@ use RuntimeException;
 /**
  * Class PdoOneQuery
  *
- * @version       2.3 2022-02-04
+ * @version       2.4 2022-02-04
  * @package       eftec
  * @author        Jorge Castro Castillo
  * @copyright (c) Jorge Castro C. Dual Licence: MIT and Commercial License  https://github.com/EFTEC/PdoOne

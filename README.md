@@ -2011,8 +2011,9 @@ In a nutshell:
 >
 > Every decimal version means that it patches/fixes/refactoring a previous functionality i.e. 1.5.0 -> 1.5.1 (fix)
 
-* 2.26 2022-02-19
-  *  
+* 2.27 2022-02-19
+  * **[core]** lots of cleanups.
+  * **[_BasePdoOneRepo]** update to binary version 8.  **You must rebuild the repository classes to rebuild the base class.**
 * 2.26 2022-02-19
   * **[core]** **[new]** added more type hiting for the arguments for safety and stability of the tool.
   * **[cli]** now the CLI is located a different file called pdoonecli.php.  Also the CLI has more features than before, including the generation of the OOP classes.

@@ -14,7 +14,7 @@ use RuntimeException;
 /**
  * Class _BasePdoOneRepo
  *
- * @version       6.2 2022-02-04
+ * @version       6.3 2022-02-04
  * @package       eftec
  * @author        Jorge Castro Castillo
  * @copyright (c) Jorge Castro C. Dual Licence: MIT and Commercial License  https://github.com/EFTEC/PdoOne
@@ -22,7 +22,7 @@ use RuntimeException;
 abstract class _BasePdoOneRepo
 {
     // it is used for compatibility.
-    public const BINARYVERSION = 7;
+    public const BINARYVERSION = 8;
 
     /**
      * If true then it returns false on exception. Otherwise, it throws an exception.
