@@ -814,13 +814,14 @@ PdoOne: $v  Cli: $vc
 
 // this code only runs on CLI but only if pdoonecli.php is called directly and via command line.
 if (!defined('PHPUNIT_COMPOSER_INSTALL') && !defined('__PHPUNIT_PHAR__')
-    && isset($_SERVER['PHP_SELF']) && basename($_SERVER['PHP_SELF']) === 'pdoonecli.php'
-    && pdoonecli::isCli()
+    && isset($_SERVER['PHP_SELF']) &&
+    pdoonecli::isCli() &&
+    ( basename($_SERVER['PHP_SELF']) === 'pdoonecli.php' || basename($_SERVER['PHP_SELF']) === 'pdoonecli')
 ) {
     // we also excluded it if it is called by phpunit.
     $path = pdoonecli::findVendorPath();
     /** @noinspection PhpIncludeInspection */
-    include __DIR__ . '/' . $path . '/autoload.php';
+    include_once __DIR__ . '/' . $path . '/autoload.php';
     $cli = new pdoonecli();
     /** @noinspection PhpUnhandledExceptionInspection */
     $cli->cliEngine();

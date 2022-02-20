@@ -30,11 +30,14 @@
   "require": {
     "php": ">=7.2.5",
     "ext-json": "*",
-    "eftec/clione": "^1.6.1",
+    "eftec/clione": "^1.7",
     "ext-pdo": "*",
     "ext-readline": "*",
     "eftec/messagecontainer": "^2.4"
   },
+  "bin": [
+    "lib/pdoonecli.php"
+  ],
   "suggest": {
     "eftec/validationone": "For keeping and storing the messages"
   },
