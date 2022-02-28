@@ -1380,6 +1380,31 @@ You could use the TAB key to autocomplete values (if any).
 
 Note: You could also save and load the configuration.
 
+#### Examples
+
+Connect to mysql and generate a csv from the table "actor"
+
+```shell
+## via arguments
+php pdoonecli --databasetype mysql --server 127.0.0.1 -u root -p abc.123 --database sakila -in actor -out csv
+## via user input (interactive)
+php pdoonecli -i -in actor -out csv
+```
+
+Save the configuration in a file
+
+```shell
+php pdoonecli --databasetype mysql --server 127.0.0.1 -u root -p abc.123 --database sakila --saveconfig myconfig
+```
+
+Load the configuration from a file
+
+```shell
+php pdoonecli --loadconfig myconfig -in actor -out csv
+```
+
+
+
 ### Run CLI to generate repository classes.
 
 You could use the flag "-cli" to generate the repository classes
@@ -2010,9 +2035,13 @@ In a nutshell:
 >
 > Every decimal version means that it patches/fixes/refactoring a previous functionality i.e. 1.5.0 -> 1.5.1 (fix)
 
+
+* 2.30 2022-02-28
+  * Update PdoOneCli to version 0.9
+    * The CLI is almost functional with the new engine however it requires some cleanups.
 * 2.29 2022-02-20
   
-  * Added as a binary file
+  * Added as a binary file (vendor/bin/pdoonecli)
   
 * 2.27 2022-02-19
 

@@ -265,7 +265,7 @@ class PdoOne
                 $this->service = new PdoOne_TestMockup($this);
                 break;
             default:
-                throw new RuntimeException('no value selected');
+                throw new RuntimeException('no database type selected');
         }
         $charset = $this->service->construct($charset, []);
         $this->server = $server;
@@ -3137,6 +3137,9 @@ class PdoOne
         if (is_array($namespaces)) {
             [$namespace, $namespaceModel] = $namespaces;
         } else {
+            if(is_null($namespaces) || is_null($folder)) {
+                throw new RuntimeException('namespace or folder is not set');
+            }
             $namespace = $namespaces;
             $namespaceModel = $namespaces;
         }
