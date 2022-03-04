@@ -5,6 +5,7 @@
 namespace eftec;
 
 use eftec\CliOne\CliOne;
+use eftec\CliOne\CliOneParam;
 use Exception;
 use RuntimeException;
 
@@ -24,11 +25,11 @@ use RuntimeException;
  * @package       eftec
  * @author        Jorge Castro Castillo
  * @copyright (c) Jorge Castro C. Dual Licence: MIT and Commercial License  https://github.com/EFTEC/PdoOne
- * @version       0.9
+ * @version       0.10
  */
 class PdoOneCli
 {
-    public const VERSION = '0.9';
+    public const VERSION = '0.10';
 //</editor-fold>
     /**
      * @var array
@@ -51,7 +52,11 @@ class PdoOneCli
      */
     protected $columnsTable = [];
     /** @var CliOne */
-    private $cli;
+    public $cli;
+    /**
+     * @var CliOneParam
+     */
+    protected $help;
 
     public function __construct()
     {
@@ -107,6 +112,11 @@ class PdoOneCli
     protected function injectRunParam($firstCommand,$interactive):void {
 
     }
+    protected function injectEvalGenerate($command) : void
+    {
+
+    }
+
 
     /**
      * It executes the cli Engine.
@@ -124,7 +134,7 @@ class PdoOneCli
                 'Example:<dim> <command> --help</dim>'], 'command')
             ->setInput(false)
             ->add();
-        $help = $this->cli->evalParam('help', false);
+        $this->help = $this->cli->evalParam('help', false);
 
         $this->cli->createParam('first',[], 'command')
             ->setRelated([])
@@ -218,7 +228,7 @@ class PdoOneCli
 
         $this->cli->createParam('namespace', 'ns', 'longflag')
             ->setRequired(false)
-            ->setDescription('The namespace', '', [
+            ->setDescription('The namespace', 'The namespace used', [
                 'Example: <dim>"customers"</dim>'])
             ->setDefault('')
             ->setInput(false)
@@ -325,7 +335,7 @@ class PdoOneCli
         $this->runCliGenerationParams();
         switch ($first->value) {
             case 'generate':
-                if (!$help->missing) {
+                if (!$this->help->missing) {
                     $this->showHelpGenerate();
                 } else {
                     $this->runCliGeneration();
@@ -333,7 +343,7 @@ class PdoOneCli
                 return;
             case 'export':
                 $this->runCliSaveConfig($interactive);
-                if (!$help->missing || !$database) {
+                if (!$this->help->missing || !$database) {
                     $this->showHelpExport();
                 } else {
                     try {
@@ -364,6 +374,7 @@ class PdoOneCli
                 }
                 return;
             default:
+
                 $this->injectRunParam($first->value,$interactive);
                 break;
         }
@@ -919,6 +930,9 @@ PdoOne: $v  Cli: $vc
                 case 'configure':
                     $this->databaseConfigure();
                     break;
+                default:
+                    $this->injectEvalGenerate($com->valueKey);
+                    break;
             }
             if ($this->cli->isParameterPresent('command') !== 'none') {
                 break;
@@ -972,7 +986,7 @@ PdoOne: $v  Cli: $vc
         //unset($tablexclass['actor']);
         //$tablexclass['newtable']='newtablerepo';
         //unset($columnsTable['city']['city']);
-        $columnsTable['city']['xxxx'] = 'new';
+        //$columnsTable['city']['xxxx'] = 'new';
         // end testing
         $this->cli->showLine();
         ksort($conversion);
