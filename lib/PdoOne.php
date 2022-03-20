@@ -4,7 +4,6 @@
 /** @noinspection PhpUnused */
 /** @noinspection PhpConditionAlreadyCheckedInspection */
 
-
 namespace eftec;
 
 use DateTime;
@@ -27,11 +26,11 @@ use stdClass;
  * @package       eftec
  * @author        Jorge Castro Castillo
  * @copyright (c) Jorge Castro C. Dual Licence: MIT and Commercial License  https://github.com/EFTEC/PdoOne
- * @version       2.31
+ * @version       2.32
  */
 class PdoOne
 {
-    public const VERSION = '2.31';
+    public const VERSION = '2.32';
     /** @var int We need this value because null and false could be a valid value. */
     public const NULL = PHP_INT_MAX;
     /** @var string Prefix of the tables */
@@ -187,23 +186,23 @@ class PdoOne
     /**
      * PdoOne constructor.  It doesn't open the connection to the database.
      *
-     * @param string      $database =['mysql','sqlsrv','oci','test'][$i]
-     * @param string      $server   server ip. Ex. 127.0.0.1 127.0.0.1:3306<br>
-     *                              In 'oci' it could be 'orcl' or 'localhost/orcl' (instance name) or <br>
-     *                              (DESCRIPTION=(ADDRESS=(PROTOCOL=TCP)(HOST=localhost)(PORT=1521))<br>
-     *                              (CONNECT_DATA=(SERVICE_NAME=ORCL)))
-     * @param string      $user     Ex. root.  In 'oci' the user is set in uppercase.
-     * @param string      $pwd      Ex. 12345
-     * @param string      $db       Ex. mybase. In 'oci' $db is set equals to $user
-     * @param bool        $logFile  if true then it store the error in the php log file (if any)
-     * @param string|null $charset  Example utf8mb4
-     * @param int         $nodeId   It is the id of the node (server). It is used
-     *                              for sequence. Form 0 to 1023
+     * @param string      $databaseType =['mysql','sqlsrv','oci','test'][$i]
+     * @param string      $server       server ip. Ex. 127.0.0.1 127.0.0.1:3306<br>
+     *                                  In 'oci' it could be 'orcl' or 'localhost/orcl' (instance name) or <br>
+     *                                  (DESCRIPTION=(ADDRESS=(PROTOCOL=TCP)(HOST=localhost)(PORT=1521))<br>
+     *                                  (CONNECT_DATA=(SERVICE_NAME=ORCL)))
+     * @param string      $user         Ex. root.  In 'oci' the user is set in uppercase.
+     * @param string      $pwd          Ex. 12345
+     * @param string      $db           Ex. mybase. In 'oci' this value is ignored and it uses $user
+     * @param bool        $logFile      if true then it store the error in the php log file (if any)
+     * @param string|null $charset      Example utf8mb4
+     * @param int         $nodeId       It is the id of the node (server). It is used
+     *                                  for sequence. Form 0 to 1023
      *
      * @see PdoOne::connect()
      */
     public function __construct(
-        string  $database,
+        string  $databaseType,
         string  $server,
         string  $user,
         string  $pwd,
@@ -213,7 +212,7 @@ class PdoOne
         int     $nodeId = 1
     )
     {
-        $this->construct($database, $server, $user, $pwd, $db, $logFile, $charset, $nodeId);
+        $this->construct($databaseType, $server, $user, $pwd, $db, $logFile, $charset, $nodeId);
         if (!class_exists('eftec\MessageContainer')) {
             throw new RuntimeException('MessageContainer class does not exist');
         }
@@ -238,7 +237,7 @@ class PdoOne
     }
 
     protected function construct(
-        $database,
+        $databaseType,
         $server,
         $user,
         $pwd,
@@ -248,7 +247,7 @@ class PdoOne
         $nodeId = 1
     ): void
     {
-        $this->databaseType = $database;
+        $this->databaseType = $databaseType;
         switch ($this->databaseType) {
             case 'mysql':
                 $this->service = new PdoOne_Mysql($this);
@@ -2270,7 +2269,7 @@ class PdoOne
     //</editor-fold>
     private function typeDict($row)
     {
-        return $this->service->typeDict($row, true);
+        return $this->service->typeDict($row);
     }
 
     public static function camelize($input, $separator = '_')
@@ -3137,7 +3136,7 @@ class PdoOne
         if (is_array($namespaces)) {
             [$namespace, $namespaceModel] = $namespaces;
         } else {
-            if(is_null($namespaces) || is_null($folder)) {
+            if (is_null($namespaces) || is_null($folder)) {
                 throw new RuntimeException('namespace or folder is not set');
             }
             $namespace = $namespaces;
@@ -3197,14 +3196,14 @@ class PdoOne
                     . json_encode(error_get_last());
             }
             // creating model
-            $resultcolumns=[];
+            $resultcolumns = [];
             try {
                 // we need to generate it to obtain resultcolumns
                 $classModel1 = $this->generateAbstractModelClass($tableName, $namespaceModel, $custom,
                     $relationsModel, [], null, null, $baseClass, $extraCols, $columnRem, $resultcolumns);
             } catch (Exception $e) {
                 $result = false;
-                $classModel1='error '.$e->getMessage();
+                $classModel1 = 'error ' . $e->getMessage();
             }
             if ($result === false) {
                 $logs[] = "Error: Unable to save Abstract Model Class file '{$folder}Abstract"
@@ -3213,7 +3212,6 @@ class PdoOne
             if ($useModel) {
                 try {
                     //$custom = (isset($customRelation[$tableName])) ? $customRelation[$tableName] : [];
-
                     $result = @file_put_contents($folderModel . 'Abstract' . $relationsModel[$tableName] . '.php',
                         $classModel1);
                 } catch (Exception $e) {
@@ -3356,7 +3354,7 @@ class PdoOne
         array  &$resultColumns = []
     )
     {
-        $resultColumns=[];
+        $resultColumns = [];
         $this->beginTry();
         $filename = __DIR__ . '/template/template_abstractmodel.php';
         $r = $this->phpstart . $this->openTemplate($filename);
@@ -3452,14 +3450,14 @@ class PdoOne
                 case 'string':
                 case 'time':
                 case 'timestamp':
-                    $resultColumns[]=[$varn,$field['phptype'],null];
+                    $resultColumns[] = [$varn, $field['phptype'], null];
                     $fields[] = "\t/** @var " . $field['phptype'] . " \$$varn  */\n\tpublic \$$varn;";
                     $fieldsb[] = "\t\t\$obj->$varn=isset(\$array['$varn']) ?  \$array['$varn'] : null;";
                     break;
             }
         }
         foreach ($extraColumn as $varn => $value) {
-            $resultColumns[]=[$varn,'mixed',null];
+            $resultColumns[] = [$varn, 'mixed', null];
             $fields[] = "\t/** @var mixed \$$varn extra column: $value */\n\tpublic \$$varn;";
             $fieldsb[] = "\t\t\$obj->$varn=isset(\$array['$varn']) ?  \$array['$varn'] : null;";
         }
@@ -3474,7 +3472,7 @@ class PdoOne
                     break;
                 case 'MANYTOONE':
                     $class = $classRelations[$field['reftable']];
-                    $resultColumns[]=[$varn,$field['key'],$class];
+                    $resultColumns[] = [$varn, $field['key'], $class];
                     $field2s[] = "\t/** @var $class \$$varn manytoone */\n\tpublic \$$varn;";
                     $field2sb[] = "\t\t\$obj->$varn=isset(\$array['$varn']) ? \n\t\t\t\$obj->$varn=$class::fromArray(\$array['$varn']) \n\t\t\t: null; // manytoone";
                     $col = ltrim($varn, self::$prefixBase);
@@ -3483,19 +3481,19 @@ class PdoOne
                     break;
                 case 'MANYTOMANY':
                     $class = $classRelations[$field['reftable']];
-                    $resultColumns[]=[$varn,$field['key'],$class];
+                    $resultColumns[] = [$varn, $field['key'], $class];
                     $field2s[] = "\t/** @var {$class}[] \$$varn manytomany */\n\tpublic \$$varn;";
                     $field2sb[] = "\t\t\$obj->$varn=isset(\$array['$varn']) ?  \n\t\t\t\$obj->$varn=$class::fromArrayMultiple(\$array['$varn']) \n\t\t\t: null; // manytomany";
                     break;
                 case 'ONETOMANY':
                     $class = $classRelations[$field['reftable']];
-                    $resultColumns[]=[$varn,$field['key'],$class];
+                    $resultColumns[] = [$varn, $field['key'], $class];
                     $field2s[] = "\t/** @var {$class}[] \$$varn onetomany */\n\tpublic \$$varn;";
                     $field2sb[] = "\t\t\$obj->$varn=isset(\$array['$varn']) ?  \n\t\t\t\$obj->$varn=$class::fromArrayMultiple(\$array['$varn']) \n\t\t\t: null; // onetomany";
                     break;
                 case 'ONETOONE':
                     $class = $classRelations[$field['reftable']];
-                    $resultColumns[]=[$varn,$field['key'],$class];
+                    $resultColumns[] = [$varn, $field['key'], $class];
                     $field2s[] = "\t/** @var $class \$$varn onetoone */\n\tpublic \$$varn;";
                     $field2sb[] = "\t\t\$obj->$varn=isset(\$array['$varn']) ?  \n\t\t\t\$obj->$varn=$class::fromArray(\$array['$varn']) \n\t\t\t: null; // onetoone";
                     $col = $field['col'] ?? $pkFirst;
@@ -3592,7 +3590,6 @@ class PdoOne
     )
     {
         $this->beginTry();
-
         $filename = __DIR__ . '/template/template_model.php';
         $r = $this->phpstart . $this->openTemplate($filename);
         //$lastns = explode('\\', $namespace);
@@ -3878,18 +3875,17 @@ class PdoOne
             $modelClass = false;
             $modelUse = false;
         }
-        $helpcolumns='';
-        $related='';
-        foreach($resultColumns as $v) {
+        $helpcolumns = '';
+        $related = '';
+        foreach ($resultColumns as $v) {
             if ($v[2]) {
-                $related.=" * @see $v[2]\n";
+                $related .= " * @see $v[2]\n";
                 $c = '(' . $v[2] . ')';
             } else {
                 $c = '';
             }
-            $helpcolumns.=" * <li>$v[0] $v[1] $c</li>\n";
+            $helpcolumns .= " * <li>$v[0] $v[1] $c</li>\n";
         }
-
         $this->endTry();
         return str_replace(array(
             '{version}',
@@ -4578,20 +4574,15 @@ BOOTS;
      * Create a table<br>
      * <b>Example:</b><br>
      * <pre>
-     * createTable('products',['id'=>'int not null','name'=>'varchar(50) not
-     * null'],'id');
+     * // no universal (false indicates native sql)
+     * createTable('products',['id'=>'int not null','name'=>'varchar(50) null'],'id','','',false);
+     * // universal (true indicates universal)
+     * createTable('products',['id int','name string(50) null'],'id','','',true);
      * </pre>
      *
-     * @param string            $tableName        The name of the new table. This
-     *                                            method will fail if the table
-     *                                            exists.
-     * @param array             $definition       An associative array with the
-     *                                            definition of the
-     *                                            columns.<br>
-     *                                            Example ['id'=>'integer not
-     *                                            null','name'=>'varchar(50)
-     *                                            not
-     *                                            null']
+     * @param string            $tableName        The name of the new table. This method will fail if the table exists.
+     * @param array             $definition       An associative array with the definition of the columns.<br>
+     *                                            <b>Example:</b><br>
      * @param string|null|array $primaryKey       The column's name that is primary key.<br>
      *                                            If the value is an associative array then it generates all keys
      * @param string|null       $extra            An extra operation inside of
@@ -4601,7 +4592,20 @@ BOOTS;
      *                                            table.<br> It replaces the
      *                                            default values outside of the
      *                                            table
-     *
+     * @param bool              $universal        (default false), if true, then it expect an universal definition of
+     *                                            table<br> This definition is simplified and it works as: This
+     *                                            definition is simplified ("column type null extra") and it doesn't
+     *                                            contain all the definitions<br>
+     *                                            <b>Example: universal vs native</b>
+     *                                            <ul>
+     *                                            <li>"name string(20) null" -> "name varchar(20) null"</li>
+     *                                            <li>"creationDate datetime null" -> "creationDate date null"</li>
+     *                                            <li>"id int" -> "id int not null"</li>
+     *                                            <li>"id int  extra" -> "id int not null extra"</li>
+     *                                            </ul>
+     *                                            <b>allow nulls</b>: "null" for null or " " for not null.<br>
+     *                                            <b>types allowed</b>: int, long, decimal, bool, date, datetime,
+     *                                            timestamp, string<br>
      * @return bool
      * @throws Exception
      */
@@ -4610,14 +4614,51 @@ BOOTS;
         array   $definition,
                 $primaryKey = null,
         ?string $extra = '',
-        ?string $extraOutside = ''
+        ?string $extraOutside = '',
+        bool    $universal = false
     ): bool
     {
+        if ($universal) {
+            $definition = $this->convertUniversal($definition);
+        }
         $this->endTry();
         $sql = $this->service->createTable($tableName, $definition, $primaryKey, $extra, $extraOutside);
         $r = $this->runMultipleRawQuery($sql);
         $this->endTry();
         return $r;
+    }
+
+    /**
+     * it converts a natural definition of table to a specific definition of table.<br>
+     * This definition is simplified ("column type null extra") and it doesn't contain all the definitions<br>
+     * <b>Example:</b>
+     * <pre>
+     * "name string(20) null" -> "name varchar(20) null"
+     * "creationDate datetime null" -> "creationDate date null"
+     * "id int" -> "id int not null"
+     * "id int  extra" -> "id int not null extra" (check the double space for null)
+     * </pre>
+     * <b>types allowed</b>: int, long, decimal, bool, date, datetime, timestamp, string<br>
+     * @param array $simpledef
+     * @return array
+     */
+    protected function convertUniversal(array $simpledef): array
+    {
+        $result = [];
+        foreach ($simpledef as $v) {
+            @[$name, $typeOrigin, $extra] = explode(' ', trim($v), 3);
+            $tmp = explode(' ', str_replace(['(', ')'], [' ', ''], $typeOrigin), 2);
+            $type = $tmp[0];
+            $len = $tmp[1] ?? null;
+            $extra =' '.$extra.' ';
+            $realType = $this->service->translateType($type, $len);
+            $nullReal = strpos($extra,' null ')!==false ? 'null' : 'not null';
+            $identityReal=(strpos($extra,' autonumeric ')!==false)?$this->service->translateExtra('autonumeric'):'';
+            $extra=trim(str_replace([' null ',' autonumeric '],['',''],$extra));
+
+            $result[$name] = "$realType $nullReal $identityReal $extra";
+        }
+        return $result;
     }
 
     /**
@@ -5208,7 +5249,7 @@ BOOTS;
     public function insert(
         ?string $tableName = null,
         ?array  $tableDef = null,
-               $values = PdoOne::NULL
+                $values = PdoOne::NULL
     )
     {
         $this->beginTry();
@@ -5428,7 +5469,7 @@ BOOTS;
     public function delete(
         ?string $tableName = null,
         ?array  $tableDefWhere = null,
-               $valueWhere = PdoOne::NULL
+                $valueWhere = PdoOne::NULL
     )
     {
         return (new PdoOneQuery($this))->delete($tableName, $tableDefWhere, $valueWhere);
@@ -5460,9 +5501,9 @@ BOOTS;
     public function update(
         ?string $tableName = null,
         ?array  $tableDef = null,
-               $values = PdoOne::NULL,
+                $values = PdoOne::NULL,
         ?array  $tableDefWhere = null,
-               $valueWhere = PdoOne::NULL
+                $valueWhere = PdoOne::NULL
     )
     {
         return (new PdoOneQuery($this))->update($tableName, $tableDef, $values, $tableDefWhere, $valueWhere);
@@ -5892,7 +5933,7 @@ BOOTS;
     public function flushKV(): bool
     {
         try {
-            return $this->runRawQuery("delete from $this->tableKV where 1=1")!==false;
+            return $this->runRawQuery("delete from $this->tableKV where 1=1") !== false;
         } catch (Exception $ex) {
             if ($this->throwOnError) {
                 throw $ex;

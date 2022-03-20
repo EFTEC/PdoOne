@@ -2035,6 +2035,8 @@ In a nutshell:
 >
 > Every decimal version means that it patches/fixes/refactoring a previous functionality i.e. 1.5.0 -> 1.5.1 (fix)
 
+* 2.32 2022-03-20
+  * createTable() allows to specify the definition of the columns universally using a pseudo php syntax. 
 * 2.31 2022-03-04
   * PdoOneCli updated to version 0.10 
 * 2.30 2022-02-28

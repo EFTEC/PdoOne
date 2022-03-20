@@ -1,4 +1,5 @@
-<?php /** @noinspection UnnecessaryCastingInspection */
+<?php /** @noinspection PhpUnused */
+/** @noinspection UnnecessaryCastingInspection */
 /** @noinspection ReturnTypeCanBeDeclaredInspection */
 /** @noinspection PhpMissingReturnTypeInspection */
 /** @noinspection PhpMissingParamTypeInspection */

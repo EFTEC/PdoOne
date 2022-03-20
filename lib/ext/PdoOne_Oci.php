@@ -80,28 +80,28 @@ class PdoOne_Oci implements PdoOne_IExt
         }
     }
 
-    public function truncate($tableName,$extra,$force)   {
+    public function truncate(string $tableName, string $extra, bool $force)   {
         if(!$force) {
             $sql = 'truncate table ' . $this->parent->addDelimiter($tableName) . " $extra";
-            return $this->parent->runRawQuery($sql, null, true);
+            return $this->parent->runRawQuery($sql);
         }
         $sql="DELETE FROM ".$this->parent->addDelimiter($tableName)." $extra";
-        return $this->parent->runRawQuery($sql,null, true);
+        return $this->parent->runRawQuery($sql);
     }
 
-    public function resetIdentity($tableName,$newValue=0,$column='') {
+    public function resetIdentity(string $tableName, int $newValue=0, string $column='') {
         $sql="ALTER TABLE \"$tableName\" MODIFY($column GENERATED AS IDENTITY (START WITH $newValue))";
-        return $this->parent->runRawQuery($sql, null, true);
+        return $this->parent->runRawQuery($sql);
     }
 
     /**
      * @param string $table
-     * @param false $onlyDescription
+     * @param false  $onlyDescription
      *
      * @return array|bool|mixed|PDOStatement|null
      * @throws Exception
      */
-    public function getDefTableExtended($table,$onlyDescription=false) {
+    public function getDefTableExtended(string $table, bool $onlyDescription=false) {
 
         $query="SELECT
                   ut.table_name
@@ -113,14 +113,14 @@ class PdoOne_Oci implements PdoOne_IExt
                   all_tables ut,all_tab_comments utc
                   WHERE ut.TABLE_NAME=? and ut.owner=?
                   and ut.table_name=utc.table_name and ut.owner=utc.owner ";
-        $result=$this->parent->runRawQuery($query,[$table,$this->parent->db],true);
+        $result=$this->parent->runRawQuery($query,[$table,$this->parent->db]);
         if($onlyDescription) {
             return $result['description'];
         }
         return $result;
     }
 
-    public function getDefTable($table) : array
+    public function getDefTable(string $table) : array
     {
         /** @var array $result =array(["name"=>'',"is_identity"=>0,"increment_value"=>0,"seed_value"=>0]) */
         // throw new RuntimeException("no yet implemented");
@@ -152,13 +152,14 @@ class PdoOne_Oci implements PdoOne_IExt
      * @param array $col An associative array with the data of the column
      *
      * @return string
+     * @noinspection PhpUnused
      */
     protected static function oci_getType($col): string
     {
         throw new RuntimeException("no yet implemented");
         /** @var array $exclusion type of columns that don't use size */
         $exclusion = ['int', 'long', 'tinyint', 'year', 'bigint', 'bit', 'smallint', 'float', 'money'];
-        if (in_array($col['DATA_TYPE'], $exclusion) !== false) {
+        if (in_array($col['DATA_TYPE'], $exclusion, true) !== false) {
             return $col['DATA_TYPE'];
         }
         if ($col['NUMERIC_SCALE']) {
@@ -173,13 +174,13 @@ class PdoOne_Oci implements PdoOne_IExt
     }
 
     /**
-     * @param string $table
-     * @param bool $returnSimple
-     * @param null $filter
+     * @param string      $table
+     * @param bool        $returnSimple
+     * @param string|null $filter
      * @return array
      * @throws Exception
      */
-    public function getDefTableKeys($table, $returnSimple, $filter = null) : array
+    public function getDefTableKeys(string $table, bool $returnSimple, string $filter = null) : array
     {
         $columns = [];
         /** @var array $result =array(["IndexName"=>'',"ColumnName"=>'',"is_unique"=>0,"is_primary_key"=>0,"TYPE"=>0]) */
@@ -192,7 +193,7 @@ class PdoOne_Oci implements PdoOne_IExt
                          ->where("ALL_indexes.table_name='$table' and ALL_indexes.table_owner='{$this->parent->db}'")
                          ->order('"IndexName"')->toList();
         foreach ($result as $k=>$item) {
-            if (in_array($item['ColumnName'],$pks)) {
+            if (in_array($item['ColumnName'], $pks, true)) {
                 $type = 'PRIMARY KEY';
                 $result[$k]['is_primary_key']=1;
             } elseif ($item['is_unique']) {
@@ -213,15 +214,15 @@ class PdoOne_Oci implements PdoOne_IExt
     }
 
     /**
-     * @param string $table
-     * @param bool $returnSimple
-     * @param null $filter
-     * @param bool $assocArray
+     * @param string      $table
+     * @param bool        $returnSimple
+     * @param string|null $filter
+     * @param bool        $assocArray
      * @return array
      * @throws Exception
      * todo: missing checking
      */
-    public function getDefTableFK($table, $returnSimple, $filter = null, $assocArray =false) : array
+    public function getDefTableFK(string $table, bool $returnSimple, string $filter = null, bool $assocArray =false) : array
     {
 
         $columns = [];
@@ -283,7 +284,7 @@ class PdoOne_Oci implements PdoOne_IExt
         return $this->parent->filterKey($filter, $columns, $returnSimple);
     }
 
-    function typeDict($row, $default = true): string
+    function typeDict($row, bool $default = true): string
     {
         $type = strtolower(@$row['oci:decl_type']);
         switch ($type) {
@@ -330,7 +331,7 @@ class PdoOne_Oci implements PdoOne_IExt
         }
     }
 
-    public function objectExist($type = 'table') :  null|string
+    public function objectExist(string $type = 'table') :  ?string
     {
 
         switch ($type) {
@@ -350,7 +351,7 @@ class PdoOne_Oci implements PdoOne_IExt
         return $query;
     }
 
-    public function objectList($type = 'table', $onlyName = false)
+    public function objectList(string $type = 'table', bool $onlyName = false)
     {
         switch ($type) {
             case 'table':
@@ -408,7 +409,7 @@ class PdoOne_Oci implements PdoOne_IExt
 					where obj.name='$tableName' ";
     }
 
-    public function createSequence($tableSequence = null, $method = 'snowflake') : array
+    public function createSequence(string $tableSequence = null, string $method = 'snowflake') : array
     {
         return ["CREATE SEQUENCE \"$tableSequence\"
 				    START WITH 1  
@@ -420,7 +421,49 @@ class PdoOne_Oci implements PdoOne_IExt
         return "select \"$sequenceName\".nextval as \"id\" from dual";
     }
 
-    public function createTable($tableName, $definition, $primaryKey = null, $extra = '', $extraOutside = '') : string
+    public function translateExtra($universalExtra):string
+    {
+        /** @noinspection DegradedSwitchInspection */
+        switch ($universalExtra) {
+            case 'autonumeric':
+                $sqlExtra='GENERATED BY DEFAULT AS IDENTITY';
+                break;
+            default:
+                $sqlExtra=$universalExtra;
+        }
+        return $sqlExtra;
+    }
+    public function translateType($universalType,$len=null): string
+    {
+        switch ($universalType) {
+            case 'int':
+                $sqlType="int";
+                break;
+            case 'long':
+                $sqlType="long";
+                break;
+            case 'decimal':
+                $sqlType="decimal($len) ";
+                break;
+            case 'bool':
+                $sqlType="char(1)";
+                break;
+            case 'date':
+            case 'datetime':
+                $sqlType="date";
+                break;
+            case 'timestamp':
+                $sqlType="timestamp";
+                break;
+            case 'string':
+            default:
+                $sqlType="varchar2($len) ";
+                break;
+        }
+        return $sqlType;
+    }
+
+    public function createTable(string $tableName, array $definition, $primaryKey = null, string $extra = '', string $extraOutside = '') : string
     {
         $sql = "CREATE TABLE \"$tableName\" (";
         foreach ($definition as $key => $type) {
@@ -476,7 +519,7 @@ class PdoOne_Oci implements PdoOne_IExt
         return $sql;
     }
 
-    public function createFK($tableName, $foreignKeys): ?string
+    public function createFK(string $tableName, array $foreignKeys): ?string
     {
         $sql = '';
         foreach ($foreignKeys as $key => $value) {
@@ -495,7 +538,7 @@ class PdoOne_Oci implements PdoOne_IExt
         }
         return $sql;
     }
-    public function createIndex($tableName, $indexesAndDef): string
+    public function createIndex(string $tableName, array $indexesAndDef): string
     {
         throw new RuntimeException('not tested');
         $sql = '';
@@ -530,7 +573,7 @@ class PdoOne_Oci implements PdoOne_IExt
     {
         return $this->createTable($tableKV
             , ['KEYT' => 'VARCHAR2(256)', 'VALUE' => 'CLOB', 'TIMESTAMP' => 'BIGINT']
-            , 'KEYT', '');
+            , 'KEYT');
     }
 
     public function getPK($query, $pk=null)
@@ -549,7 +592,7 @@ class PdoOne_Oci implements PdoOne_IExt
                         AND cons.constraint_name = cols.constraint_name
                         AND cons.owner = cols.owner";
 
-                $r=$this->parent->runRawQuery($q,[$query,$this->parent->db],true);
+                $r=$this->parent->runRawQuery($q,[$query,$this->parent->db]);
 
                 if (count($r) >= 1) {
                     foreach ($r as $item) {
@@ -566,12 +609,12 @@ class PdoOne_Oci implements PdoOne_IExt
         }
     }
 
-    public function callProcedure($procName, &$arguments = [], $outputColumns = [])
+    public function callProcedure(string $procName, array &$arguments = [], array $outputColumns = [])
     {
         // TODO: Implement callProcedure() method.
     }
 
-    public function createProcedure($procedureName, $arguments = [], $body = '', $extra = ''): string
+    public function createProcedure(string $procedureName, $arguments = [], string $body = '', string $extra = ''): string
     {
         if(is_array($arguments)) {
             $sqlArgs = '';

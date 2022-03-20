@@ -424,6 +424,7 @@ abstract class _BasePdoOneRepo
         $class = static::class;
         $table = static::TABLE;
         $p0 = strripos($class, $table) + strlen($table);
+        /** @noinspection PhpStrictComparisonWithOperandsOfDifferentTypesInspection */
         if ($p0 === false) {
             return false;
         }

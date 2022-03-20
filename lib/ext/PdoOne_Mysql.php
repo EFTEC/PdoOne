@@ -1,4 +1,5 @@
-<?php /** @noinspection UnknownInspectionInspection */
+<?php /** @noinspection TypeUnsafeArraySearchInspection */
+/** @noinspection UnknownInspectionInspection */
 /** @noinspection TypeUnsafeComparisonInspection */
 
 /** @noinspection DuplicatedCode */
@@ -61,13 +62,14 @@ class PdoOne_Mysql implements PdoOne_IExt
         $this->parent->conn1->setAttribute(PDO::ATTR_EMULATE_PREPARES, false);
 
     }
-    public function callProcedure($procName, &$arguments=[], $outputColumns=[]): bool
+    public function callProcedure(string $procName, array &$arguments=[], array $outputColumns=[]): bool
     {
         $keys=array_keys($arguments);
         $outputFields='';
         $argList = '';
         if(count($keys)>0) {
             foreach($arguments as $k=>$v) {
+                /** @noinspection TypeUnsafeArraySearchInspection */
                 if(in_array($k,$outputColumns)) {
                     $argList.="@$k,";
                     $outputFields.="@$k as `$k`,";
@@ -83,6 +85,7 @@ class PdoOne_Mysql implements PdoOne_IExt
         }
         $stmt=$this->parent->prepare("call $procName($argList)");
         foreach($arguments as $k=>$v) {
+            /** @noinspection TypeUnsafeArraySearchInspection */
             if(!in_array($k,$outputColumns)) {
                 $stmt->bindParam($k, $arguments[$k], $this->parent->getType($arguments[$k]));
             }
@@ -98,10 +101,10 @@ class PdoOne_Mysql implements PdoOne_IExt
         return true;
     }
 
-    public function truncate($tableName,$extra,$force)  {
+    public function truncate(string $tableName, string $extra, bool $force)  {
         if(!$force) {
             $sql = 'truncate table ' . $this->parent->addDelimiter($tableName) . " $extra";
-            return $this->parent->runRawQuery($sql, null, true);
+            return $this->parent->runRawQuery($sql);
         }
         $sql="SET FOREIGN_KEY_CHECKS = 0;
             TRUNCATE ".$this->parent->addDelimiter($tableName)." $extra;
@@ -109,23 +112,23 @@ class PdoOne_Mysql implements PdoOne_IExt
         return $this->parent->runMultipleRawQuery($sql, true);
     }
 
-    public function resetIdentity($tableName,$newValue=0,$column='') {
+    public function resetIdentity(string $tableName, int $newValue=0, string $column='') {
         $sql="ALTER TABLE " . $this->parent->addDelimiter($tableName) . " AUTO_INCREMENT = $newValue";
-        return $this->parent->runRawQuery($sql, null, true);
+        return $this->parent->runRawQuery($sql);
     }
 
     /**
      * @param string $table
-     * @param bool $onlyDescription
+     * @param bool   $onlyDescription
      *
      * @return array|string|null  ['table','engine','schema','collation','description']
      * @throws Exception
      */
-    public function getDefTableExtended($table,$onlyDescription=false) {
+    public function getDefTableExtended(string $table, bool $onlyDescription=false) {
         $query="SELECT table_name as `table`,engine as `engine`, table_schema as `schema`,".
             " table_collation as `collation`, table_comment as `description` ".
             "FROM information_schema.tables WHERE table_schema = '?' and table_name='?'";
-        $result=$this->parent->runRawQuery($query,[$this->parent->db,$table],true);
+        $result=$this->parent->runRawQuery($query,[$this->parent->db,$table]);
         if($onlyDescription) {
             return $result['description'];
         }
@@ -133,13 +136,13 @@ class PdoOne_Mysql implements PdoOne_IExt
     }
 
     /**
-     * @param $table
+     * @param string $table
      * @return array ['Field','Type','Null','Key','Default','Extra']
      * @throws Exception
      */
-    public function getDefTable($table): array
+    public function getDefTable(string $table): array
     {
-        $defArray = $this->parent->runRawQuery('show columns from ' . $table, [], true);
+        $defArray = $this->parent->runRawQuery('show columns from ' . $table, []);
         $result = [];
         foreach ($defArray as $col) {
             /*if ($col['Key'] === 'PRI') {
@@ -163,7 +166,7 @@ class PdoOne_Mysql implements PdoOne_IExt
     }
 
 
-    public function getDefTableFK($table, $returnSimple, $filter = null, $assocArray = false) : array
+    public function getDefTableFK(string $table, bool $returnSimple, string $filter = null, bool $assocArray = false) : array
     {
         $columns = [];
         /** @var array $result =array(["CONSTRAINT_NAME"=>'',"COLUMN_NAME"=>'',"REFERENCED_TABLE_NAME"=>''
@@ -228,7 +231,7 @@ class PdoOne_Mysql implements PdoOne_IExt
         return $this->parent->filterKey($filter, $columns, $returnSimple);
     }
 
-    public function typeDict($row, $default = true): string
+    public function typeDict($row, bool $default = true): string
     {
         $type = @$row['native_type'];
         switch ($type) {
@@ -262,7 +265,7 @@ class PdoOne_Mysql implements PdoOne_IExt
         }
     }
 
-    public function objectExist($type = 'table'): ?string
+    public function objectExist(string $type = 'table'): ?string
     {
         switch ($type) {
             case 'table':
@@ -292,7 +295,7 @@ class PdoOne_Mysql implements PdoOne_IExt
         return $query;
     }
 
-    public function objectList($type = 'table', $onlyName = false)
+    public function objectList(string $type = 'table', bool $onlyName = false)
     {
         switch ($type) {
             case 'table':
@@ -343,7 +346,7 @@ class PdoOne_Mysql implements PdoOne_IExt
 						and referenced_table_name is not null;";
     }
 
-    public function createSequence($tableSequence = null, $method = 'snowflake'): array
+    public function createSequence(string $tableSequence = null, string $method = 'snowflake'): array
     {
         $ok = $this->parent->createTable($tableSequence, [
             'id'   => 'bigint(20) unsigned NOT NULL AUTO_INCREMENT',
@@ -394,13 +397,13 @@ class PdoOne_Mysql implements PdoOne_IExt
     }
 
     /**
-     * @param string $procedureName
+     * @param string       $procedureName
      * @param string|array $arguments
-     * @param string $body
-     * @param string $extra
+     * @param string       $body
+     * @param string       $extra
      * @return string
      */
-    public function createProcedure($procedureName,$arguments='',$body='',$extra=''): string
+    public function createProcedure(string $procedureName, $arguments='', string $body='', string $extra=''): string
     {
         if(is_array($arguments)) {
             $sqlArgs = '';
@@ -429,13 +432,57 @@ class PdoOne_Mysql implements PdoOne_IExt
         $sequenceName = ($sequenceName == '') ? $this->parent->tableSequence : $sequenceName;
         return "select next_$sequenceName({$this->parent->nodeId}) id";
     }
+    public function translateExtra($universalExtra):string
+    {
+        /** @noinspection DegradedSwitchInspection */
+        switch ($universalExtra) {
+            case 'autonumeric':
+                $sqlExtra='AUTO_INCREMENT';
+                break;
+            default:
+                $sqlExtra=$universalExtra;
+        }
+        return $sqlExtra;
+    }
+    public function translateType($universalType,$len=null): string
+    {
+        switch ($universalType) {
+            case 'int':
+                $sqlType="int";
+                break;
+            case 'long':
+                $sqlType="long";
+                break;
+            case 'decimal':
+                $sqlType="decimal($len) ";
+                break;
+            case 'bool':
+                $sqlType="char(1)";
+                break;
+            case 'date':
+                $sqlType="date";
+                break;
+            case 'datetime':
+                $sqlType="datetime";
+                break;
+            case 'timestamp':
+                $sqlType="timestamp";
+                break;
+            case 'string':
+            default:
+                $sqlType="varchar($len) ";
+                break;
+        }
+        return $sqlType;
+    }
+
 
     public function createTable(
-        $tableName,
-        $definition,
+        string $tableName,
+        array  $definition,
         $primaryKey = null,
-        $extra = '',
-        $extraOutside = ''
+        string $extra = '',
+        string $extraOutside = ''
     ): string
     {
         $extraOutside = ($extraOutside === '') ? "ENGINE=InnoDB DEFAULT CHARSET={$this->parent->charset};"
@@ -490,7 +537,7 @@ class PdoOne_Mysql implements PdoOne_IExt
     }
 
     /** @noinspection SqlResolve */
-    public function createFK($tableName, $foreignKeys): string
+    public function createFK(string $tableName, array $foreignKeys): string
     {
         $sql = '';
         foreach ($foreignKeys as $key => $value) {
@@ -507,7 +554,7 @@ class PdoOne_Mysql implements PdoOne_IExt
         }
         return $sql;
     }
-    public function createIndex($tableName, $indexesAndDef): string
+    public function createIndex(string $tableName, array $indexesAndDef): string
     {
         $sql = '';
         foreach ($indexesAndDef as $key => $typeIndex) {
@@ -557,7 +604,7 @@ class PdoOne_Mysql implements PdoOne_IExt
         }
     }
 
-    public function getDefTableKeys($table, $returnSimple, $filter = null): array
+    public function getDefTableKeys(string $table, bool $returnSimple, string $filter = null): array
     {
         $columns = [];
         /** @var array $indexArr =array(["Table"=>'',"Non_unique"=>0,"Key_name"=>'',"Seq_in_index"=>0

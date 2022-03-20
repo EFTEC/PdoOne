@@ -405,7 +405,39 @@ class PdoOne_mysql_Test extends TestCase
         self::assertEquals(array('id' => 'PRIMARY KEY'), $this->pdoOne->getDefTableKeys('table5'));
         self::assertEquals(array(), $this->pdoOne->getDefTableFK('table5'));
     }
+    public function test_createtableUniversal(): void
+    {
+        if ($this->pdoOne->tableExist('table5')) {
+            $this->pdoOne->dropTable('table5');
+        }
+        $r = $this->pdoOne->createTable('table5',['id int','name string(50) null'],
+            ['id' => 'PRIMARY KEY'],'','',true);
+        self::assertEquals(true, $r);
 
+        self::assertEquals(array(
+            'id' => [
+                'phptype' => 'int',
+                'conversion' => null,
+                'type' => 'int',
+                'size' => null,
+                'null' => false,
+                'identity' => false,
+                'sql' => 'int not null'
+            ],
+            'name' => [
+                'phptype' => 'string',
+                'conversion' => null,
+                'type' => 'varchar',
+                'size' => '50',
+                'null' => true,
+                'identity' => false,
+                'sql' => 'varchar(50)'
+
+            ]
+        ), $this->pdoOne->getDefTable('table5'));
+        self::assertEquals(array('id' => 'PRIMARY KEY'), $this->pdoOne->getDefTableKeys('table5'));
+        self::assertEquals(array(), $this->pdoOne->getDefTableFK('table5'));
+    }
 
     public function test_chainreset(): void
     {

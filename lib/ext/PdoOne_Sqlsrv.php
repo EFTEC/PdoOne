@@ -64,20 +64,20 @@ class PdoOne_Sqlsrv implements PdoOne_IExt
 
     }
 
-    public function truncate($tableName, $extra, $force)
+    public function truncate(string $tableName, string $extra, bool $force)
     {
         if (!$force) {
             $sql = 'truncate table ' . $this->parent->addDelimiter($tableName) . " $extra";
-            return $this->parent->runRawQuery($sql, null, true);
+            return $this->parent->runRawQuery($sql);
         }
         $sql = "DELETE FROM " . $this->parent->addDelimiter($tableName) . " $extra";
-        return $this->parent->runRawQuery($sql, null, true);
+        return $this->parent->runRawQuery($sql);
     }
 
-    public function resetIdentity($tableName, $newValue = 0, $column = '')
+    public function resetIdentity(string $tableName, int $newValue = 0, string $column = '')
     {
         $sql = "DBCC CHECKIDENT ('$tableName',RESEED, $newValue)";
-        return $this->parent->runRawQuery($sql, null, true);
+        return $this->parent->runRawQuery($sql);
     }
 
     /**
@@ -87,7 +87,7 @@ class PdoOne_Sqlsrv implements PdoOne_IExt
      * @return array|bool|mixed|PDOStatement|null ['table','engine','schema','collation','description']
      * @throws Exception
      */
-    public function getDefTableExtended($table, $onlyDescription = false)
+    public function getDefTableExtended(string $table, bool $onlyDescription = false)
     {
         $query = "SELECT objects.name as [table],'' as [engine],schemas.name as [schema]
                 ,'' as [collation],value description
@@ -97,14 +97,14 @@ class PdoOne_Sqlsrv implements PdoOne_IExt
                                     'SCHEMA', schema_name(objects.schema_id),
                                     'TABLE', objects.name, null, null) ep
                 WHERE sys.objects.name=?";
-        $result = $this->parent->runRawQuery($query, [$table], true);
+        $result = $this->parent->runRawQuery($query, [$table]);
         if ($onlyDescription) {
             return $result['description'];
         }
         return $result;
     }
 
-    public function getDefTable($table) : array
+    public function getDefTable(string $table) : array
     {
         /** @var array $result =array(["name"=>'',"is_identity"=>0,"increment_value"=>0,"seed_value"=>0]) */
         $findIdentity =
@@ -147,7 +147,7 @@ class PdoOne_Sqlsrv implements PdoOne_IExt
     {
         /** @var array $exclusion type of columns that don't use size */
         $exclusion = ['int', 'long', 'tinyint', 'year', 'bigint', 'bit', 'smallint', 'float', 'money'];
-        if (in_array($col['DATA_TYPE'], $exclusion) !== false) {
+        if (in_array($col['DATA_TYPE'], $exclusion, true) !== false) {
             return $col['DATA_TYPE'];
         }
         if ($col['NUMERIC_SCALE']) {
@@ -162,13 +162,13 @@ class PdoOne_Sqlsrv implements PdoOne_IExt
     }
 
     /**
-     * @param string $table
-     * @param bool   $returnSimple
-     * @param null   $filter
+     * @param string      $table
+     * @param bool        $returnSimple
+     * @param string|null $filter
      * @return array
      * @throws Exception
      */
-    public function getDefTableKeys($table, $returnSimple, $filter = null) : array
+    public function getDefTableKeys(string $table, bool $returnSimple, string $filter = null) : array
     {
         $columns = [];
         /** @var array $result =array(["IndexName"=>'',"ColumnName"=>'',"is_unique"=>0,"is_primary_key"=>0,"TYPE"=>0]) */
@@ -201,15 +201,15 @@ class PdoOne_Sqlsrv implements PdoOne_IExt
     }
 
     /**
-     * @param string $table
-     * @param bool   $returnSimple
-     * @param null   $filter
-     * @param bool   $assocArray
+     * @param string      $table
+     * @param bool        $returnSimple
+     * @param string|null $filter
+     * @param bool        $assocArray
      * @return array
      * @throws Exception
      * @noinspection GrazieInspection
      */
-    public function getDefTableFK($table, $returnSimple, $filter = null, $assocArray = false) : array
+    public function getDefTableFK(string $table, bool $returnSimple, string $filter = null, bool $assocArray = false) : array
     {
         $columns = [];
         /** @var array $fkArr =array(["foreign_key_name"=>'',"referencing_table_name"=>'',"COLUMN_NAME"=>''
@@ -260,7 +260,7 @@ class PdoOne_Sqlsrv implements PdoOne_IExt
         return $this->parent->filterKey($filter, $columns, $returnSimple);
     }
 
-    function typeDict($row, $default = true): string
+    function typeDict($row, bool $default = true): string
     {
         $type = @$row['sqlsrv:decl_type'];
         switch ($type) {
@@ -304,7 +304,7 @@ class PdoOne_Sqlsrv implements PdoOne_IExt
         }
     }
 
-    public function objectExist($type = 'table') : ?string
+    public function objectExist(string $type = 'table') : ?string
     {
         switch ($type) {
             case 'table':
@@ -326,7 +326,7 @@ class PdoOne_Sqlsrv implements PdoOne_IExt
         return $query;
     }
 
-    public function objectList($type = 'table', $onlyName = false)
+    public function objectList(string $type = 'table', bool $onlyName = false)
     {
         switch ($type) {
             case 'table':
@@ -383,7 +383,7 @@ class PdoOne_Sqlsrv implements PdoOne_IExt
 					where obj.name='$tableName' ";
     }
 
-    public function createSequence($tableSequence = null, $method = 'snowflake'): array
+    public function createSequence(string $tableSequence = null, string $method = 'snowflake'): array
     {
         $sql=[];
         $sql[] = "CREATE SEQUENCE [$tableSequence]
@@ -416,7 +416,51 @@ class PdoOne_Sqlsrv implements PdoOne_IExt
         return "exec next_$sequenceName {$this->parent->nodeId}";
     }
 
-    public function createTable($tableName, $definition, $primaryKey = null, $extra = '', $extraOutside = '') : string
+    public function translateExtra($universalExtra):string
+    {
+        /** @noinspection DegradedSwitchInspection */
+        switch ($universalExtra) {
+            case 'autonumeric':
+                $sqlExtra='IDENTITY(1,1)';
+                break;
+            default:
+                $sqlExtra=$universalExtra;
+        }
+        return $sqlExtra;
+    }
+    public function translateType($universalType,$len=null): string
+    {
+        switch ($universalType) {
+            case 'int':
+                $sqlType="int";
+                break;
+            case 'long':
+                $sqlType="long";
+                break;
+            case 'decimal':
+                $sqlType="decimal($len) ";
+                break;
+            case 'bool':
+                $sqlType="char(1)";
+                break;
+            case 'date':
+                $sqlType="date";
+                break;
+            case 'datetime':
+                $sqlType="datetime";
+                break;
+            case 'timestamp':
+                $sqlType="timestamp";
+                break;
+            case 'string':
+            default:
+                $sqlType="varchar($len) ";
+                break;
+        }
+        return $sqlType;
+    }
+
+    public function createTable(string $tableName, array $definition, $primaryKey = null, string $extra = '', string $extraOutside = '') : string
     {
         $extraOutside = ($extraOutside === '') ? 'ON [PRIMARY]' : $extraOutside;
         $sql = "set nocount on;
@@ -473,7 +517,7 @@ class PdoOne_Sqlsrv implements PdoOne_IExt
         return $sql;
     }
 
-    public function createFK($tableName, $foreignKeys): ?string
+    public function createFK(string $tableName, array $foreignKeys): ?string
     {
         $sql = '';
         foreach ($foreignKeys as $key => $value) {
@@ -491,7 +535,7 @@ class PdoOne_Sqlsrv implements PdoOne_IExt
         }
         return $sql;
     }
-    public function createIndex($tableName, $indexesAndDef): string
+    public function createIndex(string $tableName, array $indexesAndDef): string
     {
         $sql = '';
         foreach ($indexesAndDef as $key => $typeIndex) {
@@ -555,7 +599,7 @@ class PdoOne_Sqlsrv implements PdoOne_IExt
         }
     }
 
-    public function callProcedure($procName, &$arguments = [], $outputColumns = [])
+    public function callProcedure(string $procName, array &$arguments = [], array $outputColumns = [])
     {
         $keys = array_keys($arguments);
         $argList = '';
@@ -568,7 +612,7 @@ class PdoOne_Sqlsrv implements PdoOne_IExt
         $sql = "{call $procName ($argList)}";
         $stmt = $this->parent->prepare($sql);
         foreach ($arguments as $k => $v) {
-            if (in_array($k, $outputColumns)) {
+            if (in_array($k, $outputColumns, true)) {
                 $stmt->bindParam(':' . $k, $arguments[$k], $this->parent->getType($v) | PDO::PARAM_INPUT_OUTPUT, 4000);
             } else {
                 $stmt->bindParam(':' . $k, $arguments[$k],$this->parent->getType($v));
@@ -588,7 +632,7 @@ class PdoOne_Sqlsrv implements PdoOne_IExt
         return $result;
     }
 
-    public function createProcedure($procedureName, $arguments = [], $body = '', $extra = ''): string
+    public function createProcedure(string $procedureName, $arguments = [], string $body = '', string $extra = ''): string
     {
         if (is_array($arguments)) {
             $sqlArgs = '';
