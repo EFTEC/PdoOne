@@ -25,11 +25,11 @@ use RuntimeException;
  * @package       eftec
  * @author        Jorge Castro Castillo
  * @copyright (c) Jorge Castro C. Dual Licence: MIT and Commercial License  https://github.com/EFTEC/PdoOne
- * @version       0.11
+ * @version       0.14
  */
 class PdoOneCli
 {
-    public const VERSION = '0.11';
+    public const VERSION = '0.14';
 //</editor-fold>
     /**
      * @var array
@@ -42,6 +42,10 @@ class PdoOneCli
     /**
      * @var array
      */
+    protected $alias = [];
+    /**
+     * @var array
+     */
     protected $extracolumn = [];
     /**
      * @var array
@@ -51,6 +55,10 @@ class PdoOneCli
      * @var array
      */
     protected $columnsTable = [];
+    /**
+     * @var array
+     */
+    protected $columnsAlias = [];
     /** @var CliOne */
     public $cli;
     /**
@@ -101,28 +109,36 @@ class PdoOneCli
      * This method is used for to be injected when the initial parameteres are created.
      * @return void
      */
-    protected function injectInitParam() : void {
-    }
-    protected function InjectInitParam2($firstCommand,$interactive):void {
-
-    }
-    protected function InjectLoadFile($firstCommand,$interactive):void {
-
-    }
-    protected function injectEvalParam($firstCommand,$interactive):void {
-
-    }
-
-    protected function injectRunParam($firstCommand,$interactive):void {
-
-    }
-    protected function injectEvalGenerate($command) : void
+    protected function injectInitParam(): void
     {
-
     }
-    protected function injectEngine($first):void
-    {
 
+    protected function InjectInitParam2($firstCommand, $interactive): void
+    {
+    }
+
+    protected function InjectLoadFile($firstCommand, $interactive): void
+    {
+    }
+
+    /** @noinspection PhpUnused */
+    protected function injectEvalParam($firstCommand, $interactive): void
+    {
+    }
+
+    /** @noinspection PhpUnused */
+    protected function injectRunParam($firstCommand, $interactive): void
+    {
+    }
+
+    /** @noinspection PhpUnused */
+    protected function injectEvalGenerate($command): void
+    {
+    }
+
+    /** @noinspection PhpUnused */
+    protected function injectEngine($first): void
+    {
     }
 
     /**
@@ -142,18 +158,16 @@ class PdoOneCli
             ->setInput(false)
             ->add();
         $this->help = $this->cli->evalParam('help');
-
-        $this->cli->createParam('first',[], 'command')
+        $this->cli->createParam('first', [], 'command')
             ->setRelated([])
             ->setRequired(false)
             ->setAllowEmpty()
-            ->setDescription('', '',[])
+            ->setDescription('', '', [])
             ->setInput(false)
             ->add();
         $first = $this->cli->evalParam('first');
-
         $this->cli->createParam('interactive', 'i', 'longflag')
-            ->setRelated(['common', 'export', 'generate'])
+            ->setRelated(['common', 'export', 'generate', 'definition'])
             ->setRequired(false)
             ->setAllowEmpty()
             ->setDescription('Interactive', 'set the input interactively', [
@@ -161,6 +175,16 @@ class PdoOneCli
             ->setInput(false)
             ->add();
         $interactive = !$this->cli->evalParam('interactive')->missing;
+        $this->cli->createParam('definition', [], 'first')
+            ->setRequired(false)
+            ->setAllowEmpty()
+            ->setDescription('It returns the definition of the database', '', [
+                'Example: <dim>"definition --loadconfig myconfig"</dim>.Load a config and generate in interactive mode',
+                'Example: <dim>"definition --command scan --loadconfig .\p2.php -og yes"</dim>. Load a config, scan for changes and override'])
+            ->setDefault('')
+            ->setInput(false)
+            ->add();
+        $this->cli->evalParam('definition');
         $this->cli->createParam('generate', [], 'first')
             ->setRequired(false)
             ->setAllowEmpty()
@@ -181,7 +205,6 @@ class PdoOneCli
             ->add();
         $this->cli->evalParam('export');
         $this->inJectInitParam();
-
         $this->cli->createParam('databasetype', 'dt', 'longflag')
             ->setRelated(['common', 'export', 'generate'])
             ->setRequired(false)
@@ -226,13 +249,17 @@ class PdoOneCli
             ->add();
         $this->cli->createParam('classdirectory')
             ->setCurrentAsDefault()
-            ->setDescription('', 'Select the relative directory to create the classes')
+            ->setDescription('',
+                'Select the relative directory where the repository classes will be created',
+                ['Example: repo'])
             ->setInput()->add();
         $this->cli->createParam('classnamespace')
             ->setCurrentAsDefault()
-            ->setDescription('', 'Select the namespace of the classes')
+            ->setDescription('',
+                'Select the repository\'s namespace.',
+                [ 'It must coincide with the definition of Composer\'s autoloader',
+                    'Example: ns1\\ns2'])
             ->setInput()->add();
-
         $this->cli->createParam('namespace', 'ns', 'longflag')
             ->setRequired(false)
             ->setDescription('The namespace', 'The namespace used', [
@@ -261,6 +288,15 @@ class PdoOneCli
             ->setInput($interactive, 'string', $listPHPFiles)
             ->add();
         switch ($first->value) {
+            case 'definition':
+                $this->cli->createParam('output', 'out', 'longflag')
+                    ->setRelated(['export'])
+                    ->setRequired(false)
+                    ->setDescription('The output file', '', ["The output file"])
+                    ->setDefault('')
+                    ->setInput($interactive)
+                    ->add();
+                break;
             case 'export':
                 $this->cli->createParam('input', 'in', 'longflag')
                     ->setRelated(['export'])
@@ -270,7 +306,7 @@ class PdoOneCli
                         'Example: <dim>-input "table"</dim> = it takkes a table as input value'
                     ])
                     ->setDefault('')
-                    ->setInput( $interactive)
+                    ->setInput($interactive)
                     ->add();
                 $this->cli->createParam('output', 'out', 'longflag')
                     ->setRelated(['export'])
@@ -289,11 +325,11 @@ class PdoOneCli
             case '':
                 break;
             default:
-                $this->inJectInitParam2($first->value,$interactive);
+                $this->inJectInitParam2($first->value, $interactive);
                 break;
         }
-
         switch ($first->value) {
+            case 'definition':
             case 'export':
             case 'generate':
             case '':
@@ -301,7 +337,7 @@ class PdoOneCli
                 $loadconfig = $this->cli->evalParam('loadconfig');
                 if ($loadconfig->value) {
                     [$ok, $data] = $this->cli->readData($loadconfig->value);
-                    if ($ok === false) {
+                    if ($ok === false || !is_array($data)) {
                         $this->cli->showCheck('ERROR', 'red', "unable to open file $loadconfig->value");
                     } else {
                         $this->cli->showCheck('OK', 'green', "Configuration PdoOneCli open $loadconfig->value");
@@ -309,17 +345,18 @@ class PdoOneCli
                             , [], ['databasetype', 'server', 'user', 'password', 'database', 'classdirectory', 'classnamespace']);
                         $this->tablexclass = $data['tablexclass'] ?? [];
                         $this->columnsTable = $data['columnsTable'] ?? [];
+                        $this->columnsAlias = $data['columnsAlias'] ?? [];
                         $this->conversion = $data['conversion'] ?? [];
+                        $this->alias = $data['alias'] ?? [];
                         $this->extracolumn = $data['extracolumn'] ?? [];
                         $this->removecolumn = $config['removecolumn'] ?? [];
                     }
                 }
                 break;
             default:
-                $this->injectLoadFile($first->value,$interactive);
+                $this->injectLoadFile($first->value, $interactive);
                 break;
         }
-
         $database = $this->cli->getParameter('databasetype')
             ->evalParam($interactive, true);
         $server = $this->cli->evalParam('server', $interactive, true);
@@ -327,27 +364,35 @@ class PdoOneCli
         $pwd = $this->cli->evalParam('password', $interactive, true);
         $db = $this->cli->evalParam('database', $interactive, true);
         switch ($first->value) {
+            case 'definition':
+                $output = $this->cli->setErrorType('silent')->evalParam('output', false, true);
+                break;
             case 'export':
                 $input = $this->cli->setErrorType('silent')->evalParam('input', false, true);
                 $output = $this->cli->setErrorType('silent')->evalParam('output', false, true);
                 $namespace = $this->cli->evalParam('namespace', false, true);
                 break;
             case 'generate':
-                $input='';
-                $output='';
-                $namespace='';
+                $input = '';
+                $output = '';
+                $namespace = '';
                 break;
             default:
-                $input='';
-                $output='';
-                $namespace='';
-                $this->injectEvalParam($first->value,$interactive);
+                $input = '';
+                $output = '';
+                $namespace = '';
+                $this->injectEvalParam($first->value, $interactive);
                 break;
         }
-
-
         $this->runCliGenerationParams();
         switch ($first->value) {
+            case 'definition':
+                if (!$this->help->missing) {
+                    $this->showHelpDefinition();
+                } else {
+                    $this->runCliDefinition();
+                }
+                return;
             case 'generate':
                 if (!$this->help->missing) {
                     $this->showHelpGenerate();
@@ -363,6 +408,7 @@ class PdoOneCli
                     try {
                         $pdo = new PdoOne('test', '127.0.0.1', 'root', 'root', 'db'); // mockup database connection
                         $pdo->logLevel = 3;
+                        /** @noinspection PhpUndefinedVariableInspection */
                         $this->cli->showLine($pdo->run($database, $server, $user, $pwd, $db, $input, $output, $namespace));
                     } catch (Exception $ex) {
                         $this->cli->showCheck('error', 'red', $ex->getMessage(), 'stderr');
@@ -388,15 +434,12 @@ class PdoOneCli
                 }
                 return;
             default:
-
-                $this->injectRunParam($first->value,$interactive);
+                $this->injectRunParam($first->value, $interactive);
                 break;
         }
-
-
     } // end cliEngine()
 
-    protected function showLogo():void
+    protected function showLogo(): void
     {
         $v = PdoOne::VERSION;
         $vc = self::VERSION;
@@ -410,6 +453,23 @@ PdoOne: $v  Cli: $vc
 <yellow>Syntax:php " . basename(__FILE__) . " <command> <flags></yellow>
 
 ");
+    }
+
+    protected function showHelpDefinition(): void
+    {
+        $this->cli->showParamSyntax2('Commands:', ['first'], [], null, null, 25);
+        $this->cli->showParamSyntax2('Flags for definition:',
+            ['flag', 'longflag'],
+            ['classdirectory',
+                'classnamespace',
+                'tables',
+                'tablescolumns',
+                'tablecommand',
+                'convertionselected',
+                'convertionnewvalue',
+                'newclassname',
+            ]
+            , null, 'export', 25);
     }
 
     protected function showHelpGenerate(): void
@@ -485,7 +545,7 @@ PdoOne: $v  Cli: $vc
 
     protected function RunCliGenerationSaveConfig(): void
     {
-        if($this->cli->getParameter('command')->origin!=='argument') {
+        if ($this->cli->getParameter('command')->origin !== 'argument') {
             $sg = $this->cli->createParam('yn', [], 'none')
                 ->setDescription('', 'Do you want to save the configuration of the connection?')
                 ->setInput(true, 'optionshort', ['yes', 'no'])
@@ -504,9 +564,9 @@ PdoOne: $v  Cli: $vc
     }
 
 
-    protected function databaseConfigure(): void
+    protected function databaseDetail(): void
     {
-        $this->cli->upLevel('configure');
+        $this->cli->upLevel('detail');
         while (true) {
             $this->cli->setColor(['byellow'])->showBread();
             //$tmp = $this->cli->getValue('tables');
@@ -605,10 +665,10 @@ PdoOne: $v  Cli: $vc
                                     ->setDefault($tablecolumn->value)
                                     ->setPattern('<cyan>[{key}]</cyan> {value}')
                                     ->setInput(true, 'option', [
-                                        'PARENT' => 'Same than MANYTONE without the recursivity',
-                                        'MANYTOMANY' => 'Many to many',
+                                        'PARENT' => 'The field is related (similar to MANYTONE) but it is not loaded recursively',
+                                        'MANYTOMANY' => 'Many to many relation',
                                         'ONETOMANY' => 'One to many relation',
-                                        'MANYTOONE' => 'Many to one',
+                                        'MANYTOONE' => 'Many to one relation',
                                         'ONETOONE' => 'One to one'
                                     ]);
                             } else {
@@ -617,13 +677,14 @@ PdoOne: $v  Cli: $vc
                                     ->setDefault($tablecolumn->value)
                                     ->setAllowEmpty()
                                     ->setInput(true, 'option', [
+                                        'string' => 'the value is converted to string',
                                         'encrypt' => 'encrypt the value',
                                         'decrypt' => 'decrypt the value',
-                                        'datetime3' => 'datetime3',
-                                        'datetime4' => 'datetime3',
-                                        'datetime2' => 'datetime3',
-                                        'datetime' => 'datetime3',
-                                        'timestamp' => 'datetime3',
+                                        'datetime3' => 'date/time is convert from human readable to SQL format',
+                                        'datetime4' => 'date/time is not converted',
+                                        'datetime2' => 'date/time is converted from ISO to SQL format',
+                                        'datetime' => 'date/time is converted from a DateTime PHP class to SQL format',
+                                        'timestamp' => 'date/time is converted from timestamp to SQL format',
                                         'bool' => 'the value will be converted into a boolean (0=false,other=true)',
                                         'int' => 'the value will be converted into a int',
                                         'float' => 'the value will be converted into a float',
@@ -635,6 +696,28 @@ PdoOne: $v  Cli: $vc
                             if ($tablecolumnsvalue->valueKey !== $this->cli->emptyValue) {
                                 $this->columnsTable[$ktable][$tablecolumn->valueKey] = $tablecolumnsvalue->valueKey;
                             }
+                            $this->cli->downLevel();
+                        }
+                        $this->cli->downLevel();
+                        break;
+                    case 'alias':
+                        $this->cli->upLevel('alias');
+                        while (true) {
+                            $this->cli->setColor(['byellow'])->showBread();
+                            $this->cli->getParameter('tablescolumns')
+                                ->setDescription('', 'Select a column (or empty for end)')
+                                ->setAllowEmpty()
+                                ->setInput(true, 'option3', $this->columnsAlias[$ktable]);
+                            $tablecolumn = $this->cli->evalParam('tablescolumns', true);
+                            if ($tablecolumn->value === '') {
+                                // exit
+                                break;
+                            }
+                            $this->cli->upLevel($tablecolumn->valueKey, ' (column)');
+                            $this->cli->setColor(['byellow'])->showBread();
+                            $this->cli->getParameter('tablescolumnsalias')->setDefault($tablecolumn->value);
+                            $tablescolumnalias = $this->cli->evalParam('tablescolumnsalias', true);
+                            $this->columnsAlias[$ktable][$tablecolumn->valueKey] = $tablescolumnalias->value;
                             $this->cli->downLevel();
                         }
                         $this->cli->downLevel();
@@ -724,7 +807,7 @@ PdoOne: $v  Cli: $vc
             $this->cli->show('</yellow>');
             // $this->cli->showCheck('WARNING', 'yellow', 'unable to create directory ' . $ex->getMessage());
         }
-        // dummy
+        // dummy.
         while (true) {
             $this->cli->showCheck('info', 'yellow', 'The target path is ' . getcwd() . '/' . $this->cli->getValue('classdirectory'));
             $this->cli->getParameter('classnamespace')->setDefault($this->cli->getValue('classnamespace'))->evalParam(true);
@@ -813,10 +896,10 @@ PdoOne: $v  Cli: $vc
                 , ['<cyan><optionkey/></cyan>:<option/>'], 'cmd')
             ->setAllowEmpty()
             ->setInput(true, 'option', [
-                'folder' => 'Configure the folders and namespaces',
+                'folder' => 'Configure the repository folder and namespace',
                 'scan' => 'Scan for changes to the database. It adds or removes tables and classes',
                 'select' => 'Select or de-select the tables to work',
-                'configure' => 'Configure each table and repository separately',
+                'detail' => 'Configure each table and columns separately',
                 'convertxtype' => 'Configure all columns per type of data',
                 'save' => 'Save the current configuration',
                 'convert' => 'Convert and exit (in non-interactive mode is done automatically)'])
@@ -833,6 +916,11 @@ PdoOne: $v  Cli: $vc
             ->setRequired(false)
             ->setAllowEmpty()
             ->setInput(true, 'string', [])->add();
+        $this->cli->createParam('tablescolumnsalias', [], 'none')
+            ->setDescription('', 'Select the new alias of the column. Use: PROPERCASE to set propercase')
+            ->setRequired(false)
+            ->setAllowEmpty()
+            ->setInput(true, 'string', [])->add();
         $this->cli->createParam('classselected', [], 'none')
             ->setDescription('', 'Select a table to configure')
             ->setAllowEmpty()
@@ -842,7 +930,8 @@ PdoOne: $v  Cli: $vc
             ->setAllowEmpty()
             ->setInput(true, 'option', [
                 'rename' => 'rename the class from the table',
-                'conversion' => 'column conversion',
+                'conversion' => 'A conversion of type per column',
+                'alias' => 'rename a column',
                 'extracolumn' => 'configure extra columns that could be read',
                 'remove' => 'remove a column'
             ])->add();
@@ -875,6 +964,52 @@ PdoOne: $v  Cli: $vc
             ->setDescription('Override the generate values', 'Do you want to override previous generated classes?'
                 , ['Values available <cyan><option/></cyan>'], 'bool')
             ->setInput(true, 'optionshort', ['yes', 'no'])->add();
+    }
+
+    /**
+     * @throws Exception
+     */
+    protected function runCliDefinition(): void
+    {
+        $this->cli->getParameter('databasetype')->setInput(true, 'optionshort', ['mysql', 'sqlsrv', 'oci', 'test']);
+        $this->cli->getParameter('server')->setInput();
+        $this->cli->getParameter('user')->setInput();
+        $this->cli->getParameter('password')->setInput();
+        $this->cli->getParameter('database')->setInput();
+        $this->cli->evalParam('databasetype');
+        $this->cli->evalParam('server');
+        $this->cli->evalParam('user');
+        $this->cli->evalParam('password');
+        $this->cli->evalParam('database');
+        $pdo = $this->runCliConnection();
+        if ($pdo === null) {
+            $this->cli->showCheck('CRITICAL', 'red', 'No connection');
+            die(1);
+        }
+        $this->cli->show('<yellow>Please wait, reading tables... </yellow>');
+        try {
+            $tables = $pdo->objectList('table', true);
+        } catch (Exception $e) {
+            $this->cli->showCheck('CRITICAL', 'red', 'Unable to read tables');
+            die(1);
+        }
+        $result = [];
+        foreach ($tables as $table) {
+            $result[$table] = $pdo->getDefTable($table);
+        }
+        $result = json_encode($result, JSON_PRETTY_PRINT);
+        $output = $this->cli->getValue('output');
+        if ($output) {
+            try {
+                $r = @file_put_contents($output, $result);
+                if ($r === false) {
+                    throw new RuntimeException('Unable to write file ' . $output);
+                }
+                $this->cli->showCheck('ok', 'green', "file generated [$output]");
+            } catch (Exception $ex) {
+                $this->cli->showCheck('error', 'red', 'Unable to create file, ' . $ex->getMessage());
+            }
+        }
     }
 
     /**
@@ -919,12 +1054,12 @@ PdoOne: $v  Cli: $vc
                 case $this->cli->emptyValue:
                 case '':
                 case 'convert':
-                    if($this->cli->getValue('classdirectory') && $this->cli->getValue('classnamespace')) {
+                    if ($this->cli->getValue('classdirectory') && $this->cli->getValue('classnamespace')) {
                         break 2;
                     }
-                    $this->cli->showCheck('ERROR','red',[
+                    $this->cli->showCheck('ERROR', 'red', [
                         'you must set the directory and namespace',
-                        'Use the option <bold><cyan>[folder]</cyan></bold> to set the directory and namespace'],'stderr');
+                        'Use the option <bold><cyan>[folder]</cyan></bold> to set the directory and namespace'], 'stderr');
                     break;
                 case 'scan':
                     $this->databaseScan($tablesmarked, $pdo);
@@ -941,8 +1076,8 @@ PdoOne: $v  Cli: $vc
                 case 'select':
                     $this->databaseSelect($tablesmarked, $tables);
                     break;
-                case 'configure':
-                    $this->databaseConfigure();
+                case 'detail':
+                    $this->databaseDetail();
                     break;
                 default:
                     $this->injectEvalGenerate($com->valueKey);
@@ -959,7 +1094,8 @@ PdoOne: $v  Cli: $vc
             $this->cli->getValue('overridegenerate') === 'yes',
             $this->columnsTable,
             $this->extracolumn,
-            $this->removecolumn
+            $this->removecolumn,
+            $this->columnsAlias
         );
         $this->RunCliGenerationSaveConfig();
         $this->cli->showLine('<green>Done</green>');
@@ -996,7 +1132,7 @@ PdoOne: $v  Cli: $vc
                 }
             }
         }
-        // this lines are used for testing
+        // The next lines are used for testing:
         //unset($tablexclass['actor']);
         //$tablexclass['newtable']='newtablerepo';
         //unset($columnsTable['city']['city']);
@@ -1005,6 +1141,7 @@ PdoOne: $v  Cli: $vc
         $this->cli->showLine();
         ksort($conversion);
         // merge new with old
+        // *** TABLEXCLASS
         if (count($this->tablexclass) !== 0) {
             foreach ($this->tablexclass as $table => $v) {
                 if (!isset($tablexclass[$table])) {
@@ -1020,37 +1157,69 @@ PdoOne: $v  Cli: $vc
                     $this->extracolumn[$table] = [];
                 }
             }
-            //$this->tablexclass=$oldTablexClass;
         } else {
             $this->tablexclass = $tablexclass;
         }
-        if (count($this->columnsTable) !== 0) {
-            foreach ($this->columnsTable as $table => $columns) {
-                foreach ($columns as $column => $v) {
-                    if (!array_key_exists($column, $columnsTable[$table])) {
-                        $this->cli->showCheck('<bold>deleted</bold>', 'red', "column <bold>$table.$column</bold> deleted");
-                        unset($this->columnsTable[$table][$column]);
-                    }
-                }
-            }
-            foreach ($columnsTable as $table => $columns) {
-                foreach ($columns as $column => $v) {
-                    if (isset($this->columnsTable[$table]) && !array_key_exists($column, $this->columnsTable[$table])) {
-                        $this->cli->showCheck(' added ', 'green', "column <bold>$table.$column</bold> added");
-                        $this->columnsTable[$table][$column] = $v;
-                        //unset($this->tablexclass[$table], $this->columnsTable[$table], $this->extracolumn[$table]);
-                    }
-                }
-            }
-        } else {
-            $this->columnsTable = $columnsTable;
-        }
+        // *** COLUMNSTABLE
+        $this->columnsTable = $this->updateMultiArray($columnsTable, $this->columnsTable, '', 'Columns Table');
         if (count($this->columnsTable) === 0) {
             $this->columnsTable = $columnsTable;
         }
+        $alias = $columnsTable;
+        foreach ($columnsTable as $table => $columns) {
+            foreach ($columns as $column => $v) {
+                if ($column[0] !== '_') {
+                    $alias[$table][$column] = $column;
+                } else {
+                    unset($alias[$table][$column]);
+                }
+            }
+        }
+        //$oldAlias = $this->columnsAlias;
+        //$this->columnsAlias = [];
+        // **** COLUMNSALIAS
+        $this->columnsAlias = $this->updateMultiArray($alias, $this->columnsAlias, '', 'Columns Alias');
         if (count($this->extracolumn) === 0) {
             $this->extracolumn = $extracolumn;
         }
+    }
+
+    protected function updateMultiArray($oldArray, $newArray, $columnName, $name)
+    {
+        if (count($newArray) !== 0) {
+            // delete
+            foreach ($newArray as $tableName => $columns) {
+                if (isset($oldArray[$tableName])) {
+                    foreach ($columns as $column => $v) {
+                        if (!array_key_exists($column, $oldArray[$tableName])) {
+                            $this->cli->showCheck('<bold>deleted</bold>', 'red', "$name: Column <bold>$tableName.$column</bold> deleted");
+                            unset($newArray[$tableName][$column]);
+                        }
+                    }
+                } else {
+                    $this->cli->showCheck('<bold>deleted</bold>', 'red', "$name: Table <bold>$tableName</bold> delete");
+                    unset($newArray[$tableName]);
+                }
+            }
+            // insert
+            foreach ($oldArray as $tableName => $columns) {
+                if (isset($newArray[$tableName])) {
+                    foreach ($columns as $column => $v) {
+                        if (!array_key_exists($column, $newArray[$tableName])) {
+                            $this->cli->showCheck(' added ', 'green', "$name: Column <bold>$tableName.$column</bold> added");
+                            $newArray[$tableName][$column] = $v;
+                            //unset($this->tablexclass[$tableName], $this->columnsTable[$tableName], $this->extracolumn[$tableName]);
+                        }
+                    }
+                } else {
+                    $this->cli->showCheck(' added ', 'green', "$name: Table <bold>$tableName</bold> added");
+                    $newArray[$tableName] = $columns;
+                }
+            }
+        } else {
+            $newArray = $oldArray;
+        }
+        return $newArray;
     }
 
     protected function runCliSaveConfig($interactive): void
@@ -1109,9 +1278,11 @@ PdoOne: $v  Cli: $vc
         $configcli = [
             'tablexclass' => $this->tablexclass,
             'conversion' => $this->conversion,
+            'alias' => $this->alias,
             'extracolumn' => $this->extracolumn,
             'removecolumn' => $this->removecolumn,
             'columnsTable' => $this->columnsTable,
+            'columnsAlias' => $this->columnsAlias,
             //'classes' => $classes
         ];
         $config = array_merge($config, $configcli);

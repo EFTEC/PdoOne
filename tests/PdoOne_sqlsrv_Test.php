@@ -139,7 +139,7 @@ class PdoOne_sqlsrv_Test extends TestCase
         if(!$this->pdoOne->tableExist('table1')) {
             $this->pdoOne->createTable('table1', ['id' => 'int']);
         }
-        $this->assertNotEquals('', $this->pdoOne->generateAbstractClass('table1'));
+        $this->assertNotEquals('', $this->pdoOne->generateAbstractRepo('table1'));
         $this->assertEquals("['id'=>0]",$this->pdoOne->generateCodeArray('table1'));
         $this->assertStringContainsString("array \$result=array(['id'=>0])",$this->pdoOne->generateCodeSelect('select * from table1'));
         $this->assertStringContainsString('$pdo->createTable(\'table1',$this->pdoOne->generateCodeCreate('table1'));

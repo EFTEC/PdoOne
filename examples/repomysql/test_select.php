@@ -9,6 +9,14 @@ use repomysql\TableParentRepo;
 include "common.php";
 //$result=TableParentRepo::insert();
 $result=TableParentRepo::where('idtablaparentPK=2')
+    //->select(['idtablaparentPK','fieldVarchar'])
+    //->recursive('*')
+    ->toList();
+var_dump(\eftec\PdoOne::instance()->lastQuery);
+die(1);
+
+
+$result=TableParentRepo::where('idtablaparentPK=2')
     ->select(['idtablaparentPK','fieldVarchar'])
     ->recursive('*')
     ->toListKeyValue();

@@ -46,11 +46,12 @@ $extraColumn = [
 
 $tables = $dao->tableSorted();
 foreach ($tables as $table) {
-    
+
     echo "include 'generated/Abstract{$table}Repo.php';<br>";
     echo "include 'generated/{$table}Repo.php';<br>";
     echo "include 'generatedmodel/{$table}Model.php';<br>";
 }
+
 
 $dao->generateCodeClassConversions([
     'datetime' => 'datetime',

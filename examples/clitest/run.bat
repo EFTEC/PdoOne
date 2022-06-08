@@ -1,0 +1,1 @@
+ php ..\..\lib\pdoonecli --loadconfig p2 --generate --command scan --saveconfig p2 --overridegenerate yes

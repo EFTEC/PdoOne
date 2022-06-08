@@ -14,7 +14,7 @@ $tables=$dao->tableSorted(3, false, false);
 echo "<hr>";
 echo "<pre>";
 foreach($tables as $table) {
-    $code=$dao->generateAbstractClass($table, 'termo2\test\dbtest\repo');
+    $code=$dao->generateAbstractRepo($table, 'termo2\test\dbtest\repo');
     $className=PdoOne::camelize($table);
     echo "// include 'ecospace/".$className."Repo.php';\n";
     echo '$result["'.$className.'"]=(\\termo2\\test\\dbtest\\repo\\'.$className.'Repo::validTable());'."\n";

@@ -283,6 +283,7 @@ class PdoOneQuery
      */
     public function sqlGen(bool $resetStack = false): string
     {
+
         if (stripos($this->select, 'select ') === 0) {
             // is it a full query? $this->select=select * ..." instead of $this->select=*
             $words = preg_split('#\s+#', strtolower($this->select));
@@ -441,18 +442,21 @@ class PdoOneQuery
     }
 
     /**
+     * Add a condition to the query.
      * <b>Example:</b><br>
-     *      where( ['field'=>20] ) // associative array with automatic type
-     *      where( ['field'=>[20]] ) // associative array with type defined
-     *      where( ['field',20] ) // array automatic type
-     *      where (['field',[20]] ) // array type defined
-     *      where('field=20') // literal value
-     *      where('field=?',[20]) // automatic type
-     *      where('field',[20]) // automatic type, it's the same as
-     *      where('field=?',[20]) where('field=?', [20] ) // type(i,d,s,b)
-     *      defined where('field=?,field2=?', [20,'hello'] )
-     *      where('field=:field,field2=:field2',
-     *      ['field'=>'hello','field2'=>'world'] ) // associative array as value
+     * <pre>
+     *  where( ['field'=>20] ) // associative array with automatic type
+     *  where( ['/_field/subfield',20] ) // (for ORM) recursive query
+     *                                   //, where _field is a relational column.
+     *  where('field=20') // literal value
+     *  where('field=?',[20]) // positional argument.
+     *                        // You can also use >, < , >=, <=, in, etc.
+     *  where('field',[20])
+     *  where('field=?',[20])
+     *  where('field=?,field2=?', [20,'hello'] )
+     *  where('field=:field,field2=:field2',
+     *       ['field'=>'hello','field2'=>'world'] ) // associative array as value
+     * </pre>
      *
      * @param string|array $sql          Input SQL query or associative/indexed
      *                                   array
@@ -470,9 +474,12 @@ class PdoOneQuery
      */
     public function where($sql, $param = PdoOne::NULL, bool $isHaving = false, ?string $tablePrefix = null): PdoOneQuery
     {
+
         if ($sql === null || $sql === PdoOne::NULL) {
             return $this;
         }
+        //var_dump('where1:');
+        //var_dump($sql);
         $this->constructParam2($sql, $param, $isHaving ? 'having' : 'where', false, $tablePrefix);
         return $this;
     }
@@ -532,9 +539,14 @@ class PdoOneQuery
                         $pars[] = $param;
                     }
                 } else {
+                    if ($this->ormClass !== null) {
+                        /** @var _BasePdoOneRepo $cls */
+                        $cls = $this->ormClass;
+                        $where=$cls::convertAliasToDB($where);
+                    }
                     // named  column=:arg
                     foreach ($where as $k => $v) {
-                        if (strpos($k, '?') === false) {
+                        if (strpos($k, '?') === false && strpos($k, '/') === false) {
                             if (strpos($k, ':') !== false) {
                                 // "aaa=:aaa"
                                 $parts = explode(':', $k, 2);
@@ -545,6 +557,8 @@ class PdoOneQuery
                             }
                             $named[] = $paramName;
                         } else {
+                            // also:if the name of the argument has a "/" in its name,
+                            // then it is considered a numeric argument. example ['/a/b'=>20]  == ['/a/b=?'=>20]
                             // "aa=?"
                             $paramName = $this->whereCounter;
                             $this->whereCounter++;
@@ -632,6 +646,7 @@ class PdoOneQuery
             }
         }
         $i = -1;
+
         foreach ($queryEnd as $k => $v) {
             $i++;
             if ($named[$i] !== '' && strpos($v, '?') === false && strpos($v, $named[$i]) === false) {
@@ -988,7 +1003,8 @@ class PdoOneQuery
     {
         if ($this->ormClass !== null) {
             $cls = $this->ormClass;
-            return $cls::setPdoOneQuery($this)::ToList(PdoOne::NULL, null);
+            /** @see \eftec\_BasePdoOneRepo::executePlan0 */
+            return $cls::executePlan0($this);
         }
         return $this->_toList($pdoMode);
     }
@@ -1030,8 +1046,14 @@ class PdoOneQuery
     {
         if ($this->ormClass !== null) {
             $cls = $this->ormClass;
-            /** @see \eftec\_BasePdoOneRepo::first */
-            return $cls::setPdoOneQuery($this)::first($pk);
+            if($pk!==PdoOne::NULL) {
+                /** @noinspection PhpPossiblePolymorphicInvocationInspection */
+                $this->where($cls::PK[0],$pk);
+            }
+            $condition=null;
+            /** @see \eftec\_BasePdoOneRepo::executePlan0 */
+            return $cls::executePlan0($this,$condition,true);
+
         }
         return $this->_first();
     }

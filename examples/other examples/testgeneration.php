@@ -11,7 +11,7 @@ $dao->logLevel = 3;
 $dao->throwOnError = true;
 $dao->open();
 //header("Content-Type: plain/text");
-echo $dao->generateAbstractClass('tablachild');
+echo $dao->generateAbstractRepo('tablachild');
 
 die(1);
 actorRepo::setPdoOne($dao);
