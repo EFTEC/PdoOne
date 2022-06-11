@@ -257,7 +257,7 @@ class PdoOneCli
             ->setCurrentAsDefault()
             ->setDescription('',
                 'Select the repository\'s namespace.',
-                [ 'It must coincide with the definition of Composer\'s autoloader',
+                ['It must coincide with the definition of Composer\'s autoloader',
                     'Example: ns1\\ns2'])
             ->setInput()->add();
         $this->cli->createParam('namespace', 'ns', 'longflag')
@@ -272,6 +272,7 @@ class PdoOneCli
             ->setRelated(['common', 'export', 'generate'])
             ->setRequired(false)
             ->setDescription('Select the configuration file to load', '', [
+                    'It loads a configuration file, the file mustn\'t have extension',
                     'Example: <dim>"--loadconfig myconfig"</dim>']
                 , 'file')
             ->setDefault('')
@@ -333,7 +334,9 @@ class PdoOneCli
             case 'export':
             case 'generate':
             case '':
-                $this->showLogo();
+                if ($this->cli->getSTDIN() === null) {
+                    $this->showLogo();
+                }
                 $loadconfig = $this->cli->evalParam('loadconfig');
                 if ($loadconfig->value) {
                     [$ok, $data] = $this->cli->readData($loadconfig->value);
@@ -1161,7 +1164,7 @@ PdoOne: $v  Cli: $vc
             $this->tablexclass = $tablexclass;
         }
         // *** COLUMNSTABLE
-        $this->columnsTable = $this->updateMultiArray($columnsTable, $this->columnsTable, '', 'Columns Table');
+        $this->columnsTable = $this->updateMultiArray($columnsTable, $this->columnsTable, 'Columns Table');
         if (count($this->columnsTable) === 0) {
             $this->columnsTable = $columnsTable;
         }
@@ -1178,13 +1181,20 @@ PdoOne: $v  Cli: $vc
         //$oldAlias = $this->columnsAlias;
         //$this->columnsAlias = [];
         // **** COLUMNSALIAS
-        $this->columnsAlias = $this->updateMultiArray($alias, $this->columnsAlias, '', 'Columns Alias');
+        $this->columnsAlias = $this->updateMultiArray($alias, $this->columnsAlias, 'Columns Alias');
         if (count($this->extracolumn) === 0) {
             $this->extracolumn = $extracolumn;
         }
     }
 
-    protected function updateMultiArray($oldArray, $newArray, $columnName, $name)
+    /**
+     *
+     * @param array|null $oldArray
+     * @param array|null $newArray
+     * @param string     $name
+     * @return array|null
+     */
+    protected function updateMultiArray(?array $oldArray, ?array $newArray, string $name): ?array
     {
         if (count($newArray) !== 0) {
             // delete

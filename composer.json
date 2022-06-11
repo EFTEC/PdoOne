@@ -30,10 +30,10 @@
   "require": {
     "php": ">=7.2.5",
     "ext-json": "*",
-    "eftec/clione": "^1.13",
+    "eftec/clione": "^1.18",
     "ext-pdo": "*",
     "ext-readline": "*",
-    "eftec/messagecontainer": "^2.4"
+    "eftec/messagecontainer": "^2.5"
   },
   "bin": [
     "lib/pdoonecli"

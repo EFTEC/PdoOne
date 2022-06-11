@@ -1,4 +1,4 @@
-<?php http_response_code(404); die(1); // it is a template, not code, it is protected to be called directly ?>
+<?php http_response_code(404); die(1); // It is a template file, not a code to execute directly. This line is used to avoid to execute or read it. ?>
 /** @noinspection PhpIncompatibleReturnTypeInspection
  * @noinspection ReturnTypeCanBeDeclaredInspection
  * @noinspection DuplicatedCode

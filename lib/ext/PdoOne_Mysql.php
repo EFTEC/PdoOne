@@ -1,4 +1,6 @@
-<?php /** @noinspection TypeUnsafeArraySearchInspection */
+<?php /** @noinspection SqlNoDataSourceInspection */
+/** @noinspection SqlDialectInspection */
+/** @noinspection TypeUnsafeArraySearchInspection */
 /** @noinspection UnknownInspectionInspection */
 /** @noinspection TypeUnsafeComparisonInspection */
 
@@ -173,7 +175,7 @@ class PdoOne_Mysql implements PdoOne_IExt
          * ,"REFERENCED_COLUMN_NAME"=>'',"UPDATE_RULE"=>'',"DELETE_RULE"=>''])
          */
         $fkArr = $this->parent->select('k.CONSTRAINT_NAME,k.COLUMN_NAME,k.REFERENCED_TABLE_NAME
-                    ,k.REFERENCED_COLUMN_NAME,c.UPDATE_RULE,c.DELETE_RULE,K.POSITION_IN_UNIQUE_CONSTRAINT')
+                    ,k.REFERENCED_COLUMN_NAME,c.UPDATE_RULE,c.DELETE_RULE,k.POSITION_IN_UNIQUE_CONSTRAINT')
             ->from('INFORMATION_SCHEMA.KEY_COLUMN_USAGE k')
             ->innerjoin('information_schema.REFERENTIAL_CONSTRAINTS c 
                         ON k.referenced_table_schema=c.CONSTRAINT_SCHEMA AND k.CONSTRAINT_NAME=c.CONSTRAINT_NAME')
