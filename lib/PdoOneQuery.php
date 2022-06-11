@@ -75,7 +75,7 @@ class PdoOneQuery
 
     /**
      * PdoOneQuery constructor.
-     * @param PdoOne $parent
+     * @param PdoOne  $parent
      * @param ?string $repo
      */
     public function __construct(PdoOne $parent, ?string $repo = null)
@@ -170,7 +170,7 @@ class PdoOneQuery
         bool   $returnArray = true,
         int    $extraMode = PDO::FETCH_ASSOC,
         string $extraIdCache = 'rungen',
-        bool $throwError = true
+        bool   $throwError = true
     )
     {
         $this->parent->errorText = '';
@@ -283,7 +283,6 @@ class PdoOneQuery
      */
     public function sqlGen(bool $resetStack = false): string
     {
-
         if (stripos($this->select, 'select ') === 0) {
             // is it a full query? $this->select=select * ..." instead of $this->select=*
             $words = preg_split('#\s+#', strtolower($this->select));
@@ -474,12 +473,9 @@ class PdoOneQuery
      */
     public function where($sql, $param = PdoOne::NULL, bool $isHaving = false, ?string $tablePrefix = null): PdoOneQuery
     {
-
         if ($sql === null || $sql === PdoOne::NULL) {
             return $this;
         }
-        //var_dump('where1:');
-        //var_dump($sql);
         $this->constructParam2($sql, $param, $isHaving ? 'having' : 'where', false, $tablePrefix);
         return $this;
     }
@@ -542,7 +538,7 @@ class PdoOneQuery
                     if ($this->ormClass !== null) {
                         /** @var _BasePdoOneRepo $cls */
                         $cls = $this->ormClass;
-                        $where=$cls::convertAliasToDB($where);
+                        $where = $cls::convertAliasToDB($where);
                     }
                     // named  column=:arg
                     foreach ($where as $k => $v) {
@@ -646,7 +642,6 @@ class PdoOneQuery
             }
         }
         $i = -1;
-
         foreach ($queryEnd as $k => $v) {
             $i++;
             if ($named[$i] !== '' && strpos($v, '?') === false && strpos($v, $named[$i]) === false) {
@@ -825,7 +820,7 @@ class PdoOneQuery
      *      from('table1 inner join table2 on table1.c=table2.c')
      * </pre>
      *
-     * @param string|null      $sql    Input SQL query
+     * @param string|null $sql    Input SQL query
      * @param string|null $schema The schema/database of the table without trailing dot.<br>
      *                            Example 'database' or 'database.dbo'
      * @return PdoOneQuery
@@ -1046,14 +1041,13 @@ class PdoOneQuery
     {
         if ($this->ormClass !== null) {
             $cls = $this->ormClass;
-            if($pk!==PdoOne::NULL) {
+            if ($pk !== PdoOne::NULL) {
                 /** @noinspection PhpPossiblePolymorphicInvocationInspection */
-                $this->where($cls::PK[0],$pk);
+                $this->where($cls::PK[0], $pk);
             }
-            $condition=null;
+            $condition = null;
             /** @see \eftec\_BasePdoOneRepo::executePlan0 */
-            return $cls::executePlan0($this,$condition,true);
-
+            return $cls::executePlan0($this, $condition, true);
         }
         return $this->_first();
     }
@@ -1621,6 +1615,7 @@ class PdoOneQuery
      * <b>example:</b>:<br>
      * <pre>
      * $this->recursive(['field1','field2']);
+     * RepoClass::recursive(['/_relation1','/_relation1/_subrelation1']); // For ORM: use of recursive
      * </pre>
      *
      * @param array|mixed $rec The fields to load recursively.
@@ -1848,7 +1843,7 @@ class PdoOneQuery
      *      ->insert();
      *</pre>
      *
-     * @param ?string|array      $tableNameOrValues
+     * @param ?string|array     $tableNameOrValues
      * @param string[]|null     $tableDef
      * @param string[]|int|null $values
      *

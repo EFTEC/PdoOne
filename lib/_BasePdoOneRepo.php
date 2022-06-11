@@ -6,11 +6,8 @@
 
 namespace eftec;
 
-use eftec\examples\clitest\repo2\TableParentRepo;
-use eftec\examples\clitest\testdb2\CityRepo;
 use Exception;
 use PDOStatement;
-use PHPUnit\Util\Xml\ValidationResult;
 use RuntimeException;
 
 /**
@@ -269,7 +266,7 @@ abstract class _BasePdoOneRepo
      * namespace<br>
      * <b>Example:</b><br>
      * <pre>
-     * CityRepo::setRecursive(['/countryFK'])::getRecursiveClass(); // ['CityRepo','TableFk']
+     * CityRepo::recursive(['/countryFK'])::getRecursiveClass(); // ['CityRepo','TableFk']
      * </pre>
      *
      * @param array|null $final  It is used internally for recursivity, it keeps the values.
@@ -705,6 +702,7 @@ abstract class _BasePdoOneRepo
             $currentQuery->select($columnSQL)->from($fromSQL)->where($whereSql);
             $useCache = $currentQuery->useCache;
             $currentQuery->useCache = false;
+            //var_dump($currentQuery->sqlGen(true));
             $result = $currentQuery->toList();
             $currentQuery->useCache = $useCache;
             //  var_dump($query);
@@ -848,7 +846,7 @@ abstract class _BasePdoOneRepo
                 if (in_array($absolutePrefix . "/" . $v['alias'], $recursive, true)) {
                     //var_dump($absolutePrefix."/".$v['alias']);
                     $colLocal = substr($k, 1); // remove the first "_"
-                    /** @var TableParentRepo $class */
+                    /** var TableParentRepo $class */
                     $class = $ns . static::RELATIONS[$v['reftable']];
                     $aliasTableQuoted = static::addQuote($aliasTable);
                     if ($vkey === 'ONETOONE') {
@@ -863,6 +861,7 @@ abstract class _BasePdoOneRepo
                             , $aliasTableParentDot, $colLocal
                             , $aliasTableQuoted, $v['refcol']);
                     }
+                    /** @noinspection PhpUndefinedMethodInspection */
                     [$cols2, $table2, $where2] = $class::plan($absolutePrefix . '/' . $v['alias'], $recursive, $prefix . '.' . $k, $aliasTable, static::TABLE);
                     array_push($cols, ...$cols2);
                     foreach ($where2 as $kwhere => $vwhere) {
@@ -1179,58 +1178,9 @@ abstract class _BasePdoOneRepo
 
 
     /**
-     * It converts ['aaa.bbb'=>'v'] into ['aaa']['bbb']='v';
-     *
-     * @param mixed $data
-     *
-     * @return mixed
-     */
-    protected static function convertRow($data)
-    {
-        if (!is_array($data)) {
-            return $data;
-        }
-        $row = [];
-        $colalias = static::DEFFK;
-        foreach ($data as $k => $v) {
-            if (strpos($k, '.') === false) {
-                $row[$k] = $v;
-            } else {
-                $ar = explode('.', $k);
-                $ar[0] = $colalias[$ar[0]]['alias'];
-                switch (count($ar)) {
-                    case 2:
-                        // 'aaa.bb' => ['aaa']['bbb']
-                        $row[$ar[0]][$ar[1]] = $v;
-                        break;
-                    case 3:
-                        // 'aaa.bb.cc' => ['aaa']['bbb']['ccc']
-                        $row[$ar[0]][$ar[1]][$ar[2]] = $v;
-                        break;
-                    case 4:
-                        $row[$ar[0]][$ar[1]][$ar[2]][$ar[3]] = $v;
-                        break;
-                    case 5:
-                        $row[$ar[0]][$ar[1]][$ar[2]][$ar[3]][$ar[4]] = $v;
-                        break;
-                    case 6:
-                        $row[$ar[0]][$ar[1]][$ar[2]][$ar[3]][$ar[4]][$ar[5]] = $v;
-                        break;
-                    case 7:
-                        $row[$ar[0]][$ar[1]][$ar[2]][$ar[3]][$ar[4]][$ar[5]][$ar[6]] = $v;
-                        break;
-                    case 8:
-                        $row[$ar[0]][$ar[1]][$ar[2]][$ar[3]][$ar[4]][$ar[5]][$ar[6]][$ar[7]] = $v;
-                        break;
-                }
-            }
-        }
-        return $row;
-    }
-
-    /**
      * @param array $rows The associative arrays with values to convert.
      * @param bool  $list false for a single row, or true for a list of rows.
+     * @noinspection PhpUnused
      */
     protected static function convertSQLValueInit(array &$rows, bool $list = false): void
     {
@@ -1252,16 +1202,19 @@ abstract class _BasePdoOneRepo
                         case 'MANYTOONE':
                             $class = $ns . static::RELATIONS[$v['reftable']];
                             /** @noinspection PhpUndefinedMethodInspection */
+                            /** @see \eftec\_BasePdoOneRepo::convertSQLValueInit */
                             $class::convertSQLValueInit($colName, false);
                             break;
                         case 'ONETOMANY':
                             $class = $ns . static::RELATIONS[$v['reftable']];
                             /** @noinspection PhpUndefinedMethodInspection */
+                            /** @see \eftec\_BasePdoOneRepo::convertSQLValueInit */
                             $class::convertSQLValueInit($colName, true);
                             break;
                         case 'MANYTOMANY':
                             $class = $ns . static::RELATIONS[$v['table2']];
                             /** @noinspection PhpUndefinedMethodInspection */
+                            /** @see \eftec\_BasePdoOneRepo::convertSQLValueInit */
                             $class::convertSQLValueInit($colName, true);
                             break;
                     }
@@ -1330,40 +1283,43 @@ abstract class _BasePdoOneRepo
     public static function convertAliasToDB($aliasRows): array
     {
         $db = [];
-        $aliasCol=static::ALIAS2COL;
+        $aliasCol = static::ALIAS2COL;
         foreach ($aliasRows as $keyAlias => $value) {
-            if(strpos($keyAlias,'/')!==false) {
+            if (strpos($keyAlias, '/') !== false) {
                 //_relation/column
-                $key=static::transformAliasTosql($keyAlias);
-                $db[$key] =$value;
+                $key = static::transformAliasTosql($keyAlias);
+                $db[$key] = $value;
             } else {
                 // alias=>real column
-                $findKey = $aliasCol[$keyAlias]??false;
+                $findKey = $aliasCol[$keyAlias] ?? false;
                 if ($findKey !== false) {
                     $db[$findKey] = $value;
+                } else {
+                    throw new RuntimeException("Column alias not found [" . static::TABLE . "::$keyAlias] ");
                 }
             }
         }
         return $db;
     }
+
     public static function transformAliasTosql($alias): string
     {
-        $parts=explode('/',$alias,3);
+        $parts = explode('/', $alias, 3);
         //var_dump('parts:');
         //var_dump($alias);
         //var_dump($parts);
         $ns = self::getNamespace();
-        $first=static::DEFFK[$parts[1]]??null;
-        if($first===null) {
+        $first = static::DEFFK[$parts[1]] ?? null;
+        if ($first === null) {
             throw new RuntimeException("Column [$parts[1]] not found as [$alias]");
         }
-        /** @var CityRepo $class this comment is only used for autocomplete */
-        $class=$ns.static::RELATIONS[$first['reftable']];
-        $aliasCol=static::ALIAS2COL;
+        /** var CityRepo $class this comment is only used for autocomplete */
+        $class = $ns . static::RELATIONS[$first['reftable']];
+        $aliasCol = $class::ALIAS2COL;
         // alias => real column
-        $second= $aliasCol($parts[2])??false;
+        $second = $aliasCol[$parts[2]] ?? $parts[2]; // if alias not found then it keeps the same name of column.
         //var_dump('aliastosql:');
-        return static::addQuote('/'.$parts[1]).'.'.static::addQuote($second);
+        return static::addQuote('/' . $parts[1]) . '.' . static::addQuote($second);
     }
 
     /**
@@ -1470,12 +1426,11 @@ abstract class _BasePdoOneRepo
             // only the fields that are defined are inserted
             $entityCopy = self::intersectArraysNotNull($entityDB, static::getDefName());
             //$entityCopy = self::diffArrays($entityCopy, array_merge(array_keys(static::getDefKey()), static::getDefNoUpdate())); // columns discarded
-            $noUpdates=static::DEFNOUPDATE;
-            foreach($noUpdates as $k=>$v) {
-                $noUpdates[$k]=static::ALIAS2COL[$v];
+            $noUpdates = static::DEFNOUPDATE;
+            foreach ($noUpdates as $k => $v) {
+                $noUpdates[$k] = static::ALIAS2COL[$v];
             }
-
-            $entityCopy = self::diffArrays($entityCopy,  $noUpdates); // columns discarded
+            $entityCopy = self::diffArrays($entityCopy, $noUpdates); // columns discarded
             if ($query->parent->transactionOpen === true) {
                 // we disable transaction to avoid nested transactions.
                 // mysql does not allow nested transactions
@@ -1494,7 +1449,13 @@ abstract class _BasePdoOneRepo
             $query->_recursive($recursiveBack); // update() delete the value of recursive
             $defs = static::DEFFK;
             $ns = self::getNamespace();
-            $fatherPK = $entityDB[static::PK[0]];
+            //$pk=static::COL2ALIAS[static::PK[0]];
+            $pk = static::PK[0];
+            if (!isset($entityDB[$pk])) {
+                $pkalias = @static::COL2ALIAS[static::PK[0]];
+                throw new RuntimeException("Update: Primary key [$pkalias] not set");
+            }
+            $fatherPK = $entityDB[$pk];
             foreach ($defs as $key => $def) { // ['/tablaparentxcategory']=['key'=>...]
                 if ($def['key'] === 'ONETOMANY' && $query->hasRecursive($key, $recursiveBack)) {
                     if (!isset($entityDB[$key]) || !is_array($entityDB[$key])) {
@@ -1511,8 +1472,8 @@ abstract class _BasePdoOneRepo
                     foreach ($newRows as $v) {
                         $newRowsKeys[] = $v[$refpk];
                     }
-                    //self::_setRecursive([$def['refcol2']]);
-                    self::_setRecursive([]);
+                    //self::_recursive([$def['refcol2']]);
+                    self::_recursive([]);
                     /** @noinspection PhpUndefinedMethodInspection */
                     $oldRows = ($classRef::where($refcol, $entityDB[$col1]))->toList();
                     $oldRowsKeys = [];
@@ -1555,8 +1516,8 @@ abstract class _BasePdoOneRepo
                     foreach ($newRows as $v) {
                         $newRowsKeys[] = $v[$col2];
                     }
-                    //self::_setRecursive([$def['refcol2']]);
-                    self::_setRecursive([]);
+                    //self::_recursive([$def['refcol2']]);
+                    self::_recursive([]);
                     /** @noinspection PhpUndefinedMethodInspection */
                     $oldRows = ($classRef::where($refcol, $entityDB[$col1]))->toList();
                     $oldRowsKeys = [];
@@ -1726,23 +1687,23 @@ abstract class _BasePdoOneRepo
      * '/customer' is a relation. Usually, a relation has both fields and relation.
      * - If the relation is manytoone, then the query is joined with the table indicated in the relation. Example:<br>
      * <pre>
-     * ProductRepo::setRecursive(['/Category'])::toList(); // select ... from Producto inner join Category on ...
+     * ProductRepo::recursive(['/Category'])::toList(); // select ... from Producto inner join Category on ...
      * </pre>
      * - If the relation is onetomany, then it creates an extra query (or queries) with the corresponding values.
      * Example:<br>
      * <pre>
-     * CategoryRepo::setRecursive(['/Product'])::toList(); // select ... from Category and select from Product where...
+     * CategoryRepo::recursive(['/Product'])::toList(); // select ... from Category and select from Product where...
      * </pre>
      * - If the reation is onetoone, then it is considered as a manytoone, but it returns a single value. Example:<br>
      * <pre>
-     * ProductRepo::setRecursive(['/ProductExtension'])::toList(); // select ... from Product inner join
+     * ProductRepo::recursive(['/ProductExtension'])::toList(); // select ... from Product inner join
      * ProductExtension
      * </pre>
      * - If the relation is manytomany, then the system load the relational table (always, not matter the recursivity),
      * and it reads/insert/update the next values only if the value is marked as recursive. Example:<br>
      * <pre>
-     * ProductRepo::setRecursive(['/product_x_category'])::toList(); // it returns porduct, productxcategory and
-     * category ProductRepo::setRecursive([])->toList(); // it returns porduct and productxcategory (if
+     * ProductRepo::recursive(['/product_x_category'])::toList(); // it returns porduct, productxcategory and
+     * category ProductRepo::recursive([])->toList(); // it returns porduct and productxcategory (if
      * /productcategory is marked as manytomany)
      * </pre>
      *
@@ -1752,7 +1713,7 @@ abstract class _BasePdoOneRepo
      * @return PdoOneQuery
      * @see static::DEFFK for where to define the relation.
      */
-    protected static function _setRecursive(array $recursive): PdoOneQuery
+    protected static function _recursive(array $recursive): PdoOneQuery
     {
         return self::newQuery()->_recursive($recursive);
     }
@@ -1785,12 +1746,9 @@ abstract class _BasePdoOneRepo
             self::invalidateCache();
             $recursiveBack = self::getQuery()->getRecursive();  // recursive is deleted by insertObject
             // only the fields that are defined are inserted
-            $aliasColumns=static::COL2ALIAS;
+            $aliasColumns = static::COL2ALIAS;
             $entityCopy = self::intersectArraysNotNull($entityAlias, $aliasColumns);
-
             $entityCopy = self::diffArrays($entityCopy, static::DEFNOINSERT); // discard some columns
-
-
             if (count($entityCopy) === 0) {
                 static::getPdoOne()
                     ->throwError('insert: insert without fields or fields incorrects. Please check the syntax' .
@@ -1806,11 +1764,10 @@ abstract class _BasePdoOneRepo
             if ($transaction) {
                 $pdoOneQuery->parent->startTransaction();
             }
-
             $insert = $pdoOneQuery->insertObject(static::TABLE, $entityCopy);
             $pks = static::IDENTITY;
             if ($pks !== null) {
-                $pks=static::COL2ALIAS[$pks];
+                $pks = static::COL2ALIAS[$pks];
                 // we update the identity of $entity ($entityCopy is already updated).
                 if ($returnObject !== false) {
                     $returnObject->$pks = $insert;
@@ -1862,7 +1819,7 @@ abstract class _BasePdoOneRepo
             if ($transaction) {
                 $pdoOneQuery->parent->commit();
             }
-            $entityAlias=$entityCopy;
+            $entityAlias = $entityCopy;
             if ($returnObject !== false) {
                 return $entityAlias;
             }
@@ -1970,8 +1927,8 @@ abstract class _BasePdoOneRepo
                     $refcol = ltrim($def['refcol'], PdoOne::$prefixBase);
                     //$refcol2 = ltrim($def['refcol2'], PdoOne::$prefixBase);
                     $col2 = $def['col2'];
-                    //self::_setRecursive([$def['refcol2']]);
-                    self::_setRecursive([]);
+                    //self::_recursive([$def['refcol2']]);
+                    self::_recursive([]);
                     $cols2 = [];
                     foreach ($entity[$key] as $item) {
                         $cols2[] = $item[$col2];
@@ -1987,7 +1944,7 @@ abstract class _BasePdoOneRepo
                             $class2::delete($object2Delete, false);
                         }
                     }
-                    self::_setRecursive($recursiveBackup);
+                    self::_recursive($recursiveBackup);
                 }
             }
             $r = static::getPdoOne()->delete(static::TABLE, $entityCopy);

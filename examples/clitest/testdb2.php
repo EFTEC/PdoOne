@@ -13,8 +13,8 @@
     "namespace": null,
     "savegen": "yes",
     "tables": null,
-    "tablescolumns": null,
-    "tablecommand": null,
+    "tablescolumns": "",
+    "tablecommand": "",
     "convertionselected": null,
     "convertionnewvalue": null,
     "newclassname": null,
@@ -149,7 +149,7 @@
         "customers": {
             "City": "City",
             "Email": "Email",
-            "IdCustomer": "IdCustomer",
+            "IdCustomer": "NumCustomer",
             "Name": "Name"
         }
     }

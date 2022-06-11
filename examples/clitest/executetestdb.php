@@ -31,8 +31,8 @@ $dependency=[
     '/_invoicedetails/_City'
 ];
 var_dump('list');
-$a1=InvoiceRepo::useCache(20)->recursive($dependency)->where(['/_Customer/NumCustomer'=>33])->toList();
-//$a1=InvoiceRepo::useCache(20)->recursive($dependency)->where('customer=?',[11])->toList();
+//$a1=InvoiceRepo::useCache(20)->recursive($dependency)->where(['/_Customer/NumCustomer'=>33])->toList();
+$a1=InvoiceRepo::useCache(20)->recursive($dependency)->where(['/_Customer/NumCustomer'=>11])->first();
 new \dBug\dBug($a1);
 die(1);
 var_dump('list simple');
@@ -50,7 +50,7 @@ new \dBug\dBug($firstSimple);
 
 echo "</pre>";
 die(1);
-$a1= InvoiceRepo::setRecursive(['_idchild2FK'])->where(['FieldText'=>'varchar'])->toList();
+$a1= InvoiceRepo::setRecursive(['/_idchild2FK'])->where(['FieldText'=>'varchar'])->toList();
 $query=str_replace(',',",<br>",PdoOne::instance()->lastQuery);
 
 new \dBug\dBug(InvoiceRepo::$gQuery);

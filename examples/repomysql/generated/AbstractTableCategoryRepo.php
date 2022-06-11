@@ -268,7 +268,7 @@ abstract class AbstractTableCategoryRepo extends TestDb
          * self::setRecursive('*'); // recursive every MANYTOONE,ONETOONE,MANYTOONE and ONETOONE relations (first level)
          * self::setRecursive('MANYTOONE'); // recursive all relations of the type MANYTOONE (first level)
          * self::setRecursive(['_relation1','_relation2']); // recursive only the relations of the first level
-         * self::setRecursive(['_relation1','_relation1/_subrelation1']); //recursive the relations (first and second level)
+         * self::setRecursive(['/_relation1','/_relation1/_subrelation1']); //recursive the relations (first and second level)
          * </pre>
     * If array then it uses the values to set the recursivity.<br>
     * If string then the values allowed are '*', 'MANYTOONE','ONETOMANY','MANYTOMANY','ONETOONE' (first level only)<br>

@@ -212,11 +212,11 @@ abstract class Abstract{classname} extends {baseclass}
     * With recursivity, we could use the recursivity of the fields, for example, loading a MANYTOONE relation<br>
     * <b>Example:</b><br>
     * <pre>
-         * self::setRecursive([]); // (default) no use recursivity.
-         * self::setRecursive('*'); // recursive every MANYTOONE,ONETOONE,MANYTOONE and ONETOONE relations (first level)
-         * self::setRecursive('MANYTOONE'); // recursive all relations of the type MANYTOONE (first level)
-         * self::setRecursive(['_relation1','_relation2']); // recursive only the relations of the first level
-         * self::setRecursive(['_relation1','_relation1/_subrelation1']); //recursive the relations (first and second level)
+         * self::recursive([]); // (default) no use recursivity.
+         * self::recursive('*'); // recursive every MANYTOONE,ONETOONE,MANYTOONE and ONETOONE relations (first level)
+         * self::recursive('MANYTOONE'); // recursive all relations of the type MANYTOONE (first level)
+         * self::recursive(['/_relation1','/_relation2']); // recursive only the relations of the first level
+         * self::recursive(['/_relation1','/_relation1/_subrelation1']); //recursive the relations (first and second level)
          * </pre>
     * If array then it uses the values to set the recursivity.<br>
     * If string then the values allowed are '*', 'MANYTOONE','ONETOMANY','MANYTOMANY','ONETOONE' (first level only)<br>
@@ -225,12 +225,12 @@ abstract class Abstract{classname} extends {baseclass}
     *
     * @return PdoOneQuery
     */
-    public static function setRecursive($recursive=[])
+    public static function recursive($recursive=[])
     {
         if(is_string($recursive)) {
             $recursive={classname}::getRelations($recursive);
         }
-        return parent::_setRecursive($recursive);
+        return parent::_recursive($recursive);
     }
 
     /**
@@ -362,7 +362,7 @@ abstract class Abstract{classname} extends {baseclass}
     */
     public static function factory($values = null, $recursivePrefix = '') {
         $recursive=static::getRecursive();
-        static::setRecursive(); // reset the recursivity.
+        static::recursive(); // reset the recursivity.
         $row= {array};
         {linked}
         if ($values !== null) {

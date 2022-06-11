@@ -31,7 +31,7 @@ $dependency=[
     '/_invoicedetails/_Product/_City',
     '/_invoicedetails/_City'
 ];
-$ent=InvoiceRepo::factory();
+$ent=CityRepo::factory();
 
 
 
@@ -41,8 +41,12 @@ $ent=InvoiceRepo::factory();
 $first=CityRepo::first();
 
 new \dBug\dBug($first);
-$ent['NameCity']='cityexample 555';
+$ent['NumCity']=4;
+$ent['Name']='cityexample 555';
+new \dBug\dBug($ent);
 CityRepo::update($ent);
+
+//CityRepo::deleteById(555);
 
 
 
