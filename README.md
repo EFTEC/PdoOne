@@ -2035,6 +2035,8 @@ In a nutshell:
 >
 > Every decimal version means that it patches/fixes/refactoring a previous functionality i.e. 1.5.0 -> 1.5.1 (fix)
 
+* 3.1.2 2022-06-18
+  * [ORM] fixed a bug with the template of the abstract file and limit() 
 * 3.1.1 2022-06-17
   * fixed a bug with limit() and page() 
 * 3.1 2022-06-11

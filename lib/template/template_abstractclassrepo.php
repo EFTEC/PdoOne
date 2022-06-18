@@ -247,9 +247,9 @@ abstract class Abstract{classname} extends {baseclass}
     * @throws Exception
     * @test InstanceOf PdoOne::class,this('1,10')
     */
-    public static function limit($sql) : PdoOneQuery
+    public static function limit($first,$second=null) : PdoOneQuery
     {
-        return static::newQuery()->limit($sql);
+        return static::newQuery()->limit($first,$second);
     }
 
     /**
