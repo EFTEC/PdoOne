@@ -237,8 +237,9 @@ abstract class Abstract{classname} extends {baseclass}
     * It adds an "limit" in a query. It depends on the type of database<br>
     * <b>Example:</b><br>
     * <pre>
-         *      ->select("")->limit("10,20")->toList();
-         * </pre>
+    *      self::limit("10,20")->toList(); // start row 10th, fetches 20 next 20 rows
+    *      self::limit(10,20)->toList();   // start row 10th, fetches 20 next 20 rows
+    * </pre>
     *
     * @param string $sql Input SQL query
     *

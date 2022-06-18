@@ -6,10 +6,9 @@ include_once __DIR__ . '/PdoOneCli.php';
 if (!defined('PHPUNIT_COMPOSER_INSTALL') && !defined('__PHPUNIT_PHAR__')
     && isset($_SERVER['PHP_SELF']) &&
     PdoOneCli::isCli() &&
-    ( basename($_SERVER['PHP_SELF']) === 'pdoonecli.php' || basename($_SERVER['PHP_SELF']) === 'pdoonecli')
+    (basename($_SERVER['PHP_SELF']) === 'pdoonecli.php' || basename($_SERVER['PHP_SELF']) === 'pdoonecli')
 ) {
     // we also excluded it if it is called by phpunit.
-
     $path = PdoOneCli::findVendorPath();
     /** @noinspection PhpIncludeInspection */
     include_once __DIR__ . '/' . $path . '/autoload.php';

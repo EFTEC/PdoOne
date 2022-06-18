@@ -4,11 +4,9 @@
 /** @noinspection SqlResolve */
 /** @noinspection AccessModifierPresentedInspection */
 /** @noinspection TypeUnsafeComparisonInspection */
-
 /** @noinspection DuplicatedCode */
 
 namespace eftec\ext;
-
 
 use eftec\PdoOne;
 use Exception;
@@ -54,14 +52,13 @@ class PdoOne_Sqlsrv implements PdoOne_IExt
         return '';
     }
 
-    public function connect($cs, $alterSession = false) : void
+    public function connect($cs, $alterSession = false): void
     {
         $this->parent->conn1 = new PDO("{$this->parent->databaseType}:server={$this->parent->server};" .
             "database={$this->parent->db}$cs", $this->parent->user, $this->parent->pwd);
         $this->parent->user = '';
         $this->parent->pwd = '';
         $this->parent->conn1->setAttribute(PDO::SQLSRV_ATTR_FETCHES_NUMERIC_TYPE, true);
-
     }
 
     public function truncate(string $tableName, string $extra, bool $force)
@@ -104,19 +101,17 @@ class PdoOne_Sqlsrv implements PdoOne_IExt
         return $result;
     }
 
-    public function getDefTable(string $table) : array
+    public function getDefTable(string $table): array
     {
         /** @var array $result =array(["name"=>'',"is_identity"=>0,"increment_value"=>0,"seed_value"=>0]) */
         $findIdentity =
             $this->parent->select('name,is_identity,increment_value,seed_value')->from('sys.identity_columns')
                 ->where('OBJECT_NAME(object_id)=?', $table)->toList();
         $findIdentity = (!is_array($findIdentity)) ? [] : $findIdentity; // it's always an arry
-
         $defArray = $this->parent->select('COLUMN_NAME,IS_NULLABLE,DATA_TYPE,CHARACTER_MAXIMUM_LENGTH
                         ,NUMERIC_PRECISION,NUMERIC_SCALE,COLUMN_DEFAULT,IDENT_SEED(\'".$table."\') HASIDENTITY')
             ->from('INFORMATION_SCHEMA.COLUMNS')->where('TABLE_NAME = ?', $table)
             ->order('ORDINAL_POSITION')->toList();
-
         $result = [];
         foreach ($defArray as $col) {
             $value = self::sqlsrv_getType($col);
@@ -131,7 +126,6 @@ class PdoOne_Sqlsrv implements PdoOne_IExt
             }
             $result[$colName] = $value;
         }
-
         return $result;
     }
 
@@ -157,7 +151,6 @@ class PdoOne_Sqlsrv implements PdoOne_IExt
         } else {
             $result = $col['DATA_TYPE'];
         }
-
         return $result;
     }
 
@@ -168,11 +161,10 @@ class PdoOne_Sqlsrv implements PdoOne_IExt
      * @return array
      * @throws Exception
      */
-    public function getDefTableKeys(string $table, bool $returnSimple, string $filter = null) : array
+    public function getDefTableKeys(string $table, bool $returnSimple, string $filter = null): array
     {
         $columns = [];
         /** @var array $result =array(["IndexName"=>'',"ColumnName"=>'',"is_unique"=>0,"is_primary_key"=>0,"TYPE"=>0]) */
-
         $result =
             $this->parent->select('IndexName = ind.name,ColumnName = col.name,ind.is_unique,IND.is_primary_key,IND.TYPE')
                 ->from('sys.indexes ind')
@@ -196,7 +188,6 @@ class PdoOne_Sqlsrv implements PdoOne_IExt
                 }
             }
         }
-
         return $columns; //$this->parent->filterKey($filter, $columns, $returnSimple);
     }
 
@@ -209,7 +200,7 @@ class PdoOne_Sqlsrv implements PdoOne_IExt
      * @throws Exception
      * @noinspection GrazieInspection
      */
-    public function getDefTableFK(string $table, bool $returnSimple, string $filter = null, bool $assocArray = false) : array
+    public function getDefTableFK(string $table, bool $returnSimple, string $filter = null, bool $assocArray = false): array
     {
         $columns = [];
         /** @var array $fkArr =array(["foreign_key_name"=>'',"referencing_table_name"=>'',"COLUMN_NAME"=>''
@@ -252,11 +243,9 @@ class PdoOne_Sqlsrv implements PdoOne_IExt
                     , $item['fk_name']);
             }
         }
-
         if ($assocArray) {
             return $columns;
         }
-
         return $this->parent->filterKey($filter, $columns, $returnSimple);
     }
 
@@ -304,7 +293,7 @@ class PdoOne_Sqlsrv implements PdoOne_IExt
         }
     }
 
-    public function objectExist(string $type = 'table') : ?string
+    public function objectExist(string $type = 'table'): ?string
     {
         switch ($type) {
             case 'table':
@@ -345,7 +334,6 @@ class PdoOne_Sqlsrv implements PdoOne_IExt
                 $this->parent->throwError("objectExist: type [$type] not defined for {$this->parent->databaseType}", '');
                 return null;
         }
-
         return $query;
     }
 
@@ -385,12 +373,12 @@ class PdoOne_Sqlsrv implements PdoOne_IExt
 
     public function createSequence(string $tableSequence = null, string $method = 'snowflake'): array
     {
-        $sql=[];
+        $sql = [];
         $sql[] = "CREATE SEQUENCE [$tableSequence]
 				    START WITH 1  
 				    INCREMENT BY 1;			    
 			    ";
-        $sql[]= "create PROCEDURE next_$tableSequence
+        $sql[] = "create PROCEDURE next_$tableSequence
 					@node int
 				AS
 					BEGIN
@@ -406,7 +394,6 @@ class PdoOne_Sqlsrv implements PdoOne_IExt
 						set @return=(@current_ms*cast(4194304 as bigint)) + (@node *4096) + (@incr % 4096)
 						select @return as id
 					END";
-
         return $sql;
     }
 
@@ -416,51 +403,52 @@ class PdoOne_Sqlsrv implements PdoOne_IExt
         return "exec next_$sequenceName {$this->parent->nodeId}";
     }
 
-    public function translateExtra($universalExtra):string
+    public function translateExtra($universalExtra): string
     {
         /** @noinspection DegradedSwitchInspection */
         switch ($universalExtra) {
             case 'autonumeric':
-                $sqlExtra='IDENTITY(1,1)';
+                $sqlExtra = 'IDENTITY(1,1)';
                 break;
             default:
-                $sqlExtra=$universalExtra;
+                $sqlExtra = $universalExtra;
         }
         return $sqlExtra;
     }
-    public function translateType($universalType,$len=null): string
+
+    public function translateType($universalType, $len = null): string
     {
         switch ($universalType) {
             case 'int':
-                $sqlType="int";
+                $sqlType = "int";
                 break;
             case 'long':
-                $sqlType="long";
+                $sqlType = "long";
                 break;
             case 'decimal':
-                $sqlType="decimal($len) ";
+                $sqlType = "decimal($len) ";
                 break;
             case 'bool':
-                $sqlType="char(1)";
+                $sqlType = "char(1)";
                 break;
             case 'date':
-                $sqlType="date";
+                $sqlType = "date";
                 break;
             case 'datetime':
-                $sqlType="datetime";
+                $sqlType = "datetime";
                 break;
             case 'timestamp':
-                $sqlType="timestamp";
+                $sqlType = "timestamp";
                 break;
             case 'string':
             default:
-                $sqlType="varchar($len) ";
+                $sqlType = "varchar($len) ";
                 break;
         }
         return $sqlType;
     }
 
-    public function createTable(string $tableName, array $definition, $primaryKey = null, string $extra = '', string $extraOutside = '') : string
+    public function createTable(string $tableName, array $definition, $primaryKey = null, string $extra = '', string $extraOutside = ''): string
     {
         $extraOutside = ($extraOutside === '') ? 'ON [PRIMARY]' : $extraOutside;
         $sql = "set nocount on;
@@ -469,9 +457,7 @@ class PdoOne_Sqlsrv implements PdoOne_IExt
             $sql .= "[$key] $type,";
         }
         $sql = rtrim($sql, ',');
-
         $sql .= "$extra ) ON [PRIMARY]; ";
-
         if (!is_array($primaryKey)) {
             $sql .= "
 						ALTER TABLE [$tableName] ADD CONSTRAINT
@@ -513,7 +499,6 @@ class PdoOne_Sqlsrv implements PdoOne_IExt
             }
             $sql = str_replace('*pk*', '', $sql);
         }
-
         return $sql;
     }
 
@@ -535,6 +520,7 @@ class PdoOne_Sqlsrv implements PdoOne_IExt
         }
         return $sql;
     }
+
     public function createIndex(string $tableName, array $indexesAndDef): string
     {
         $sql = '';
@@ -545,26 +531,24 @@ class PdoOne_Sqlsrv implements PdoOne_IExt
         return $sql;
     }
 
-    public function limit($sql) : string
+    public function limit(?int $first, ?int $second): string
     {
         //if (!$this->parent->order) {
         //    $this->parent->throwError('limit without a sort', '');
         //}
-        if (strpos($sql, ',')) {
-            $arr = explode(',', $sql);
-            return " OFFSET $arr[0] ROWS FETCH NEXT $arr[1] ROWS ONLY";
+        if ($second === null) {
+            return " OFFSET 0 ROWS FETCH NEXT $first ROWS ONLY";
         }
-
-        return " OFFSET 0 ROWS FETCH NEXT $sql ROWS ONLY";
+        return " OFFSET $first ROWS FETCH NEXT $second ROWS ONLY";
     }
 
     /**
      *
      * @param string $tableKV
-     * @param bool $memoryKV it requires a filegroup for memory.
+     * @param bool   $memoryKV it requires a filegroup for memory.
      * @return string
      */
-    public function createTableKV($tableKV,$memoryKV=false): string
+    public function createTableKV($tableKV, $memoryKV = false): string
     {
         return $this->createTable($tableKV
             , ['KEYT' => 'VARCHAR(256) NOT NULL', 'VALUE' => 'VARCHAR(MAX)', 'TIMESTAMP' => 'BIGINT']
@@ -580,10 +564,8 @@ class PdoOne_Sqlsrv implements PdoOne_IExt
                     return 'SQLSRV: unable to find pk via query. Use the name of the table';
                 }
             } else {
-
                 // get the pk by table name
                 $r = $this->getDefTableKeys($query, true, 'PRIMARY KEY');
-
                 if (count($r) >= 1) {
                     foreach ($r as $key => $item) {
                         $pkResult[] = $key;
@@ -615,15 +597,15 @@ class PdoOne_Sqlsrv implements PdoOne_IExt
             if (in_array($k, $outputColumns, true)) {
                 $stmt->bindParam(':' . $k, $arguments[$k], $this->parent->getType($v) | PDO::PARAM_INPUT_OUTPUT, 4000);
             } else {
-                $stmt->bindParam(':' . $k, $arguments[$k],$this->parent->getType($v));
+                $stmt->bindParam(':' . $k, $arguments[$k], $this->parent->getType($v));
             }
         }
         $r = $stmt->execute();
         if ($r) {
-            if ($stmt->columnCount()!==0) {
+            if ($stmt->columnCount() !== 0) {
                 $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
             } else {
-                $result=true;
+                $result = true;
             }
         } else {
             $result = false;

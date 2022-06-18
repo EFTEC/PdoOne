@@ -16,7 +16,7 @@ interface PdoOne_IExt
 {
     public function construct($charset, $config);
 
-    public function connect($cs, $alterSession) : void;
+    public function connect($cs, $alterSession): void;
 
     /**
      * It calls a store procedure.
@@ -123,6 +123,7 @@ interface PdoOne_IExt
     public function getDefTableFK(string $table, bool $returnSimple, string $filter = null, bool $assocArray = false): array;
 
     public function db($dbname);
+
     /**
      * It returns a default value depending on the type of the column.
      *
@@ -167,7 +168,7 @@ interface PdoOne_IExt
      * @return array the sql command to create a sequence
      * @throws Exception
      */
-    public function createSequence(string $tableSequence = null, string $method = 'snowflake') : array;
+    public function createSequence(string $tableSequence = null, string $method = 'snowflake'): array;
 
     /**
      * It creates a store procedure<br>
@@ -203,8 +204,9 @@ interface PdoOne_IExt
 
     public function getSequence(string $sequenceName);
 
-    public function translateExtra(string $universalExtra):string;
-    public function translateType(string $universalType,$len=null): string;
+    public function translateExtra(string $universalExtra): string;
+
+    public function translateType(string $universalType, $len = null): string;
 
     /**
      * DCL command. It creates a database.<br>
@@ -261,16 +263,18 @@ interface PdoOne_IExt
      * <b>Example:</b><br>
      * <pre>
      *      ->select("")->limit("10,20")->toList();
+     *      ->select("")->limit(10,20)->toList();
      * </pre>
      *
-     * @param $sql
+     * @param int|null $first  The whole expression separated by comma, or the first expression (the initial row)
+     * @param int|null $second The numbers of row to read. If null, then it uses $sql.
      * @return string
      *
      * @throws Exception
      */
-    public function limit($sql): string;
+    public function limit(?int $first, ?int $second): string;
 
-    public function createTableKV($tableKV,$memoryKV=false): string;
+    public function createTableKV($tableKV, $memoryKV = false): string;
 
     /**
      * It gets a primary key based in a query.<br>

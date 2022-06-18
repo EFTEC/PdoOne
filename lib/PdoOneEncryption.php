@@ -5,7 +5,6 @@
 /** @noinspection PhpMissingParamTypeInspection */
 /** @noinspection PhpComposerExtensionStubsInspection */
 /** @noinspection EncryptionInitializationVectorRandomnessInspection */
-
 /** @noinspection CryptographicallySecureRandomnessInspection */
 
 namespace eftec;
@@ -16,11 +15,11 @@ use RuntimeException;
 /**
  * This class is used for encryption.  It could encrypt (two ways).
  * Class PdoOneEncryption
- * @version 2.22.1 2022-01-30
- * @package eftec
- * @author Jorge Castro Castillo
+ * @version       2.22.1 2022-01-30
+ * @package       eftec
+ * @author        Jorge Castro Castillo
  * @copyright (c) Jorge Castro C. Dual Licence: MIT and Commercial License  https://github.com/EFTEC/PdoOne
- * @see https://github.com/EFTEC/PdoOne
+ * @see           https://github.com/EFTEC/PdoOne
  */
 class PdoOneEncryption
 {
@@ -31,7 +30,7 @@ class PdoOneEncryption
      * @var string=['sha256','sha512','md5'][$i]
      * @see https://www.php.net/manual/en/function.hash-algos.php
      */
-    public $hashType='sha256';
+    public $hashType = 'sha256';
     /**
      * @var string Encryption password.<br>
      * If the method is INTEGER, then the password must be an integer
@@ -45,7 +44,7 @@ class PdoOneEncryption
      * If false, then the value encrypted is the same for the same value.<br>
      * Set to false if you want a deterministic value (it always returns the same value)
      */
-    public $iv=true;
+    public $iv = true;
     /**
      * @var string<p> Encryption method, example AES-256-CTR (two ways).</p>
      * <p>If the method is SIMPLE (two ways) then it's uses a simple conversion (short generated value)</p>
@@ -58,13 +57,13 @@ class PdoOneEncryption
      * PdoOneEncryption constructor.
      * @param string $encPassword
      * @param string $encSalt
-     * @param bool $iv If iv is true then it is generated randomly (not deterministically)
-     *                  otherwise, is it generated via md5
-     * @param string $encMethod Example : AES-128-CTR @see http://php.net/manual/en/function.openssl-get-cipher-methods.php
+     * @param bool   $iv        If iv is true then it is generated randomly (not deterministically)
+     *                          otherwise, is it generated via md5
+     * @param string $encMethod Example : AES-128-CTR @see
+     *                          http://php.net/manual/en/function.openssl-get-cipher-methods.php
      */
-    public function __construct($encPassword,$encSalt=null, $iv=true, $encMethod='AES-128-CTR')
+    public function __construct($encPassword, $encSalt = null, $iv = true, $encMethod = 'AES-128-CTR')
     {
-
         $this->encPassword = $encPassword;
         $this->encSalt = $encSalt ?? $encPassword; // if null then it uses the same password
         $this->iv = $iv;
@@ -80,7 +79,7 @@ class PdoOneEncryption
      */
     public function decrypt($data)
     {
-        if (!$this->encEnabled || $data===null) {
+        if (!$this->encEnabled || $data === null) {
             return $data;
         } // no encryption
         switch ($this->encMethod) {
@@ -89,22 +88,20 @@ class PdoOneEncryption
             case 'INTEGER':
                 return $this->decryptInteger($data);
         }
-
-        $data=base64_decode(str_replace(array('-', '_'),array('+', '/'),$data));
+        $data = base64_decode(str_replace(array('-', '_'), array('+', '/'), $data));
         $iv_strlen = 2 * openssl_cipher_iv_length($this->encMethod);
         if (preg_match('/^(.{' . $iv_strlen . '})(.+)$/', $data, $regs)) {
             try {
                 [, $iv, $crypted_string] = $regs;
                 $decrypted_string = openssl_decrypt($crypted_string, $this->encMethod, $this->encPassword, 0, hex2bin($iv));
-                $result=substr($decrypted_string, strlen($this->encSalt));
-                if(strlen($result)>2 && $result[1]===':') {
+                $result = substr($decrypted_string, strlen($this->encSalt));
+                if (strlen($result) > 2 && $result[1] === ':') {
                     /** @noinspection UnserializeExploitsInspection */
-                    $resultfinal=@unserialize($result); // we try to unserialize, if fails, then we keep the current value
-                    $result=$resultfinal===false?$result:$resultfinal;
+                    $resultfinal = @unserialize($result); // we try to unserialize, if fails, then we keep the current value
+                    $result = $resultfinal === false ? $result : $resultfinal;
                 }
                 return $result;
-
-            } catch(Exception $ex) {
+            } catch (Exception $ex) {
                 return false;
             }
         } else {
@@ -116,7 +113,8 @@ class PdoOneEncryption
      * It is a two-way encryption. The result is htlml/link friendly.
      * @param mixed $data For the method simple, it could be a simple value (string,int,etc.)<br>
      *                    For the method integer, it must be an integer<br>
-     *                    For other methods, it could be any value. If it is an object or array, then it is serialized<br>
+     *                    For other methods, it could be any value. If it is an object or array, then it is
+     *                    serialized<br>
      * @return string|int|false     Returns a string with the value encrypted
      */
     public function encrypt($data)
@@ -130,17 +128,17 @@ class PdoOneEncryption
             case 'INTEGER':
                 return $this->encryptInteger($data);
         }
-        if(is_array($data) || is_object($data)) {
-            $data=serialize($data);
+        if (is_array($data) || is_object($data)) {
+            $data = serialize($data);
         }
         if ($this->iv) {
             $iv = openssl_random_pseudo_bytes(openssl_cipher_iv_length($this->encMethod));
         } else {
-            $iv=substr(md5($data,true),0,openssl_cipher_iv_length($this->encMethod));
+            $iv = substr(md5($data, true), 0, openssl_cipher_iv_length($this->encMethod));
         }
         $encrypted_string = bin2hex($iv) . openssl_encrypt($this->encSalt . $data, $this->encMethod
                 , $this->encPassword, 0, $iv);
-        return str_replace(array('+', '/'), array('-', '_'),base64_encode($encrypted_string));
+        return str_replace(array('+', '/'), array('-', '_'), base64_encode($encrypted_string));
     }
 
     /**
@@ -149,31 +147,34 @@ class PdoOneEncryption
      * @param mixed $data It could be any type of serializable data.
      * @return false|string If the serialization is not set, then it returns the same value.
      */
-    public function hash($data) {
-        if(!is_string($data)) {
-            $data=serialize($data);
+    public function hash($data)
+    {
+        if (!is_string($data)) {
+            $data = serialize($data);
         }
         if (!$this->encEnabled) {
             return $data;
         }
-        return hash($this->hashType,$this->encSalt.$data);
+        return hash($this->hashType, $this->encSalt . $data);
     }
 
     //<editor-fold desc="encryption SIMPLE">
+
     /**
      * It is a simple decryption. It's less safe but the result is shorter.
      * @param $data
      * @return string
      */
-    public function decryptSimple($data) {
+    public function decryptSimple($data)
+    {
         $result = '';
-        $data=base64_decode(str_replace(array('-', '_'),array('+', '/'),$data));
-        $l=strlen($data);
-        for($i=0; $i<$l; $i++) {
+        $data = base64_decode(str_replace(array('-', '_'), array('+', '/'), $data));
+        $l = strlen($data);
+        for ($i = 0; $i < $l; $i++) {
             $char = $data[$i];
             $keychar = $this->encPassword[($i % strlen($this->encPassword)) - 1];
-            $char = chr(ord($char)-ord($keychar));
-            $result.=$char;
+            $char = chr(ord($char) - ord($keychar));
+            $result .= $char;
         }
         return $result;
     }
@@ -183,50 +184,51 @@ class PdoOneEncryption
      * @param $data
      * @return array|string|string[]
      */
-    public function encryptSimple($data) {
+    public function encryptSimple($data)
+    {
         $result = '';
-        $l=strlen($data);
-        for($i=0; $i<$l; $i++) {
+        $l = strlen($data);
+        for ($i = 0; $i < $l; $i++) {
             $char = substr($data, $i, 1);
             $keychar = $this->encPassword[($i % strlen($this->encPassword)) - 1];
-            $char = chr(ord($char)+ord($keychar));
-            $result.=$char;
+            $char = chr(ord($char) + ord($keychar));
+            $result .= $char;
         }
-        return str_replace(array('+', '/'), array('-', '_'),base64_encode($result));
+        return str_replace(array('+', '/'), array('-', '_'), base64_encode($result));
     }
     //</editor-fold>
 
 
     /**
-     * @param $password
-     * @param $salt
-     * @param $encMethod
+     * @param      $password
+     * @param      $salt
+     * @param      $encMethod
      * @param bool $iv
      * @throws Exception
      */
-    public function setEncryption($password, $salt, $encMethod,$iv=true)
+    public function setEncryption($password, $salt, $encMethod, $iv = true)
     {
         if (!extension_loaded('openssl')) {
             $this->encEnabled = false;
             throw new RuntimeException('OpenSSL not loaded, encryption disabled');
         }
-
         $this->encEnabled = true;
         $this->encPassword = $password;
         $this->encSalt = $salt;
         $this->encMethod = $encMethod;
-        $this->iv=$iv;
+        $this->iv = $iv;
     }
 
     /**
      * It changes the hash type.
      *
-     * @param string $hashType=hash_algos()[$i]
+     * @param string $hashType =hash_algos()[$i]
      * @return void
      * @see https://www.php.net/manual/en/function.hash-algos.php
      */
-    public function setHashType($hashType) {
-        $this->hashType=$hashType;
+    public function setHashType($hashType)
+    {
+        $this->hashType = $hashType;
     }
     //<editor-fold desc="encryption INTEGER">
 
@@ -235,7 +237,8 @@ class PdoOneEncryption
      * @param integer $n
      * @return int|false
      */
-    public function encryptInteger($n) {
+    public function encryptInteger($n)
+    {
         if (!is_numeric($n)) {
             return false;
         }
@@ -248,7 +251,8 @@ class PdoOneEncryption
      * @param int $n
      * @return int|null
      */
-    public function decryptInteger($n) {
+    public function decryptInteger($n)
+    {
         if (!is_numeric($n)) {
             return null;
         }
@@ -260,29 +264,36 @@ class PdoOneEncryption
      * @return int
      * @see \eftec\PdoOneEncryption::encryptInteger
      */
-    private function encrypt32($n) {
+    private function encrypt32($n)
+    {
         return ((0x000000FF & $n) << 24) + (((0xFFFFFF00 & $n) >> 8) & 0x00FFFFFF);
     }
+
     /** @param $n
      * @return int
      * @see \eftec\PdoOneEncryption::decryptInteger
      */
-    private function decrypt32($n) {
+    private function decrypt32($n)
+    {
         return ((0x00FFFFFF & $n) << 8) + (((0xFF000000 & $n) >> 24) & 0x000000FF);
     }
+
     /** @param $n
      * @return int
      * @see \eftec\PdoOneEncryption::encryptInteger
      */
-    private function encrypt64($n) {
+    private function encrypt64($n)
+    {
         /** @noinspection PhpCastIsUnnecessaryInspection */
         return ((0x000000000000FFFF & $n) << 48) + ((((int)0xFFFFFFFFFFFF0000 & $n) >> 16.0) & 0x0000FFFFFFFFFFFF);
     }
+
     /** @param $n
      * @return int
      * @see \eftec\PdoOneEncryption::decryptInteger
      */
-    private function decrypt64($n) {
+    private function decrypt64($n)
+    {
         /** @noinspection PhpCastIsUnnecessaryInspection */
         return (((int)0x0000FFFFFFFFFFFF & $n) << 16.0) + ((((int)0xFFFF000000000000 & $n) >> 48.0) & 0x000000000000FFFF);
     }

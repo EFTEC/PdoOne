@@ -1339,12 +1339,12 @@ class PdoOneQuery
         if ($this->ormClass !== null) {
             $cls = $this->ormClass;
             $p0 = ($pageSize ?? $cls::$pageSize) * ($numPage - 1);
-            $p1 = $p0 + ($pageSize ?? $cls::$pageSize);
+            //$p1 = $p0 + ($pageSize ?? $cls::$pageSize);
         } else {
             $p0 = ($pageSize ?? PdoOne::$pageSize) * ($numPage - 1);
-            $p1 = $p0 + ($pageSize ?? PdoOne::$pageSize);
+            //$p1 = $p0 + ($pageSize ?? PdoOne::$pageSize);
         }
-        return $this->limit("$p0,$p1");
+        return $this->limit($p0, $pageSize);
     }
 
     /**
@@ -1354,18 +1354,27 @@ class PdoOneQuery
      *      ->select("")->limit("10,20")->toList();
      * </pre>
      *
-     * @param string|null $sql Input SQL query
+     * @param mixed $first  Input SQL query
+     * @param mixed $second Input SQL query
      *
      * @return PdoOneQuery
      * @throws Exception
      * @test InstanceOf PdoOne::class,this('1,10')
      */
-    public function limit(?string $sql): PdoOneQuery
+    public function limit($first, $second = null): PdoOneQuery
     {
-        if ($sql === null) {
+        if ($first === null) {
             return $this;
         }
-        $this->limit = $this->parent->service->limit($sql);
+        if ($second === null) {
+            $values = explode(',', $first, 2);
+            $value1 = @(int)$values[0];
+            $value2 = @(int)($values[1] ?? null);
+        } else {
+            $value1 = @(int)$first;
+            $value2 = @(int)$second;
+        }
+        $this->limit = $this->parent->service->limit($value1, $value2);
         return $this;
     }
 
@@ -1759,10 +1768,10 @@ class PdoOneQuery
         // using builder. from()->set()->insert()
         $errorCause = '';
         if (!$tableName) {
-            $errorCause = "you can't execute an empty insert() without a from()";
+            $errorCause = 'you can\'t execute an empty insert() without a from()';
         }
         if (count($this->set) === 0) {
-            $errorCause = "you can't execute an empty insert() without a set()";
+            $errorCause = 'you can\'t execute an empty insert() without a set()';
         }
         if ($errorCause) {
             $this->throwErrorChain('Insert:' . $errorCause);
@@ -1907,7 +1916,7 @@ class PdoOneQuery
         // using builder. from()->set()->where()->update()
         $errorCause = '';
         if (!$tableOrObject) {
-            $errorCause = "you can't execute an empty delete() without a from()";
+            $errorCause = 'you can\'t execute an empty delete() without a from()';
         }
         if ($errorCause) {
             $this->throwErrorChain('Delete:' . $errorCause);
@@ -1984,10 +1993,10 @@ class PdoOneQuery
         }
         $errorCause = '';
         if (!$tableOrObject) {
-            $errorCause = "you can't execute an empty update() without a from()";
+            $errorCause = 'you can\'t execute an empty update() without a from()';
         }
         if (count($this->set) === 0) {
-            $errorCause = "you can't execute an empty update() without a set()";
+            $errorCause = 'you can\'t execute an empty update() without a set()';
         }
         if ($errorCause) {
             $this->throwErrorChain('Update:' . $errorCause);
@@ -2057,7 +2066,7 @@ class PdoOneQuery
         if ($sql === null) {
             return $this;
         }
-        $this->order = ($sql) ? ' order by ' . $sql : '';
+        $this->order = ($sql) ? ' order by ' . PdoOne::cleanColumns($sql) : '';
         return $this;
     }
 

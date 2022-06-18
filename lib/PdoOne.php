@@ -26,11 +26,11 @@ use stdClass;
  * @package       eftec
  * @author        Jorge Castro Castillo
  * @copyright (c) Jorge Castro C. Dual Licence: MIT and Commercial License  https://github.com/EFTEC/PdoOne
- * @version       2.32.1
+ * @version       3.1.1
  */
 class PdoOne
 {
-    public const VERSION = '2.32.1';
+    public const VERSION = '3.1.1';
     /** @var int We need this value because null and false could be a valid value. */
     public const NULL = PHP_INT_MAX;
     /** @var string Prefix of the tables */
@@ -286,6 +286,19 @@ class PdoOne
         return ['key' => $key, 'refcol' => $refcol, 'reftable' => $reftable, 'extra' => $extra, 'name' => $name];
     }
 
+    /**
+     * We clean a sql that it could contain columns<br>
+     * <b>Example:</b><br>
+     * <pre>
+     * PdoOne::cleanColumns("col1,col2"); // col1,col2
+     * PdoOne::cleanColumns("col1';,col2"); // col1;,col2
+     * </pre>
+     * @param string $sql
+     * @return array|string|string[]
+     */
+    public static function cleanColumns(string $sql) {
+        return str_replace([chr(0),chr(8),chr(9),chr(13),"'",'"',chr(26),chr(92)],'',$sql);
+    }
     public static function addParenthesis($txt, $start = '(', $end = ')')
     {
         if (self::hasParenthesis($txt, $start, $end) === false) {
@@ -1245,7 +1258,8 @@ class PdoOne
      * @param string|array   $extraParam        It's only used if $logLevel>=3  It
      *                                          shows parameters (if any)
      *
-     * @param bool           $throwError        if true then it throws error (is enabled). Otherwise, it stores the error.
+     * @param bool           $throwError        if true then it throws error (is enabled). Otherwise, it stores the
+     *                                          error.
      *
      * @param Exception|null $exception
      *
@@ -1542,7 +1556,8 @@ class PdoOne
      * @param bool                 $returnArray if true then it returns an array. If false then it returns a
      *                                          PDOStatement
      * @param bool                 $useCache    if true then it uses cache (if the service is available).
-     * @param null|string|string[] $cacheFamily if cache is used, then it is used to set the family or group of the cache.
+     * @param null|string|string[] $cacheFamily if cache is used, then it is used to set the family or group of the
+     *                                          cache.
      * @return bool|PDOStatement|array an array of associative or a pdo statement. False is the operation fails
      * @throws Exception
      * @test equals [0=>[1=>1]],this('select 1',null,true)
@@ -2159,15 +2174,15 @@ class PdoOne
      * @param array  $getDefTable    the definition of the tables with the colums no relation and its definition.
      * @param array  $classRelations The relation table=>classname
      * @param array  $relation       A list of all columns of the table that are relational.
-     * @param string $type=['constant','function'][$i]
+     * @param string $type           =['constant','function'][$i]
      * @return array
      * @noinspection OnlyWritesOnParameterInspection
      * @noinspection PhpUnusedLocalVariableInspection
      */
     public function generateCodeArrayConst(
-        array $getDefTable,
-        array $classRelations,
-        array $relation,
+        array  $getDefTable,
+        array  $classRelations,
+        array  $relation,
         string $type
     ): array
     {
@@ -2187,7 +2202,7 @@ class PdoOne
                     break;
                 case 'MANYTOONE':
                 case 'ONETOONE':
-                    if($type==='constant') {
+                    if ($type === 'constant') {
                         $clsRepo = $classRelations[$v['reftable']];
                         $result[$v['alias']] = '*' . $clsRepo . '::factoryUtil()' . '*';
                     } else {
@@ -2195,7 +2210,7 @@ class PdoOne
                     }
                     break;
                 case 'ONETOMANY':
-                    if($type==='constant') {
+                    if ($type === 'constant') {
                         $clsRepo = $classRelations[$v['reftable']];
                         $result[$v['alias']] = '*[' . $clsRepo . '::factoryUtil()]*';
                     } else {
@@ -2203,7 +2218,7 @@ class PdoOne
                     }
                     break;
                 case 'MANYTOMANY':
-                    if($type==='constant') {
+                    if ($type === 'constant') {
                         $clsRepo = $classRelations[$v['table2']];
                         $result[$v['alias']] = '*[' . $clsRepo . '::factoryUtil()' . ']*';
                     } else {
@@ -2384,7 +2399,7 @@ class PdoOne
                 $r = var_export($input, true);
                 break;
         }
-        return str_replace(["'*", "*'",' NULL',' TRUE',' FALSE'], ['','',' null',' true',' false'], $r);
+        return str_replace(["'*", "*'", ' NULL', ' TRUE', ' FALSE'], ['', '', ' null', ' true', ' false'], $r);
     }
 
     /**
@@ -2904,9 +2919,9 @@ class PdoOne
                 self::varExport($relation, "\t\t"), //{deffktype}
                 self::varExport($relation2, "\t\t"), //{deffktype2}
                 self::varExport($this->generateCodeArrayConst(
-                    $getDefTable, $classRelations, $relation,'function'), "\t\t"), // {array}
+                    $getDefTable, $classRelations, $relation, 'function'), "\t\t"), // {array}
                 self::varExport($this->generateCodeArrayConst(
-                    $getDefTable, $classRelations, $relation,'constant'), "\t\t"), // {factory}
+                    $getDefTable, $classRelations, $relation, 'constant'), "\t\t"), // {factory}
                 $linked // {linked}
             ), $r);
         } catch (Exception $e) {

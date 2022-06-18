@@ -504,26 +504,28 @@ abstract class _BasePdoOneRepo
     public static function page(int $numPage, ?int $pageSize = null): PdoOneQuery
     {
         $p0 = ($pageSize ?? static::$pageSize) * ($numPage - 1);
-        $p1 = $p0 + ($pageSize ?? static::$pageSize);
-        return static::limit("$p0,$p1");
+        //$p1 = $p0 + ($pageSize ?? static::$pageSize);
+        //$p1 =$pageSize ?? static::$pageSize;
+        return static::limit($p0, $pageSize);
     }
 
     /**
-     * It adds an "limit" in a query. It depends on the type of database<br>
+     * It adds a "limit" in a query. It depends on the type of database<br>
      * <b>Example:</b><br>
      * <pre>
-     *      ->select("")->limit("10,20")->toList();
+     *      ->select("")->limit("10,20")->toList(); // it reads from the row 10th and reads the next 20 rows
+     *      ->select("")->limit(10,20)->toList(); // it reads from the row 10th and reads the next 20 rows
      * </pre>
      *
-     * @param string $sql Input SQL query
-     *
+     * @param mixed $first  The first value
+     * @param mixed $second The second value
      * @return PdoOneQuery
      * @throws Exception
      * @test InstanceOf PdoOne::class,this('1,10')
      */
-    public static function limit(string $sql): PdoOneQuery
+    public static function limit($first, $second = null): PdoOneQuery
     {
-        return static::newQuery()->limit($sql);
+        return static::newQuery()->limit($first, $second);
     }
 
     /**
