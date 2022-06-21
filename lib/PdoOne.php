@@ -26,11 +26,11 @@ use stdClass;
  * @package       eftec
  * @author        Jorge Castro Castillo
  * @copyright (c) Jorge Castro C. Dual Licence: MIT and Commercial License  https://github.com/EFTEC/PdoOne
- * @version       3.1.3
+ * @version       3.1.4
  */
 class PdoOne
 {
-    public const VERSION = '3.1.3';
+    public const VERSION = '3.1.4';
     /** @var int We need this value because null and false could be a valid value. */
     public const NULL = PHP_INT_MAX;
     /** @var string Prefix of the tables */
@@ -4176,7 +4176,7 @@ class PdoOne
     /**
      * @return IPdoOneCache|null
      */
-    public function getCacheService(): ?IPdoOneCache
+    public function getCacheService(): ?object
     {
         return $this->cacheService;
     }
@@ -4184,11 +4184,11 @@ class PdoOne
     /**
      * It sets the cache service (optional).
      *
-     * @param IPdoOneCache|null $cacheService Instance of an object that implements IPdoOneCache
+     * @param object|null $cacheService Instance of an object that implements IPdoOneCache
      *
      * @return $this
      */
-    public function setCacheService(?IPdoOneCache $cacheService): PdoOne
+    public function setCacheService(?object $cacheService): PdoOne
     {
         $this->cacheService = $cacheService;
         return $this;
