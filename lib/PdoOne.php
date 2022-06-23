@@ -1,7 +1,6 @@
 <?php /** @noinspection PhpRedundantVariableDocTypeInspection */
 /** @noinspection SqlDialectInspection */
 /** @noinspection SqlNoDataSourceInspection */
-/** @noinspection PhpUnused */
 /** @noinspection PhpConditionAlreadyCheckedInspection */
 
 namespace eftec;
@@ -26,11 +25,11 @@ use stdClass;
  * @package       eftec
  * @author        Jorge Castro Castillo
  * @copyright (c) Jorge Castro C. Dual Licence: MIT and Commercial License  https://github.com/EFTEC/PdoOne
- * @version       3.1.4
+ * @version       3.1.5
  */
 class PdoOne
 {
-    public const VERSION = '3.1.4';
+    public const VERSION = '3.1.5';
     /** @var int We need this value because null and false could be a valid value. */
     public const NULL = PHP_INT_MAX;
     /** @var string Prefix of the tables */
@@ -1555,7 +1554,7 @@ class PdoOne
      * @param array|null           $params      [type1,value1,type2,value2] or [name1=>value,name2=value2]
      * @param bool                 $returnArray if true then it returns an array. If false then it returns a
      *                                          PDOStatement
-     * @param bool                 $useCache    if true then it uses cache (if the service is available).
+     * @param bool                 $useCache    if true then it uses cache (only if the service is available).
      * @param null|string|string[] $cacheFamily if cache is used, then it is used to set the family or group of the
      *                                          cache.
      * @return bool|PDOStatement|array an array of associative or a pdo statement. False is the operation fails

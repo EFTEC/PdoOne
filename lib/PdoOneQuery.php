@@ -30,10 +30,8 @@ class PdoOneQuery
     public $whereCounter = 1;
     /**
      * @var null|int $ttl If <b>0</b> then the cache never expires.<br>
-     *                         If <b>false</b> then we don't use cache.<br>
-     *                         If <b>int</b> then it is the duration of the
-     *     cache
-     *                         (in seconds)
+     *                    If <b>false</b> then we don't use cache.<br>
+     *                    If <b>int</b> then it is the duration of the cache (in seconds)
      */
     public $useCache = false;
     /** @var string|array [optional] It is the family or group of the cache */
@@ -118,7 +116,7 @@ class PdoOneQuery
                 }
             }
             /** @var PDOStatement $stmt */
-            $stmt = $this->parent->runRawQuery($sql, $args, false, $this->useCache, $this->cacheFamily);
+            $stmt = $this->parent->runRawQuery($sql, $args, false, $this->useCache!==false, $this->cacheFamily);
         }
         if ($stmt instanceof PDOStatement === false) {
             $stmt = null;
@@ -1788,7 +1786,7 @@ class PdoOneQuery
             $param[] = [':ID_' . $identityColumn, '0', 1, null];
             $sql .= ' returning ' . $identityColumn . ' into :ID_' . $identityColumn;
         }
-        $this->parent->runRawQuery($sql, $param, true, $this->useCache, $this->cacheFamily);
+        $this->parent->runRawQuery($sql, $param, true, $this->useCache!==false, $this->cacheFamily);
         $this->builderReset(true);
         if ($this->endtry() === false) {
             return false;
@@ -1931,7 +1929,7 @@ class PdoOneQuery
         $sql .= $this->constructWhere();
         $param = $this->whereParamAssoc;
         $this->beginTry();
-        $stmt = $this->parent->runRawQuery($sql, $param, false, $this->useCache, $this->cacheFamily);
+        $stmt = $this->parent->runRawQuery($sql, $param, false, $this->useCache!==false, $this->cacheFamily);
         $this->builderReset(true);
         if ($this->endtry() === false) {
             return false;
@@ -2008,7 +2006,7 @@ class PdoOneQuery
         $param = array_merge($this->setParamAssoc, $this->whereParamAssoc); // the order matters.
         // $this->builderReset();
         $this->beginTry();
-        $stmt = $this->parent->runRawQuery($sql, $param, false, $this->useCache, $this->cacheFamily);
+        $stmt = $this->parent->runRawQuery($sql, $param, false, $this->useCache!==false, $this->cacheFamily);
         $this->builderReset(true);
         if ($this->endtry() === false) {
             return false;
