@@ -2035,6 +2035,9 @@ In a nutshell:
 >
 > Every decimal version means that it patches/fixes/refactoring a previous functionality i.e. 1.5.0 -> 1.5.1 (fix)
 
+* 3.1.6 2022-06-024
+  * [CLI] solved a problem with the conversion per type of column 
+  * [_BasePdoOneRepo] Fixed a problem with the conversion of the end results.
 * 3.1.5 2022-06-23
   * [PdoOneQuery] Solved a bug when the cache is invalidated when insert(),update(), etc. 
 * 3.1.4 2022-06-21

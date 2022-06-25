@@ -70,6 +70,7 @@ class PdoOneCli
     {
         $this->cli = new CliOne();
         $this->cli->setErrorType();
+        $this->conversion= $this->convertReset();
     }
 
     public function getCli(): CliOne
@@ -77,6 +78,13 @@ class PdoOneCli
         return $this->cli;
     }
 
+    public function convertReset():array {
+        return ["bigint"=> null, "blob"=> null, "char"=> null, "date"=> null, "datetime"=> null,
+            "decimal"=> null, "double"=> null, "enum"=> null, "float"=> null, "geometry"=> null,
+            "int"=> null, "json"=> null, "longblob"=> null, "mediumint"=> null, "mediumtext"=> null,
+            "set"=> null, "smallint"=> null, "text"=> null, "time"=> null, "timestamp"=> null,
+            "tinyint"=> null, "varbinary"=> null, "varchar"=> null, "year"=> null];
+    }
 
     /***
      * It finds the vendor path (where composer is located).
@@ -349,7 +357,9 @@ class PdoOneCli
                         $this->tablexclass = $data['tablexclass'] ?? [];
                         $this->columnsTable = $data['columnsTable'] ?? [];
                         $this->columnsAlias = $data['columnsAlias'] ?? [];
-                        $this->conversion = $data['conversion'] ?? [];
+                        $this->conversion = ($data['conversion']===null || count($data['conversion'])===0)
+                            ? $this->convertReset()
+                            : $data['conversion'];
                         $this->alias = $data['alias'] ?? [];
                         $this->extracolumn = $data['extracolumn'] ?? [];
                         $this->removecolumn = $config['removecolumn'] ?? [];
@@ -771,11 +781,12 @@ PdoOne: $v  Cli: $vc
         $this->cli->downLevel();
     }
 
-    protected function databaseConvertXType(): void
+    protected function databaseConfigureXType(): void
     {
-        $this->cli->upLevel('convertxtype');
+        $this->cli->upLevel('configuretype');
         while (true) {
             $this->cli->setColor(['byellow'])->showBread();
+
             $this->cli->getParameter('convertionselected')
                 ->setInput(true, 'option3', $this->conversion);
             $convertionselected = $this->cli->evalParam('convertionselected', true);
@@ -903,7 +914,7 @@ PdoOne: $v  Cli: $vc
                 'scan' => 'Scan for changes to the database. It adds or removes tables and classes',
                 'select' => 'Select or de-select the tables to work',
                 'detail' => 'Configure each table and columns separately',
-                'convertxtype' => 'Configure all columns per type of data',
+                'configuretype' => 'Configure all columns per type of data',
                 'save' => 'Save the current configuration',
                 'convert' => 'Convert and exit (in non-interactive mode is done automatically)'])
             ->add();
@@ -1073,8 +1084,8 @@ PdoOne: $v  Cli: $vc
                 case 'save':
                     $this->databaseSave();
                     break;
-                case 'convertxtype':
-                    $this->databaseConvertXType();
+                case 'configuretype':
+                    $this->databaseConfigureXType();
                     break;
                 case 'select':
                     $this->databaseSelect($tablesmarked, $tables);
