@@ -70,7 +70,7 @@ class PdoOneCli
     {
         $this->cli = new CliOne();
         $this->cli->setErrorType();
-        $this->conversion= $this->convertReset();
+        $this->conversion = $this->convertReset();
     }
 
     public function getCli(): CliOne
@@ -78,12 +78,13 @@ class PdoOneCli
         return $this->cli;
     }
 
-    public function convertReset():array {
-        return ["bigint"=> null, "blob"=> null, "char"=> null, "date"=> null, "datetime"=> null,
-            "decimal"=> null, "double"=> null, "enum"=> null, "float"=> null, "geometry"=> null,
-            "int"=> null, "json"=> null, "longblob"=> null, "mediumint"=> null, "mediumtext"=> null,
-            "set"=> null, "smallint"=> null, "text"=> null, "time"=> null, "timestamp"=> null,
-            "tinyint"=> null, "varbinary"=> null, "varchar"=> null, "year"=> null];
+    public function convertReset(): array
+    {
+        return ["bigint" => null, "blob" => null, "char" => null, "date" => null, "datetime" => null,
+            "decimal" => null, "double" => null, "enum" => null, "float" => null, "geometry" => null,
+            "int" => null, "json" => null, "longblob" => null, "mediumint" => null, "mediumtext" => null,
+            "set" => null, "smallint" => null, "text" => null, "time" => null, "timestamp" => null,
+            "tinyint" => null, "varbinary" => null, "varchar" => null, "year" => null];
     }
 
     /***
@@ -357,7 +358,7 @@ class PdoOneCli
                         $this->tablexclass = $data['tablexclass'] ?? [];
                         $this->columnsTable = $data['columnsTable'] ?? [];
                         $this->columnsAlias = $data['columnsAlias'] ?? [];
-                        $this->conversion = ($data['conversion']===null || count($data['conversion'])===0)
+                        $this->conversion = ($data['conversion'] === null || count($data['conversion']) === 0)
                             ? $this->convertReset()
                             : $data['conversion'];
                         $this->alias = $data['alias'] ?? [];
@@ -370,12 +371,19 @@ class PdoOneCli
                 $this->injectLoadFile($first->value, $interactive);
                 break;
         }
-        $database = $this->cli->getParameter('databasetype')
-            ->evalParam($interactive, true);
-        $server = $this->cli->evalParam('server', $interactive, true);
-        $user = $this->cli->evalParam('user', $interactive, true);
-        $pwd = $this->cli->evalParam('password', $interactive, true);
-        $db = $this->cli->evalParam('database', $interactive, true);
+        if ($first->value) {
+            $database = $this->cli->evalParam('databasetype', $interactive, true);
+            $server = $this->cli->evalParam('server', $interactive, true);
+            $user = $this->cli->evalParam('user', $interactive, true);
+            $pwd = $this->cli->evalParam('password', $interactive, true);
+            $db = $this->cli->evalParam('database', $interactive, true);
+        } else {
+            $database = '';
+            $server = '';
+            $user = '';
+            $pwd = '';
+            $db = '';
+        }
         switch ($first->value) {
             case 'definition':
                 $output = $this->cli->setErrorType('silent')->evalParam('output', false, true);
@@ -389,6 +397,10 @@ class PdoOneCli
                 $input = '';
                 $output = '';
                 $namespace = '';
+                break;
+            case '':
+                $interactive = false;
+                $this->cli->showCheck('ERROR', 'red', "No command is set");
                 break;
             default:
                 $input = '';
@@ -783,10 +795,9 @@ PdoOne: $v  Cli: $vc
 
     protected function databaseConfigureXType(): void
     {
-        $this->cli->upLevel('configuretype');
+        $this->cli->upLevel('Configure x type');
         while (true) {
             $this->cli->setColor(['byellow'])->showBread();
-
             $this->cli->getParameter('convertionselected')
                 ->setInput(true, 'option3', $this->conversion);
             $convertionselected = $this->cli->evalParam('convertionselected', true);
@@ -914,9 +925,10 @@ PdoOne: $v  Cli: $vc
                 'scan' => 'Scan for changes to the database. It adds or removes tables and classes',
                 'select' => 'Select or de-select the tables to work',
                 'detail' => 'Configure each table and columns separately',
-                'configuretype' => 'Configure all columns per type of data',
+                'type' => 'Configure the conversion of the columns per type',
                 'save' => 'Save the current configuration',
-                'convert' => 'Convert and exit (in non-interactive mode is done automatically)'])
+                'create' => 'Create the PHP repository classes (in non-interactive mode is done automatically)',
+                'exit' => 'Save and exit'])
             ->add();
         $this->cli->createParam('tables')
             ->setDescription('', '')
@@ -985,7 +997,7 @@ PdoOne: $v  Cli: $vc
      */
     protected function runCliDefinition(): void
     {
-        $this->cli->getParameter('databasetype')->setInput(true, 'optionshort', ['mysql', 'sqlsrv', 'oci', 'test']);
+        $this->cli->getParameter('databasetype')->setInput();
         $this->cli->getParameter('server')->setInput();
         $this->cli->getParameter('user')->setInput();
         $this->cli->getParameter('password')->setInput();
@@ -1032,7 +1044,7 @@ PdoOne: $v  Cli: $vc
      */
     protected function runCliGeneration(): void
     {
-        $this->cli->getParameter('databasetype')->setInput(true, 'optionshort', ['mysql', 'sqlsrv', 'oci', 'test']);
+        $this->cli->getParameter('databasetype')->setInput();
         $this->cli->getParameter('server')->setInput();
         $this->cli->getParameter('user')->setInput();
         $this->cli->getParameter('password')->setInput();
@@ -1069,6 +1081,19 @@ PdoOne: $v  Cli: $vc
                 case '':
                 case 'convert':
                     if ($this->cli->getValue('classdirectory') && $this->cli->getValue('classnamespace')) {
+                        $this->cli->evalParam('overridegenerate', true);
+                        $pdo->generateCodeClassConversions($this->conversion);
+                        $pdo->generateAllClasses($this->tablexclass, ucfirst($this->cli->getValue('database')),
+                            $this->cli->getValue('classnamespace'),
+                            $this->cli->getValue('classdirectory'),
+                            $this->cli->getValue('overridegenerate') === 'yes',
+                            $this->columnsTable,
+                            $this->extracolumn,
+                            $this->removecolumn,
+                            $this->columnsAlias
+                        );
+                        $this->RunCliGenerationSaveConfig();
+                        $this->cli->showLine('<green>Done</green>');
                         break 2;
                     }
                     $this->cli->showCheck('ERROR', 'red', [
@@ -1084,7 +1109,7 @@ PdoOne: $v  Cli: $vc
                 case 'save':
                     $this->databaseSave();
                     break;
-                case 'configuretype':
+                case 'type':
                     $this->databaseConfigureXType();
                     break;
                 case 'select':
@@ -1093,6 +1118,8 @@ PdoOne: $v  Cli: $vc
                 case 'detail':
                     $this->databaseDetail();
                     break;
+                case 'exit':
+                    break 2;
                 default:
                     $this->injectEvalGenerate($com->valueKey);
                     break;
@@ -1101,18 +1128,6 @@ PdoOne: $v  Cli: $vc
                 break;
             }
         }
-        $this->cli->evalParam('overridegenerate', true);
-        $pdo->generateAllClasses($this->tablexclass, ucfirst($this->cli->getValue('database')),
-            $this->cli->getValue('classnamespace'),
-            $this->cli->getValue('classdirectory'),
-            $this->cli->getValue('overridegenerate') === 'yes',
-            $this->columnsTable,
-            $this->extracolumn,
-            $this->removecolumn,
-            $this->columnsAlias
-        );
-        $this->RunCliGenerationSaveConfig();
-        $this->cli->showLine('<green>Done</green>');
     }
 
     /** @noinspection DisconnectedForeachInstructionInspection */

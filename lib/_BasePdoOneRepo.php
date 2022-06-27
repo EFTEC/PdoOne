@@ -679,8 +679,7 @@ abstract class _BasePdoOneRepo
             $usingCacheFamily = '';
         }
         $rowc = self::executePlan($currentQuery, '', $conditions, $currentQuery->getRecursive(), $first);
-        /** @var CustomerRepo $cls */
-        $cls=self::class;
+        $cls=static::ME;
         if($first) {
             $cls::convertOutputVal($rowc);
         } else {
