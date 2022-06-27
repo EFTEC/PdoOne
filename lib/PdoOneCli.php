@@ -25,11 +25,11 @@ use RuntimeException;
  * @package       eftec
  * @author        Jorge Castro Castillo
  * @copyright (c) Jorge Castro C. Dual Licence: MIT and Commercial License  https://github.com/EFTEC/PdoOne
- * @version       0.14
+ * @version       1.0
  */
 class PdoOneCli
 {
-    public const VERSION = '0.14';
+    public const VERSION = '1.0';
 //</editor-fold>
     /**
      * @var array
@@ -262,6 +262,13 @@ class PdoOneCli
                 'Select the relative directory where the repository classes will be created',
                 ['Example: repo'])
             ->setInput()->add();
+        $this->cli->createParam('classpostfix')
+            ->setDefault('Repo')
+            ->setCurrentAsDefault()
+            ->setDescription('',
+                'Select the postfix of the class',
+                ['Example: Repo'])
+            ->setInput()->add();
         $this->cli->createParam('classnamespace')
             ->setCurrentAsDefault()
             ->setDescription('',
@@ -354,7 +361,7 @@ class PdoOneCli
                     } else {
                         $this->cli->showCheck('OK', 'green', "Configuration PdoOneCli open $loadconfig->value");
                         $this->cli->setArrayParam($data
-                            , [], ['databasetype', 'server', 'user', 'password', 'database', 'classdirectory', 'classnamespace']);
+                            , [], ['databasetype', 'server', 'user', 'password', 'database', 'classdirectory', 'classpostfix', 'classnamespace']);
                         $this->tablexclass = $data['tablexclass'] ?? [];
                         $this->columnsTable = $data['columnsTable'] ?? [];
                         $this->columnsAlias = $data['columnsAlias'] ?? [];
@@ -443,18 +450,11 @@ class PdoOneCli
             case '':
                 if (!$interactive) {
                     $this->cli->showParamSyntax2('Commands:', ['first'], [], null, null, 25);
+                    $arr=$this->getArrayParameters();
+                    $arr[]='overridegenerate';
                     $this->cli->showParamSyntax2('Flags common:',
                         ['flag', 'longflag'],
-                        ['classdirectory',
-                            'classnamespace',
-                            'tables',
-                            'tablescolumns',
-                            'tablecommand',
-                            'convertionselected',
-                            'convertionnewvalue',
-                            'newclassname',
-                            'overridegenerate'
-                        ]
+                        $arr
                         , null, 'common', 25);
                 }
                 return;
@@ -480,20 +480,20 @@ PdoOne: $v  Cli: $vc
 ");
     }
 
+    /**
+     * List of the parameters to store, read and display in the help.
+     * @return string[]
+     */
+    protected function getArrayParameters():array {
+        return ['classdirectory', 'classpostfix', 'classnamespace', 'tables', 'tablescolumns', 'tablecommand', 'convertionselected', 'convertionnewvalue', 'newclassname',];
+    }
+
     protected function showHelpDefinition(): void
     {
         $this->cli->showParamSyntax2('Commands:', ['first'], [], null, null, 25);
         $this->cli->showParamSyntax2('Flags for definition:',
             ['flag', 'longflag'],
-            ['classdirectory',
-                'classnamespace',
-                'tables',
-                'tablescolumns',
-                'tablecommand',
-                'convertionselected',
-                'convertionnewvalue',
-                'newclassname',
-            ]
+            $this->getArrayParameters()
             , null, 'export', 25);
     }
 
@@ -502,15 +502,7 @@ PdoOne: $v  Cli: $vc
         $this->cli->showParamSyntax2('Commands:', ['first'], [], null, null, 25);
         $this->cli->showParamSyntax2('Flags for generate:',
             ['flag', 'longflag'],
-            ['classdirectory',
-                'classnamespace',
-                'tables',
-                'tablescolumns',
-                'tablecommand',
-                'convertionselected',
-                'convertionnewvalue',
-                'newclassname',
-            ]
+            $this->getArrayParameters()
             , null, 'generate', 25);
     }
 
@@ -519,15 +511,7 @@ PdoOne: $v  Cli: $vc
         $this->cli->showParamSyntax2('Commands:', ['first'], [], null, null, 25);
         $this->cli->showParamSyntax2('Flags for export:',
             ['flag', 'longflag'],
-            ['classdirectory',
-                'classnamespace',
-                'tables',
-                'tablescolumns',
-                'tablecommand',
-                'convertionselected',
-                'convertionnewvalue',
-                'newclassname',
-            ]
+            $this->getArrayParameters()
             , null, 'export', 25);
     }
 
@@ -832,6 +816,7 @@ PdoOne: $v  Cli: $vc
             $this->cli->show('</yellow>');
             // $this->cli->showCheck('WARNING', 'yellow', 'unable to create directory ' . $ex->getMessage());
         }
+        $this->cli->evalParam('classpostfix', true);
         // dummy.
         while (true) {
             $this->cli->showCheck('info', 'yellow', 'The target path is ' . getcwd() . '/' . $this->cli->getValue('classdirectory'));
@@ -850,6 +835,7 @@ PdoOne: $v  Cli: $vc
             $ce = class_exists($nameclass, true);
             if ($ce) {
                 $this->cli->showCheck('ok', 'green', 'Namespace tested correctly');
+                @unlink($filename);
                 break;
             }
             $this->cli->showCheck('warning', 'yellow', 'Unable test namespace');
@@ -1079,11 +1065,16 @@ PdoOne: $v  Cli: $vc
                 case 'end':
                 case $this->cli->emptyValue:
                 case '':
+                case 'create':
                 case 'convert':
                     if ($this->cli->getValue('classdirectory') && $this->cli->getValue('classnamespace')) {
                         $this->cli->evalParam('overridegenerate', true);
                         $pdo->generateCodeClassConversions($this->conversion);
-                        $pdo->generateAllClasses($this->tablexclass, ucfirst($this->cli->getValue('database')),
+                        $tmpTableXClass = [];
+                        foreach ($this->tablexclass as $k => $v) {
+                            $tmpTableXClass[$k] = $v . $this->cli->getValue('classpostfix');
+                        }
+                        $pdo->generateAllClasses($tmpTableXClass, ucfirst($this->cli->getValue('database')),
                             $this->cli->getValue('classnamespace'),
                             $this->cli->getValue('classdirectory'),
                             $this->cli->getValue('overridegenerate') === 'yes',
@@ -1144,7 +1135,7 @@ PdoOne: $v  Cli: $vc
         $this->cli->showWaitCursor();
         foreach ($tablesmarked as $table) {
             $this->cli->showWaitCursor(false);
-            $class = PdoOne::tableCase($table) . 'Repo';
+            $class = PdoOne::tableCase($table);
             //$classes[] = $class;
             $tablexclass[$table] = $class;
             $extracolumn[$table] = [];
@@ -1181,7 +1172,7 @@ PdoOne: $v  Cli: $vc
             foreach ($tablexclass as $table => $v) {
                 if (!isset($this->tablexclass[$table])) {
                     $this->cli->showCheck(' added ', 'green', "table <bold>$table</bold> added");
-                    $class = PdoOne::tableCase($table) . 'Repo';
+                    $class = PdoOne::tableCase($table);
                     $this->tablexclass[$table] = $class;
                     $this->extracolumn[$table] = [];
                 }
@@ -1276,7 +1267,7 @@ PdoOne: $v  Cli: $vc
                 $sg = $this->cli->createParam('yn', [], 'none')
                     ->setDescription('', 'Do you want to save the configuration of the connection?')
                     ->setInput(true, 'optionshort', ['yes', 'no'])
-                    ->setDefault('yes')
+                    ->setDefault('no')
                     ->evalParam(true);
                 if ($sg->value === 'yes') {
                     $saveconfig = $this->cli->evalParam('saveconfig', true);

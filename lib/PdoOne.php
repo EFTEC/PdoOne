@@ -1,4 +1,5 @@
-<?php /** @noinspection PhpRedundantVariableDocTypeInspection */
+<?php /** @noinspection PhpUnused */
+/** @noinspection PhpRedundantVariableDocTypeInspection */
 /** @noinspection SqlDialectInspection */
 /** @noinspection SqlNoDataSourceInspection */
 /** @noinspection PhpConditionAlreadyCheckedInspection */
@@ -25,11 +26,11 @@ use stdClass;
  * @package       eftec
  * @author        Jorge Castro Castillo
  * @copyright (c) Jorge Castro C. Dual Licence: MIT and Commercial License  https://github.com/EFTEC/PdoOne
- * @version       3.2
+ * @version       3.3
  */
 class PdoOne
 {
-    public const VERSION = '3.2';
+    public const VERSION = '3.3';
     /** @var int We need this value because null and false could be a valid value. */
     public const NULL = PHP_INT_MAX;
     /** @var string Prefix of the tables */
@@ -126,9 +127,8 @@ class PdoOne
      */
     public $customError = true;
     /** @var string[] PHP classes excluded by the custom error log */
-    //todo: quitar comentarios
-    public $traceBlackList = []; //['PdoOne.php', 'PdoOneQuery.php', 'PdoOne_Mysql.php', 'PdoOne.Sqlsrv.php', 'PdoOne.Oci.php'
-    //, 'PdoOneTestMockup.php', '_BasePdoOneRepo.php'];
+    public $traceBlackList = ['PdoOne.php', 'PdoOneQuery.php', 'PdoOne_Mysql.php', 'PdoOne.Sqlsrv.php', 'PdoOne.Oci.php'
+        , 'PdoOneTestMockup.php', '_BasePdoOneRepo.php'];
     /** @var  PDO */
     public $conn1;
     /** @var  bool True if the transaction is open */

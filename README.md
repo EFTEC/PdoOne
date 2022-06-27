@@ -2035,6 +2035,8 @@ In a nutshell:
 >
 > Every decimal version means that it patches/fixes/refactoring a previous functionality i.e. 1.5.0 -> 1.5.1 (fix)
 
+* 3.3 2022-06-27
+  * [CLI] updated CLI to 1.0
 * 3.2 2022-06-27
   * [CLI] updated CLI to 0.14 
 * 3.1.6 2022-06-24
