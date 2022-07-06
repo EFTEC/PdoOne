@@ -203,7 +203,7 @@ class PdoOneQuery
                 foreach ($allparam as &$param) {
                     if ($param[0] === 0) {
                         // it is used because when $param[0]===0, it throws an uncatchable exception.
-                        throw new RuntimeException('incorrect param');
+                        throw new RuntimeException('PdoOneQuery::runGen incorrect param');
                     }
                     $param[3] = $param[3] ?? 0;
                     $reval = $reval && $stmt->bindParam(...$param); // unpack
@@ -219,7 +219,7 @@ class PdoOneQuery
                     }
                     if ($partitionParam[0] === 0) {
                         // it is used because when $partitionParam[0]===0, it throws an uncatchable exception.
-                        throw new RuntimeException('incorrect param');
+                        throw new RuntimeException('PdoOneQuery::runGen incorrect param');
                     }
                     $partitionParam[3] = $partitionParam[3] ?? 0;
                     $reval = $reval && $stmt->bindParam(...$partitionParam);
@@ -694,7 +694,7 @@ class PdoOneQuery
     public function last(): ?array
     {
         if ($this->ormClass !== null) {
-            throw new RuntimeException("The method [" . __FUNCTION__ . "] is not yet implemented with an ORM class");
+            throw new RuntimeException("PdoOneQuery::last The method [" . __FUNCTION__ . "] is not yet implemented with an ORM class");
         }
         $useCache = $this->useCache; // because builderReset cleans this value
         if ($useCache !== false) {
@@ -1012,7 +1012,7 @@ class PdoOneQuery
     public function toResult()
     {
         if ($this->ormClass !== null) {
-            throw new RuntimeException("The method [" . __FUNCTION__ . "] is not yet implemented with an ORM class");
+            throw new RuntimeException("PdoOneQuery::toResult The method [" . __FUNCTION__ . "] is not yet implemented with an ORM class");
         }
         return $this->runGen(false);
     }
@@ -1623,6 +1623,9 @@ class PdoOneQuery
      * <pre>
      * $this->recursive(['field1','field2']);
      * RepoClass::recursive(['/_relation1','/_relation1/_subrelation1']); // For ORM: use of recursive
+     * RepoClass::recursive(['/_manytomany*'); // Form ORM: the postfix "*" indicates (only in a many-to-many relation)
+     *      // "*": in the case of insert, update or merge, the relational table, left and right table would be modified.
+     *      // "" : in the case of insert, update or merge, only the relational table and left table would be modified.
      * </pre>
      *
      * @param array|mixed $rec The fields to load recursively.
@@ -1715,11 +1718,11 @@ class PdoOneQuery
      *                                    values. If the insert returns an identity then it changes the value
      * @param array        $excludeColumn (optional) columns to exclude. Example
      *                                    ['col1','col2']
-     *
+     * @param array|null   $pks          Optional, an array with the list of primary keys. If null, then it is obtained from the database
      * @return false|int
      * @throws Exception
      */
-    public function insertObject(string $tableName, &$object, array $excludeColumn = [])
+    public function insertObject(string $tableName, &$object, array $excludeColumn = [],?array $pks=null)
     {
         $this->parent->beginTry();
         $objectCopy = (array)$object;
@@ -1729,8 +1732,8 @@ class PdoOneQuery
         $id = $this->_insert($tableName, $objectCopy);
         /** id could be 0,false or null (when it is not generated) */
         if ($id) {
-            $pks = $this->parent->setUseInternalCache()->service->getDefTableKeys($tableName, true, 'PRIMARY KEY');
-            if ($pks > 0) {
+            $pks =$pks ?? $this->parent->setUseInternalCache()->service->getDefTableKeys($tableName, true, 'PRIMARY KEY');
+            if (count($pks) > 0) {
                 // we update the object because it returned an identity.
                 $k = array_keys($pks)[0]; // first primary key
                 if (is_array($object)) {
@@ -1935,6 +1938,37 @@ class PdoOneQuery
             return false;
         }
         return $this->parent->affected_rows($stmt);
+    }
+
+    /**
+     * It deletes a registry by its id (primary key)
+     *
+     * @param mixed|array $pks
+     *
+     * @param bool        $transaction
+     *
+     * @return false|int
+     * @throws Exception
+     */
+    public function deleteById($pks, bool $transaction = true) {
+        if ($this->ormClass !== null) {
+            $cls = $this->ormClass;
+            $this->ormClass = null; // to avoid recursivity
+            /** @see \eftec\_BasePdoOneRepo::deleteById() */
+            return $cls::setPdoOneQuery($this)::deleteById($pks,$transaction);
+        }
+        if(!$this->from) {
+            throw  new RuntimeException('PdoOneQuery::deleteById table not set');
+        }
+        if(is_array($pks)) {
+            return $this->delete($pks);
+        }
+        $primaryKeys=$this->parent->setUseInternalCache()->service->getDefTableKeys($this->from, true, 'PRIMARY KEY');
+        if (count($primaryKeys) ===0) {
+            throw new RuntimeException('PdoOneQuery::deleteById no primary key');
+        }
+        $primaryKey = array_keys($pks)[0];
+        return $this->delete([$primaryKey=>$pks]);
     }
 
     /**

@@ -1,4 +1,5 @@
-<?php /** @noinspection PhpMultipleClassDeclarationsInspection */
+<?php /** @noinspection ForgottenDebugOutputInspection */
+/** @noinspection PhpMultipleClassDeclarationsInspection */
 /** @noinspection PhpUnusedLocalVariableInspection */
 /** @noinspection UnknownInspectionInspection */
 /** @noinspection SqlResolve */
@@ -209,7 +210,7 @@ class PdoOne_mysql_Test extends TestCase
     public function test_chainresetErrorList(): void
     {
         $this->pdoOne->logLevel = 3;
-        $rows = $this->pdoOne->genError(false)->select('select 123 field1 from dual222')->toList();
+        $rows = $this->pdoOne->genError()->select('select 123 field1 from dual222')->toList();
         self::assertEquals(false, $rows);
         try {
             $rows = $this->pdoOne->genError(true)->select('select 123 field1 from dual222')->toList();
@@ -239,7 +240,7 @@ class PdoOne_mysql_Test extends TestCase
     public function test_chainresetErrorListSimple(): void
     {
         $this->pdoOne->logLevel = 3;
-        $rows = $this->pdoOne->genError(false)->select('select 123 field1 from dual222')->toListSimple();
+        $rows = $this->pdoOne->genError()->select('select 123 field1 from dual222')->toListSimple();
         self::assertEquals(false, $rows);
         try {
             $rows = $this->pdoOne->genError(true)->select('select 123 field1 from dual222')->toListSimple();
@@ -281,7 +282,7 @@ class PdoOne_mysql_Test extends TestCase
     public function test_chainresetErrorMeta(): void
     {
         $this->pdoOne->logLevel = 3;
-        $rows = $this->pdoOne->genError(false)->select('select 123 field1 from dual222')->toMeta();
+        $rows = $this->pdoOne->genError()->select('select 123 field1 from dual222')->toMeta();
         self::assertEquals(false, $rows);
         try {
             $rows = $this->pdoOne->genError(true)->select('select 123 field1 from dual222')->toMeta();
@@ -310,7 +311,7 @@ class PdoOne_mysql_Test extends TestCase
     public function test_chainresetErrorFirst(): void
     {
         $this->pdoOne->logLevel = 3;
-        $rows = $this->pdoOne->genError(false)->select('select 123 field1 from dual222')->first();
+        $rows = $this->pdoOne->genError()->select('select 123 field1 from dual222')->first();
         self::assertEquals(false, $rows);
         try {
             $rows = $this->pdoOne->genError(true)->select('select 123 field1 from dual222')->first();
@@ -343,7 +344,7 @@ class PdoOne_mysql_Test extends TestCase
     public function test_chainresetErrorLast(): void
     {
         $this->pdoOne->logLevel = 3;
-        $rows = $this->pdoOne->genError(false)->select('select 123 field1 from dual222')->last();
+        $rows = $this->pdoOne->genError()->select('select 123 field1 from dual222')->last();
         self::assertEquals(false, $rows);
         try {
             $rows = $this->pdoOne->genError(true)->select('select 123 field1 from dual222')->last();
@@ -897,17 +898,17 @@ class PdoOne_mysql_Test extends TestCase
         PdoOne::$dateTimeFormat = 'Y-m-d\TH:i:s\Z';
         PdoOne::$dateTimeMicroFormat = 'Y-m-d\TH:i:s.u\Z';
         PdoOne::$dateFormat = 'Y-m-d';
-        self::assertEquals('2019-02-06 05:06:07', PdoOne::dateText2Sql('2019-02-06T05:06:07Z', true));
+        self::assertEquals('2019-02-06 05:06:07', PdoOne::dateText2Sql('2019-02-06T05:06:07Z'));
         self::assertEquals('2019-02-06 00:00:00', PdoOne::dateText2Sql('2019-02-06', false));
 
-        self::assertEquals('2018-02-06 05:06:07.123000', PdoOne::dateText2Sql('2018-02-06T05:06:07.123Z', true));
+        self::assertEquals('2018-02-06 05:06:07.123000', PdoOne::dateText2Sql('2018-02-06T05:06:07.123Z'));
 
         // sql format -> human format dd/mm/yyyy
         self::assertEquals('06/02/2019', PdoOne::dateSql2Text('2019-02-06'));
 
         // 2019-02-06T05:06:07Z -> 2019-02-06 05:06:07 -> 06/02/2019 05:06:07
         self::assertEquals('06/02/2019 05:06:07',
-            PdoOne::dateSql2Text(PdoOne::dateText2Sql('2019-02-06T05:06:07Z', true)));
+            PdoOne::dateSql2Text(PdoOne::dateText2Sql('2019-02-06T05:06:07Z')));
         self::assertEquals('06/02/2019 05:06:07', PdoOne::dateSql2Text('2019-02-06 05:06:07'));
         self::assertEquals('06/02/2018 05:06:07.123000', PdoOne::dateSql2Text('2018-02-06 05:06:07.123'));
     }
@@ -967,10 +968,10 @@ class PdoOne_mysql_Test extends TestCase
      */
     public function test_sequence2(): void
     {
-        self::assertLessThan(3639088446091303982, $this->pdoOne->getSequencePHP(false),
+        self::assertLessThan(3639088446091303982, $this->pdoOne->getSequencePHP(),
             'sequence must be greater than 3639088446091303982');
-        $s1 = $this->pdoOne->getSequencePHP(false);
-        $s2 = $this->pdoOne->getSequencePHP(false);
+        $s1 = $this->pdoOne->getSequencePHP();
+        $s2 = $this->pdoOne->getSequencePHP();
         self::assertTrue($s1 != $s2, 'sequence must not be the same');
         $this->pdoOne->encryption->encPassword = 1020304050;
         $s1 = $this->pdoOne->getSequencePHP(true);
@@ -1115,7 +1116,7 @@ class PdoOne_mysql_Test extends TestCase
 
     public function test_runRawQuery(): void
     {
-        self::assertEquals([0 => [1 => 1]], $this->pdoOne->runRawQuery('select 1', null, true));
+        self::assertEquals([0 => [1 => 1]], $this->pdoOne->runRawQuery('select 1'));
     }
 
     /**

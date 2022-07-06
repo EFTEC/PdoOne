@@ -15,35 +15,72 @@ include 'cachetest.php';
 $pdo=new PdoOne('mysql','127.0.0.1:3306','root','abc.123','testdb2');
 $pdo->setCacheService(new CacheServicesmysql());
 
+$id=224;
 
 $pdo->logLevel=3;
 $pdo->open();
-echo "<pre>";
-//::setRecursive(['_customerxcategories',''])
-//$a1=CustomerRepo::executePlan();
-$dependency=[
-    '/_invoicedetails',
-    '/_Customer',
-    '/_Customer/_customerxcategories',
-    '/_Customer/_customerxcategories/_Category', // added automatically
-    '/_Customer/_customerxcategories/_Customer',
-    '/_Customer/_customerxcategories/_Customer/_City',
-    '/_Customer/_City',
-    '/_invoicedetails/_Product',
-    '/_invoicedetails/_Product/_City',
-    '/_invoicedetails/_City'
+echo "<h1>delete</h1>";
+$a2=InvoiceRepo::recursive(['/_Types','/_InvCustomer*','/_Details*'])->deleteById($id);
+
+
+$a1= [
+    'NumInvoice' => 200,
+    'Customer' => 11,
+    'Total' => '100.0000',
+    'Date' => '2020-01-01',
+    '_InvCustomer' =>
+        [
+            'NumCustomer' => 11,
+            'Name' => 'donald UPDATED',
+            'City' => 1,
+            'Email' => 'aaa@ny.com',
+        ],
+    '_Details' =>
+        [
+            0 =>
+                [
+                    'NumInvoiceDetail' => 1,
+                    'Invoice' => 123,
+                    'Product' => 1,
+                    'Quantity' => 20,
+                ],
+            1 =>
+                [
+                    'NumInvoiceDetail' => 2,
+                    'Invoice' => 123,
+                    'Product' => 2,
+                    'Quantity' => 30,
+                ],
+        ],
+    '_Types' =>
+        [
+            0 =>
+                [
+                    'NumInvoiceType' => 1,
+                    'NameType' => 'type1',
+                ],
+            1 =>
+                [
+                    'NumInvoiceType' => 3,
+                    'NameType' => 'type3',
+                ],
+        ],
 ];
 
-
-
-// ['/_InvCustomer','/_Details','/_Types']
-/** @var array $a1=InvoiceRepo::factoryUtil() */
-$a1=InvoiceRepo::recursive(['/_Types','/_InvCustomer','/_Details'])->first();
-var_dump('first:');
-new \dBug\dBug($a1);
+$a2=InvoiceRepo::recursive(['/_Types','/_InvCustomer','/_Details'])->first($id);
+new \dBug\dBug($a2);
+die(1);
 
 
 var_dump('inserting start...............');
+echo "<h1>insert</h1>";
+$id=InvoiceRepo::recursive(['/_Types','/_InvCustomer*','/_Details*'])->insert($a1);
+
+$a2=InvoiceRepo::recursive(['/_Types','/_InvCustomer','/_Details'])->first($id);
+new \dBug\dBug($a2);
+
+
+die(1);
 
 $insert=false;
 

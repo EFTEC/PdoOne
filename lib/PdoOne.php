@@ -26,11 +26,11 @@ use stdClass;
  * @package       eftec
  * @author        Jorge Castro Castillo
  * @copyright (c) Jorge Castro C. Dual Licence: MIT and Commercial License  https://github.com/EFTEC/PdoOne
- * @version       3.3
+ * @version       3.5
  */
 class PdoOne
 {
-    public const VERSION = '3.3';
+    public const VERSION = '3.5';
     /** @var int We need this value because null and false could be a valid value. */
     public const NULL = PHP_INT_MAX;
     /** @var string Prefix of the tables */
@@ -126,9 +126,9 @@ class PdoOne
      * @var bool If true (default), then it throws a customer message.. If false, then it uses the default (PHP) style
      */
     public $customError = true;
-    /** @var string[] PHP classes excluded by the custom error log */
-    public $traceBlackList = ['PdoOne.php', 'PdoOneQuery.php', 'PdoOne_Mysql.php', 'PdoOne.Sqlsrv.php', 'PdoOne.Oci.php'
-        , 'PdoOneTestMockup.php', '_BasePdoOneRepo.php'];
+    /** @var string[] PHP classes excluded by the custom error log todo: quitar */
+    public $traceBlackList = []; //['PdoOne.php', 'PdoOneQuery.php', 'PdoOne_Mysql.php', 'PdoOne.Sqlsrv.php', 'PdoOne.Oci.php'
+        //, 'PdoOneTestMockup.php', '_BasePdoOneRepo.php'];
     /** @var  PDO */
     public $conn1;
     /** @var  bool True if the transaction is open */
@@ -1377,14 +1377,14 @@ class PdoOne
                     } else {
                         $function = @$error['function'];
                     }
-                    $r .= $file . ':' . @$error['line'] . "\t" . $function . '('
+                    $r .= '<<<'.$file . ':' . @$error['line'] . ">>>\t" . $function . '('
                         . @implode(' , ', $args) . ')' . "\n";
                 }
             }
         }
         if (!$isCli) {
-            $r = str_replace(["\n", '[', ']', '{{', '}}', "\t"]
-                , ["<br>", "<b>[", "]</b>", '<u>', '</u>', '&nbsp;&nbsp;&nbsp;&nbsp;']
+            $r = str_replace(["\n", '[', ']','<<<','>>>', '{{', '}}', "\t"]
+                , ["<br>", "<b>[", "]</b>",'<span style="background-color:blue; color:white">','</span>', '<u>', '</u>', '&nbsp;&nbsp;&nbsp;&nbsp;']
                 , $r);
         }
         if (!$returnAsString) {
@@ -2185,10 +2185,6 @@ class PdoOne
         string $type
     ): array
     {
-        //var_dump($getDefTable);
-        //var_dump($relation);
-        //var_dump($classRelations);
-        //var_dump($aliases);
         $result = [];
         foreach ($getDefTable as $k => $v) {
             $result[$v['alias']] = null;
@@ -2402,6 +2398,167 @@ class PdoOne
     }
 
     /**
+     * @param string $tableName
+     * @param array|null $columnRelations
+     * @param        $pkFirst
+     * @param array  $aliasesAllTables
+     * @return array|string
+     * @throws Exception
+     */
+    public function generateGetRelations(string $tableName,?array $columnRelations,$pkFirst,array $aliasesAllTables):array {
+        try {
+            $deps = $this->tableDependency(true);
+        } catch (Exception $e) {
+            $this->endTry();
+            return 'Error: Unable read table dependencies ' . $e->getMessage();
+        } //  ["city"]=> {["city_id"]=> "address"}
+        $after = @$deps[1][$tableName];
+        if ($after === null) {
+            $after = @$deps[1][strtolower($tableName)];
+        }
+        $before = @$deps[2][$tableName];
+        if ($before === null) {
+            $before = @$deps[2][strtolower($tableName)];
+        }
+        $aliases = $aliasesAllTables[$tableName] ?? [];
+        $relation = $this->getDefTableFK($tableName, false, true);
+        if (is_array($after) && is_array($before)) {
+            foreach ($before as $key => $rows) { // $value is [relcol,table]
+                foreach ($rows as $value) {
+                    $relation[self::$prefixBase . $value[1]] = [
+                        'key' => 'ONETOMANY',
+                        'col' => $key,
+                        'reftable' => $value[1],
+                        'refcol' => $value[0] //, ltrim( $value[0],self::$prefixBase)
+                    ];
+                }
+            }
+        }
+        // converts relations to ONETOONE
+        foreach ($relation as $k => $rel) {
+            if ($rel['key'] === 'ONETOMANY') {
+                $pkref = null;
+                $pkref = $this->service->getPK($rel['reftable'], $pkref);
+                if (self::$prefixBase . $pkref[0] === $rel['refcol'] && count($pkref) === 1) {
+                    $relation[$k]['key'] = 'ONETOONE';
+                    $relation[$k]['refcol'] = ltrim($relation[$k]['refcol'], self::$prefixBase);
+                }
+            }
+            if ($rel['key'] === 'MANYTOONE') {
+                $pkref = null;
+                $pkref = $this->service->getPK($rel['reftable'], $pkref);
+                if ($pkref[0] === $rel['refcol'] && count($pkref) === 1
+                    && (strcasecmp($k, self::$prefixBase . $pkFirst) === 0)
+                ) {
+                    // if they are linked by the pks and the pks are only 1.
+                    $relation[$k]['key'] = 'ONETOONE';
+                    $relation[$k]['col'] = $pkFirst;
+                    $relation[$k]['refcol'] = ltrim($relation[$k]['refcol'], self::$prefixBase);
+                }
+            }
+        }
+        if ($columnRelations) {
+            foreach ($relation as $k => $rel) {
+                if (isset($columnRelations[$k])) {
+                    // parent.
+                    if ($columnRelations[$k] === 'PARENT') {
+                        $relation[$k]['key'] = 'PARENT';
+                    } elseif ($columnRelations[$k] === 'MANYTOMANY') {
+                        // the table must have 2 primary keys.
+                        $pks = null;
+                        $pks = $this->service->getPK($rel['reftable'], $pks);
+                        /** @noinspection PhpParamsInspection */
+                        /** @noinspection PhpArrayIsAlwaysEmptyInspection */
+                        /** @noinspection PhpConditionAlreadyCheckedInspection */
+                        if ($pks !== false || count($pks) === 2) {
+                            $relation[$k]['key'] = 'MANYTOMANY';
+                            $refcol2 = (self::$prefixBase . $pks[0] === $relation[$k]['refcol']) ? $pks[1] : $pks[0];
+                            try {
+                                $defsFK = $this->service->getDefTableFK($relation[$k]['reftable'], false);
+                            } catch (Exception $e) {
+                                $this->endTry();
+                                return ['Error: Unable read table dependencies ' . $e->getMessage(),null];
+                            }
+                            try {
+                                $keys2 = $this->service->getDefTableKeys($defsFK[$refcol2]['reftable'], true,
+                                    'PRIMARY KEY');
+                            } catch (Exception $e) {
+                                $this->endTry();
+                                return ['Error: Unable read table dependencies' . $e->getMessage(),null];
+                            }
+                            $relation[$k]['refcol2'] = self::$prefixBase . $refcol2;
+                            if (count($keys2) > 0) {
+                                $keys2 = array_keys($keys2);
+                                $relation[$k]['col2'] = $keys2[0];
+                            } else {
+                                $relation[$k]['col2'] = null;
+                            }
+                            $relation[$k]['table2'] = $defsFK[$refcol2]['reftable'];
+                        }
+                    }
+                    // manytomany
+                }
+            }
+        }
+        $linked = '';
+        foreach ($relation as $k => $v) {
+            $ksimple = ltrim($k, '_'); // remove the _ from the beginner
+
+            $alias = ($aliases[$k] ?? $k);
+            $aliasCol = '_' . ($aliases[$ksimple] ?? $ksimple);
+            $col = ltrim($aliasCol, '_');
+            $refcol = ltrim($v['refcol'], '_');
+            $refcol2 = isset($v['refcol2']) ? ltrim($v['refcol2'], '_') : null;
+            $col2 = $v['col2'] ?? null;
+
+            $aliasRef = '_' . $aliasesAllTables[$v['reftable']][$refcol] ?? $refcol;
+
+            $relation[$k]['alias'] = $alias;
+            if (isset($v['col'])) {
+                $relation[$k]['colalias'] = $aliases[$v['col']];
+            }
+            $relation[$k]['refcolalias'] = $aliasesAllTables[$v['reftable']][$refcol] ?? $refcol;
+            $relation[$k]['refcol2alias'] = $aliasesAllTables[$v['reftable']][$refcol2] ?? $refcol2;
+            if (isset($v['table2'])) {
+                $relation[$k]['col2alias'] = $aliasesAllTables[$v['table2']][$col2] ?? $col2;
+            }
+            $key = $v['key'];
+            if ($key === 'MANYTOONE') {
+                //$col = ltrim($v['refcol'], '_');
+                $aliasCol = $aliases[$col] ?? $col;
+                $linked .= str_replace(
+                    [
+                        '{_col}',
+                        '{refcol}',
+                        '{col}'
+                    ]
+                    , [
+                    $alias,
+                    $aliasRef,
+                    $aliasCol
+                ],
+                    "\t\t// \$row['{_col}']['{refcol}']=&\$row['{col}']; // linked field MANYTOONE\n");
+            }
+            if ($key === 'ONETOONE') {
+                //$col = ltrim($v['refcol'], '_');
+                //$col = ltrim($k, '_');
+                $linked .= str_replace(
+                    [
+                        '{_col}',
+                        '{refcol}',
+                        '{col}'],
+                    [
+                        $k,
+                        $aliasRef,
+                        $col
+                    ],
+                    "\t\tisset(\$row['{_col}']) and \$row['{_col}']['{refcol}']=&\$row['{col}']; // linked field ONETOONE\n"
+                );
+            }
+        }
+        return [$relation,$linked];
+    }
+    /**
      * It generates a class<br>
      * <b>Example:</b><br>
      * <pre>
@@ -2525,113 +2682,23 @@ class PdoOne
         ,
             $extraColArray // {extracol}
         ), $r);
-        $pk = '??';
-        $pk = $this->service->getPK($tableName, $pk);
+        $pk = $this->service->getPK($tableName, '??');
         $pkFirst = (is_array($pk) && count($pk) > 0) ? $pk[0] : null;
-        try {
-            $relation = $this->getDefTableFK($tableName, false, true);
-        } catch (Exception $e) {
+
+
+
+        [$relation,$linked]=$this->generateGetRelations($tableName,$columnRelations,$pkFirst,$aliasesAllTables);
+        if(!is_array($relation)) {
+            $this->endTry();
+            return 'Error: Unable read fk of table ' . $relation;
+        }
+      /*  } catch (Exception $e) {
             $this->endTry();
             return 'Error: Unable read fk of table ' . $e->getMessage();
-        }
-        // many to many
-        /*foreach ($relation as $rel) {
-            $tableMxM = $rel['reftable'];
-            $tableFK = $this->getDefTableFK($tableMxM, false, true);
-        }
-        */
-        try {
-            $deps = $this->tableDependency(true);
-        } catch (Exception $e) {
-            $this->endTry();
-            return 'Error: Unable read table dependencies ' . $e->getMessage();
-        } //  ["city"]=> {["city_id"]=> "address"}
-        $after = @$deps[1][$tableName];
-        if ($after === null) {
-            $after = @$deps[1][strtolower($tableName)];
-        }
-        $before = @$deps[2][$tableName];
-        if ($before === null) {
-            $before = @$deps[2][strtolower($tableName)];
-        }
-        if (is_array($after) && is_array($before)) {
-            foreach ($before as $key => $rows) { // $value is [relcol,table]
-                foreach ($rows as $value) {
-                    $relation[self::$prefixBase . $value[1]] = [
-                        'key' => 'ONETOMANY',
-                        'col' => $key,
-                        'reftable' => $value[1],
-                        'refcol' => $value[0] //, ltrim( $value[0],self::$prefixBase)
-                    ];
-                }
-            }
-        }
-        // converts relations to ONETOONE
-        foreach ($relation as $k => $rel) {
-            if ($rel['key'] === 'ONETOMANY') {
-                $pkref = null;
-                $pkref = $this->service->getPK($rel['reftable'], $pkref);
-                if (self::$prefixBase . $pkref[0] === $rel['refcol'] && count($pkref) === 1) {
-                    $relation[$k]['key'] = 'ONETOONE';
-                    $relation[$k]['refcol'] = ltrim($relation[$k]['refcol'], self::$prefixBase);
-                }
-            }
-            if ($rel['key'] === 'MANYTOONE') {
-                $pkref = null;
-                $pkref = $this->service->getPK($rel['reftable'], $pkref);
-                if ($pkref[0] === $rel['refcol'] && count($pkref) === 1
-                    && (strcasecmp($k, self::$prefixBase . $pkFirst) === 0)
-                ) {
-                    // if they are linked by the pks and the pks are only 1.
-                    $relation[$k]['key'] = 'ONETOONE';
-                    $relation[$k]['col'] = $pkFirst;
-                    $relation[$k]['refcol'] = ltrim($relation[$k]['refcol'], self::$prefixBase);
-                }
-            }
-        }
-        if ($columnRelations) {
-            foreach ($relation as $k => $rel) {
-                if (isset($columnRelations[$k])) {
-                    // parent.
-                    if ($columnRelations[$k] === 'PARENT') {
-                        $relation[$k]['key'] = 'PARENT';
-                    } elseif ($columnRelations[$k] === 'MANYTOMANY') {
-                        // the table must have 2 primary keys.
-                        $pks = null;
-                        $pks = $this->service->getPK($rel['reftable'], $pks);
-                        /** @noinspection PhpParamsInspection */
-                        /** @noinspection PhpArrayIsAlwaysEmptyInspection */
-                        /** @noinspection PhpConditionAlreadyCheckedInspection */
-                        if ($pks !== false || count($pks) === 2) {
-                            $relation[$k]['key'] = 'MANYTOMANY';
-                            $refcol2 = (self::$prefixBase . $pks[0] === $relation[$k]['refcol']) ? $pks[1] : $pks[0];
-                            try {
-                                $defsFK = $this->service->getDefTableFK($relation[$k]['reftable'], false);
-                            } catch (Exception $e) {
-                                $this->endTry();
-                                return 'Error: Unable read table dependencies ' . $e->getMessage();
-                            }
-                            try {
-                                $keys2 = $this->service->getDefTableKeys($defsFK[$refcol2]['reftable'], true,
-                                    'PRIMARY KEY');
-                            } catch (Exception $e) {
-                                $this->endTry();
-                                return 'Error: Unable read table dependencies' . $e->getMessage();
-                            }
-                            $relation[$k]['refcol2'] = self::$prefixBase . $refcol2;
-                            if (count($keys2) > 0) {
-                                $keys2 = array_keys($keys2);
-                                $relation[$k]['col2'] = $keys2[0];
-                            } else {
-                                $relation[$k]['col2'] = null;
-                            }
-                            $relation[$k]['table2'] = $defsFK[$refcol2]['reftable'];
-                        }
-                    }
-                    // manytomany
-                }
-            }
-        }
+        }*/
+
+
+
         //die(1);
         $convertOutput = '';
         $convertInput = '';
@@ -2771,58 +2838,7 @@ class PdoOne
                 $convertOutput .= "\t\t" . str_replace('%s', "\$row['$alias']", $tmp) . "\n";
             }
         }
-        $linked = '';
-        foreach ($relation as $k => $v) {
-            $ksimple = ltrim($k, '_'); // remove the _ from the beginner
-            $alias = '_' . ($aliases[$ksimple] ?? $ksimple);
-            $col = ltrim($alias, '_');
-            $refcol = ltrim($v['refcol'], '_');
-            $refcol2 = isset($v['refcol2']) ? ltrim($v['refcol2'], '_') : null;
-            $col2 = $v['col2'] ?? null;
-            $aliasRef = '_' . $aliasesAllTables[$v['reftable']][$refcol] ?? $refcol;
-            $relation[$k]['alias'] = $alias;
-            if (isset($v['col'])) {
-                $relation[$k]['colalias'] = $aliases[$v['col']];
-            }
-            $relation[$k]['refcolalias'] = $aliasesAllTables[$v['reftable']][$refcol] ?? $refcol;
-            $relation[$k]['refcol2alias'] = $aliasesAllTables[$v['reftable']][$refcol2] ?? $refcol2;
-            if (isset($v['table2'])) {
-                $relation[$k]['col2alias'] = $aliasesAllTables[$v['table2']][$col2] ?? $col2;
-            }
-            $key = $v['key'];
-            if ($key === 'MANYTOONE') {
-                //$col = ltrim($v['refcol'], '_');
-                $aliasCol = $aliases[$col] ?? $col;
-                $linked .= str_replace(
-                    [
-                        '{_col}',
-                        '{refcol}',
-                        '{col}'
-                    ]
-                    , [
-                    $alias,
-                    $aliasRef,
-                    $aliasCol
-                ],
-                    "\t\t// \$row['{_col}']['{refcol}']=&\$row['{col}']; // linked field MANYTOONE\n");
-            }
-            if ($key === 'ONETOONE') {
-                //$col = ltrim($v['refcol'], '_');
-                //$col = ltrim($k, '_');
-                $linked .= str_replace(
-                    [
-                        '{_col}',
-                        '{refcol}',
-                        '{col}'],
-                    [
-                        $k,
-                        $aliasRef,
-                        $col
-                    ],
-                    "\t\tisset(\$row['{_col}']) and \$row['{_col}']['{refcol}']=&\$row['{col}']; // linked field ONETOONE\n"
-                );
-            }
-        }
+
         //$convertOutput.=$linked;
         $convertOutput = rtrim($convertOutput, "\n");
         $convertInput = rtrim($convertInput, "\n");
@@ -2843,8 +2859,9 @@ class PdoOne
             $noUpdate = array_merge($identities, $defNoUpdate);
         } else {
             $noUpdate = $identities;
+
         }
-        $copy = $noInsert;
+        /*$copy = $noInsert;
         $noInsert = [];
         foreach ($copy as $v) {
             if (isset($aliases[$v])) {
@@ -2852,8 +2869,8 @@ class PdoOne
             } else {
                 $noInsert[] = $v;
             }
-        }
-        $copy = $noUpdate;
+        }*/
+        /*$copy = $noUpdate;
         $noUpdate = [];
         foreach ($copy as $v) {
             if (isset($aliases[$v])) {
@@ -2861,18 +2878,16 @@ class PdoOne
             } else {
                 $noUpdate[] = $v;
             }
-        }
-        //var_dump($aliases);
-        //var_dump($noInsert);
+        }*/
         //die(1);
         if ($pk) {
             // we never update the primary key.
             $noUpdate += $pk; // it adds and replaces duplicates, indexes are ignored.
         }
         $relation2 = [];
-        foreach ($relation as $col => $arr) {
+        foreach ($relation as $arr) {
             if ($arr['key'] !== 'FOREIGN KEY' && $arr['key'] !== 'PARENT' && $arr['key'] !== 'NONE') {
-                @$relation2[$arr['key']][] = $col;
+                @$relation2[$arr['key']][] = '/'.$arr['alias'];
             }
             //if($arr['key']==='MANYTOONE') {
             //    $relation2[]=$col;
@@ -3143,12 +3158,16 @@ class PdoOne
         if (!$this->transactionOpen && $throw) {
             $this->throwError('Transaction not open  to rollback()', '');
         }
-        if (!$this->isOpen) {
+        if (!$this->isOpen && $throw) {
             $this->throwError("It's not connected to the database", '');
             return false;
         }
         $this->transactionOpen = false;
+        try {
         $r = @$this->conn1->rollback();
+        } catch(Exception $ex) {
+            $r=false;
+        }
         $this->endTry();
         return $r;
     }

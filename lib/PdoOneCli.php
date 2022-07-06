@@ -523,14 +523,7 @@ PdoOne: $v  Cli: $vc
         $result = null;
         while (true) {
             try {
-                $pdo = new PdoOne(
-                    $this->cli->getValue('databasetype'),
-                    $this->cli->getValue('server'),
-                    $this->cli->getValue('user'),
-                    $this->cli->getValue('password'),
-                    $this->cli->getValue('database'));
-                $pdo->logLevel = 3;
-                $pdo->connect();
+                $pdo = $this->createPdoInstance();
                 $this->cli->showCheck('OK', 'green', 'Connected to the database <bold>' . $this->cli->getValue('database') . '</bold>');
                 $result = $pdo;
                 break;
@@ -556,9 +549,9 @@ PdoOne: $v  Cli: $vc
     {
         if ($this->cli->getParameter('command')->origin !== 'argument') {
             $sg = $this->cli->createParam('yn', [], 'none')
-                ->setDescription('', 'Do you want to save the configuration of the connection?')
+                ->setDescription('', 'Do you want to save the configurations entered in the CLI?')
                 ->setInput(true, 'optionshort', ['yes', 'no'])
-                ->setDefault('yes')
+                ->setDefault('no')
                 ->evalParam(true);
             if ($sg->value === 'yes') {
                 $saveconfig = $this->cli->evalParam('saveconfig');
@@ -654,6 +647,7 @@ PdoOne: $v  Cli: $vc
                     case 'conversion':
                         $this->cli->upLevel('conversion');
                         while (true) {
+
                             $this->cli->setColor(['byellow'])->showBread();
                             $this->cli->getParameter('tablescolumns')
                                 ->setDescription('', 'Select a column (or empty for end)')
@@ -711,6 +705,7 @@ PdoOne: $v  Cli: $vc
                         break;
                     case 'alias':
                         $this->cli->upLevel('alias');
+
                         while (true) {
                             $this->cli->setColor(['byellow'])->showBread();
                             $this->cli->getParameter('tablescolumns')
@@ -734,6 +729,17 @@ PdoOne: $v  Cli: $vc
                 }
             } // end while tablecommand
         } // end while table
+    }
+    public function createPdoInstance(): PdoOne {
+        $pdo = new PdoOne(
+            $this->cli->getValue('databasetype'),
+            $this->cli->getValue('server'),
+            $this->cli->getValue('user'),
+            $this->cli->getValue('password'),
+            $this->cli->getValue('database'));
+        $pdo->logLevel = 3;
+        $pdo->connect();
+        return $pdo;
     }
 
     protected function databaseConfigureRemove($ktable): void
@@ -973,7 +979,8 @@ PdoOne: $v  Cli: $vc
             ->setInput(true, 'string', [])->add();
         $this->cli->createParam('overridegenerate', ['og'], 'longflag')
             ->setRelated(['generate'])
-            ->setDescription('Override the generate values', 'Do you want to override previous generated classes?'
+            ->setDefault('no')
+            ->setDescription('Override the generate values', 'Do you want to override previous repository classes (abstract classes are always override)?'
                 , ['Values available <cyan><option/></cyan>'], 'bool')
             ->setInput(true, 'optionshort', ['yes', 'no'])->add();
     }
@@ -1124,6 +1131,7 @@ PdoOne: $v  Cli: $vc
     /** @noinspection DisconnectedForeachInstructionInspection */
     protected function databaseScan($tablesmarked, $pdo): void
     {
+
         $tablexclass = [];
         $columnsTable = [];
         $conversion = [];
@@ -1195,6 +1203,18 @@ PdoOne: $v  Cli: $vc
                 }
             }
         }
+        // add onetomany and onetoone alias
+        foreach ($columnsTable as $ktable => $columns) {
+            $pk = '??';
+            $pk = $pdo->service->getPK($ktable, $pk);
+            $pkFirst = (is_array($pk) && count($pk) > 0) ? $pk[0] : null;
+            [$relation, $linked] = $pdo->generateGetRelations($ktable, $this->columnsTable, $pkFirst, $alias);
+            foreach ($relation as $colDB => $defs) {
+                if (!isset($alias[$ktable][$colDB])) {
+                    $alias[$ktable][$colDB] = $defs['alias'];
+                }
+            }
+        }
         //$oldAlias = $this->columnsAlias;
         //$this->columnsAlias = [];
         // **** COLUMNSALIAS
@@ -1202,6 +1222,7 @@ PdoOne: $v  Cli: $vc
         if (count($this->extracolumn) === 0) {
             $this->extracolumn = $extracolumn;
         }
+
     }
 
     /**

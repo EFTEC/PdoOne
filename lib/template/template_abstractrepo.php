@@ -54,9 +54,9 @@ abstract class Abstract{classname} extends {baseclass}
     /** @var string[][] an associative array with the definition of the foreign keys and relations */
     public const DEFFK={deffktype};
     public const DEFFKSQL={deffk};
-    /** @var string[] An indexed array with the name of the columns that are not inserted */
+    /** @var string[] An indexed array with the database name of the columns that are not inserted */
     public const DEFNOINSERT={defnoinsert};
-    /** @var string[] An indexed array with the name of the columns that are not updated */
+    /** @var string[] An indexed array with the database name of the columns that are not updated */
     public const DEFNOUPDATE={defnoupdate};
     /** @var string[] an associative array that associates the database column with its alias, ex: ['col'=>'colalias'] */
     public const COL2ALIAS={defnamealias};
@@ -109,11 +109,15 @@ abstract class Abstract{classname} extends {baseclass}
     * It converts a row returned from the database.<br>
     * If the column is missing then it sets the field as null.
     *
-    * @param array $row [ref]
+    * @param null|array $row [ref]
     */
     public static function convertOutputVal(&$row)
     {
         if ($row === false || $row === null) {
+            return;
+        }
+        if(count($row)===0) {
+            $row=null;
             return;
         }
 {convertoutput}
@@ -229,14 +233,18 @@ abstract class Abstract{classname} extends {baseclass}
     * With recursivity, we could use the recursivity of the fields, for example, loading a MANYTOONE relation<br>
     * <b>Example:</b><br>
     * <pre>
-         * self::recursive([]); // (default) no use recursivity.
-         * self::recursive('*'); // recursive every MANYTOONE,ONETOONE,MANYTOONE and ONETOONE relations (first level)
-         * self::recursive('MANYTOONE'); // recursive all relations of the type MANYTOONE (first level)
-         * self::recursive(['/_relation1','/_relation2']); // recursive only the relations of the first level
-         * self::recursive(['/_relation1','/_relation1/_subrelation1']); //recursive the relations (first and second level)
-         * </pre>
+    * self::recursive([]); // (default) no use recursivity.
+    * self::recursive('*'); // recursive every MANYTOONE,ONETOONE,MANYTOONE and ONETOONE relations (first level)
+    * self::recursive('MANYTOONE'); // recursive all relations of the type MANYTOONE (first level)
+    * self::recursive(['/_relation1','/_relation2']); // recursive only the relations of the first level
+    * self::recursive(['/_relation1','/_relation1/_subrelation1']); //recursive the relations (first and second level)
+    * self::recursive(['/_manytomany*'); // the postfix "*" indicates: (only in a many-to-many relation)
+    *      // "*": in the case of insert, update or merge, the relational table,left and right table would be modified.
+    *      // "" : in the case of insert, update or merge, only the relational table and left would be modified.
+    * </pre>
     * If array then it uses the values to set the recursivity.<br>
     * If string then the values allowed are '*', 'MANYTOONE','ONETOMANY','MANYTOMANY','ONETOONE' (first level only)<br>
+    * If you don't want to do multiple modifications (insert,update or delete), then simply you can skip this operator.
     *
     * @param string|array $recursive=self::factoryUtil();
     *
@@ -310,6 +318,8 @@ abstract class Abstract{classname} extends {baseclass}
 
     /**
     * It inserts a new entity(row) into the database<br>
+    * It returns false if the operation failed, otherwise, it returns the entity modified (if it has, for example, an
+    * identity field<br>
     * @param array|object $entity        =self::factoryUtil()
     * @param bool         $transactional If true (default) then the operation is transactional
     *

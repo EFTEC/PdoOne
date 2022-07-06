@@ -15,10 +15,10 @@
     "savegen": "yes",
     "tables": null,
     "tablescolumns": null,
-    "tablecommand": "",
+    "tablecommand": null,
     "convertionselected": null,
     "convertionnewvalue": null,
-    "newclassname": "Product",
+    "newclassname": null,
     "overridegenerate": null,
     "tablexclass": {
         "cities": "City",
@@ -27,7 +27,10 @@
         "customerxcategories": "CustomerXCategory",
         "invoicedetails": "InvoiceDetail",
         "invoices": "Invoice",
-        "products": "Product"
+        "products": "Product",
+        "users": "User",
+        "invoicetypes": "Invoicetyp",
+        "invoicextypes": "Invoicextyp"
     },
     "conversion": {
         "bigint": null,
@@ -63,7 +66,10 @@
         "customerxcategories": [],
         "invoicedetails": [],
         "invoices": [],
-        "products": []
+        "products": [],
+        "users": [],
+        "invoicetypes": [],
+        "invoicextypes": []
     },
     "removecolumn": [],
     "columnsTable": {
@@ -101,57 +107,109 @@
             "IdInvoice": null,
             "Total": null,
             "_Customer": "MANYTOONE",
-            "_invoicedetails": "ONETOMANY"
+            "_invoicedetails": "ONETOMANY",
+            "_invoicextypes": "MANYTOMANY"
         },
         "products": {
             "City": null,
             "IdProducts": null,
             "_City": "MANYTOONE",
             "_invoicedetails": "PARENT",
-            "Name": null
+            "Name": null,
+            "unitPrice": null
         },
         "cities": {
             "IdCity": null,
             "Name": null,
             "_customers": "ONETOMANY",
             "_products": "ONETOMANY"
+        },
+        "users": {
+            "fullname": null,
+            "iduser": null,
+            "pwd": null,
+            "user": null
+        },
+        "invoicetypes": {
+            "IdInvoiceType": null,
+            "NameType": null,
+            "_invoicextypes": "ONETOMANY"
+        },
+        "invoicextypes": {
+            "IdInvoice": null,
+            "IdInvoiceType": null,
+            "_IdInvoice": "ONETOONE",
+            "_IdInvoiceType": "MANYTOONE"
         }
     },
     "columnsAlias": {
         "categories": {
             "IdCategory": "NumCategory",
-            "Name": "Name"
+            "Name": "Name",
+            "_customerxcategories": "_customerxcategories"
         },
         "cities": {
             "IdCity": "NumCity",
-            "Name": "Name"
+            "Name": "Name",
+            "_customers": "_clientes",
+            "_products": "_products"
         },
         "customerxcategories": {
             "Category": "Category",
-            "Customer": "Customer"
+            "Customer": "Customer",
+            "_Category": "_Category",
+            "_Customer": "_Customer"
         },
         "invoicedetails": {
             "IdInvoiceDetail": "NumInvoiceDetail",
             "Invoice": "Invoice",
             "Product": "Product",
-            "Quantity": "Quantity"
+            "Quantity": "Quantity",
+            "_Invoice": "_Invoice",
+            "_Product": "_Product"
         },
         "invoices": {
             "Customer": "Customer",
             "Date": "Date",
             "IdInvoice": "NumInvoice",
-            "Total": "Total"
+            "Total": "Total",
+            "_Customer": "_InvCustomer",
+            "_invoicedetails": "_Details",
+            "_invoicextypes": "_Types"
         },
         "products": {
-            "City": "City",
+            "City": "Ciudad",
             "IdProducts": "Numproduct",
-            "Name": "Name"
+            "Name": "Name",
+            "unitPrice": "unitPrice",
+            "_City": "_CiudadRef",
+            "_invoicedetails": "_invoicedetails"
         },
         "customers": {
             "City": "City",
             "Email": "Email",
             "IdCustomer": "NumCustomer",
-            "Name": "Name"
+            "Name": "Name",
+            "_City": "_City",
+            "_customerxcategories": "_customerxcategories",
+            "_invoices": "_invoices"
+        },
+        "users": {
+            "fullname": "fullname",
+            "iduser": "iduser",
+            "pwd": "pwd",
+            "user": "user"
+        },
+        "invoicetypes": {
+            "IdInvoiceType": "NumInvoiceType",
+            "NameType": "NameType",
+            "_invoicextypes": "_invoicextypes"
+        },
+        "invoicextypes": {
+            "IdInvoice": "Col1X",
+            "IdInvoiceType": "Col2X",
+            "_IdInvoice": "_Col1X",
+            "_IdInvoiceType": "_Col2X"
         }
     }
 }

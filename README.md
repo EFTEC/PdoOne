@@ -2035,6 +2035,9 @@ In a nutshell:
 >
 > Every decimal version means that it patches/fixes/refactoring a previous functionality i.e. 1.5.0 -> 1.5.1 (fix)
 
+* 3.5 2022-07-06
+  * [ORM] fixed recursive when "query", "insert","update" and "delete". Now recursive work with aliases.
+  * _BasePdoOne update to binary version BINARYVERSION. It will require regeneration of repository classes.
 * 3.3 2022-06-27
   * [CLI] updated CLI to 1.0
 * 3.2 2022-06-27

@@ -2,6 +2,7 @@
 
 use eftec\examples\clitest\testdb2\CityRepo;
 use eftec\examples\clitest\testdb2\InvoiceRepo;
+use eftec\examples\clitest\testdb2\ProductRepo;
 use eftec\PdoOne;
 use eftec\examples\clitest\testdb2\CustomerRepo;
 
@@ -31,10 +32,17 @@ $dependency=[
     '/_invoicedetails/_Product/_City',
     '/_invoicedetails/_City'
 ];
-$ent=CityRepo::factory();
-$ent['_customers']=CustomerRepo::factory();
-$ent['_customers']['Name']='aaa';
-$ent['_customers']['Email']='bbb';
+ProductRepo::deleteById(99);
+$ent=ProductRepo::recursive(['/_CiudadRef' ])->first(1);
+//$ent= ProductRepo::factory();
+new \dBug\dBug($ent);
+$ent['Name']='product #updated 2';
+$ent['Ciudad']=1;
+$ent['_CiudadRef']=CityRepo::factory(['NumCity' => 1,'Name' => 'City #updated2']);
+
+ProductRepo::recursive(['/_CiudadRef'])->update($ent);
+var_dump($ent);
+die(1);
 
 //$ent=['NumCity' => 555,'NameCity' => 'cityexample'];
 //new \dBug\dBug(CityRepo::insert($ent));
@@ -48,10 +56,9 @@ new \dBug\dBug($ent);
 $r=CityRepo::recursive(['/_customers' ])->update($ent);
 var_dump($r);
 var_dump('first:');
-
+die(1);
 $first=CityRepo::recursive(['*'])->first();
 new \dBug\dBug($first);
-die(1);
 //CityRepo::deleteById(555);
 
 

@@ -41,7 +41,7 @@ $dependency=[
 $a1=InvoiceRepo::recursive(['/_Types','/_InvCustomer','/_Details'])->first();
 var_dump('first:');
 new \dBug\dBug($a1);
-
+echo var_export($a1,true);
 
 var_dump('inserting start...............');
 
