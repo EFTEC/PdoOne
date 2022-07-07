@@ -2511,7 +2511,7 @@ class PdoOne
             $refcol2 = isset($v['refcol2']) ? ltrim($v['refcol2'], '_') : null;
             $col2 = $v['col2'] ?? null;
 
-            $aliasRef = '_' . $aliasesAllTables[$v['reftable']][$refcol] ?? $refcol;
+            $aliasRef = '_' . @$aliasesAllTables[$v['reftable']][$refcol] ?? $refcol;
 
             $relation[$k]['alias'] = $alias;
             if (isset($v['col'])) {

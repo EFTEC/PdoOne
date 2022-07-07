@@ -213,7 +213,9 @@ class PdoOneCli
             ->setInput(false)
             ->add();
         $this->cli->evalParam('export');
+
         $this->inJectInitParam();
+
         $this->cli->createParam('databasetype', 'dt', 'longflag')
             ->setRelated(['common', 'export', 'generate'])
             ->setRequired(false)
@@ -345,6 +347,7 @@ class PdoOneCli
                 $this->inJectInitParam2($first->value, $interactive);
                 break;
         }
+        $ok=false;
         switch ($first->value) {
             case 'definition':
             case 'export':
@@ -378,18 +381,20 @@ class PdoOneCli
                 $this->injectLoadFile($first->value, $interactive);
                 break;
         }
-        if ($first->value) {
+        if (!$ok) {// $first->value) {
+            var_dump('load');
             $database = $this->cli->evalParam('databasetype', $interactive, true);
             $server = $this->cli->evalParam('server', $interactive, true);
             $user = $this->cli->evalParam('user', $interactive, true);
             $pwd = $this->cli->evalParam('password', $interactive, true);
             $db = $this->cli->evalParam('database', $interactive, true);
+            var_dump('two');
         } else {
-            $database = '';
-            $server = '';
-            $user = '';
-            $pwd = '';
-            $db = '';
+            $database = $this->cli->getValue('databasetype');
+            $server = $this->cli->getValue('server');
+            $user = $this->cli->getValue('user');
+            $pwd = $this->cli->getValue('password');
+            $db = $this->cli->getValue('database');
         }
         switch ($first->value) {
             case 'definition':
@@ -515,20 +520,29 @@ PdoOne: $v  Cli: $vc
             , null, 'export', 25);
     }
 
-    protected function runCliConnection(): ?PdoOne
+    protected function runCliConnection($force=false): ?PdoOne
     {
-        if (!$this->cli->getValue('databasetype')) {
+        if (!$this->cli->getValue('databasetype') && $force===false) {
             return null;
+        }
+        if($force) {
+            $this->cli->evalParam('databasetype',true);
+            $this->cli->evalParam('server',true);
+            $this->cli->evalParam('user',true);
+            $this->cli->evalParam('password',true);
+            $this->cli->evalParam('database',true);
         }
         $result = null;
         while (true) {
             try {
                 $pdo = $this->createPdoInstance();
+                if($pdo===null) {
+                    throw new RuntimeException('trying');
+                }
                 $this->cli->showCheck('OK', 'green', 'Connected to the database <bold>' . $this->cli->getValue('database') . '</bold>');
                 $result = $pdo;
                 break;
             } catch (Exception $ex) {
-                $this->cli->showCheck('ERROR', 'red', 'Unable to connect to the database: ' . $ex->getMessage());
             }
             $rt = $this->cli->createParam('retry')
                 ->setDescription('', 'Do you want to retry?')
@@ -730,15 +744,21 @@ PdoOne: $v  Cli: $vc
             } // end while tablecommand
         } // end while table
     }
-    public function createPdoInstance(): PdoOne {
-        $pdo = new PdoOne(
-            $this->cli->getValue('databasetype'),
-            $this->cli->getValue('server'),
-            $this->cli->getValue('user'),
-            $this->cli->getValue('password'),
-            $this->cli->getValue('database'));
-        $pdo->logLevel = 3;
-        $pdo->connect();
+    public function createPdoInstance(): ?PdoOne {
+        try {
+            $pdo = new PdoOne(
+                $this->cli->getValue('databasetype'),
+                $this->cli->getValue('server'),
+                $this->cli->getValue('user'),
+                $this->cli->getValue('password'),
+                $this->cli->getValue('database'));
+            $pdo->logLevel = 1;
+            $pdo->connect();
+        } catch(Exception $ex) {
+            $this->cli->showCheck('ERROR','red',['Unable to connect to database',$pdo->lastError(),$pdo->errorText]);
+            return null;
+        }
+        $pdo->logLevel = 2;
         return $pdo;
     }
 
@@ -913,6 +933,7 @@ PdoOne: $v  Cli: $vc
                 , ['<cyan><optionkey/></cyan>:<option/>'], 'cmd')
             ->setAllowEmpty()
             ->setInput(true, 'option', [
+                'connect' => 'Connect to the database or change the connection',
                 'folder' => 'Configure the repository folder and namespace',
                 'scan' => 'Scan for changes to the database. It adds or removes tables and classes',
                 'select' => 'Select or de-select the tables to work',
@@ -1047,6 +1068,7 @@ PdoOne: $v  Cli: $vc
         $this->cli->evalParam('user');
         $this->cli->evalParam('password');
         $this->cli->evalParam('database');
+
         $pdo = $this->runCliConnection();
         if ($pdo === null) {
             $this->cli->showCheck('CRITICAL', 'red', 'No connection');
@@ -1097,6 +1119,9 @@ PdoOne: $v  Cli: $vc
                     $this->cli->showCheck('ERROR', 'red', [
                         'you must set the directory and namespace',
                         'Use the option <bold><cyan>[folder]</cyan></bold> to set the directory and namespace'], 'stderr');
+                    break;
+                case 'connect':
+                    $pdo=$this->runCliConnection(true);
                     break;
                 case 'scan':
                     $this->databaseScan($tablesmarked, $pdo);
@@ -1153,7 +1178,12 @@ PdoOne: $v  Cli: $vc
                 $columnsTable[$table][$v['colname']] = null;
             }
             $pk[$table] = $pdo->getPK($table);
-            $def2[$table] = $pdo->getRelations($table, $pk[$table][0]);
+
+            if($pk[$table]===false) {
+                $def2[$table] = $pdo->getRelations($table, null);
+            } else {
+                $def2[$table] = $pdo->getRelations($table, $pk[$table][0]);
+            }
             foreach ($def2[$table] as $k => $v) {
                 if (isset($v['key']) && $v['key'] !== 'FOREIGN KEY') {
                     $columnsTable[$table][$k] = $v['key'];
