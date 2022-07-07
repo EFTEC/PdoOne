@@ -25,11 +25,11 @@ use RuntimeException;
  * @package       eftec
  * @author        Jorge Castro Castillo
  * @copyright (c) Jorge Castro C. Dual Licence: MIT and Commercial License  https://github.com/EFTEC/PdoOne
- * @version       1.0
+ * @version       1.1
  */
 class PdoOneCli
 {
-    public const VERSION = '1.0';
+    public const VERSION = '1.1';
 //</editor-fold>
     /**
      * @var array
@@ -382,13 +382,11 @@ class PdoOneCli
                 break;
         }
         if (!$ok) {// $first->value) {
-            var_dump('load');
             $database = $this->cli->evalParam('databasetype', $interactive, true);
             $server = $this->cli->evalParam('server', $interactive, true);
             $user = $this->cli->evalParam('user', $interactive, true);
             $pwd = $this->cli->evalParam('password', $interactive, true);
             $db = $this->cli->evalParam('database', $interactive, true);
-            var_dump('two');
         } else {
             $database = $this->cli->getValue('databasetype');
             $server = $this->cli->getValue('server');
@@ -522,7 +520,7 @@ PdoOne: $v  Cli: $vc
 
     protected function runCliConnection($force=false): ?PdoOne
     {
-        if (!$this->cli->getValue('databasetype') && $force===false) {
+        if ($force===false &&!$this->cli->getValue('databasetype')) {
             return null;
         }
         if($force) {
@@ -755,6 +753,7 @@ PdoOne: $v  Cli: $vc
             $pdo->logLevel = 1;
             $pdo->connect();
         } catch(Exception $ex) {
+            /** @noinspection PhpUndefinedVariableInspection */
             $this->cli->showCheck('ERROR','red',['Unable to connect to database',$pdo->lastError(),$pdo->errorText]);
             return null;
         }
@@ -1238,6 +1237,7 @@ PdoOne: $v  Cli: $vc
             $pk = '??';
             $pk = $pdo->service->getPK($ktable, $pk);
             $pkFirst = (is_array($pk) && count($pk) > 0) ? $pk[0] : null;
+            /** @noinspection PhpUnusedLocalVariableInspection */
             [$relation, $linked] = $pdo->generateGetRelations($ktable, $this->columnsTable, $pkFirst, $alias);
             foreach ($relation as $colDB => $defs) {
                 if (!isset($alias[$ktable][$colDB])) {
