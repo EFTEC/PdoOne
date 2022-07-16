@@ -1044,8 +1044,9 @@ class PdoOneQuery
                 $this->where($cls::PK[0], $pk);
             }
             $condition = null;
-            /** @see \eftec\_BasePdoOneRepo::executePlan0 */
-            return $cls::executePlan0($this, $condition, true);
+            /** @see \eftec\_BasePdoOneRepo::_first */
+            return $cls::first($pk);
+            //return $cls::executePlan0($this, $condition, true);
         }
         return $this->_first();
     }

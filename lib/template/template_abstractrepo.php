@@ -132,8 +132,8 @@ abstract class Abstract{classname} extends {baseclass}
     * @return array
     */
     public static function convertInputVal(&$row) {
-        {convertinput}
-        return self::convertAliasToDB($row);
+{convertinput}
+        return $row;
     }
 
 

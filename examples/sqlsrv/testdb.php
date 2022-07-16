@@ -9,7 +9,7 @@ include "../../vendor/autoload.php";
 
 
 // connecting to database sakila at 127.0.0.1 with user root and password abc.123
-$dao=new PdoOne("sqlsrv","127.0.0.1","sa","abc.123","sakila","");
+$dao=new PdoOne("sqlsrv","(local)","sa","ats475","prefrio","");
 $dao->logLevel=2;
 try {
     echo "<h1>connection. The instance 127.0.0.1, base:sakila  user:root and password:abc.123 must exists</h1>";

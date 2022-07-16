@@ -13,17 +13,20 @@ include '../dbug.php';
 include 'cachetest.php';
 
 $pdo=new PdoOne('mysql','127.0.0.1:3306','root','abc.123','testdb2');
+$pdo->logLevel=3;
+$pdo->open();
 $pdo->setCacheService(new CacheServicesmysql());
+
+
 
 $id=224;
 
-$pdo->logLevel=3;
-$pdo->open();
+
 echo "<h1>delete</h1>";
 
-$new=InvoiceRepo::factory(['Total' => 555,'Date' => '2020-01-01']);
+$new=InvoiceRepo::factory(['Total' => 555,'Date' => '31/01/2020']);
 $new['_InvCustomer']=CustomerRepo::factory(['NumCustomer'  => 0,'Name' => 'cus #200','Email' => 'aaa@aaa.com']);
-$new['_Details'][]=InvoiceDetailRepo::factory(['Product' => 1,'Quantity' => 4444444444444444444444444]);
+$new['_Details'][]=InvoiceDetailRepo::factory(['Product' => 1,'Quantity' => 444]);
 $new['_Details'][]=InvoiceDetailRepo::factory(['Product' => 2,'Quantity' => 400]);
 $new['_Details'][]=InvoiceDetailRepo::factory(['Product' => 3,'Quantity' => 600]);
 $new['_Types'][]=InvoicetypRepo::factory(['NumInvoiceType' => 1]);

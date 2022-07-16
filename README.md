@@ -2035,6 +2035,10 @@ In a nutshell:
 >
 > Every decimal version means that it patches/fixes/refactoring a previous functionality i.e. 1.5.0 -> 1.5.1 (fix)
 
+* 3.7 2022-07-16 
+  * [ORM] fixed a problem with first
+  * [ORM] fixed a problem with insert and conversion of columns
+  * _BasePdoOne update to binary version 11. It will require regeneration of repository classes.
 * 3.6 2022-07-07
   * [CLI] update CLI to 1.1 
 * 3.5 2022-07-06

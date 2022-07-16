@@ -12,7 +12,7 @@ use RuntimeException;
  * Class _BasePdoOneRepo.<br>
  * This class is used together with the repository classes.
  *
- * @version       6.3 2022-06-05
+ * @version       6.4 2022-06-05
  * @package       eftec
  * @author        Jorge Castro Castillo
  * @copyright (c) Jorge Castro C. Dual Licence: MIT and Commercial License  https://github.com/EFTEC/PdoOne
@@ -20,7 +20,7 @@ use RuntimeException;
 abstract class _BasePdoOneRepo
 {
     // it is used for compatibility.
-    public const BINARYVERSION = 10;
+    public const BINARYVERSION = 11;
 
     /**
      * If true then it returns false on exception. Otherwise, it throws an exception.
@@ -1263,7 +1263,7 @@ abstract class _BasePdoOneRepo
      * @return array|bool static::factoryUtil()
      * @throws Exception
      */
-    protected static function _first($pk = PdoOne::NULL)
+    protected static function _first($pk = PdoOne::NULL,PdoOneQuery $query=null)
     {
         if ($pk !== PdoOne::NULL) {
             $tmp = is_array($pk) ? $pk : [static::PK[0] => $pk];
@@ -1273,11 +1273,11 @@ abstract class _BasePdoOneRepo
                 $pk[$pt . $k] = $v;
             }
         }
-        $newQuery = self::getQuery();
-        $newQuery->ormClass = null;
-        $newQuery->where($pk);
+        $query = $query?? self::getQuery();
+        $query->ormClass = null;
+        $query->where($pk);
         /** @see \eftec\_BasePdoOneRepo::executePlan0 */
-        return self::executePlan0($newQuery, null, true);
+        return self::executePlan0($query, null, true);
     }
 
     /**
@@ -1433,7 +1433,7 @@ abstract class _BasePdoOneRepo
             }
             $pdoOnequery = $newQuery === true ? new PdoOneQuery(static::getPdoOne(), static::class) : self::getQuery();
             //$defTable = static::getDef('conversion');
-            $entityDB = (static::ME)::convertInputVal($entityAlias);
+            $entityDB = (static::ME)::convertAliasToDB((static::ME)::convertInputVal($entityAlias));
             self::invalidateCache();
 
             // only the fields that are defined are inserted
@@ -1870,17 +1870,18 @@ abstract class _BasePdoOneRepo
     {
         $returnObject = false;
         if ($entityAlias === null) {
-            throw new RuntimeException('unable to insert an empty entity');
+            throw new RuntimeException('Unable to insert an empty entity');
         }
         $pdoOneQuery = $newQuery === true ? new PdoOneQuery(static::getPdoOne(), static::class) : self::getQuery();
         try {
+            $entityAlias=(static::ME)::convertInputVal($entityAlias);
             //$defTable = static::getDef('conversion');
             //self::_convertInputValue($entity, $defTable);
             if (is_object($entityAlias)) {
                 $returnObject = clone $entityAlias;
                 $entityAlias = static::objectToArray($entityAlias);
             }
-            // $entityDB = (static::ME)::convertInputVal($entityAlias);
+            //$entityDB = (static::ME)::convertInputVal($entityAlias);
             self::invalidateCache();
             $recursiveBackup = self::getQuery()->getRecursive();  // recursive is deleted by insertObject
             // only the fields that are defined are inserted
@@ -2009,7 +2010,7 @@ abstract class _BasePdoOneRepo
             if (is_object($entityAlias)) {
                 $entityAlias = static::objectToArray($entityAlias);
             }
-            $entityDB = (static::ME)::convertInputVal($entityAlias);
+            $entityDB =(static::ME)::convertAliasToDB((static::ME)::convertInputVal($entityAlias));
             $entityCopy = self::intersectArraysNotNull($entityDB, $columns);
             if ($entityCopy === []) {
                 throw new RuntimeException('Delete without conditions');
