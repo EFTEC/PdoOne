@@ -25,11 +25,11 @@ use RuntimeException;
  * @package       eftec
  * @author        Jorge Castro Castillo
  * @copyright (c) Jorge Castro C. Dual Licence: MIT and Commercial License  https://github.com/EFTEC/PdoOne
- * @version       1.1
+ * @version       1.2
  */
 class PdoOneCli
 {
-    public const VERSION = '1.1';
+    public const VERSION = '1.2';
 //</editor-fold>
     /**
      * @var array

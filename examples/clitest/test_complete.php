@@ -16,7 +16,11 @@ $pdo=new PdoOne('mysql','127.0.0.1:3306','root','abc.123','testdb2');
 $pdo->logLevel=3;
 $pdo->open();
 $pdo->setCacheService(new CacheServicesmysql());
+new \dBug\dBug(InvoiceRepo::recursive(['/_InvCustomer'])->first(227));
 
+new \dBug\dBug(InvoiceRepo::recursive(['/_InvCustomer'])->where("invoices.flag='1'")->toList());
+new \dBug\dBug(InvoiceRepo::recursive(['/_InvCustomer'])->where(["FlagAlias"=>'1'])->toList());
+die(1);
 
 
 $id=224;

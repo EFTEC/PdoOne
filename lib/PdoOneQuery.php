@@ -13,7 +13,7 @@ use RuntimeException;
 /**
  * Class PdoOneQuery
  *
- * @version       2.4 2022-02-04
+ * @version       3.8
  * @package       eftec
  * @author        Jorge Castro Castillo
  * @copyright (c) Jorge Castro C. Dual Licence: MIT and Commercial License  https://github.com/EFTEC/PdoOne
@@ -444,7 +444,7 @@ class PdoOneQuery
      * <pre>
      *  where( ['field'=>20] ) // associative array with automatic type
      *  where( ['/_field/subfield',20] ) // (for ORM) recursive query
-     *                                   //, where _field is a relational column.
+     *                                   //, where _field is a relational column (alias).
      *  where('field=20') // literal value
      *  where('field=?',[20]) // positional argument.
      *                        // You can also use >, < , >=, <=, in, etc.
@@ -536,7 +536,7 @@ class PdoOneQuery
                     if ($this->ormClass !== null) {
                         /** @var _BasePdoOneRepo $cls */
                         $cls = $this->ormClass;
-                        $where = $cls::convertAliasToDB($where);
+                        $where = $cls::convertAliasToDB($where,true);
                     }
                     // named  column=:arg
                     foreach ($where as $k => $v) {
@@ -1039,13 +1039,8 @@ class PdoOneQuery
     {
         if ($this->ormClass !== null) {
             $cls = $this->ormClass;
-            if ($pk !== PdoOne::NULL) {
-                /** @noinspection PhpPossiblePolymorphicInvocationInspection */
-                $this->where($cls::PK[0], $pk);
-            }
-            $condition = null;
             /** @see \eftec\_BasePdoOneRepo::_first */
-            return $cls::first($pk);
+            return $cls::first($pk,$this);
             //return $cls::executePlan0($this, $condition, true);
         }
         return $this->_first();
@@ -1800,6 +1795,7 @@ class PdoOneQuery
                 //todo: aqui se debe recuperar el valor insertado
                 /** @noinspection ForgottenDebugOutputInspection */
                 var_dump($param);
+                throw new RuntimeException('Insert with identity: Not defined for OCI');
             }
             return null;
         }

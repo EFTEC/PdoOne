@@ -26,11 +26,11 @@ use stdClass;
  * @package       eftec
  * @author        Jorge Castro Castillo
  * @copyright (c) Jorge Castro C. Dual Licence: MIT and Commercial License  https://github.com/EFTEC/PdoOne
- * @version       3.7
+ * @version       3.8
  */
 class PdoOne
 {
-    public const VERSION = '3.7';
+    public const VERSION = '3.8';
     /** @var int We need this value because null and false could be a valid value. */
     public const NULL = PHP_INT_MAX;
     /** @var string Prefix of the tables */
@@ -128,7 +128,7 @@ class PdoOne
     public $customError = true;
     /** @var string[] PHP classes excluded by the custom error log todo: quitar */
     public $traceBlackList = []; //['PdoOne.php', 'PdoOneQuery.php', 'PdoOne_Mysql.php', 'PdoOne.Sqlsrv.php', 'PdoOne.Oci.php'
-        //, 'PdoOneTestMockup.php', '_BasePdoOneRepo.php'];
+    //, 'PdoOneTestMockup.php', '_BasePdoOneRepo.php'];
     /** @var  PDO */
     public $conn1;
     /** @var  bool True if the transaction is open */
@@ -295,9 +295,11 @@ class PdoOne
      * @param string $sql
      * @return array|string|string[]
      */
-    public static function cleanColumns(string $sql) {
-        return str_replace([chr(0),chr(8),chr(9),chr(13),"'",'"',chr(26),chr(92)],'',$sql);
+    public static function cleanColumns(string $sql)
+    {
+        return str_replace([chr(0), chr(8), chr(9), chr(13), "'", '"', chr(26), chr(92)], '', $sql);
     }
+
     public static function addParenthesis($txt, $start = '(', $end = ')')
     {
         if (self::hasParenthesis($txt, $start, $end) === false) {
@@ -1377,14 +1379,14 @@ class PdoOne
                     } else {
                         $function = @$error['function'];
                     }
-                    $r .= '<<<'.$file . ':' . @$error['line'] . ">>>\t" . $function . '('
+                    $r .= '<<<' . $file . ':' . @$error['line'] . ">>>\t" . $function . '('
                         . @implode(' , ', $args) . ')' . "\n";
                 }
             }
         }
         if (!$isCli) {
-            $r = str_replace(["\n", '[', ']','<<<','>>>', '{{', '}}', "\t"]
-                , ["<br>", "<b>[", "]</b>",'<span style="background-color:blue; color:white">','</span>', '<u>', '</u>', '&nbsp;&nbsp;&nbsp;&nbsp;']
+            $r = str_replace(["\n", '[', ']', '<<<', '>>>', '{{', '}}', "\t"]
+                , ["<br>", "<b>[", "]</b>", '<span style="background-color:blue; color:white">', '</span>', '<u>', '</u>', '&nbsp;&nbsp;&nbsp;&nbsp;']
                 , $r);
         }
         if (!$returnAsString) {
@@ -1458,11 +1460,17 @@ class PdoOne
         $this->messageContainer = $messageContainer;
     }
 
-    public function debugFile($txt, $level = 'INFO'): void
+    /**
+     * @param mixed  $txt   the message to send. If it is an object or an array, then it is serialized.
+     * @param string $level The level of the message
+     * @return void
+     */
+    public function debugFile($txt, string $level = 'INFO'): void
     {
         if (!$this->logFile) {
             return; // debug file is disabled.
         }
+        $maxl=200*1024*1024; // 200mb
         if (is_object($txt) || is_array($txt)) {
             $txtW = print_r($txt, true);
         } else {
@@ -1471,8 +1479,24 @@ class PdoOne
         if ($this->logLevel === 2) {
             $txtW .= ' param:' . json_encode($this->lastParam);
         }
-        /** @noinspection ForgottenDebugOutputInspection */
-        error_log('[PdoOne]' . $level . "\t" . $txtW);
+        if($level==='INFO') {
+            $errorfile=ini_get('error_log');
+            if($errorfile) {
+                $infoFile=str_replace('.','_warning.',$errorfile);
+                if(@filesize($infoFile)>$maxl) {
+                    $fp = @fopen($infoFile, 'wb');
+                    @fclose($fp);
+                }
+                /** @noinspection ForgottenDebugOutputInspection */
+                error_log('['.date("M d H:i:s")."] [PdoOne]\t[$level]\t$txtW\n\n", 3,$infoFile);
+            } else {
+                /** @noinspection ForgottenDebugOutputInspection */
+                error_log("[PdoOne]\t[$level]\t" . $txtW);
+            }
+        } else {
+            /** @noinspection ForgottenDebugOutputInspection */
+            error_log("[PdoOne]\t[$level]\t" . $txtW);
+        }
     }
 
     //<editor-fold desc="transaction functions">
@@ -2398,14 +2422,15 @@ class PdoOne
     }
 
     /**
-     * @param string $tableName
+     * @param string     $tableName
      * @param array|null $columnRelations
-     * @param        $pkFirst
-     * @param array  $aliasesAllTables
+     * @param            $pkFirst
+     * @param array      $aliasesAllTables
      * @return array|string
      * @throws Exception
      */
-    public function generateGetRelations(string $tableName,?array $columnRelations,$pkFirst,array $aliasesAllTables):array {
+    public function generateGetRelations(string $tableName, ?array $columnRelations, $pkFirst, array $aliasesAllTables): array
+    {
         try {
             $deps = $this->tableDependency(true);
         } catch (Exception $e) {
@@ -2477,14 +2502,14 @@ class PdoOne
                                 $defsFK = $this->service->getDefTableFK($relation[$k]['reftable'], false);
                             } catch (Exception $e) {
                                 $this->endTry();
-                                return ['Error: Unable read table dependencies ' . $e->getMessage(),null];
+                                return ['Error: Unable read table dependencies ' . $e->getMessage(), null];
                             }
                             try {
                                 $keys2 = $this->service->getDefTableKeys($defsFK[$refcol2]['reftable'], true,
                                     'PRIMARY KEY');
                             } catch (Exception $e) {
                                 $this->endTry();
-                                return ['Error: Unable read table dependencies' . $e->getMessage(),null];
+                                return ['Error: Unable read table dependencies' . $e->getMessage(), null];
                             }
                             $relation[$k]['refcol2'] = self::$prefixBase . $refcol2;
                             if (count($keys2) > 0) {
@@ -2503,16 +2528,13 @@ class PdoOne
         $linked = '';
         foreach ($relation as $k => $v) {
             $ksimple = ltrim($k, '_'); // remove the _ from the beginner
-
             $alias = ($aliases[$k] ?? $k);
             $aliasCol = '_' . ($aliases[$ksimple] ?? $ksimple);
             $col = ltrim($aliasCol, '_');
             $refcol = ltrim($v['refcol'], '_');
             $refcol2 = isset($v['refcol2']) ? ltrim($v['refcol2'], '_') : null;
             $col2 = $v['col2'] ?? null;
-
             $aliasRef = '_' . @$aliasesAllTables[$v['reftable']][$refcol] ?? $refcol;
-
             $relation[$k]['alias'] = $alias;
             if (isset($v['col'])) {
                 $relation[$k]['colalias'] = $aliases[$v['col']];
@@ -2556,8 +2578,9 @@ class PdoOne
                 );
             }
         }
-        return [$relation,$linked];
+        return [$relation, $linked];
     }
+
     /**
      * It generates a class<br>
      * <b>Example:</b><br>
@@ -2684,21 +2707,15 @@ class PdoOne
         ), $r);
         $pk = $this->service->getPK($tableName, '??');
         $pkFirst = (is_array($pk) && count($pk) > 0) ? $pk[0] : null;
-
-
-
-        [$relation,$linked]=$this->generateGetRelations($tableName,$columnRelations,$pkFirst,$aliasesAllTables);
-        if(!is_array($relation)) {
+        [$relation, $linked] = $this->generateGetRelations($tableName, $columnRelations, $pkFirst, $aliasesAllTables);
+        if (!is_array($relation)) {
             $this->endTry();
             return 'Error: Unable read fk of table ' . $relation;
         }
-      /*  } catch (Exception $e) {
-            $this->endTry();
-            return 'Error: Unable read fk of table ' . $e->getMessage();
-        }*/
-
-
-
+        /*  } catch (Exception $e) {
+              $this->endTry();
+              return 'Error: Unable read fk of table ' . $e->getMessage();
+          }*/
         //die(1);
         $convertOutput = '';
         $convertInput = '';
@@ -2838,7 +2855,6 @@ class PdoOne
                 $convertOutput .= "\t\t" . str_replace('%s', "\$row['$alias']", $tmp) . "\n";
             }
         }
-
         //$convertOutput.=$linked;
         $convertOutput = rtrim($convertOutput, "\n");
         $convertInput = rtrim($convertInput, "\n");
@@ -2859,7 +2875,6 @@ class PdoOne
             $noUpdate = array_merge($identities, $defNoUpdate);
         } else {
             $noUpdate = $identities;
-
         }
         /*$copy = $noInsert;
         $noInsert = [];
@@ -2887,7 +2902,7 @@ class PdoOne
         $relation2 = [];
         foreach ($relation as $arr) {
             if ($arr['key'] !== 'FOREIGN KEY' && $arr['key'] !== 'PARENT' && $arr['key'] !== 'NONE') {
-                @$relation2[$arr['key']][] = '/'.$arr['alias'];
+                @$relation2[$arr['key']][] = '/' . $arr['alias'];
             }
             //if($arr['key']==='MANYTOONE') {
             //    $relation2[]=$col;
@@ -3164,9 +3179,9 @@ class PdoOne
         }
         $this->transactionOpen = false;
         try {
-        $r = @$this->conn1->rollback();
-        } catch(Exception $ex) {
-            $r=false;
+            $r = @$this->conn1->rollback();
+        } catch (Exception $ex) {
+            $r = false;
         }
         $this->endTry();
         return $r;

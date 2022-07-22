@@ -15,7 +15,7 @@ use RuntimeException;
 /**
  * This class is used for encryption.  It could encrypt (two ways).
  * Class PdoOneEncryption
- * @version       2.22.1 2022-01-30
+ * @version       3.8
  * @package       eftec
  * @author        Jorge Castro Castillo
  * @copyright (c) Jorge Castro C. Dual Licence: MIT and Commercial License  https://github.com/EFTEC/PdoOne
@@ -145,7 +145,7 @@ class PdoOneEncryption
      * It generates a hash based in the hash type ($this->hashType), the data used and the SALT.
      *
      * @param mixed $data It could be any type of serializable data.
-     * @return false|string If the serialization is not set, then it returns the same value.
+     * @return string If the serialization is not set, then it returns the same value.
      */
     public function hash($data)
     {

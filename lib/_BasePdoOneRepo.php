@@ -12,7 +12,7 @@ use RuntimeException;
  * Class _BasePdoOneRepo.<br>
  * This class is used together with the repository classes.
  *
- * @version       6.4 2022-06-05
+ * @version       6.5 2022-07-22
  * @package       eftec
  * @author        Jorge Castro Castillo
  * @copyright (c) Jorge Castro C. Dual Licence: MIT and Commercial License  https://github.com/EFTEC/PdoOne
@@ -706,15 +706,18 @@ abstract class _BasePdoOneRepo
             $where = [];
             $query = self::startPlan($absolutePrefix, $dependency, $where);
             [$columnSQL, $fromSQL] = explode('|FROM|', $query);
+
             if ($conditions !== null) {
                 $whereSql = ' ';
                 foreach ($conditions as $k => $v) {
                     $whereSql .= sprintf(" %s ='%s' AND", static::TABLE . '.' . static::addQuote($k), $v);
                 }
+
                 $whereSql = substr($whereSql, 0, -4); // we remove the last ' ANDº';
             } else {
                 $whereSql = null;
             }
+
             $currentQuery->select($columnSQL)->from($fromSQL)->where($whereSql);
             $useCache = $currentQuery->useCache;
             $currentQuery->useCache = false;
@@ -1239,13 +1242,13 @@ abstract class _BasePdoOneRepo
      * @return array|bool It returns false if not file is found.
      * @throws Exception
      */
-    public static function first($pk = PdoOne::NULL)
+    public static function first($pk = PdoOne::NULL,?PdoOneQuery $query=null)
     {
         if (static::$useModel) {
             /** @noinspection PhpUndefinedMethodInspection */
-            return static::fromArray(self::_first($pk));
+            return static::fromArray(self::_first($pk,$query));
         }
-        return self::_first($pk);
+        return self::_first($pk,$query);
     }
 
     /**
@@ -1281,11 +1284,15 @@ abstract class _BasePdoOneRepo
     }
 
     /**
-     * It converts an associative array with columns (alias) to database columns
+     * It converts an associative array with columns (alias) to database columns<br>
+     * If iswhere and aliasrows does not contain '/' or '.', then is converted to aliascolumn  => table.dbcolumn
+     *
      * @param array $aliasRows
+     * @param bool  $isWhere (false by default). if true, then it convers the column considering the input is used
+     *                       in a "where".
      * @return array
      */
-    public static function convertAliasToDB($aliasRows): array
+    public static function convertAliasToDB($aliasRows,$isWhere=false): array
     {
         $db = [];
         $aliasCol = static::ALIAS2COL;
@@ -1294,9 +1301,10 @@ abstract class _BasePdoOneRepo
                 // /_relation/column
                 $key = static::transformAliasTosql($keyAlias);
                 $db[$key] = $value;
-            } else {
+            } else if (strpos($keyAlias, '.') === false) {
                 // alias=>real column
                 if (strpos($keyAlias, '_') === 0) {
+                    // _column
                     $findKey = false;
                     foreach (static::DEFFK as $key => $val) {
                         if ($val['alias'] === $keyAlias && $val['key'] !== 'FOREIGN KEY') {
@@ -1306,7 +1314,11 @@ abstract class _BasePdoOneRepo
                     }
                     // $findKey = isset(static::DEFFK[$keyAlias]) ? $keyAlias : false;
                 } else {
+                    // column
                     $findKey = $aliasCol[$keyAlias] ?? false;
+                    if ($isWhere && $findKey!==false) {
+                        $findKey = static::addQuote(static::TABLE) . '.' .$findKey;
+                    }
                 }
                 if ($findKey !== false) {
                     $db[$findKey] = $value;
@@ -1872,6 +1884,7 @@ abstract class _BasePdoOneRepo
         if ($entityAlias === null) {
             throw new RuntimeException('Unable to insert an empty entity');
         }
+
         $pdoOneQuery = $newQuery === true ? new PdoOneQuery(static::getPdoOne(), static::class) : self::getQuery();
         try {
             $entityAlias=(static::ME)::convertInputVal($entityAlias);

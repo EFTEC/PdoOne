@@ -14,10 +14,10 @@
     "namespace": null,
     "savegen": "yes",
     "tables": null,
-    "tablescolumns": null,
-    "tablecommand": null,
-    "convertionselected": "",
-    "convertionnewvalue": "convert an human readable date to SQL",
+    "tablescolumns": "",
+    "tablecommand": "",
+    "convertionselected": null,
+    "convertionnewvalue": null,
     "newclassname": null,
     "overridegenerate": null,
     "tablexclass": {
@@ -85,7 +85,8 @@
             "Name": null,
             "_City": "MANYTOONE",
             "_customerxcategories": "MANYTOMANY",
-            "_invoices": "PARENT"
+            "_invoices": "PARENT",
+            "Flag": null
         },
         "customerxcategories": {
             "Category": null,
@@ -99,7 +100,8 @@
             "Product": null,
             "Quantity": null,
             "_Invoice": "PARENT",
-            "_Product": "MANYTOONE"
+            "_Product": "MANYTOONE",
+            "Flag": null
         },
         "invoices": {
             "Customer": null,
@@ -108,7 +110,8 @@
             "Total": null,
             "_Customer": "MANYTOONE",
             "_invoicedetails": "ONETOMANY",
-            "_invoicextypes": "MANYTOMANY"
+            "_invoicextypes": "MANYTOMANY",
+            "Flag": null
         },
         "products": {
             "City": null,
@@ -116,7 +119,8 @@
             "_City": "MANYTOONE",
             "_invoicedetails": "PARENT",
             "Name": null,
-            "unitPrice": null
+            "unitPrice": null,
+            "Flag": null
         },
         "cities": {
             "IdCity": null,
@@ -133,7 +137,8 @@
         "invoicetypes": {
             "IdInvoiceType": null,
             "NameType": null,
-            "_invoicextypes": "ONETOMANY"
+            "_invoicextypes": "ONETOMANY",
+            "Flag": null
         },
         "invoicextypes": {
             "IdInvoice": null,
@@ -166,7 +171,8 @@
             "Product": "Product",
             "Quantity": "Quantity",
             "_Invoice": "_Invoice",
-            "_Product": "_Product"
+            "_Product": "_Product",
+            "Flag": "Flag"
         },
         "invoices": {
             "Customer": "Customer",
@@ -175,7 +181,8 @@
             "Total": "Total",
             "_Customer": "_InvCustomer",
             "_invoicedetails": "_Details",
-            "_invoicextypes": "_Types"
+            "_invoicextypes": "_Types",
+            "Flag": "FlagAlias"
         },
         "products": {
             "City": "Ciudad",
@@ -183,7 +190,8 @@
             "Name": "Name",
             "unitPrice": "unitPrice",
             "_City": "_CiudadRef",
-            "_invoicedetails": "_invoicedetails"
+            "_invoicedetails": "_invoicedetails",
+            "Flag": "Flag"
         },
         "customers": {
             "City": "City",
@@ -192,7 +200,8 @@
             "Name": "Name",
             "_City": "_City",
             "_customerxcategories": "_customerxcategories",
-            "_invoices": "_invoices"
+            "_invoices": "_invoices",
+            "Flag": "FlagAlias"
         },
         "users": {
             "fullname": "fullname",
@@ -203,7 +212,8 @@
         "invoicetypes": {
             "IdInvoiceType": "NumInvoiceType",
             "NameType": "NameType",
-            "_invoicextypes": "_invoicextypes"
+            "_invoicextypes": "_invoicextypes",
+            "Flag": "Flag"
         },
         "invoicextypes": {
             "IdInvoice": "Col1X",

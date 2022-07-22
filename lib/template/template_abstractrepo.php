@@ -291,12 +291,12 @@ abstract class Abstract{classname} extends {baseclass}
     * @return array|bool It returns false if not file is found.
     * @throws Exception
     */
-    public static function first($pk = PdoOne::NULL) {
+    public static function first($pk = PdoOne::NULL,?PdoOneQuery $query=null) {
         if(self::$useModel) {
             /** @noinspection PhpIncompatibleReturnTypeInspection */
             return {classmodelfirst}
         }
-        return self::_first($pk);
+        return self::_first($pk,$query);
     }
 
     /**
@@ -327,7 +327,7 @@ abstract class Abstract{classname} extends {baseclass}
     * @throws Exception
     */
     public static function insert(&$entity,$transactional=true) {
-        return self::_insert($entity,$transactional);
+        return self::_insert($entity,$transactional,true);
     }
 
     /**

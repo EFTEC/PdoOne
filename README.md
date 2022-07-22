@@ -2035,6 +2035,8 @@ In a nutshell:
 >
 > Every decimal version means that it patches/fixes/refactoring a previous functionality i.e. 1.5.0 -> 1.5.1 (fix)
 
+* 3.8 2022-07-22
+  * [ORM] fixed a problem when where is used and more than two column (different tables) use the same name of column. 
 * 3.7 2022-07-16 
   * [ORM] fixed a problem with first
   * [ORM] fixed a problem with insert and conversion of columns
