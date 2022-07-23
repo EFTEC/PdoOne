@@ -26,11 +26,11 @@ use stdClass;
  * @package       eftec
  * @author        Jorge Castro Castillo
  * @copyright (c) Jorge Castro C. Dual Licence: MIT and Commercial License  https://github.com/EFTEC/PdoOne
- * @version       3.8.1
+ * @version       3.9
  */
 class PdoOne
 {
-    public const VERSION = '3.8.1';
+    public const VERSION = '3.9';
     /** @var int We need this value because null and false could be a valid value. */
     public const NULL = PHP_INT_MAX;
     /** @var string Prefix of the tables */
@@ -1470,7 +1470,7 @@ class PdoOne
         if (!$this->logFile) {
             return; // debug file is disabled.
         }
-        $maxl=200*1024*1024; // 200mb
+        $maxl = 200 * 1024 * 1024; // 200mb
         if (is_object($txt) || is_array($txt)) {
             $txtW = print_r($txt, true);
         } else {
@@ -1479,16 +1479,16 @@ class PdoOne
         if ($this->logLevel === 2) {
             $txtW .= ' param:' . json_encode($this->lastParam);
         }
-        if($level==='INFO') {
-            $errorfile=ini_get('error_log');
-            if($errorfile) {
-                $infoFile=str_replace('.','_warning.',$errorfile);
-                if(@filesize($infoFile)>$maxl) {
+        if ($level === 'INFO') {
+            $errorfile = ini_get('error_log');
+            if ($errorfile) {
+                $infoFile = str_replace('.', '_warning.', $errorfile);
+                if (@filesize($infoFile) > $maxl) {
                     $fp = @fopen($infoFile, 'wb');
                     @fclose($fp);
                 }
                 /** @noinspection ForgottenDebugOutputInspection */
-                error_log('['.date("M d H:i:s")."] [PdoOne]\t[$level]\t$txtW\n\n", 3,$infoFile);
+                error_log('[' . date("M d H:i:s") . "] [PdoOne]\t[$level]\t$txtW\n\n", 3, $infoFile);
             } else {
                 /** @noinspection ForgottenDebugOutputInspection */
                 error_log("[PdoOne]\t[$level]\t" . $txtW);
@@ -3359,7 +3359,7 @@ class PdoOne
         $logs = [];
         try {
             $classCode = $this->generateBaseClass($baseClass, $namespace, $relationsRepo, $useModel);
-            $result = @file_put_contents($folder . $baseClass . '.php', $classCode);
+            $result = self::saveFile($folder . $baseClass . '.php', $classCode);
         } catch (Exception $exception) {
             $result = false;
         }
@@ -3379,7 +3379,7 @@ class PdoOne
                 $columnRem = $columnRemoves[$tableName] ?? [];
                 $classCode1 = $this->generateAbstractRepo($tableName, $namespace, $custom, $relationsRepo, [], null, null,
                     $baseClass, $modelname, $extraCols, $columnRem, $aliases ?? []);
-                $result = @file_put_contents($folder . "Abstract$className.php", $classCode1);
+                $result = self::saveFile($folder . "Abstract$className.php", $classCode1);
             } catch (Exception $e) {
                 $result = false;
             }
@@ -3404,7 +3404,7 @@ class PdoOne
             if ($useModel) {
                 try {
                     //$custom = (isset($customRelation[$tableName])) ? $customRelation[$tableName] : [];
-                    $result = @file_put_contents($folderModel . 'Abstract' . $relationsModel[$tableName] . '.php',
+                    $result = self::saveFile($folderModel . 'Abstract' . $relationsModel[$tableName] . '.php',
                         $classModel1);
                 } catch (Exception $e) {
                     $result = false;
@@ -3418,7 +3418,7 @@ class PdoOne
                     $classModel1 = $this->generateModelClass($tableName, $namespaceModel, $custom, $relationsModel, [],
                         null, null, $baseClass);
                     if ($force || @!file_exists($filename)) {
-                        $result = @file_put_contents($filename, $classModel1);
+                        $result = self::saveFile($filename, $classModel1);
                     } else {
                         $logs[] = "Warning: Unable to save Model Class file '$filename', file already exist, skipped";
                     }
@@ -3440,7 +3440,7 @@ class PdoOne
                 );
                 if ($force || @!file_exists($filename)) {
                     // if the file exists then, we don't want to replace this class
-                    $result = @file_put_contents($filename, $classCode2);
+                    $result = self::saveFile($filename, $classCode2);
                 } else {
                     $logs[] = "Warning: Unable to save Repo Class file '$folder$className.php', file already exist, skipped";
                 }
@@ -3480,7 +3480,131 @@ class PdoOne
         return substr($template, strpos($template, "\n") + 1);
     }
 
-    public function generateBaseClass($baseClassName, $namespace, $classes, $modelUse = false)
+    /**
+     * @param string      $filename
+     * @param string|null $content
+     * @return false|int
+     */
+    public static function saveFile(string $filename,?string $content) {
+        try {
+            $content = self::mixFiles($filename, $content);
+            $f = @file_put_contents($filename, $content);
+        } catch (Exception $e) {
+            return false;
+        }
+        return $f;
+    }
+    /**
+     * Mix a filename with a new content while keeping part of the old code<br>
+     * It keeps the lines of the filename that are in betweeen "// [EDIT:type]" and "// [/EDIT]"<br>
+     * The new content has priority, i.e. if the old content has more [EDIT] blocks than the new content,
+     * then the old blocks are discarded.<br>
+     * If the old content few more [EDIT] blocks than the new content, then it keeps the block in new content<br>
+     * <b>Example</b>
+     * newcontent:<br>
+     * <pre>
+     * init
+     * // [EDIT:c1]
+     * ccc
+     * // [/EDIT]
+     * end
+     * </pre>
+     * filename content:<br>
+     * <pre>
+     * init modified
+     * // [EDIT:c1]
+     * modified
+     * // [/EDIT]
+     * end modified
+     * </pre>
+     * result:<br>
+     * <pre>
+     * init
+     * // [EDIT:c1]
+     * modified
+     * // [/EDIT]
+     * end
+     * </pre>
+     *
+     * @param string      $filename   The full filename of the old archive. If the archive doesn't exist,
+     *                                then it keeps the new content
+     * @param string|null $newContent The new content to mix with the content of the filename.
+     * @return string
+     */
+    public static function mixFiles(string $filename, ?string $newContent): string
+    {
+        if ($newContent === '' || $newContent === null) {
+            return '';
+        }
+        $newContent = str_replace("\r\n", "\n", $newContent);
+        if (@!file_exists($filename)) {
+            // nothing changed
+            return $newContent;
+        }
+        $oldContent = @file_get_contents($filename);
+        if ($oldContent === false) {
+            throw new RuntimeException("Unable to open $filename");
+        }
+        $oldContent = str_replace("\r\n", "\n", $oldContent);
+        $lines = explode("\n", $oldContent);
+        $oldValues = [];
+        $name = '';
+        foreach ($lines as $line) {
+            if (strpos($line, "// [EDIT:") !== false) {
+                $p0 = strpos($line, "// [EDIT:") + strlen("// [EDIT:");
+                $p1 = strpos($line, ']', $p0);
+                $name = substr($line, $p0, $p1 - $p0);
+                $oldValues[$name] = '';
+                continue;
+            }
+            if (strpos($line, "// [/EDIT]") !== false) {
+                $name = '';
+                continue;
+            }
+            if ($name !== '') {
+                $oldValues[$name] .= $line . "\n";
+            }
+        }
+        $name = '';
+        $newValues = [];
+        $lines = explode("\n", $newContent);
+        $isReplacing = false;
+        foreach ($lines as $line) {
+            if (strpos($line, "// [EDIT:") !== false) {
+                $p0 = strpos($line, "// [EDIT:") + strlen("// [EDIT:");
+                $p1 = strpos($line, ']', $p0);
+                $name = substr($line, $p0, $p1 - $p0);
+                if (isset($oldValues[$name])) {
+                    // content exists in the previous file, so we replace it
+                    $newValues[] = $line;
+                    $newValues[] = rtrim($oldValues[$name], "\n");
+                    // and we mark as no continue to add lines until the end of the edit
+                    $isReplacing = true;
+                } else {
+                    // content doesn't exist in previous file
+                    $name = '';
+                    $isReplacing = false;
+                }
+            }
+            if (strpos($line, "// [/EDIT]") !== false) {
+                // end of the edit
+                $name = '';
+                $isReplacing = false;
+            }
+            if ($name === '') {
+                // normal line, add to newValues
+                $newValues[] = $line;
+            } else if (!$isReplacing) {
+                // maybe it is never called.
+                $newValues[] = $line;
+            }
+        }
+        return implode("\n", $newValues);
+    }
+
+
+    public
+    function generateBaseClass($baseClassName, $namespace, $classes, $modelUse = false)
     {
         $filename = __DIR__ . '/template/template_base.php';
         $r = $this->phpstart . $this->openTemplate($filename);
@@ -3514,9 +3638,8 @@ class PdoOne
         ], $r);
     }
 
-
-    //</editor-fold>
-    //<editor-fold desc="Log functions" defaultstate="collapsed" >
+//</editor-fold>
+//<editor-fold desc="Log functions" defaultstate="collapsed" >
     /**
      * @param string $tableName
      * @param string $namespace
@@ -3533,7 +3656,8 @@ class PdoOne
      * @throws Exception
      * @noinspection PhpUnnecessaryCurlyVarSyntaxInspection
      */
-    public function generateAbstractModelClass(
+    public
+    function generateAbstractModelClass(
         string $tableName,
         string $namespace = '',
                $customRelation = null,
@@ -3771,7 +3895,8 @@ class PdoOne
      * @throws Exception
      * @noinspection PhpUnnecessaryCurlyVarSyntaxInspection
      */
-    public function generateModelClass(
+    public
+    function generateModelClass(
         string $tableName,
         string $namespace = '',
                $customRelation = null,
@@ -4039,10 +4164,10 @@ class PdoOne
         return $r;
     }
 
-
-    //</editor-fold>
-    //<editor-fold desc="cli functions" defaultstate="collapsed" >
-    public function generateCodeClassRepo(
+//</editor-fold>
+//<editor-fold desc="cli functions" defaultstate="collapsed" >
+    public
+    function generateCodeClassRepo(
         $tableName,
         $namespace = '',
         $classRelations = [],
@@ -4118,7 +4243,8 @@ class PdoOne
      *
      * @see \eftec\PdoOne::setUseInternalCache
      */
-    public function flushInternalCache(bool $useInternalCache = false): void
+    public
+    function flushInternalCache(bool $useInternalCache = false): void
     {
         $this->internalCacheCounter = 0;
         $this->internalCache = [];
@@ -4139,7 +4265,8 @@ class PdoOne
      *
      * @return void.
      */
-    public function setCache(string $uid, $family = '', $data = null, $ttl = null): void
+    public
+    function setCache(string $uid, $family = '', $data = null, $ttl = null): void
     {
         if ($family === '*') {
             $family = $this->tables;
@@ -4164,7 +4291,8 @@ class PdoOne
      * @return $this
      * @see \eftec\PdoOneEncryption::$hashType
      */
-    public function invalidateCache($uid = '', $family = ''): PdoOne
+    public
+    function invalidateCache($uid = '', $family = ''): PdoOne
     {
         if ($this->cacheService !== null) {
             if ($family === '*') {
@@ -4182,7 +4310,8 @@ class PdoOne
      *
      * @return int
      */
-    public function affected_rows($stmt = null): int
+    public
+    function affected_rows($stmt = null): int
     {
         if ($stmt instanceof PDOStatement && !$this->isOpen) {
             return $stmt->rowCount();
@@ -4197,7 +4326,8 @@ class PdoOne
      *
      * @return int|bool a number or 0 if it is not found
      */
-    public function insert_id(?string $sequenceName = null)
+    public
+    function insert_id(?string $sequenceName = null)
     {
         if (!$this->isOpen) {
             return -1;
@@ -4209,7 +4339,8 @@ class PdoOne
     /**
      * @return IPdoOneCache|null
      */
-    public function getCacheService(): ?object
+    public
+    function getCacheService(): ?object
     {
         return $this->cacheService;
     }
@@ -4221,7 +4352,8 @@ class PdoOne
      *
      * @return $this
      */
-    public function setCacheService(?object $cacheService): PdoOne
+    public
+    function setCacheService(?object $cacheService): PdoOne
     {
         $this->cacheService = $cacheService;
         return $this;
@@ -4245,7 +4377,8 @@ class PdoOne
      * @throws Exception
      * @test void this('123','somesalt','AES-256-CTR')
      */
-    public function setEncryption($password, string $salt, string $encMethod = 'AES-256-CTR'): PdoOne
+    public
+    function setEncryption($password, string $salt, string $encMethod = 'AES-256-CTR'): PdoOne
     {
         $this->beginTry();
         if (!extension_loaded('openssl')) {
@@ -4270,7 +4403,8 @@ class PdoOne
      * @return int|string|null
      * @see \eftec\PdoOneEncryption::encrypt
      */
-    public function encrypt($data)
+    public
+    function encrypt($data)
     {
         return $this->encryption->encrypt($data);
     }
@@ -4280,7 +4414,8 @@ class PdoOne
      * @param mixed $data It could be any type of serializable data.
      * @return false|string If the serialization is not set, then it returns the same value.
      */
-    public function hash($data)
+    public
+    function hash($data)
     {
         return $this->encryption->hash($data);
     }
@@ -4294,12 +4429,14 @@ class PdoOne
      * @see \eftec\PdoOneEncryption::decrypt
      * @see https://www.php.net/manual/en/function.openssl-get-cipher-methods.php
      */
-    public function decrypt($data)
+    public
+    function decrypt($data)
     {
         return $this->encryption->decrypt($data);
     }
 
-    public function render(): void
+    public
+    function render(): void
     {
         if ($this->logLevel) {
             ob_clean();
@@ -4572,7 +4709,8 @@ TEM1;
         }
     }
 
-    public function bootstrapcss(): string
+    public
+    function bootstrapcss(): string
     {
         return <<<BOOTS
     	<style>
@@ -4581,7 +4719,8 @@ html{font-family:sans-serif;-webkit-text-size-adjust:100%;-ms-text-size-adjust:1
 BOOTS;
     }
 
-    private function runUtilCombo($array, $select): string
+    private
+    function runUtilCombo($array, $select): string
     {
         $r = '';
         foreach ($array as $item) {
@@ -4601,7 +4740,8 @@ BOOTS;
      * @return bool
      * @throws Exception
      */
-    public function dropTable(string $tableName, string $extra = ''): bool
+    public
+    function dropTable(string $tableName, string $extra = ''): bool
     {
         $this->beginTry();
         $r = $this->drop($tableName, 'table', $extra);
@@ -4621,7 +4761,8 @@ BOOTS;
      * @return bool
      * @throws Exception
      */
-    public function drop(string $objectName, string $type, string $extra = ''): bool
+    public
+    function drop(string $objectName, string $type, string $extra = ''): bool
     {
         $this->beginTry();
         $sql = "drop $type " . $this->addDelimiter($objectName) . " $extra";
@@ -4641,7 +4782,8 @@ BOOTS;
      * @return array|bool
      * @throws Exception
      */
-    public function truncate(string $tableName, string $extra = '', bool $forced = false)
+    public
+    function truncate(string $tableName, string $extra = '', bool $forced = false)
     {
         $this->beginTry();
         $r = $this->service->truncate($tableName, $extra, $forced);
@@ -4664,7 +4806,8 @@ BOOTS;
      *                              $this->errorText
      * @throws Exception
      */
-    public function callProcedure(string $procName, array &$arguments = [], array $outputColumns = [])
+    public
+    function callProcedure(string $procName, array &$arguments = [], array $outputColumns = [])
     {
         $this->beginTry();
         try {
@@ -4687,7 +4830,8 @@ BOOTS;
      * @return array|bool|null
      * @throws Exception
      */
-    public function resetIdentity(string $tableName, int $newValue = 0)
+    public
+    function resetIdentity(string $tableName, int $newValue = 0)
     {
         $this->beginTry();
         $r = $this->service->resetIdentity($tableName, $newValue);
@@ -4712,7 +4856,8 @@ BOOTS;
      * @return bool
      * @throws Exception
      */
-    public function createSequence(?string $tableSequence = null, string $method = 'snowflake'): bool
+    public
+    function createSequence(?string $tableSequence = null, string $method = 'snowflake'): bool
     {
         $this->beginTry();
         $tableSequence = $tableSequence ?? $this->tableSequence;
@@ -4758,7 +4903,8 @@ BOOTS;
      * @return false|int
      * @throws Exception
      */
-    public function createProcedure(string $procedureName, $arguments = [], string $body = '', string $extra = '')
+    public
+    function createProcedure(string $procedureName, $arguments = [], string $body = '', string $extra = '')
     {
         $this->beginTry();
         $sql = $this->service->createProcedure($procedureName, $arguments, $body, $extra);
@@ -4806,7 +4952,8 @@ BOOTS;
      * @return bool
      * @throws Exception
      */
-    public function createTable(
+    public
+    function createTable(
         string  $tableName,
         array   $definition,
                 $primaryKey = null,
@@ -4839,7 +4986,8 @@ BOOTS;
      * @param array $simpledef
      * @return array
      */
-    protected function convertUniversal(array $simpledef): array
+    protected
+    function convertUniversal(array $simpledef): array
     {
         $result = [];
         foreach ($simpledef as $v) {
@@ -4873,7 +5021,8 @@ BOOTS;
      * @return bool
      * @throws Exception
      */
-    public function runMultipleRawQuery($listSql, bool $continueOnError = false): bool
+    public
+    function runMultipleRawQuery($listSql, bool $continueOnError = false): bool
     {
         $this->beginTry();
         if (!$this->isOpen) {
@@ -4935,7 +5084,8 @@ BOOTS;
      * @return bool
      * @throws Exception
      */
-    public function createFK(string $tableName, array $definitions): bool
+    public
+    function createFK(string $tableName, array $definitions): bool
     {
         $this->beginTry();
         $sql = $this->service->createFK($tableName, $definitions);
@@ -4956,7 +5106,8 @@ BOOTS;
      * @return bool true if the operation was successful, otherwise false.
      * @throws Exception
      */
-    public function createIndex(string $tableName, array $definitions): bool
+    public
+    function createIndex(string $tableName, array $definitions): bool
     {
         $this->beginTry();
         $sql = $this->service->createIndex($tableName, $definitions);
@@ -4972,7 +5123,8 @@ BOOTS;
      *
      * @test void this('travisdb')
      */
-    public function db($dbName): void
+    public
+    function db($dbName): void
     {
         $this->beginTry();
         if (!$this->isOpen) {
@@ -4992,7 +5144,8 @@ BOOTS;
      * @return bool
      * @test equals false,this(),'the database is read only'
      */
-    public function readonly(): bool
+    public
+    function readonly(): bool
     {
         return $this->readonly;
     }
@@ -5005,7 +5158,8 @@ BOOTS;
      * @test exception this(false)
      * @see  PdoOne::connect()
      */
-    public function open(bool $failIfConnected = true, bool $alterSession = false): void
+    public
+    function open(bool $failIfConnected = true, bool $alterSession = false): void
     {
         $this->connect($failIfConnected, $alterSession);
     }
@@ -5015,7 +5169,8 @@ BOOTS;
      *
      * @test void this()
      */
-    public function close(): void
+    public
+    function close(): void
     {
         $this->isOpen = false;
         if ($this->conn1 === null) {
@@ -5031,7 +5186,8 @@ BOOTS;
      * @param string|null $pkDefault The default pk if the key is not found.
      * @return array|false|mixed|string
      */
-    public function getPK(string $table, ?string $pkDefault = null)
+    public
+    function getPK(string $table, ?string $pkDefault = null)
     {
         $this->beginTry();
         $r = $this->service->getPK($table, $pkDefault);
@@ -5059,7 +5215,8 @@ BOOTS;
      * @return string . Example string(19) "3639032938181434317"
      * @throws Exception
      */
-    public function getSequence(
+    public
+    function getSequence(
         bool   $asFloat = false,
         bool   $unpredictable = false,
         string $sequenceName = ''
@@ -5094,7 +5251,8 @@ BOOTS;
      * @return string
      * @see \eftec\PdoOne::getSequence
      */
-    public function getSequencePHP(bool $unpredictable = false): string
+    public
+    function getSequencePHP(bool $unpredictable = false): string
     {
         $ms = microtime(true);
         //$ms=1000;
@@ -5124,7 +5282,8 @@ BOOTS;
      *
      * @return array|string|string[]
      */
-    public function getUnpredictable($number)
+    public
+    function getUnpredictable($number)
     {
         $string = '' . $number;
         $maskSize = count($this->masks0);
@@ -5147,7 +5306,8 @@ BOOTS;
      * @see \eftec\PdoOne::$masks0
      * @see \eftec\PdoOne::$masks1
      */
-    public function getUnpredictableInv($number)
+    public
+    function getUnpredictableInv($number)
     {
         $maskSize = count($this->masks0);
         for ($i = $maskSize - 1; $i >= 0; $i--) {
@@ -5168,7 +5328,8 @@ BOOTS;
      * @return bool true if the table exist
      * @throws Exception
      */
-    public function tableExist(string $tableName): bool
+    public
+    function tableExist(string $tableName): bool
     {
         $this->beginTry();
         $r = $this->objectExist($tableName);
@@ -5186,7 +5347,8 @@ BOOTS;
      * @return bool
      * @throws Exception
      */
-    public function objectExist(string $objectName, string $type = 'table'): bool
+    public
+    function objectExist(string $objectName, string $type = 'table'): bool
     {
         $this->beginTry();
         $query = $this->service->objectExist($type);
@@ -5217,7 +5379,8 @@ BOOTS;
      * @return array List of table.
      * @throws Exception
      */
-    public function tableSorted(int $maxLoop = 5, bool $returnProblems = false, bool $debugTrace = false): array
+    public
+    function tableSorted(int $maxLoop = 5, bool $returnProblems = false, bool $debugTrace = false): array
     {
         $this->beginTry();
         [$tables, $after, $before] = $this->tableDependency();
@@ -5239,9 +5402,8 @@ BOOTS;
         return $tableSorted;
     }
 
-
-    //</editor-fold>
-    //<editor-fold desc="chain calls">
+//</editor-fold>
+//<editor-fold desc="chain calls">
     /**
      * Resort the tableSorted list based in dependencies.
      *
@@ -5258,7 +5420,8 @@ BOOTS;
      *
      * @return bool true if the sort is finished and there is nothing wrong.
      */
-    protected function reSort(
+    protected
+    function reSort(
         array $tables,
         array &$tableSorted,
         array $after,
@@ -5340,7 +5503,8 @@ BOOTS;
      *                    ['min','max','avg','sum','count']
      * @throws Exception
      */
-    public function statValue(string $tableName, string $columnName)
+    public
+    function statValue(string $tableName, string $columnName)
     {
         $this->beginTry();
         $query = "select min($columnName) min
@@ -5362,7 +5526,8 @@ BOOTS;
      * @return array|bool=['colname','coltype','colsize','colpres','colscale','iskey','isidentity','isnullable']
      * @throws Exception
      */
-    public function columnTable(string $tableName)
+    public
+    function columnTable(string $tableName)
     {
         $this->beginTry();
         $query = $this->service->columnTable($tableName);
@@ -5379,7 +5544,8 @@ BOOTS;
      * @return array|bool
      * @throws Exception
      */
-    public function foreignKeyTable(string $tableName)
+    public
+    function foreignKeyTable(string $tableName)
     {
         $this->beginTry();
         $query = $this->service->foreignKeyTable($tableName);
@@ -5395,14 +5561,16 @@ BOOTS;
      *
      * @return bool
      */
-    public function isQuery(string $sql): bool
+    public
+    function isQuery(string $sql): bool
     {
         $sql = trim($sql);
         return (stripos($sql, 'select ') === 0 || stripos($sql, 'show ') === 0);
     }
 
     /** @noinspection TypeUnsafeComparisonInspection */
-    public function filterKey($condition, $columns, $returnSimple)
+    public
+    function filterKey($condition, $columns, $returnSimple)
     {
         if ($condition === null) {
             // no filter.
@@ -5442,7 +5610,8 @@ BOOTS;
      * @return false|int|string Returns the identity (if any) or false if the operation fails.
      * @throws Exception
      */
-    public function insert(
+    public
+    function insert(
         ?string $tableName = null,
         ?array  $tableDef = null,
                 $values = PdoOne::NULL
@@ -5468,7 +5637,8 @@ BOOTS;
      * @return array|bool
      * @throws Exception
      */
-    public function toMeta(?string $sql = null, array $args = [])
+    public
+    function toMeta(?string $sql = null, array $args = [])
     {
         $this->beginTry();
         $query = new PdoOneQuery($this);
@@ -5488,7 +5658,8 @@ BOOTS;
      * @return PdoOneQuery
      * @see \eftec\PdoOne::$errorText
      */
-    public function genError(bool $error = false): PdoOneQuery
+    public
+    function genError(bool $error = false): PdoOneQuery
     {
         return (new PdoOneQuery($this))->genError($error);
     }
@@ -5509,7 +5680,8 @@ BOOTS;
      * @return float|int
      * @throws Exception
      */
-    public function min(string $sql = '', string $arg = '')
+    public
+    function min(string $sql = '', string $arg = '')
     {
         return (new PdoOneQuery($this))->_aggFn('min', $sql, $arg);
     }
@@ -5533,7 +5705,8 @@ BOOTS;
      * @return int|float
      * @throws Exception
      */
-    public function count(?string $sql = '', string $arg = '*')
+    public
+    function count(?string $sql = '', string $arg = '*')
     {
         return (new PdoOneQuery($this))->_aggFn('count', $sql, $arg);
     }
@@ -5555,7 +5728,8 @@ BOOTS;
      * @return float|int
      * @throws Exception
      */
-    public function sum(string $sql = '', string $arg = '')
+    public
+    function sum(string $sql = '', string $arg = '')
     {
         return (new PdoOneQuery($this))->_aggFn('sum', $sql, $arg);
     }
@@ -5576,7 +5750,8 @@ BOOTS;
      * @return float|int
      * @throws Exception
      */
-    public function max(string $sql = '', string $arg = '')
+    public
+    function max(string $sql = '', string $arg = '')
     {
         return (new PdoOneQuery($this))->_aggFn('max', $sql, $arg);
     }
@@ -5597,7 +5772,8 @@ BOOTS;
      * @return float|int
      * @throws Exception
      */
-    public function avg(string $sql = '', string $arg = '')
+    public
+    function avg(string $sql = '', string $arg = '')
     {
         return (new PdoOneQuery($this))->_aggFn('avg', $sql, $arg);
     }
@@ -5621,7 +5797,8 @@ BOOTS;
      * @return PdoOneQuery
      * @test InstanceOf PdoOne::class,this('table t1')
      */
-    public function from(string $sql, ?string $schema = null): PdoOneQuery
+    public
+    function from(string $sql, ?string $schema = null): PdoOneQuery
     {
         return (new PdoOneQuery($this))->from($sql, $schema);
     }
@@ -5640,7 +5817,8 @@ BOOTS;
      * @return false|int
      * @throws Exception
      */
-    public function insertObject(string $tableName, &$object, array $excludeColumn = [])
+    public
+    function insertObject(string $tableName, &$object, array $excludeColumn = [])
     {
         return (new PdoOneQuery($this))->insertObject($tableName, $object, $excludeColumn);
     }
@@ -5662,7 +5840,8 @@ BOOTS;
      * @return false|int If successes then it returns the number of rows deleted.
      * @throws Exception
      */
-    public function delete(
+    public
+    function delete(
         ?string $tableName = null,
         ?array  $tableDefWhere = null,
                 $valueWhere = PdoOne::NULL
@@ -5694,7 +5873,8 @@ BOOTS;
      * @return false|int
      * @throws Exception
      */
-    public function update(
+    public
+    function update(
         ?string $tableName = null,
         ?array  $tableDef = null,
                 $values = PdoOne::NULL,
@@ -5718,7 +5898,8 @@ BOOTS;
      * @return PdoOneQuery
      * @test InstanceOf PdoOne::class,this('table2 on table1.t1=table2.t2')
      */
-    public function right(string $sql): PdoOneQuery
+    public
+    function right(string $sql): PdoOneQuery
     {
         return (new PdoOneQuery($this))->right($sql);
     }
@@ -5738,7 +5919,8 @@ BOOTS;
      * @return PdoOneQuery
      * @test InstanceOf PdoOne::class,this('table2 on table1.t1=table2.t2')
      */
-    public function left(string $sql): PdoOneQuery
+    public
+    function left(string $sql): PdoOneQuery
     {
         return (new PdoOneQuery($this))->left($sql);
     }
@@ -5771,7 +5953,8 @@ BOOTS;
      * @test InstanceOf
      *       PdoOne::class,this('field1=?,field2=?',[20,'hello'])
      */
-    public function where($sql, $param = PdoOne::NULL, bool $isHaving = false, ?string $tablePrefix = null): PdoOneQuery
+    public
+    function where($sql, $param = PdoOne::NULL, bool $isHaving = false, ?string $tablePrefix = null): PdoOneQuery
     {
         return (new PdoOneQuery($this))->where($sql, $param, $isHaving, $tablePrefix);
     }
@@ -5798,7 +5981,8 @@ BOOTS;
      * @test InstanceOf
      *       PdoOne::class,this('field1=?,field2=?',[20,'hello'])
      */
-    public function having($sql, $param = PdoOne::NULL): PdoOneQuery
+    public
+    function having($sql, $param = PdoOne::NULL): PdoOneQuery
     {
         return (new PdoOneQuery($this))->having($sql, $param);
     }
@@ -5817,7 +6001,8 @@ BOOTS;
      * @return PdoOneQuery
      * @test InstanceOf PdoOne::class,this('tablejoin on t1.field=t2.field')
      */
-    public function join(string $sql, string $condition = ''): PdoOneQuery
+    public
+    function join(string $sql, string $condition = ''): PdoOneQuery
     {
         return (new PdoOneQuery($this))->join($sql, $condition);
     }
@@ -5832,7 +6017,8 @@ BOOTS;
      * @return PdoOneQuery
      * @test InstanceOf PdoOne::class,this('fieldgroup')
      */
-    public function group(string $sql): PdoOneQuery
+    public
+    function group(string $sql): PdoOneQuery
     {
         return (new PdoOneQuery($this))->group($sql);
     }
@@ -5850,13 +6036,14 @@ BOOTS;
      * @return PdoOneQuery
      * @test InstanceOf PdoOne::class,this('name desc')
      */
-    public function order(string $sql): PdoOneQuery
+    public
+    function order(string $sql): PdoOneQuery
     {
         return (new PdoOneQuery($this))->order($sql);
     }
 
-    //</editor-fold>
-    //<editor-fold desc="cli utils">
+//</editor-fold>
+//<editor-fold desc="cli utils">
     /**
      * It adds an "limit" in a query. It depends on the type of database<br>
      * <b>Example:</b><br>
@@ -5870,7 +6057,8 @@ BOOTS;
      * @throws Exception
      * @test InstanceOf PdoOne::class,this('1,10')
      */
-    public function limit(string $sql): PdoOneQuery
+    public
+    function limit(string $sql): PdoOneQuery
     {
         return (new PdoOneQuery($this))->limit($sql);
     }
@@ -5888,7 +6076,8 @@ BOOTS;
      * @return PdoOneQuery
      * @test InstanceOf PdoOne::class,this()
      */
-    public function distinct(string $sql = 'distinct'): PdoOneQuery
+    public
+    function distinct(string $sql = 'distinct'): PdoOneQuery
     {
         return (new PdoOneQuery($this))->distinct($sql);
     }
@@ -5904,7 +6093,8 @@ BOOTS;
      *
      * @return PdoOneQuery
      */
-    public function recursive($rec): PdoOneQuery
+    public
+    function recursive($rec): PdoOneQuery
     {
         return (new PdoOneQuery($this))->recursive($rec);
     }
@@ -5914,7 +6104,8 @@ BOOTS;
      *
      * @return array
      */
-    public function getRecursive(): array
+    public
+    function getRecursive(): array
     {
         return (new PdoOneQuery($this))->getRecursive();
     }
@@ -5947,33 +6138,39 @@ BOOTS;
      *
      * @return PdoOneQuery
      */
-    public function useCache($ttl = 0, $family = ''): PdoOneQuery
+    public
+    function useCache($ttl = 0, $family = ''): PdoOneQuery
     {
         return (new PdoOneQuery($this))->useCache($ttl, $family);
     }
-    //</editor-fold>
-    //<editor-fold desc="key value">
-    protected $tableKV = '';
-    protected $defaultTableKV = '';
 
-    public function setKvDefaultTable($table): PdoOne
+//</editor-fold>
+//<editor-fold desc="key value">
+    protected
+        $tableKV = '';
+    protected
+        $defaultTableKV = '';
+
+    public
+    function setKvDefaultTable($table): PdoOne
     {
         $this->defaultTableKV = $table;
         $this->tableKV = $table;
         return $this;
     }
 
-    public function kv($table): PdoOne
+    public
+    function kv($table): PdoOne
     {
         $this->tableKV = $table;
         return $this;
     }
 
-    protected function resetKVChain(): void
+    protected
+    function resetKVChain(): void
     {
         $this->tableKV = $this->defaultTableKV;
     }
-
 
     /**
      * It creates the table for Key/Value database. If the table exists, or it is unable to create, then it returns
@@ -5981,7 +6178,8 @@ BOOTS;
      * @param bool $memoryKV
      * @return bool
      */
-    public function createTableKV(bool $memoryKV = false): bool
+    public
+    function createTableKV(bool $memoryKV = false): bool
     {
         if ($this->tableKV === '') {
             throw new RuntimeException('CreateTableKV,ou must set the table so you can use it');
@@ -6004,7 +6202,8 @@ BOOTS;
      * @return bool
      * @throws Exception
      */
-    public function dropTableKV(): bool
+    public
+    function dropTableKV(): bool
     {
         if ($this->tableKV === '') {
             throw new RuntimeException('CreateTableKV,ou must set the table so you can use it');
@@ -6019,7 +6218,8 @@ BOOTS;
      * @return mixed The value if found. the valueIfNotfound if not found, or null in case of error.
      * @throws Exception
      */
-    public function getKV(string $key, $valueIfNotFound = null)
+    public
+    function getKV(string $key, $valueIfNotFound = null)
     {
         $sql = "select KEYT,VALUE,TIMESTAMP from $this->tableKV where KEYT=?";
         // ["KEYT"]=> string(5) "hello" ["VALUE"]=> string(13) "it is a value" ["TIMESTAMP"]=> string(19) "2022-02-09 19:08:20"
@@ -6052,7 +6252,8 @@ BOOTS;
      * @return bool
      * @throws Exception
      */
-    public function setKV(string $key, string $value, $timeout = null): bool
+    public
+    function setKV(string $key, string $value, $timeout = null): bool
     {
         $t = time();
         $row = $this->runRawQuery("select 1 from $this->tableKV where KEYT=:KEYT"
@@ -6089,7 +6290,8 @@ BOOTS;
      * @return bool
      * @throws Exception
      */
-    public function garbageCollectorKV(): bool
+    public
+    function garbageCollectorKV(): bool
     {
         try {
             $t = time();
@@ -6108,7 +6310,8 @@ BOOTS;
      * @return bool
      * @throws Exception
      */
-    public function delKV(string $key): bool
+    public
+    function delKV(string $key): bool
     {
         try {
             $this->runRawQuery("delete from $this->tableKV where KEYT=:KEYT", ['KEYT' => $key]);
@@ -6126,7 +6329,8 @@ BOOTS;
      * @return bool
      * @throws Exception
      */
-    public function flushKV(): bool
+    public
+    function flushKV(): bool
     {
         try {
             return $this->runRawQuery("delete from $this->tableKV where 1=1") !== false;
@@ -6145,7 +6349,8 @@ BOOTS;
      * @return bool|null
      * @throws Exception
      */
-    public function existKV(string $key): ?bool
+    public
+    function existKV(string $key): ?bool
     {
         try {
             $t = time();
@@ -6159,7 +6364,5 @@ BOOTS;
         }
         return isset($row[0]);
     }
-
-
-    //</editor-fold>
+//</editor-fold>
 }

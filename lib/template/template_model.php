@@ -13,6 +13,9 @@
 {namespace}
 use eftec\PdoOne;
 {exception}
+// [EDIT:use] you can edit this part
+// Here you can add your custom use
+// [/EDIT] end of edit
 
 /**
  * Class {classname}. Copyright (c) Jorge Castro C. (https://github.com/EFTEC/PdoOne)<br>
@@ -24,6 +27,7 @@ use eftec\PdoOne;
  */
 class {classname} extends Abstract{classname}
 {
-
-
+    // [EDIT:content] you can edit this part
+    // Here you can add your custom content.
+    // [/EDIT] end of edit
 } // end class

@@ -2034,6 +2034,9 @@ In a nutshell:
 > Every minor version means that it adds a new functionality i.e. 1.5 -> 1.6 (new methods)
 >
 > Every decimal version means that it patches/fixes/refactoring a previous functionality i.e. 1.5.0 -> 1.5.1 (fix)
+
+* 3.9  2022-07-23
+  * [ORM] [CLI] Now, you can savely edit some part of the code generated under the comment blocks marked as "EDIT". 
 * 3.8.1 2022-07-23
   * [ORM] fixed another problem with where() when the filter use a named parameter. 
   * [CLI] Exit option exists instantly. And create does not exit.
