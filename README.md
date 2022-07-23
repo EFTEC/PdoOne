@@ -2034,7 +2034,9 @@ In a nutshell:
 > Every minor version means that it adds a new functionality i.e. 1.5 -> 1.6 (new methods)
 >
 > Every decimal version means that it patches/fixes/refactoring a previous functionality i.e. 1.5.0 -> 1.5.1 (fix)
-
+* 3.8.1 2022-07-23
+  * [ORM] fixed another problem with where() when the filter use a named parameter. 
+  * [CLI] Exit option exists instantly. And create does not exit.
 * 3.8 2022-07-22
   * [ORM] fixed a problem when where is used and more than two column (different tables) use the same name of column. 
 * 3.7 2022-07-16 

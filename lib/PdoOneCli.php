@@ -25,11 +25,11 @@ use RuntimeException;
  * @package       eftec
  * @author        Jorge Castro Castillo
  * @copyright (c) Jorge Castro C. Dual Licence: MIT and Commercial License  https://github.com/EFTEC/PdoOne
- * @version       1.2
+ * @version       1.3
  */
 class PdoOneCli
 {
-    public const VERSION = '1.2';
+    public const VERSION = '1.3';
 //</editor-fold>
     /**
      * @var array
@@ -940,7 +940,7 @@ PdoOne: $v  Cli: $vc
                 'type' => 'Configure the conversion of the columns per type',
                 'save' => 'Save the current configuration',
                 'create' => 'Create the PHP repository classes (in non-interactive mode is done automatically)',
-                'exit' => 'Save and exit'])
+                'exit' => 'Exit of the program'])
             ->add();
         $this->cli->createParam('tables')
             ->setDescription('', '')
@@ -1113,7 +1113,7 @@ PdoOne: $v  Cli: $vc
                         );
                         $this->RunCliGenerationSaveConfig();
                         $this->cli->showLine('<green>Done</green>');
-                        break 2;
+                        break;
                     }
                     $this->cli->showCheck('ERROR', 'red', [
                         'you must set the directory and namespace',

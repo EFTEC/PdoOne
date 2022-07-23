@@ -537,6 +537,7 @@ class PdoOneQuery
                         /** @var _BasePdoOneRepo $cls */
                         $cls = $this->ormClass;
                         $where = $cls::convertAliasToDB($where,true);
+
                     }
                     // named  column=:arg
                     foreach ($where as $k => $v) {
@@ -544,10 +545,10 @@ class PdoOneQuery
                             if (strpos($k, ':') !== false) {
                                 // "aaa=:aaa"
                                 $parts = explode(':', $k, 2);
-                                $paramName = ':' . str_replace('.', '_', $parts[1]);
+                                $paramName = ':' . str_replace(['.',$this->parent->database_delimiter0,$this->parent->database_delimiter1], ['_','',''], $parts[1]);
                             } else {
                                 // "aaa"
-                                $paramName = ':' . str_replace('.', '_', $k);
+                                $paramName = ':' . str_replace(['.',$this->parent->database_delimiter0,$this->parent->database_delimiter1], ['_','',''], $k);
                             }
                             $named[] = $paramName;
                         } else {
