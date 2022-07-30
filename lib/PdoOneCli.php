@@ -25,11 +25,11 @@ use RuntimeException;
  * @package       eftec
  * @author        Jorge Castro Castillo
  * @copyright (c) Jorge Castro C. Dual Licence: MIT and Commercial License  https://github.com/EFTEC/PdoOne
- * @version       1.4
+ * @version       1.5
  */
 class PdoOneCli
 {
-    public const VERSION = '1.4';
+    public const VERSION = '1.5';
 //</editor-fold>
     /**
      * @var array
@@ -158,7 +158,7 @@ class PdoOneCli
     public function cliEngine(): void
     {
         $this->cli->createParam('help', 'h', 'longflag')
-            ->setRelated(['common', 'export', 'generate'])
+            ->setRelated(['common', 'export', 'generate','definition'])
             ->setRequired(false)
             ->setAllowEmpty()
             ->setDescription('This help', '', [
@@ -189,11 +189,24 @@ class PdoOneCli
             ->setAllowEmpty()
             ->setDescription('It returns the definition of the database', '', [
                 'Example: <dim>"definition --loadconfig myconfig"</dim>.Load a config and generate in interactive mode',
-                'Example: <dim>"definition --command scan --loadconfig .\p2.php -og yes"</dim>. Load a config, scan for changes and override'])
+                'Example: <dim>"definition --command scan --loadconfig .\p2.php -og yes"</dim>. Load a config, scan for changes and override',
+                'Example: <dim>"definition --type relation/table --loadconfig .\p2.php -og yes"</dim>. Returns a relation/table'])
+
             ->setDefault('')
             ->setInput(false)
             ->add();
         $this->cli->evalParam('definition');
+        $this->cli->createParam('type', ['t'], 'longflag')
+            ->setRequired(false)
+            ->setAllowEmpty()
+            ->setDefault('table')
+            ->setRelated(['definition'])
+            ->setDescription('It set the type of definition to obtain', '', [
+                'Values allowed: <cyan><option/></cyan>',
+                'Example: <dim>"generate -i --type table"</dim>. generate the definition of a table, and it shows on screen'])
+            ->setInput($interactive, 'optionshort', ['relation', 'table','alias','conversion','extra','removed','tablexclass'])
+            ->add();
+
         $this->cli->createParam('generate', [], 'first')
             ->setRequired(false)
             ->setAllowEmpty()
@@ -213,11 +226,9 @@ class PdoOneCli
             ->setInput(false)
             ->add();
         $this->cli->evalParam('export');
-
         $this->inJectInitParam();
-
         $this->cli->createParam('databasetype', 'dt', 'longflag')
-            ->setRelated(['common', 'export', 'generate'])
+            ->setRelated(['common', 'export', 'generate','definition'])
             ->setRequired(false)
             ->setDescription('The type of database', 'Select the type of database', [
                 'Values allowed: <cyan><option/></cyan>'])
@@ -225,7 +236,7 @@ class PdoOneCli
             ->setCurrentAsDefault()
             ->add();
         $this->cli->createParam('server', 'srv', 'longflag')
-            ->setRelated(['common', 'export', 'generate'])
+            ->setRelated(['common', 'export', 'generate','definition'])
             ->setRequired(false)
             ->setDefault('127.0.0.1')
             ->setCurrentAsDefault()
@@ -235,7 +246,7 @@ class PdoOneCli
             ->setInput($interactive)
             ->add();
         $this->cli->createParam('user', 'u', 'longflag')
-            ->setRelated(['common', 'export', 'generate'])
+            ->setRelated(['common', 'export', 'generate','definition'])
             ->setDescription('The username to access to the database', 'Select the username',
                 ['Example: <dim>sa, root</dim>'], 'usr')
             ->setRequired(false)
@@ -243,14 +254,14 @@ class PdoOneCli
             ->setInput($interactive)
             ->add();
         $this->cli->createParam('password', 'p', 'longflag')
-            ->setRelated(['common', 'export', 'generate'])
+            ->setRelated(['common', 'export', 'generate','definition'])
             ->setRequired(false)
             ->setDescription('The password to access to the database', '', ['Example: <dim>12345</dim>'], 'pwd')
             ->setCurrentAsDefault()
             ->setInput($interactive, 'password')
             ->add();
         $this->cli->createParam('database', 'db', 'longflag')
-            ->setRelated(['common', 'export', 'generate'])
+            ->setRelated(['common', 'export', 'generate','definition'])
             ->setRequired(false)
             ->setDescription('The database/schema', 'Select the database/schema', [
                 'Example: <dim>sakila,contoso,adventureworks</dim>'], 'db')
@@ -287,7 +298,7 @@ class PdoOneCli
             ->add();
         $listPHPFiles = $this->getFiles('.', 'php');
         $this->cli->createParam('loadconfig', [], 'longflag')
-            ->setRelated(['common', 'export', 'generate'])
+            ->setRelated(['common', 'export', 'generate','definition'])
             ->setRequired(false)
             ->setDescription('Select the configuration file to load', '', [
                     'It loads a configuration file, the file mustn\'t have extension',
@@ -297,7 +308,7 @@ class PdoOneCli
             ->setInput(false, 'string', $listPHPFiles)
             ->add();
         $this->cli->createParam('saveconfig', [], 'longflag')
-            ->setRelated(['common', 'export', 'generate'])
+            ->setRelated(['common', 'export', 'generate','definition'])
             ->setRequired(false)
             ->setCurrentAsDefault()
             ->setDescription('save a configuration file', 'Select the configuration file to save', [
@@ -347,7 +358,7 @@ class PdoOneCli
                 $this->inJectInitParam2($first->value, $interactive);
                 break;
         }
-        $ok=false;
+        $ok = false;
         switch ($first->value) {
             case 'definition':
             case 'export':
@@ -453,8 +464,8 @@ class PdoOneCli
             case '':
                 if (!$interactive) {
                     $this->cli->showParamSyntax2('Commands:', ['first'], [], null, null, 25);
-                    $arr=$this->getArrayParameters();
-                    $arr[]='overridegenerate';
+                    $arr = $this->getArrayParameters();
+                    $arr[] = 'overridegenerate';
                     $this->cli->showParamSyntax2('Flags common:',
                         ['flag', 'longflag'],
                         $arr
@@ -487,7 +498,8 @@ PdoOne: $v  Cli: $vc
      * List of the parameters to store, read and display in the help.
      * @return string[]
      */
-    protected function getArrayParameters():array {
+    protected function getArrayParameters(): array
+    {
         return ['classdirectory', 'classpostfix', 'classnamespace', 'tables', 'tablescolumns', 'tablecommand', 'convertionselected', 'convertionnewvalue', 'newclassname',];
     }
 
@@ -497,7 +509,7 @@ PdoOne: $v  Cli: $vc
         $this->cli->showParamSyntax2('Flags for definition:',
             ['flag', 'longflag'],
             $this->getArrayParameters()
-            , null, 'export', 25);
+            , null, 'definition', 25);
     }
 
     protected function showHelpGenerate(): void
@@ -518,23 +530,23 @@ PdoOne: $v  Cli: $vc
             , null, 'export', 25);
     }
 
-    protected function runCliConnection($force=false): ?PdoOne
+    protected function runCliConnection($force = false): ?PdoOne
     {
-        if ($force===false &&!$this->cli->getValue('databasetype')) {
+        if ($force === false && !$this->cli->getValue('databasetype')) {
             return null;
         }
-        if($force) {
-            $this->cli->evalParam('databasetype',true);
-            $this->cli->evalParam('server',true);
-            $this->cli->evalParam('user',true);
-            $this->cli->evalParam('password',true);
-            $this->cli->evalParam('database',true);
+        if ($force) {
+            $this->cli->evalParam('databasetype', true);
+            $this->cli->evalParam('server', true);
+            $this->cli->evalParam('user', true);
+            $this->cli->evalParam('password', true);
+            $this->cli->evalParam('database', true);
         }
         $result = null;
         while (true) {
             try {
                 $pdo = $this->createPdoInstance();
-                if($pdo===null) {
+                if ($pdo === null) {
                     throw new RuntimeException('trying');
                 }
                 $this->cli->showCheck('OK', 'green', 'Connected to the database <bold>' . $this->cli->getValue('database') . '</bold>');
@@ -659,7 +671,6 @@ PdoOne: $v  Cli: $vc
                     case 'conversion':
                         $this->cli->upLevel('conversion');
                         while (true) {
-
                             $this->cli->setColor(['byellow'])->showBread();
                             $this->cli->getParameter('tablescolumns')
                                 ->setDescription('', 'Select a column (or empty for end)')
@@ -717,7 +728,6 @@ PdoOne: $v  Cli: $vc
                         break;
                     case 'alias':
                         $this->cli->upLevel('alias');
-
                         while (true) {
                             $this->cli->setColor(['byellow'])->showBread();
                             $this->cli->getParameter('tablescolumns')
@@ -742,7 +752,9 @@ PdoOne: $v  Cli: $vc
             } // end while tablecommand
         } // end while table
     }
-    public function createPdoInstance(): ?PdoOne {
+
+    public function createPdoInstance(): ?PdoOne
+    {
         try {
             $pdo = new PdoOne(
                 $this->cli->getValue('databasetype'),
@@ -752,9 +764,9 @@ PdoOne: $v  Cli: $vc
                 $this->cli->getValue('database'));
             $pdo->logLevel = 1;
             $pdo->connect();
-        } catch(Exception $ex) {
+        } catch (Exception $ex) {
             /** @noinspection PhpUndefinedVariableInspection */
-            $this->cli->showCheck('ERROR','red',['Unable to connect to database',$pdo->lastError(),$pdo->errorText]);
+            $this->cli->showCheck('ERROR', 'red', ['Unable to connect to database', $pdo->lastError(), $pdo->errorText]);
             return null;
         }
         $pdo->logLevel = 2;
@@ -931,15 +943,15 @@ PdoOne: $v  Cli: $vc
                 , 'Select a command (empty for exit)'
                 , ['<cyan><optionkey/></cyan>:<option/>'], 'cmd')
             ->setAllowEmpty()
-            ->setInput(true, 'option', [
+            ->setInput(true, 'wide-option', [
                 'connect' => 'Connect to the database or change the connection',
                 'folder' => 'Configure the repository folder and namespace',
-                'scan' => 'Scan for changes to the database. It adds or removes tables and classes',
+                'scan' => 'Scan for changes to the database adding or removing tables and columns.',
                 'select' => 'Select or de-select the tables to work',
                 'detail' => 'Configure each table and columns separately',
                 'type' => 'Configure the conversion of the columns per type',
                 'save' => 'Save the current configuration',
-                'create' => 'Create the PHP repository classes (in non-interactive mode is done automatically)',
+                'create' => 'Create the PHP repository classes',
                 'exit' => 'Exit of the program'])
             ->add();
         $this->cli->createParam('tables')
@@ -1010,6 +1022,8 @@ PdoOne: $v  Cli: $vc
      */
     protected function runCliDefinition(): void
     {
+        $defType = $this->cli->evalParam('type')->value;
+        $defType = $defType ?? "";
         $this->cli->getParameter('databasetype')->setInput();
         $this->cli->getParameter('server')->setInput();
         $this->cli->getParameter('user')->setInput();
@@ -1032,9 +1046,42 @@ PdoOne: $v  Cli: $vc
             $this->cli->showCheck('CRITICAL', 'red', 'Unable to read tables');
             die(1);
         }
-        $result = [];
-        foreach ($tables as $table) {
-            $result[$table] = $pdo->getDefTable($table);
+
+        switch ($defType) {
+            case 'table':
+            case '':
+                $result = [];
+                foreach ($tables as $table) {
+                    $result[$table] = $pdo->getDefTable($table);
+                }
+                break;
+            case 'relation':
+                $this->databaseScan($tables, $pdo);
+                $result = $this->columnsTable;
+                break;
+            case 'conversion':
+                $this->databaseScan($tables, $pdo);
+                $result = $this->conversion;
+                break;
+            case 'alias':
+                $this->databaseScan($tables, $pdo);
+                $result = $this->columnsAlias;
+                break;
+            case 'extra':
+                $this->databaseScan($tables, $pdo);
+                $result = $this->extracolumn;
+                break;
+            case 'removed':
+                $this->databaseScan($tables, $pdo);
+                $result = $this->removecolumn;
+                break;
+            case 'tablexclass':
+                $this->databaseScan($tables, $pdo);
+                $result = $this->tablexclass;
+                break;
+            default:
+                $result = [];
+                echo "type not defined $defType\n";
         }
         $result = json_encode($result, JSON_PRETTY_PRINT);
         $output = $this->cli->getValue('output');
@@ -1048,6 +1095,8 @@ PdoOne: $v  Cli: $vc
             } catch (Exception $ex) {
                 $this->cli->showCheck('error', 'red', 'Unable to create file, ' . $ex->getMessage());
             }
+        } else {
+            echo $result;
         }
     }
 
@@ -1067,7 +1116,6 @@ PdoOne: $v  Cli: $vc
         $this->cli->evalParam('user');
         $this->cli->evalParam('password');
         $this->cli->evalParam('database');
-
         $pdo = $this->runCliConnection();
         if ($pdo === null) {
             $this->cli->showCheck('CRITICAL', 'red', 'No connection');
@@ -1120,7 +1168,7 @@ PdoOne: $v  Cli: $vc
                         'Use the option <bold><cyan>[folder]</cyan></bold> to set the directory and namespace'], 'stderr');
                     break;
                 case 'connect':
-                    $pdo=$this->runCliConnection(true);
+                    $pdo = $this->runCliConnection(true);
                     break;
                 case 'scan':
                     $this->databaseScan($tablesmarked, $pdo);
@@ -1155,7 +1203,6 @@ PdoOne: $v  Cli: $vc
     /** @noinspection DisconnectedForeachInstructionInspection */
     protected function databaseScan($tablesmarked, $pdo): void
     {
-
         $tablexclass = [];
         $columnsTable = [];
         $conversion = [];
@@ -1177,8 +1224,7 @@ PdoOne: $v  Cli: $vc
                 $columnsTable[$table][$v['colname']] = null;
             }
             $pk[$table] = $pdo->getPK($table);
-
-            if($pk[$table]===false) {
+            if ($pk[$table] === false) {
                 $def2[$table] = $pdo->getRelations($table, null);
             } else {
                 $def2[$table] = $pdo->getRelations($table, $pk[$table][0]);
@@ -1252,7 +1298,6 @@ PdoOne: $v  Cli: $vc
         if (count($this->extracolumn) === 0) {
             $this->extracolumn = $extracolumn;
         }
-
     }
 
     /**

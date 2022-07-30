@@ -1,8 +1,5 @@
-<?php /** @noinspection PhpUnused */
+<?php
 /** @noinspection UnnecessaryCastingInspection */
-/** @noinspection ReturnTypeCanBeDeclaredInspection */
-/** @noinspection PhpMissingReturnTypeInspection */
-/** @noinspection PhpMissingParamTypeInspection */
 /** @noinspection PhpComposerExtensionStubsInspection */
 /** @noinspection EncryptionInitializationVectorRandomnessInspection */
 /** @noinspection CryptographicallySecureRandomnessInspection */
@@ -147,7 +144,7 @@ class PdoOneEncryption
      * @param mixed $data It could be any type of serializable data.
      * @return string If the serialization is not set, then it returns the same value.
      */
-    public function hash($data)
+    public function hash($data): string
     {
         if (!is_string($data)) {
             $data = serialize($data);
@@ -165,7 +162,7 @@ class PdoOneEncryption
      * @param $data
      * @return string
      */
-    public function decryptSimple($data)
+    public function decryptSimple($data): string
     {
         $result = '';
         $data = base64_decode(str_replace(array('-', '_'), array('+', '/'), $data));
@@ -206,7 +203,7 @@ class PdoOneEncryption
      * @param bool $iv
      * @throws Exception
      */
-    public function setEncryption($password, $salt, $encMethod, $iv = true)
+    public function setEncryption($password, $salt, $encMethod, $iv = true): void
     {
         if (!extension_loaded('openssl')) {
             $this->encEnabled = false;
@@ -226,7 +223,7 @@ class PdoOneEncryption
      * @return void
      * @see https://www.php.net/manual/en/function.hash-algos.php
      */
-    public function setHashType($hashType)
+    public function setHashType($hashType): void
     {
         $this->hashType = $hashType;
     }
@@ -251,7 +248,7 @@ class PdoOneEncryption
      * @param int $n
      * @return int|null
      */
-    public function decryptInteger($n)
+    public function decryptInteger($n): ?int
     {
         if (!is_numeric($n)) {
             return null;
@@ -264,7 +261,7 @@ class PdoOneEncryption
      * @return int
      * @see \eftec\PdoOneEncryption::encryptInteger
      */
-    private function encrypt32($n)
+    private function encrypt32($n): int
     {
         return ((0x000000FF & $n) << 24) + (((0xFFFFFF00 & $n) >> 8) & 0x00FFFFFF);
     }
@@ -273,7 +270,7 @@ class PdoOneEncryption
      * @return int
      * @see \eftec\PdoOneEncryption::decryptInteger
      */
-    private function decrypt32($n)
+    private function decrypt32($n): int
     {
         return ((0x00FFFFFF & $n) << 8) + (((0xFF000000 & $n) >> 24) & 0x000000FF);
     }
@@ -282,7 +279,7 @@ class PdoOneEncryption
      * @return int
      * @see \eftec\PdoOneEncryption::encryptInteger
      */
-    private function encrypt64($n)
+    private function encrypt64($n): int
     {
         /** @noinspection PhpCastIsUnnecessaryInspection */
         return ((0x000000000000FFFF & $n) << 48) + ((((int)0xFFFFFFFFFFFF0000 & $n) >> 16.0) & 0x0000FFFFFFFFFFFF);
@@ -292,7 +289,7 @@ class PdoOneEncryption
      * @return int
      * @see \eftec\PdoOneEncryption::decryptInteger
      */
-    private function decrypt64($n)
+    private function decrypt64($n): int
     {
         /** @noinspection PhpCastIsUnnecessaryInspection */
         return (((int)0x0000FFFFFFFFFFFF & $n) << 16.0) + ((((int)0xFFFF000000000000 & $n) >> 48.0) & 0x000000000000FFFF);

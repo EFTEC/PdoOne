@@ -44,24 +44,21 @@ ProductRepo // this class was generated with echo $pdoOne()->generateCodeClass([
     ::toList();
 ```
 
-
-
-## Table of Content
-
 # Table of contents
 
 - [Database Access Object wrapper for PHP and PDO in a single class](#database-access-object-wrapper-for-php-and-pdo-in-a-single-class)
-  - [Table of Content](#table-of-content)
   - [Examples](#examples)
   - [Installation](#installation)
     - [Install (using composer)](#install-using-composer)
     - [Install (manually)](#install-manually)
   - [How to create a Connection?](#how-to-create-a-connection)
-  - [How to runs a SQL command?](#how-to-runs-a-sql-command)
+    - [OCI](#oci)
+  - [How to run a SQL command?](#how-to-run-a-sql-command)
     - [1. Running a raw query](#1-running-a-raw-query)
     - [2. Running a native PDO statement](#2-running-a-native-pdo-statement)
     - [3. Running using the query builder](#3-running-using-the-query-builder)
     - [4. Running using a ORM](#4-running-using-a-orm)
+  - [How to work with Date values?](#how-to-work-with-date-values)
   - [How to run a transaction?](#how-to-run-a-transaction)
   - [Custom Queries](#custom-queries)
     - [tableExist($tableName)](#tableexisttablename)
@@ -114,6 +111,7 @@ ProductRepo // this class was generated with echo $pdoOne()->generateCodeClass([
     - [Creating a sequence without a table.](#creating-a-sequence-without-a-table)
     - [Using the sequence](#using-the-sequence)
   - [Fields](#fields)
+  - [Encryption](#encryption)
   - [How to debug and trace errors in the database?](#how-to-debug-and-trace-errors-in-the-database)
     - [Setting the log level](#setting-the-log-level)
     - [Throwing errors](#throwing-errors)
@@ -121,6 +119,9 @@ ProductRepo // this class was generated with echo $pdoOne()->generateCodeClass([
     - [Generating a log file](#generating-a-log-file)
   - [CLI](#cli)
     - [Run as cli](#run-as-cli)
+    - [Run as CLI interative](#run-as-cli-interative)
+      - [Examples](#examples)
+    - [Run CLI to generate repository classes.](#run-cli-to-generate-repository-classes)
     - [cli-classcode](#cli-classcode)
     - [cli-selectcode](#cli-selectcode)
     - [cli-arraycode](#cli-arraycode)
@@ -128,13 +129,14 @@ ProductRepo // this class was generated with echo $pdoOne()->generateCodeClass([
     - [cli-csv](#cli-csv)
     - [UI](#ui)
     - [How to run the UI?](#how-to-run-the-ui)
-  - **[orm]**(#orm)
+  - [ORM](#orm)
     - [What is an ORM?](#what-is-an-orm)
     - [Building and installing the ORM](#building-and-installing-the-orm)
       - [Creating the repository class](#creating-the-repository-class)
       - [Creating multiples repositories classes](#creating-multiples-repositories-classes)
       - [Creating all repositories classes](#creating-all-repositories-classes)
     - [Using the Repository class.](#using-the-repository-class)
+      - [Using multiples connections](#using-multiples-connections)
     - [DDL  Database Design Language](#ddl--database-design-language)
     - [Nested Operators](#nested-operators)
     - [DQL Database Query Language](#dql-database-query-language)
@@ -145,8 +147,11 @@ ProductRepo // this class was generated with echo $pdoOne()->generateCodeClass([
       - [getRecursive()](#getrecursive)
       - [hasRecursive()](#hasrecursive)
   - [Benchmark (mysql, estimated)](#benchmark-mysql-estimated)
-  - [OCI](#oci)
+  - [Error FAQs](#error-faqs)
+    - [Uncaught Error: Undefined constant eftec\_BasePdoOneRepo::COMPILEDVERSION](#uncaught-error-undefined-constant-eftec_basepdoonerepocompiledversion)
   - [Changelist](#changelist)
+
+
 
 
 
@@ -2035,6 +2040,8 @@ In a nutshell:
 >
 > Every decimal version means that it patches/fixes/refactoring a previous functionality i.e. 1.5.0 -> 1.5.1 (fix)
 
+* 3.10 2022-07-30
+  * [CLI] update CLI to 1.5.  
 * 3.9  2022-07-23
   * [ORM] [CLI] Now, you can savely edit some part of the code generated under the comment blocks marked as "EDIT". 
 * 3.8.1 2022-07-23
