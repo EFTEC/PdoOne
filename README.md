@@ -2040,6 +2040,8 @@ In a nutshell:
 >
 > Every decimal version means that it patches/fixes/refactoring a previous functionality i.e. 1.5.0 -> 1.5.1 (fix)
 
+* 3.11.1 2022-07-30
+  * [CLI] update CLI to 1.6.1 Added the column "key" to "tablefull".
 * 3.11 2022-07-30
   * [CLI] update CLI to 1.6. Added "relation2" and "tablefull" to definitions. 
 * 3.10 2022-07-30

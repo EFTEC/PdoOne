@@ -25,11 +25,11 @@ use RuntimeException;
  * @package       eftec
  * @author        Jorge Castro Castillo
  * @copyright (c) Jorge Castro C. Dual Licence: MIT and Commercial License  https://github.com/EFTEC/PdoOne
- * @version       1.6
+ * @version       1.6.1
  */
 class PdoOneCli
 {
-    public const VERSION = '1.6';
+    public const VERSION = '1.6.1';
 //</editor-fold>
     /**
      * @var array
@@ -1068,12 +1068,24 @@ PdoOne: $v  Cli: $vc
                 $result = [];
                 foreach ($tables as $table) {
                     $result[$table] = $pdo->getDefTable($table);
+                    foreach($result[$table] as $col=>$values) {
+                        // we set empty key
+                        $result[$table][$col]['key']='NORMAL';
+                    }
                 }
                 $this->databaseScan($tables, $pdo);
                 $result2=[];
                 foreach($tables as $tableName) {
-                    $pk = $pdo->service->getPK($tableName, '??');
-                    $pkFirst = (is_array($pk) && count($pk) > 0) ? $pk[0] : null;
+                    $pks = $pdo->service->getPK($tableName, '??');
+                    $keys = $pdo->service->getDefTableKeys($tableName,true);
+                    if(count($keys)>0) {
+                        foreach($keys as $col=>$keytype) {
+                            // we set the keys for primary and index (but no foreign keys or relations)
+                            $result[$tableName][$col]['key']=$keytype;
+                        }
+                    }
+                    $pkFirst = (is_array($pks) && count($pks) > 0) ? $pks[0] : null;
+                    // we get the relations and foreign keys.
                     [$relation, $linked] = $pdo->generateGetRelations($tableName, $this->columnsTable, $pkFirst, $this->columnsAlias);
                     $result2[$tableName]=$relation;
                 }
@@ -1134,7 +1146,6 @@ PdoOne: $v  Cli: $vc
             echo $result;
         }
     }
-
     /**
      * @return void
      * @throws Exception
