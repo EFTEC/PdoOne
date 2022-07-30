@@ -33,7 +33,7 @@ class PdoOne
     public const VERSION = '3.10';
     /** @var int We need this value because null and false could be a valid value. */
     public const NULL = PHP_INT_MAX;
-    /** @var string Prefix of the tables */
+    /** @var string Prefix of the related columns */
     public static $prefixBase = '_';
     /** @var int Used for the method page() */
     public static $pageSize = 20;
@@ -2422,10 +2422,12 @@ class PdoOne
     }
 
     /**
-     * @param string     $tableName
+     * It returns an associative array with the relations between the tables.
+     * @param string     $tableName The name of the table (no alias)
      * @param array|null $columnRelations
-     * @param            $pkFirst
-     * @param array      $aliasesAllTables
+     * @param mixed      $pkFirst the first primary key
+     * @param array      $aliasesAllTables an associative array with all the aliases of the columns of all tables<br>
+     *                                     ['table2'=>['col'=>'alias'..],'table20>['col'=>'alias'],..]
      * @return array|string
      * @throws Exception
      */
@@ -2527,14 +2529,14 @@ class PdoOne
         }
         $linked = '';
         foreach ($relation as $k => $v) {
-            $ksimple = ltrim($k, '_'); // remove the _ from the beginner
+            $ksimple = ltrim($k, self::$prefixBase); // remove the _ from the beginner
             $alias = ($aliases[$k] ?? $k);
-            $aliasCol = '_' . ($aliases[$ksimple] ?? $ksimple);
-            $col = ltrim($aliasCol, '_');
-            $refcol = ltrim($v['refcol'], '_');
-            $refcol2 = isset($v['refcol2']) ? ltrim($v['refcol2'], '_') : null;
+            $aliasCol = self::$prefixBase . ($aliases[$ksimple] ?? $ksimple);
+            $col = ltrim($aliasCol, self::$prefixBase);
+            $refcol = ltrim($v['refcol'], self::$prefixBase);
+            $refcol2 = isset($v['refcol2']) ? ltrim($v['refcol2'], self::$prefixBase) : null;
             $col2 = $v['col2'] ?? null;
-            $aliasRef = '_' . @$aliasesAllTables[$v['reftable']][$refcol] ?? $refcol;
+            $aliasRef = self::$prefixBase . @$aliasesAllTables[$v['reftable']][$refcol] ?? $refcol;
             $relation[$k]['alias'] = $alias;
             if (isset($v['col'])) {
                 $relation[$k]['colalias'] = $aliases[$v['col']];

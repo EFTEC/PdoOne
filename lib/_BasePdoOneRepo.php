@@ -795,8 +795,8 @@ abstract class _BasePdoOneRepo
     public static function planManyToMany(string $absolutePrefix, array $dependency, array $relation, $value): array
     {
         $where = [substr($relation['refcol'], 1) => $value];
-        if (!in_array($absolutePrefix . '/' . '_' . $relation['refcol2alias'], $dependency, true)) {
-            $dependency[] = $absolutePrefix . '/' . '_' . $relation['refcol2alias'];
+        if (!in_array($absolutePrefix . '/' . PdoOne::$prefixBase . $relation['refcol2alias'], $dependency, true)) {
+            $dependency[] = $absolutePrefix . '/' . PdoOne::$prefixBase . $relation['refcol2alias'];
         }
         $nq = self::newQuery();
         $nq->ormClass = null;
@@ -804,7 +804,7 @@ abstract class _BasePdoOneRepo
         $rowFinal = [];
         // flatting the query, so we remove the array relational
         foreach ($rows as $row) {
-            $rowFinal[] = $row['_' . $relation['refcol2alias']];
+            $rowFinal[] = $row[PdoOne::$prefixBase . $relation['refcol2alias']];
         }
         return $rowFinal;
     }
@@ -1300,7 +1300,7 @@ abstract class _BasePdoOneRepo
                 $db[$key] = $value;
             } else if (strpos($keyAlias, '.') === false) {
                 // alias=>real column
-                if (strpos($keyAlias, '_') === 0) {
+                if (strpos($keyAlias, PdoOne::$prefixBase) === 0) {
                     // _column
                     $findKey = false;
                     foreach (static::DEFFK as $key => $val) {
@@ -1530,7 +1530,7 @@ abstract class _BasePdoOneRepo
                              * @see          \eftec\_BasePdoOneRepo::_insert
                              */
                             $objectInserted = $classMO::_insert($entityAlias[$columnAlias], false, true);
-                            $colRightAlias = static::ALIAS2COL[ltrim($col, '_')];
+                            $colRightAlias = static::ALIAS2COL[ltrim($col, PdoOne::$prefixBase)];
                             if (is_array($objectInserted)) {
                                 $entityCopy[$colRightAlias] = $objectInserted[$defs['refcolalias']];
                             } else {

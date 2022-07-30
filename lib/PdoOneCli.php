@@ -25,11 +25,11 @@ use RuntimeException;
  * @package       eftec
  * @author        Jorge Castro Castillo
  * @copyright (c) Jorge Castro C. Dual Licence: MIT and Commercial License  https://github.com/EFTEC/PdoOne
- * @version       1.5
+ * @version       1.6
  */
 class PdoOneCli
 {
-    public const VERSION = '1.5';
+    public const VERSION = '1.6';
 //</editor-fold>
     /**
      * @var array
@@ -203,8 +203,12 @@ class PdoOneCli
             ->setRelated(['definition'])
             ->setDescription('It set the type of definition to obtain', '', [
                 'Values allowed: <cyan><option/></cyan>',
-                'Example: <dim>"generate -i --type table"</dim>. generate the definition of a table, and it shows on screen'])
-            ->setInput($interactive, 'optionshort', ['relation', 'table','alias','conversion','extra','removed','tablexclass'])
+                'Example: <dim>"generate -i --type table"</dim>. generate the definition of a table, and it shows on screen',
+                'relation: gets relations of the tables, relation2: gets foreign keys and relations in detail, table: get the tables and columns',
+                'tablefull: get the tables, columns and relations',
+                'alias: get all aliases, conversion: get a custom conversion, extra: get a custom extra column, removed: get tables removed',
+                'tablesxclass: gets the relation between tables and classes'])
+            ->setInput($interactive, 'optionshort', ['relation','relation2', 'table','tablefull','alias','conversion','extra','removed','tablexclass'])
             ->add();
 
         $this->cli->createParam('generate', [], 'first')
@@ -1019,6 +1023,7 @@ PdoOne: $v  Cli: $vc
 
     /**
      * @throws Exception
+     * @noinspection PhpUnusedLocalVariableInspection
      */
     protected function runCliDefinition(): void
     {
@@ -1058,6 +1063,36 @@ PdoOne: $v  Cli: $vc
             case 'relation':
                 $this->databaseScan($tables, $pdo);
                 $result = $this->columnsTable;
+                break;
+            case 'tablefull':
+                $result = [];
+                foreach ($tables as $table) {
+                    $result[$table] = $pdo->getDefTable($table);
+                }
+                $this->databaseScan($tables, $pdo);
+                $result2=[];
+                foreach($tables as $tableName) {
+                    $pk = $pdo->service->getPK($tableName, '??');
+                    $pkFirst = (is_array($pk) && count($pk) > 0) ? $pk[0] : null;
+                    [$relation, $linked] = $pdo->generateGetRelations($tableName, $this->columnsTable, $pkFirst, $this->columnsAlias);
+                    $result2[$tableName]=$relation;
+                }
+                // merging
+                foreach($tables as $tableName) {
+                    foreach($result2[$tableName] as $kcol=>$kval) {
+                        $result[$tableName][$kcol]=$kval;
+                    }
+                }
+                break;
+            case 'relation2':
+                $this->databaseScan($tables, $pdo);
+                $result=[];
+                foreach($tables as $tableName) {
+                    $pk = $pdo->service->getPK($tableName, '??');
+                    $pkFirst = (is_array($pk) && count($pk) > 0) ? $pk[0] : null;
+                    [$relation, $linked] = $pdo->generateGetRelations($tableName, $this->columnsTable, $pkFirst, $this->columnsAlias);
+                    $result[$tableName]=$relation;
+                }
                 break;
             case 'conversion':
                 $this->databaseScan($tables, $pdo);
