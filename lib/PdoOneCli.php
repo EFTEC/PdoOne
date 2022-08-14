@@ -873,7 +873,7 @@ PdoOne: $v  Cli: $vc
             } catch (Exception $ex) {
                 $this->cli->showCheck('warning', 'yellow', 'Unable to create test class, ' . $ex->getMessage());
             }
-            $ce = class_exists($nameclass, true);
+            $ce = class_exists($nameclass);
             if ($ce) {
                 $this->cli->showCheck('ok', 'green', 'Namespace tested correctly');
                 @unlink($filename);
@@ -1052,6 +1052,7 @@ PdoOne: $v  Cli: $vc
             die(1);
         }
 
+
         switch ($defType) {
             case 'table':
             case '':
@@ -1073,8 +1074,11 @@ PdoOne: $v  Cli: $vc
                         $result[$table][$col]['key']='NORMAL';
                     }
                 }
+
+                //die(1);
                 $this->databaseScan($tables, $pdo);
                 $result2=[];
+
                 foreach($tables as $tableName) {
                     $pks = $pdo->service->getPK($tableName, '??');
                     $keys = $pdo->service->getDefTableKeys($tableName,true);
@@ -1092,9 +1096,22 @@ PdoOne: $v  Cli: $vc
                 // merging
                 foreach($tables as $tableName) {
                     foreach($result2[$tableName] as $kcol=>$kval) {
-                        $result[$tableName][$kcol]=$kval;
+                        if (strpos($kcol, '_') !== 0) {
+                            // we don't add "_relational" columns
+                            if (isset($result[$tableName][$kcol])) {
+                                /** @noinspection SlowArrayOperationsInLoopInspection */
+                                $result[$tableName][$kcol] = array_merge($kval, $result[$tableName][$kcol]);
+                                $kn = '_' . $kcol;
+                                if (isset($result2[$tableName][$kn])) {
+                                    $result[$tableName][$kcol]['key'] = $result2[$tableName][$kn]['key'];
+                                }
+                            } else {
+                                $result[$tableName][$kcol] = $kval;
+                            }
+                        }
                     }
                 }
+
                 break;
             case 'relation2':
                 $this->databaseScan($tables, $pdo);

@@ -118,6 +118,24 @@ class PdoOne_mysql_Test extends TestCase
         $cache = new CacheServicesmysql();
         $this->pdoOne->setCacheService($cache);
     }
+    public function test_prefix_table(): void
+    {
+        $this->pdoOne->prefixTable='table_';
+        if(!$this->pdoOne->tableExist('city')) {
+            $this->pdoOne->createTable('city', ['id' => 'int not null AUTO_INCREMENT', 'name' => 'varchar(45)'], ['id' => 'PRIMARY KEY']);
+        }
+        $r=$this->pdoOne->truncate('city');
+        $this->assertNotFalse($r);
+
+        $r=$this->pdoOne->delete('city');
+        $this->assertNotFalse($r);
+        $id=$this->pdoOne->insert('city',['id'=>0,'name'=>'city1']);
+        $this->assertTrue($id>0);
+        $r=$this->pdoOne->update('city',['name'=>'city2'],['id'=>$id]);
+        $this->assertNotFalse($r);
+        $r=$this->pdoOne->select('*')->from('city')->where(['id'=>$r])->first();
+        $this->assertEquals(['id'=>$id,'name'=>'city2'],$r);
+    }
 
 
     public function test_procedure(): void
@@ -390,7 +408,8 @@ class PdoOne_mysql_Test extends TestCase
                 'size' => null,
                 'null' => false,
                 'identity' => false,
-                'sql' => 'int not null'
+                'sql' => 'int not null',
+                'alias'=>'id'
             ],
             'name' => [
                 'phptype' => 'string',
@@ -399,7 +418,8 @@ class PdoOne_mysql_Test extends TestCase
                 'size' => '50',
                 'null' => true,
                 'identity' => false,
-                'sql' => 'varchar(50)'
+                'sql' => 'varchar(50)',
+                'alias'=>'name'
 
             ]
         ), $this->pdoOne->getDefTable('table5'));
@@ -423,7 +443,8 @@ class PdoOne_mysql_Test extends TestCase
                 'size' => null,
                 'null' => false,
                 'identity' => false,
-                'sql' => 'int not null'
+                'sql' => 'int not null',
+                'alias'=>'id'
             ],
             'name' => [
                 'phptype' => 'string',
@@ -432,7 +453,8 @@ class PdoOne_mysql_Test extends TestCase
                 'size' => '50',
                 'null' => true,
                 'identity' => false,
-                'sql' => 'varchar(50)'
+                'sql' => 'varchar(50)',
+                'alias'=>'name'
 
             ]
         ), $this->pdoOne->getDefTable('table5'));

@@ -1552,6 +1552,7 @@ abstract class _BasePdoOneRepo
 
     /**
      * @throws Exception
+     * @noinspection TypeUnsafeArraySearchInspection
      */
     protected static function recursiveDMLOxMMxM(string $type, array $entityAlias, array $defs, PdoOneQuery $query, array $recursiveBack, string $ns, string $fatherPK): void
     {
@@ -1591,14 +1592,14 @@ abstract class _BasePdoOneRepo
                             $deleteKeys = array_diff($oldRowsKeys, $newRowsKeys);
                             // inserting a new value
                             foreach ($newRows as $item) {
-                                if (in_array($item[$refpk], $insertKeys, false)) {
+                                if (in_array($item[$refpk], $insertKeys)) {
                                     $item[$refcol] = $fatherPK;
                                     /**
                                      * @noinspection PhpUndefinedMethodInspection
                                      * @see          \eftec\_BasePdoOneRepo::_insert
                                      */
                                     $classRef::_insert($item, false, true);
-                                } elseif (!in_array($item[$refpk], $deleteKeys, false)) {
+                                } elseif (!in_array($item[$refpk], $deleteKeys)) {
                                     /** @noinspection PhpUndefinedMethodInspection */
                                     $classRef::update($item, false);
                                 }
@@ -1647,7 +1648,7 @@ abstract class _BasePdoOneRepo
                         $deleteKeys = array_diff($oldRowsKeys, $newRowsKeys);
                         // inserting a new value
                         foreach ($newRows as $item) {
-                            if (in_array($item[$col2], $insertKeys, false)) {
+                            if (in_array($item[$col2], $insertKeys)) {
                                 $pk2 = $item[$col2];
                                 //if (static::getPdoOne()->recursive($columnAlias, $recursiveBack)) {
                                 if ($hasRecursive === 'multiple') {
@@ -1676,7 +1677,7 @@ abstract class _BasePdoOneRepo
                         }
                         // delete
                         foreach ($oldRowsAlias as $item) {
-                            if (in_array($item[$refcol2alias], $deleteKeys, false)) {
+                            if (in_array($item[$refcol2alias], $deleteKeys)) {
                                 $pk2 = $item[$refcol2alias];
                                 if ($query->hasRecursive($columnAlias, $recursiveBack)) {
                                     /** @noinspection PhpUndefinedMethodInspection */
@@ -1758,12 +1759,13 @@ abstract class _BasePdoOneRepo
      * @param array $arrayIndex  An indexed array with the name of the columns
      *
      * @return array
+     * @noinspection TypeUnsafeArraySearchInspection
      */
     public static function intersectArraysNotNull(array $arrayValues, array $arrayIndex): array
     {
         $result = [];
         foreach ($arrayValues as $k => $v) {
-            if (in_array($k, $arrayIndex, false)) {
+            if (in_array($k, $arrayIndex)) {
                 $result[$k] = $v;
             }
         }
@@ -1782,12 +1784,13 @@ abstract class _BasePdoOneRepo
      * @param bool $indexIsKey
      *
      * @return array
+     * @noinspection TypeUnsafeArraySearchInspection
      */
     public static function diffArrays($arrayValues, $arrayIndex, bool $indexIsKey = false): array
     {
         $result = [];
         foreach ($arrayValues as $k => $v) {
-            if (!$indexIsKey && !in_array($k, $arrayIndex, false)) {
+            if (!$indexIsKey && !in_array($k, $arrayIndex)) {
                 $result[$k] = $v;
             }
             if ($indexIsKey && !array_key_exists($k, $arrayIndex)) {

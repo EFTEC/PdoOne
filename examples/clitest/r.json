@@ -1,382 +1,142 @@
 {
-    "actor": {
-        "id": {
-            "phptype": "int",
-            "conversion": null,
-            "type": "bigint",
-            "size": null,
-            "null": false,
-            "identity": true,
-            "sql": "bigint unsigned not null auto_increment"
-        },
-        "name": {
-            "phptype": "string",
-            "conversion": null,
-            "type": "varchar",
-            "size": "255",
-            "null": false,
-            "identity": false,
-            "sql": "varchar(255) not null"
-        },
-        "created_at": {
-            "phptype": "timestamp",
-            "conversion": null,
-            "type": "timestamp",
-            "size": null,
-            "null": true,
-            "identity": false,
-            "sql": "timestamp"
-        },
-        "updated_at": {
-            "phptype": "timestamp",
-            "conversion": null,
-            "type": "timestamp",
-            "size": null,
-            "null": true,
-            "identity": false,
-            "sql": "timestamp"
-        }
-    },
-    "cities": {
-        "id": {
-            "phptype": "int",
-            "conversion": null,
-            "type": "bigint",
-            "size": null,
-            "null": false,
-            "identity": true,
-            "sql": "bigint unsigned not null auto_increment"
-        },
-        "created_at": {
-            "phptype": "timestamp",
-            "conversion": null,
-            "type": "timestamp",
-            "size": null,
-            "null": true,
-            "identity": false,
-            "sql": "timestamp"
-        },
-        "updated_at": {
-            "phptype": "timestamp",
-            "conversion": null,
-            "type": "timestamp",
-            "size": null,
-            "null": true,
-            "identity": false,
-            "sql": "timestamp"
-        }
-    },
-    "failed_jobs": {
-        "id": {
-            "phptype": "int",
-            "conversion": null,
-            "type": "bigint",
-            "size": null,
-            "null": false,
-            "identity": true,
-            "sql": "bigint unsigned not null auto_increment"
-        },
-        "uuid": {
-            "phptype": "string",
-            "conversion": null,
-            "type": "varchar",
-            "size": "255",
-            "null": false,
-            "identity": false,
-            "sql": "varchar(255) not null"
-        },
-        "connection": {
-            "phptype": "binary",
-            "conversion": null,
-            "type": "text",
-            "size": null,
-            "null": false,
-            "identity": false,
-            "sql": "text not null"
-        },
-        "queue": {
-            "phptype": "binary",
-            "conversion": null,
-            "type": "text",
-            "size": null,
-            "null": false,
-            "identity": false,
-            "sql": "text not null"
-        },
-        "payload": {
-            "phptype": "binary",
-            "conversion": null,
-            "type": "longtext",
-            "size": null,
-            "null": false,
-            "identity": false,
-            "sql": "longtext not null"
-        },
-        "exception": {
-            "phptype": "binary",
-            "conversion": null,
-            "type": "longtext",
-            "size": null,
-            "null": false,
-            "identity": false,
-            "sql": "longtext not null"
-        },
-        "failed_at": {
-            "phptype": "timestamp",
-            "conversion": null,
-            "type": "timestamp",
-            "size": null,
-            "null": false,
-            "identity": false,
-            "sql": "timestamp not null default CURRENT_TIMESTAMP DEFAULT_GENERATED"
-        }
-    },
-    "migrations": {
-        "id": {
+    "categories": {
+        "IdCategory": {
+            "alias": "IdCategory",
             "phptype": "int",
             "conversion": null,
             "type": "int",
             "size": null,
             "null": false,
             "identity": true,
-            "sql": "int unsigned not null auto_increment"
+            "sql": "int not null auto_increment",
+            "key": "PRIMARY KEY"
         },
-        "migration": {
-            "phptype": "string",
-            "conversion": null,
-            "type": "varchar",
-            "size": "255",
-            "null": false,
-            "identity": false,
-            "sql": "varchar(255) not null"
-        },
-        "batch": {
-            "phptype": "int",
-            "conversion": null,
-            "type": "int",
-            "size": null,
-            "null": false,
-            "identity": false,
-            "sql": "int not null"
-        }
-    },
-    "mytable": {
-        "myuser": {
-            "phptype": "string",
-            "conversion": null,
-            "type": "varchar",
-            "size": "128",
-            "null": false,
-            "identity": false,
-            "sql": "varchar(128) not null"
-        },
-        "mypassword": {
-            "phptype": "string",
-            "conversion": null,
-            "type": "varchar",
-            "size": "128",
-            "null": false,
-            "identity": false,
-            "sql": "varchar(128) not null"
-        },
-        "myenable": {
-            "phptype": "string",
-            "conversion": null,
-            "type": "varchar",
-            "size": "24",
-            "null": false,
-            "identity": false,
-            "sql": "varchar(24) not null"
-        }
-    },
-    "mytokens": {
-        "KEYT": {
-            "phptype": "string",
-            "conversion": null,
-            "type": "varchar",
-            "size": "256",
-            "null": false,
-            "identity": false,
-            "sql": "varchar(256) not null"
-        },
-        "VALUE": {
-            "phptype": "binary",
-            "conversion": null,
-            "type": "mediumtext",
-            "size": null,
-            "null": true,
-            "identity": false,
-            "sql": "mediumtext"
-        },
-        "TIMESTAMP": {
-            "phptype": "int",
-            "conversion": null,
-            "type": "bigint",
-            "size": null,
-            "null": true,
-            "identity": false,
-            "sql": "bigint"
-        }
-    },
-    "password_resets": {
-        "email": {
-            "phptype": "string",
-            "conversion": null,
-            "type": "varchar",
-            "size": "255",
-            "null": false,
-            "identity": false,
-            "sql": "varchar(255) not null"
-        },
-        "token": {
-            "phptype": "string",
-            "conversion": null,
-            "type": "varchar",
-            "size": "255",
-            "null": false,
-            "identity": false,
-            "sql": "varchar(255) not null"
-        },
-        "created_at": {
-            "phptype": "timestamp",
-            "conversion": null,
-            "type": "timestamp",
-            "size": null,
-            "null": true,
-            "identity": false,
-            "sql": "timestamp"
-        }
-    },
-    "personal_access_tokens": {
-        "id": {
-            "phptype": "int",
-            "conversion": null,
-            "type": "bigint",
-            "size": null,
-            "null": false,
-            "identity": true,
-            "sql": "bigint unsigned not null auto_increment"
-        },
-        "tokenable_type": {
-            "phptype": "string",
-            "conversion": null,
-            "type": "varchar",
-            "size": "255",
-            "null": false,
-            "identity": false,
-            "sql": "varchar(255) not null"
-        },
-        "tokenable_id": {
-            "phptype": "int",
-            "conversion": null,
-            "type": "bigint",
-            "size": null,
-            "null": false,
-            "identity": false,
-            "sql": "bigint unsigned not null"
-        },
-        "name": {
-            "phptype": "string",
-            "conversion": null,
-            "type": "varchar",
-            "size": "255",
-            "null": false,
-            "identity": false,
-            "sql": "varchar(255) not null"
-        },
-        "token": {
-            "phptype": "string",
-            "conversion": null,
-            "type": "varchar",
-            "size": "64",
-            "null": false,
-            "identity": false,
-            "sql": "varchar(64) not null"
-        },
-        "abilities": {
-            "phptype": "binary",
-            "conversion": null,
-            "type": "text",
-            "size": null,
-            "null": true,
-            "identity": false,
-            "sql": "text"
-        },
-        "last_used_at": {
-            "phptype": "timestamp",
-            "conversion": null,
-            "type": "timestamp",
-            "size": null,
-            "null": true,
-            "identity": false,
-            "sql": "timestamp"
-        },
-        "created_at": {
-            "phptype": "timestamp",
-            "conversion": null,
-            "type": "timestamp",
-            "size": null,
-            "null": true,
-            "identity": false,
-            "sql": "timestamp"
-        },
-        "updated_at": {
-            "phptype": "timestamp",
-            "conversion": null,
-            "type": "timestamp",
-            "size": null,
-            "null": true,
-            "identity": false,
-            "sql": "timestamp"
-        }
-    },
-    "sessions": {
-        "id": {
-            "phptype": "string",
-            "conversion": null,
-            "type": "varchar",
-            "size": "255",
-            "null": false,
-            "identity": false,
-            "sql": "varchar(255) not null"
-        },
-        "user_id": {
-            "phptype": "int",
-            "conversion": null,
-            "type": "bigint",
-            "size": null,
-            "null": true,
-            "identity": false,
-            "sql": "bigint unsigned"
-        },
-        "ip_address": {
+        "Name": {
+            "alias": "Name",
             "phptype": "string",
             "conversion": null,
             "type": "varchar",
             "size": "45",
             "null": true,
             "identity": false,
-            "sql": "varchar(45)"
-        },
-        "user_agent": {
-            "phptype": "binary",
+            "sql": "varchar(45)",
+            "key": "NORMAL"
+        }
+    },
+    "cities": {
+        "IdCity": {
+            "alias": "IdCity",
+            "phptype": "int",
             "conversion": null,
-            "type": "text",
+            "type": "int",
+            "size": null,
+            "null": false,
+            "identity": true,
+            "sql": "int not null auto_increment",
+            "key": "PRIMARY KEY"
+        },
+        "Name": {
+            "alias": "Name",
+            "phptype": "string",
+            "conversion": null,
+            "type": "varchar",
+            "size": "45",
+            "null": true,
+            "identity": false,
+            "sql": "varchar(45)",
+            "key": "NORMAL"
+        }
+    },
+    "customers": {
+        "IdCustomer": {
+            "alias": "IdCustomer",
+            "phptype": "int",
+            "conversion": null,
+            "type": "int",
+            "size": null,
+            "null": false,
+            "identity": true,
+            "sql": "int not null auto_increment",
+            "key": "PRIMARY KEY"
+        },
+        "Name": {
+            "alias": "Name",
+            "phptype": "string",
+            "conversion": null,
+            "type": "varchar",
+            "size": "45",
+            "null": true,
+            "identity": false,
+            "sql": "varchar(45)",
+            "key": "NORMAL"
+        },
+        "City": {
+            "key": "MANYTOONE",
+            "refcol": "IdCity",
+            "reftable": "cities",
+            "extra": "",
+            "name": "customers_fk1",
+            "alias": "City",
+            "refcolalias": "NumCity",
+            "refcol2alias": null,
+            "phptype": "int",
+            "conversion": null,
+            "type": "int",
             "size": null,
             "null": true,
             "identity": false,
-            "sql": "text"
+            "sql": "int"
         },
-        "payload": {
-            "phptype": "binary",
+        "Email": {
+            "alias": "Email",
+            "phptype": "string",
             "conversion": null,
-            "type": "text",
+            "type": "varchar",
+            "size": "45",
+            "null": true,
+            "identity": false,
+            "sql": "varchar(45)",
+            "key": "NORMAL"
+        },
+        "Flag": {
+            "alias": "Flag",
+            "phptype": "string",
+            "conversion": null,
+            "type": "varchar",
+            "size": "1",
+            "null": true,
+            "identity": false,
+            "sql": "varchar(1) default '1'",
+            "key": "NORMAL"
+        }
+    },
+    "customerxcategories": {
+        "Customer": {
+            "key": "ONETOONE",
+            "refcol": "IdCustomer",
+            "reftable": "customers",
+            "extra": "",
+            "name": "customerxcategories_fk1",
+            "alias": "Customer",
+            "refcolalias": "NumCustomer",
+            "refcol2alias": null,
+            "phptype": "int",
+            "conversion": null,
+            "type": "int",
             "size": null,
             "null": false,
             "identity": false,
-            "sql": "text not null"
+            "sql": "int not null"
         },
-        "last_activity": {
+        "Category": {
+            "key": "MANYTOONE",
+            "refcol": "IdCategory",
+            "reftable": "categories",
+            "extra": "",
+            "name": "customerxcategories_fk2",
+            "alias": "Category",
+            "refcolalias": "NumCategory",
+            "refcol2alias": null,
             "phptype": "int",
             "conversion": null,
             "type": "int",
@@ -386,114 +146,316 @@
             "sql": "int not null"
         }
     },
-    "users": {
-        "id": {
+    "invoicedetails": {
+        "IdInvoiceDetail": {
+            "alias": "IdInvoiceDetail",
             "phptype": "int",
             "conversion": null,
-            "type": "bigint",
+            "type": "int",
             "size": null,
             "null": false,
             "identity": true,
-            "sql": "bigint unsigned not null auto_increment"
+            "sql": "int not null auto_increment",
+            "key": "PRIMARY KEY"
         },
-        "name": {
-            "phptype": "string",
-            "conversion": null,
-            "type": "varchar",
-            "size": "255",
-            "null": false,
-            "identity": false,
-            "sql": "varchar(255) not null"
-        },
-        "email": {
-            "phptype": "string",
-            "conversion": null,
-            "type": "varchar",
-            "size": "255",
-            "null": false,
-            "identity": false,
-            "sql": "varchar(255) not null"
-        },
-        "email_verified_at": {
-            "phptype": "timestamp",
-            "conversion": null,
-            "type": "timestamp",
-            "size": null,
-            "null": true,
-            "identity": false,
-            "sql": "timestamp"
-        },
-        "password": {
-            "phptype": "string",
-            "conversion": null,
-            "type": "varchar",
-            "size": "255",
-            "null": false,
-            "identity": false,
-            "sql": "varchar(255) not null"
-        },
-        "remember_token": {
-            "phptype": "string",
-            "conversion": null,
-            "type": "varchar",
-            "size": "100",
-            "null": true,
-            "identity": false,
-            "sql": "varchar(100)"
-        },
-        "two_factor_secret": {
-            "phptype": "binary",
-            "conversion": null,
-            "type": "text",
-            "size": null,
-            "null": true,
-            "identity": false,
-            "sql": "text"
-        },
-        "two_factor_recovery_codes": {
-            "phptype": "binary",
-            "conversion": null,
-            "type": "text",
-            "size": null,
-            "null": true,
-            "identity": false,
-            "sql": "text"
-        },
-        "current_team_id": {
+        "Invoice": {
+            "key": "MANYTOONE",
+            "refcol": "IdInvoice",
+            "reftable": "invoices",
+            "extra": "",
+            "name": "invoicedetails_fk2",
+            "alias": "Invoice",
+            "refcolalias": "NumInvoice",
+            "refcol2alias": null,
             "phptype": "int",
             "conversion": null,
-            "type": "bigint",
+            "type": "int",
             "size": null,
             "null": true,
             "identity": false,
-            "sql": "bigint unsigned"
+            "sql": "int"
         },
-        "profile_photo_path": {
-            "phptype": "binary",
+        "Product": {
+            "key": "MANYTOONE",
+            "refcol": "IdProducts",
+            "reftable": "products",
+            "extra": "",
+            "name": "invoicedetails_fk1",
+            "alias": "Product",
+            "refcolalias": "Numproduct",
+            "refcol2alias": null,
+            "phptype": "int",
             "conversion": null,
-            "type": "text",
+            "type": "int",
             "size": null,
             "null": true,
             "identity": false,
-            "sql": "text"
+            "sql": "int"
         },
-        "created_at": {
-            "phptype": "timestamp",
+        "Quantity": {
+            "alias": "Quantity",
+            "phptype": "int",
             "conversion": null,
-            "type": "timestamp",
+            "type": "int",
             "size": null,
             "null": true,
             "identity": false,
-            "sql": "timestamp"
+            "sql": "int",
+            "key": "NORMAL"
         },
-        "updated_at": {
-            "phptype": "timestamp",
+        "Flag": {
+            "alias": "Flag",
+            "phptype": "string",
             "conversion": null,
-            "type": "timestamp",
+            "type": "varchar",
+            "size": "1",
+            "null": true,
+            "identity": false,
+            "sql": "varchar(1) default '1'",
+            "key": "NORMAL"
+        }
+    },
+    "invoices": {
+        "IdInvoice": {
+            "alias": "IdInvoice",
+            "phptype": "int",
+            "conversion": null,
+            "type": "int",
+            "size": null,
+            "null": false,
+            "identity": true,
+            "sql": "int not null auto_increment",
+            "key": "PRIMARY KEY"
+        },
+        "Customer": {
+            "key": "MANYTOONE",
+            "refcol": "IdCustomer",
+            "reftable": "customers",
+            "extra": "",
+            "name": "invoices_fk1",
+            "alias": "Customer",
+            "refcolalias": "NumCustomer",
+            "refcol2alias": null,
+            "phptype": "int",
+            "conversion": null,
+            "type": "int",
             "size": null,
             "null": true,
             "identity": false,
-            "sql": "timestamp"
+            "sql": "int"
+        },
+        "Total": {
+            "alias": "Total",
+            "phptype": "float",
+            "conversion": null,
+            "type": "decimal",
+            "size": "9,4",
+            "null": true,
+            "identity": false,
+            "sql": "decimal(9,4)",
+            "key": "NORMAL"
+        },
+        "Date": {
+            "alias": "Date",
+            "phptype": "date",
+            "conversion": null,
+            "type": "date",
+            "size": null,
+            "null": true,
+            "identity": false,
+            "sql": "date",
+            "key": "NORMAL"
+        },
+        "Flag": {
+            "alias": "Flag",
+            "phptype": "string",
+            "conversion": null,
+            "type": "varchar",
+            "size": "1",
+            "null": true,
+            "identity": false,
+            "sql": "varchar(1) default '1'",
+            "key": "NORMAL"
+        }
+    },
+    "invoicetypes": {
+        "IdInvoiceType": {
+            "alias": "IdInvoiceType",
+            "phptype": "int",
+            "conversion": null,
+            "type": "int",
+            "size": null,
+            "null": false,
+            "identity": true,
+            "sql": "int not null auto_increment",
+            "key": "PRIMARY KEY"
+        },
+        "NameType": {
+            "alias": "NameType",
+            "phptype": "string",
+            "conversion": null,
+            "type": "varchar",
+            "size": "45",
+            "null": true,
+            "identity": false,
+            "sql": "varchar(45)",
+            "key": "NORMAL"
+        },
+        "Flag": {
+            "alias": "Flag",
+            "phptype": "string",
+            "conversion": null,
+            "type": "varchar",
+            "size": "1",
+            "null": true,
+            "identity": false,
+            "sql": "varchar(1) default '1'",
+            "key": "NORMAL"
+        }
+    },
+    "invoicextypes": {
+        "IdInvoice": {
+            "key": "ONETOONE",
+            "refcol": "IdInvoice",
+            "reftable": "invoices",
+            "extra": "",
+            "name": "invoicextypes_fk1",
+            "alias": "IdInvoice",
+            "refcolalias": "NumInvoice",
+            "refcol2alias": null,
+            "phptype": "int",
+            "conversion": null,
+            "type": "int",
+            "size": null,
+            "null": false,
+            "identity": false,
+            "sql": "int not null"
+        },
+        "IdInvoiceType": {
+            "key": "MANYTOONE",
+            "refcol": "IdInvoiceType",
+            "reftable": "invoicetypes",
+            "extra": "",
+            "name": "invoicextypes_fk2",
+            "alias": "IdInvoiceType",
+            "refcolalias": "NumInvoiceType",
+            "refcol2alias": null,
+            "phptype": "int",
+            "conversion": null,
+            "type": "int",
+            "size": null,
+            "null": false,
+            "identity": false,
+            "sql": "int not null"
+        }
+    },
+    "products": {
+        "IdProducts": {
+            "alias": "IdProducts",
+            "phptype": "int",
+            "conversion": null,
+            "type": "int",
+            "size": null,
+            "null": false,
+            "identity": true,
+            "sql": "int not null auto_increment",
+            "key": "PRIMARY KEY"
+        },
+        "Name": {
+            "alias": "Name",
+            "phptype": "string",
+            "conversion": null,
+            "type": "varchar",
+            "size": "45",
+            "null": true,
+            "identity": false,
+            "sql": "varchar(45)",
+            "key": "NORMAL"
+        },
+        "City": {
+            "key": "MANYTOONE",
+            "refcol": "IdCity",
+            "reftable": "cities",
+            "extra": "",
+            "name": "products_fk1",
+            "alias": "City",
+            "refcolalias": "NumCity",
+            "refcol2alias": null,
+            "phptype": "int",
+            "conversion": null,
+            "type": "int",
+            "size": null,
+            "null": true,
+            "identity": false,
+            "sql": "int"
+        },
+        "unitPrice": {
+            "alias": "unitPrice",
+            "phptype": "float",
+            "conversion": null,
+            "type": "decimal",
+            "size": "10,2",
+            "null": true,
+            "identity": false,
+            "sql": "decimal(10,2) default '0.00'",
+            "key": "NORMAL"
+        },
+        "Flag": {
+            "alias": "Flag",
+            "phptype": "string",
+            "conversion": null,
+            "type": "varchar",
+            "size": "1",
+            "null": true,
+            "identity": false,
+            "sql": "varchar(1) default '1'",
+            "key": "NORMAL"
+        }
+    },
+    "users": {
+        "iduser": {
+            "alias": "iduser",
+            "phptype": "int",
+            "conversion": null,
+            "type": "int",
+            "size": null,
+            "null": false,
+            "identity": true,
+            "sql": "int not null auto_increment",
+            "key": "PRIMARY KEY"
+        },
+        "user": {
+            "alias": "user",
+            "phptype": "string",
+            "conversion": null,
+            "type": "varchar",
+            "size": "45",
+            "null": true,
+            "identity": false,
+            "sql": "varchar(45)",
+            "key": "NORMAL"
+        },
+        "pwd": {
+            "alias": "pwd",
+            "phptype": "string",
+            "conversion": null,
+            "type": "varchar",
+            "size": "80",
+            "null": true,
+            "identity": false,
+            "sql": "varchar(80)",
+            "key": "NORMAL"
+        },
+        "fullname": {
+            "alias": "fullname",
+            "phptype": "string",
+            "conversion": null,
+            "type": "varchar",
+            "size": "45",
+            "null": true,
+            "identity": false,
+            "sql": "varchar(45)",
+            "key": "NORMAL"
         }
     }
 }

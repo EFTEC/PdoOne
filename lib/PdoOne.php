@@ -26,15 +26,17 @@ use stdClass;
  * @package       eftec
  * @author        Jorge Castro Castillo
  * @copyright (c) Jorge Castro C. Dual Licence: MIT and Commercial License  https://github.com/EFTEC/PdoOne
- * @version       3.11.1
+ * @version       3.12
  */
 class PdoOne
 {
-    public const VERSION = '3.11.1';
+    public const VERSION = '3.12';
     /** @var int We need this value because null and false could be a valid value. */
     public const NULL = PHP_INT_MAX;
-    /** @var string Prefix of the related columns */
+    /** @var string Prefix of the related columns. It is used for ORM */
     public static $prefixBase = '_';
+    /** @var string the prefix of every table, example "t_" */
+    public $prefixTable='';
     /** @var int Used for the method page() */
     public static $pageSize = 20;
     /** @var string|null Static date (when the date is empty) */
@@ -2914,6 +2916,7 @@ class PdoOne
         foreach ($getDefTable as $k => $v) {
             $listAlias[$k] = $v['alias'];
         }
+
         try {
             $r = str_replace(array(
                 '{pk}',
@@ -2950,9 +2953,9 @@ class PdoOne
                 self::varExport($relation, "\t\t"), //{deffktype}
                 self::varExport($relation2, "\t\t"), //{deffktype2}
                 self::varExport($this->generateCodeArrayConst(
-                    $getDefTable, $classRelations, $relation, 'function'), "\t\t"), // {array}
+                    $getDefTable, $classRelations??[], $relation, 'function'), "\t\t"), // {array}
                 self::varExport($this->generateCodeArrayConst(
-                    $getDefTable, $classRelations, $relation, 'constant'), "\t\t"), // {factory}
+                    $getDefTable, $classRelations??[], $relation, 'constant'), "\t\t"), // {factory}
                 $linked // {linked}
             ), $r);
         } catch (Exception $e) {
@@ -2971,7 +2974,7 @@ class PdoOne
     public function getRelations(string $tableName, ?string $pkFirst): array
     {
         try {
-            $relation = $this->getDefTableFK($tableName, false, true);
+            $relation = $this->getDefTableFK($this->prefixTable.$tableName, false, true);
         } catch (Exception $e) {
             $this->endTry();
             throw new RuntimeException('Error: Unable read fk of table ' . $e->getMessage());
@@ -4741,7 +4744,7 @@ BOOTS;
     public function dropTable(string $tableName, string $extra = ''): bool
     {
         $this->beginTry();
-        $r = $this->drop($tableName, 'table', $extra);
+        $r = $this->drop($this->prefixTable.$tableName, 'table', $extra);
         $this->endTry();
         return $r;
     }
@@ -4781,7 +4784,7 @@ BOOTS;
     public function truncate(string $tableName, string $extra = '', bool $forced = false)
     {
         $this->beginTry();
-        $r = $this->service->truncate($tableName, $extra, $forced);
+        $r = $this->service->truncate($this->prefixTable.$tableName, $extra, $forced);
         $this->endTry();
         return $r;
     }
@@ -4827,7 +4830,7 @@ BOOTS;
     public function resetIdentity(string $tableName, int $newValue = 0)
     {
         $this->beginTry();
-        $r = $this->service->resetIdentity($tableName, $newValue);
+        $r = $this->service->resetIdentity($this->prefixTable.$tableName, $newValue);
         $this->endTry();
         return $r;
     }
@@ -4956,7 +4959,7 @@ BOOTS;
             $definition = $this->convertUniversal($definition);
         }
         $this->endTry();
-        $sql = $this->service->createTable($tableName, $definition, $primaryKey, $extra, $extraOutside);
+        $sql = $this->service->createTable($this->prefixTable.$tableName, $definition, $primaryKey, $extra, $extraOutside);
         $r = $this->runMultipleRawQuery($sql);
         $this->endTry();
         return $r;
@@ -5076,7 +5079,7 @@ BOOTS;
     public function createFK(string $tableName, array $definitions): bool
     {
         $this->beginTry();
-        $sql = $this->service->createFK($tableName, $definitions);
+        $sql = $this->service->createFK($this->prefixTable.$tableName, $definitions);
         $r = $this->runMultipleRawQuery($sql);
         $this->endTry();
         return $r;
@@ -5097,7 +5100,7 @@ BOOTS;
     public function createIndex(string $tableName, array $definitions): bool
     {
         $this->beginTry();
-        $sql = $this->service->createIndex($tableName, $definitions);
+        $sql = $this->service->createIndex($this->prefixTable.$tableName, $definitions);
         $r = $this->runMultipleRawQuery($sql);
         $this->endTry();
         return $r;
@@ -5309,7 +5312,7 @@ BOOTS;
     public function tableExist(string $tableName): bool
     {
         $this->beginTry();
-        $r = $this->objectExist($tableName);
+        $r = $this->objectExist($this->prefixTable.$tableName);
         $this->endTry();
         return $r;
     }
@@ -5486,7 +5489,7 @@ BOOTS;
 						,avg($columnName) avg
 						,sum($columnName) sum
 						,count($columnName) count
-						 from $tableName";
+						 from $this->prefixTable$tableName";
         $r = $this->runRawQuery($query);
         $this->endTry();
         return $r;
@@ -5503,7 +5506,7 @@ BOOTS;
     public function columnTable(string $tableName)
     {
         $this->beginTry();
-        $query = $this->service->columnTable($tableName);
+        $query = $this->service->columnTable($this->prefixTable.$tableName);
         $r = $this->runRawQuery($query);
         $this->endTry();
         return $r;
@@ -5520,7 +5523,7 @@ BOOTS;
     public function foreignKeyTable(string $tableName)
     {
         $this->beginTry();
-        $query = $this->service->foreignKeyTable($tableName);
+        $query = $this->service->foreignKeyTable($this->prefixTable.$tableName);
         $r = $this->runRawQuery($query);
         $this->endTry();
         return $r;

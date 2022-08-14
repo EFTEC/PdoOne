@@ -13,7 +13,7 @@ use RuntimeException;
 /**
  * Class PdoOneQuery
  *
- * @version       3.8
+ * @version       3.9
  * @package       eftec
  * @author        Jorge Castro Castillo
  * @copyright (c) Jorge Castro C. Dual Licence: MIT and Commercial License  https://github.com/EFTEC/PdoOne
@@ -501,7 +501,7 @@ class PdoOneQuery
      * @param string|array|int $params
      * @param string           $type
      * @param bool             $return
-     * @param string|null      $tablePrefix
+     * @param string|null      $tablePrefix  Tableprefix is used internally by ORM.
      *
      * @return array|null
      */
@@ -616,8 +616,10 @@ class PdoOneQuery
                 } else {
                     trigger_error('parameteres not correctly defined');
                     /*foreach ($where as $k => $v) {
-                        $named[] = '?';
+                        $named[] = $k;
                         $queryEnd[] = $k;
+                        //$named[] = '?';
+                        //$queryEnd[] = $k;
                     }*/
                 }
                 $numeric = isset($params[0]);
@@ -808,8 +810,8 @@ class PdoOneQuery
     }
 
     /**
-     * Adds a from for a query. It could be used by select,insert,update and
-     * delete.<br>
+     * Adds a from for a query. It could be used by select,insert,update and delete.<br>
+     * <b>Note:</b> The prefix (PdoOne->$prefixTable) is considered only if the table is defined alone.
      * <b>Example:</b><br>
      * <pre>
      *      from('table')
@@ -819,35 +821,41 @@ class PdoOneQuery
      *      from('table1 inner join table2 on table1.c=table2.c')
      * </pre>
      *
-     * @param string|null $sql    Input SQL query
-     * @param string|null $schema The schema/database of the table without trailing dot.<br>
+     * @param string|null $sqlOrTableName Input SQL query
+     * @param string|null $schema         The schema/database of the table without trailing dot.<br>
      *                            Example 'database' or 'database.dbo'
      * @return PdoOneQuery
      * @test InstanceOf PdoOne::class,this('table t1')
      */
-    public function from(?string $sql, ?string $schema = null): PdoOneQuery
+    public function from(?string $sqlOrTableName, ?string $schema = null): PdoOneQuery
     {
-        if ($sql === null) {
+        if ($sqlOrTableName === null) {
             return $this;
         }
         if ($schema !== null) {
             $schema .= '.';
-            $comma = strpos($sql, ',') !== false;
+            $comma = strpos($sqlOrTableName, ',') !== false;
             if ($comma) {
                 // table1,table2 => prefix.table1,prefix.table2
-                $sql = str_replace(',', ',' . $schema, $sql);
+                $sqlOrTableName = str_replace(',', ',' . $schema, $sqlOrTableName);
             } else {
-                $join = stripos($sql, ' join ') !== false;
+                $join = stripos($sqlOrTableName, ' join ') !== false;
+
                 if ($join) {
                     // table1 inner join table2 => prefix.table1 inner join prefix.table2
-                    $sql = str_ireplace(' join ', ' join ' . $schema, $sql);
+                    $sqlOrTableName = str_ireplace(' join ', ' join ' . $schema, $sqlOrTableName);
+                } else {
+                    // It is a simple table (with a schema)
+                    $sqlOrTableName=$this->parent->prefixTable.$sqlOrTableName;
                 }
             }
-            // prefix at the begginer table1=> prefix.table1
-            $sql = $schema . ltrim($sql);
+            // Added a prefix table1=> prefixtable1
+            $sqlOrTableName = $schema . ltrim($sqlOrTableName);
+        } else {
+            $sqlOrTableName=$this->parent->prefixTable.$sqlOrTableName;
         }
-        $this->from = ($sql) ? $sql . $this->from : $this->from;
-        $this->parent->tables[] = explode(' ', $sql)[0];
+        $this->from = ($sqlOrTableName) ? $sqlOrTableName . $this->from : $this->from;
+        $this->parent->tables[] = explode(' ', $sqlOrTableName)[0];
         return $this;
     }
 
@@ -1524,6 +1532,9 @@ class PdoOneQuery
         if ($sql === null) {
             return $this;
         }
+        if(strpos($sql,',')===0) {
+            $sql.=$this->parent->prefixTable.$sql;
+        }
         $this->from .= ($sql) ? " left join $sql" : '';
         $this->parent->tables[] = explode(' ', $sql)[0];
         return $this;
@@ -1546,6 +1557,9 @@ class PdoOneQuery
     {
         if ($sql === null) {
             return $this;
+        }
+        if(strpos($sql,',')===0) {
+            $sql.=$this->parent->prefixTable.$sql;
         }
         $this->from .= ($sql) ? " right join $sql" : '';
         $this->parent->tables[] = explode(' ', $sql)[0];
@@ -1726,10 +1740,11 @@ class PdoOneQuery
         foreach ($excludeColumn as $ex) {
             unset($objectCopy[$ex]);
         }
-        $id = $this->_insert($tableName, $objectCopy);
+        $tmpTable=$this->parent->prefixTable.$tableName;
+        $id = $this->_insert($tmpTable, $objectCopy);
         /** id could be 0,false or null (when it is not generated) */
         if ($id) {
-            $pks =$pks ?? $this->parent->setUseInternalCache()->service->getDefTableKeys($tableName, true, 'PRIMARY KEY');
+            $pks =$pks ?? $this->parent->setUseInternalCache()->service->getDefTableKeys($tmpTable, true, 'PRIMARY KEY');
             if (count($pks) > 0) {
                 // we update the object because it returned an identity.
                 $k = array_keys($pks)[0]; // first primary key
@@ -1869,6 +1884,9 @@ class PdoOneQuery
             $cls = $this->ormClass;
             return $cls::setPdoOneQuery($this)::insert($tableNameOrValues);
         }
+        if(is_string($tableNameOrValues)) {
+            $tableNameOrValues=$this->parent->prefixTable.$tableNameOrValues;
+        }
         return $this->_insert($tableNameOrValues, $tableDef, $values, $identityColumn);
     }
 
@@ -1880,10 +1898,8 @@ class PdoOneQuery
      * Example:
      *      delete('table',['col1',10,'col2','hello world']);
      *      delete('table',['col1','col2'],[10,'hello world']);
-     *      $db->from('table')
-     *          ->where('.')
-     *          ->delete() // running on a chain
-     *      delete('table where condition=1');
+     *      $db->from('table')->where(..)->delete() // running on a chain
+     *      delete('table where condition=1'); // single command.
      *
      * @param string|null|array $tableOrObject
      * @param string[]|null     $tableDefWhere
@@ -1906,6 +1922,8 @@ class PdoOneQuery
         }
         if ($tableOrObject === null) {
             $tableOrObject = $this->from;
+        } else if(is_string($tableOrObject)) {
+            $this->parent->tables[] = $this->parent->prefixTable.$tableOrObject;
         } else {
             $this->parent->tables[] = $tableOrObject;
         }
@@ -1974,6 +1992,7 @@ class PdoOneQuery
      * <br><b>Example</b>:<br>
      * <pre>
      *      update('table',['col1',10,'col2','hello world'],['wherecol',10]);
+     *      update('table',['col1'=>10=>'col2'=>'hello world'],['wherecol'=>10]);
      *      update('table',['col1','col2'],[10,'hello world'],['wherecol'],[10]);
      *      $this->from("producttype")
      *          ->set("name=?",['Captain-Crunch'])
@@ -2010,13 +2029,21 @@ class PdoOneQuery
             // using builder. from()->set()->where()->update()
             $tableOrObject = $this->from;
         } else {
+            if(is_string($tableOrObject)) {
+                $tableOrObject=$this->parent->prefixTable.$tableOrObject;
+            }
             $this->parent->tables[] = $tableOrObject;
         }
         if ($this->useCache === true) {
             $this->parent->invalidateCache('', $this->cacheFamily);
         }
         if ($tableDef !== null) {
-            $this->constructParam2($tableDef, $values, 'set');
+            if(is_array($values)) {
+                $this->constructParam2($tableDef,PdoOne::NULL, 'set');
+                $this->where($values);
+            } else {
+                $this->constructParam2($tableDef, $values, 'set');
+            }
         }
         if ($tableDefWhere !== null) {
             $this->constructParam2($tableDefWhere, $valueWhere);
@@ -2101,7 +2128,7 @@ class PdoOneQuery
     }
 
     /**
-     * Macro of join.<br>
+     * Alias of method join().<br>
      * <b>Example</b>:<br>
      * <pre>
      *          innerjoin('tablejoin on t1.field=t2.field')
@@ -2138,6 +2165,9 @@ class PdoOneQuery
     {
         if ($condition !== '') {
             $sql = "$sql on $condition";
+        }
+        if(strpos($sql,',')===0) {
+            $sql.=$this->parent->prefixTable.$sql;
         }
         $this->from .= ($sql) ? " inner join $sql " : '';
         $this->parent->tables[] = explode(' ', $sql)[0];
