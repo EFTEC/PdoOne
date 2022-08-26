@@ -290,7 +290,7 @@ class PdoOneQuery
         if (!in_array('select', $words, true)) {
             $sql = 'select ' . $this->distinct . $this->select;
         } else {
-            $sql = $this->select; // the query already constains "select", so we don't want "select select * from".
+            $sql = $this->select; // the query already constains "select", so we don't want "select * from".
         }
         if (!in_array('from', $words, true)) {
             $sql .= ' from ' . $this->from;
@@ -1341,12 +1341,13 @@ class PdoOneQuery
     {
         if ($this->ormClass !== null) {
             $cls = $this->ormClass;
-            $p0 = ($pageSize ?? $cls::$pageSize) * ($numPage - 1);
+            $pageSize=$pageSize ?? $cls::$pageSize;
             //$p1 = $p0 + ($pageSize ?? $cls::$pageSize);
         } else {
-            $p0 = ($pageSize ?? PdoOne::$pageSize) * ($numPage - 1);
+            $pageSize=$pageSize ?? PdoOne::$pageSize;
             //$p1 = $p0 + ($pageSize ?? PdoOne::$pageSize);
         }
+        $p0 = $pageSize * ($numPage - 1);
         return $this->limit($p0, $pageSize);
     }
 

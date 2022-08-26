@@ -26,11 +26,11 @@ use stdClass;
  * @package       eftec
  * @author        Jorge Castro Castillo
  * @copyright (c) Jorge Castro C. Dual Licence: MIT and Commercial License  https://github.com/EFTEC/PdoOne
- * @version       3.12
+ * @version       3.12.1
  */
 class PdoOne
 {
-    public const VERSION = '3.12';
+    public const VERSION = '3.12.1';
     /** @var int We need this value because null and false could be a valid value. */
     public const NULL = PHP_INT_MAX;
     /** @var string Prefix of the related columns. It is used for ORM */
@@ -5787,7 +5787,7 @@ BOOTS;
     }
 
     /**
-     * Delete a row(s) if they exists.
+     * Delete a row(s) if they exist.
      * Example:
      *      delete('table',['col1',10,'col2','hello world']);
      *      delete('table',['col1','col2'],[10,'hello world']);
@@ -5927,7 +5927,7 @@ BOOTS;
      *      having(['field',[20]] ) // array type defined
      *      having('field=20') // literal value
      *      having('field=?',[20]) // automatic type
-     *      having('field',[20]) // automatic type (it's the same than
+     *      having('field',[20]) // automatic type (it's the same)
      *      where('field=?',[20]) having('field=?', [20] ) // type(i,d,s,b)
      *      defined having('field=?,field2=?', [20,'hello'] )
      *

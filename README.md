@@ -2040,6 +2040,8 @@ In a nutshell:
 >
 > Every decimal version means that it patches/fixes/refactoring a previous functionality i.e. 1.5.0 -> 1.5.1 (fix)
 
+* 3.12.1 2022-08-26
+  * [PdoOneQuery] fixed a problem with page() in an ORM. 
 * 3.12  2022-08-14
   * [PdoOne] Added field $prefixTable to prefix every table in the database.
     * It works with select,insert,update,delete,from,count and many others operations.
