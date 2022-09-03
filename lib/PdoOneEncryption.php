@@ -53,13 +53,13 @@ class PdoOneEncryption
     /**
      * PdoOneEncryption constructor.
      * @param string $encPassword
-     * @param string $encSalt
+     * @param string|null $encSalt
      * @param bool   $iv        If iv is true then it is generated randomly (not deterministically)
      *                          otherwise, is it generated via md5
      * @param string $encMethod Example : AES-128-CTR @see
      *                          http://php.net/manual/en/function.openssl-get-cipher-methods.php
      */
-    public function __construct($encPassword, $encSalt = null, $iv = true, $encMethod = 'AES-128-CTR')
+    public function __construct(string $encPassword,?string $encSalt = null,bool $iv = true,string $encMethod = 'AES-256-CTR')
     {
         $this->encPassword = $encPassword;
         $this->encSalt = $encSalt ?? $encPassword; // if null then it uses the same password
@@ -197,13 +197,13 @@ class PdoOneEncryption
 
 
     /**
-     * @param      $password
-     * @param      $salt
-     * @param      $encMethod
+     * @param string $password
+     * @param string $salt
+     * @param string $encMethod
      * @param bool $iv
      * @throws Exception
      */
-    public function setEncryption($password, $salt, $encMethod, $iv = true): void
+    public function setEncryption(string $password,string $salt,string $encMethod,bool $iv = true): void
     {
         if (!extension_loaded('openssl')) {
             $this->encEnabled = false;
@@ -223,7 +223,7 @@ class PdoOneEncryption
      * @return void
      * @see https://www.php.net/manual/en/function.hash-algos.php
      */
-    public function setHashType($hashType): void
+    public function setHashType(string $hashType): void
     {
         $this->hashType = $hashType;
     }
@@ -234,7 +234,7 @@ class PdoOneEncryption
      * @param integer $n
      * @return int|false
      */
-    public function encryptInteger($n)
+    public function encryptInteger(int $n)
     {
         if (!is_numeric($n)) {
             return false;
@@ -248,7 +248,7 @@ class PdoOneEncryption
      * @param int $n
      * @return int|null
      */
-    public function decryptInteger($n): ?int
+    public function decryptInteger(int $n): ?int
     {
         if (!is_numeric($n)) {
             return null;
@@ -257,39 +257,39 @@ class PdoOneEncryption
         return PHP_INT_SIZE === 4 ? $this->decrypt32($n) : $this->decrypt64($n);
     }
 
-    /** @param $n
+    /** @param int $n
      * @return int
      * @see \eftec\PdoOneEncryption::encryptInteger
      */
-    private function encrypt32($n): int
+    private function encrypt32(int $n): int
     {
         return ((0x000000FF & $n) << 24) + (((0xFFFFFF00 & $n) >> 8) & 0x00FFFFFF);
     }
 
-    /** @param $n
+    /** @param int $n
      * @return int
      * @see \eftec\PdoOneEncryption::decryptInteger
      */
-    private function decrypt32($n): int
+    private function decrypt32(int $n): int
     {
         return ((0x00FFFFFF & $n) << 8) + (((0xFF000000 & $n) >> 24) & 0x000000FF);
     }
 
-    /** @param $n
+    /** @param int $n
      * @return int
      * @see \eftec\PdoOneEncryption::encryptInteger
      */
-    private function encrypt64($n): int
+    private function encrypt64(int $n): int
     {
         /** @noinspection PhpCastIsUnnecessaryInspection */
         return ((0x000000000000FFFF & $n) << 48) + ((((int)0xFFFFFFFFFFFF0000 & $n) >> 16.0) & 0x0000FFFFFFFFFFFF);
     }
 
-    /** @param $n
+    /** @param int $n
      * @return int
      * @see \eftec\PdoOneEncryption::decryptInteger
      */
-    private function decrypt64($n): int
+    private function decrypt64(int $n): int
     {
         /** @noinspection PhpCastIsUnnecessaryInspection */
         return (((int)0x0000FFFFFFFFFFFF & $n) << 16.0) + ((((int)0xFFFF000000000000 & $n) >> 48.0) & 0x000000000000FFFF);

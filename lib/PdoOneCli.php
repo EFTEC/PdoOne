@@ -1,7 +1,5 @@
 <?php /** @noinspection DuplicatedCode */
 
-/** @noinspection PhpConditionAlreadyCheckedInspection */
-
 namespace eftec;
 
 use eftec\CliOne\CliOne;
@@ -12,7 +10,6 @@ use RuntimeException;
 /**
  * Class pdoonecli
  * It is the CLI interface for PdoOne.<br>
- * Note, this class is called ON-PURPOSE in lowercase.<br>
  * <b>How to execute it?</b><br>
  * In the command line, runs the next line:<br>
  * <pre>
@@ -158,7 +155,7 @@ class PdoOneCli
     public function cliEngine(): void
     {
         $this->cli->createParam('help', 'h', 'longflag')
-            ->setRelated(['common', 'export', 'generate','definition'])
+            ->setRelated(['common', 'export', 'generate', 'definition'])
             ->setRequired(false)
             ->setAllowEmpty()
             ->setDescription('This help', '', [
@@ -191,7 +188,6 @@ class PdoOneCli
                 'Example: <dim>"definition --loadconfig myconfig"</dim>.Load a config and generate in interactive mode',
                 'Example: <dim>"definition --command scan --loadconfig .\p2.php -og yes"</dim>. Load a config, scan for changes and override',
                 'Example: <dim>"definition --type relation/table --loadconfig .\p2.php -og yes"</dim>. Returns a relation/table'])
-
             ->setDefault('')
             ->setInput(false)
             ->add();
@@ -208,9 +204,8 @@ class PdoOneCli
                 'tablefull: get the tables, columns and relations',
                 'alias: get all aliases, conversion: get a custom conversion, extra: get a custom extra column, removed: get tables removed',
                 'tablesxclass: gets the relation between tables and classes'])
-            ->setInput($interactive, 'optionshort', ['relation','relation2', 'table','tablefull','alias','conversion','extra','removed','tablexclass'])
+            ->setInput($interactive, 'optionshort', ['relation', 'relation2', 'table', 'tablefull', 'alias', 'conversion', 'extra', 'removed', 'tablexclass'])
             ->add();
-
         $this->cli->createParam('generate', [], 'first')
             ->setRequired(false)
             ->setAllowEmpty()
@@ -232,7 +227,7 @@ class PdoOneCli
         $this->cli->evalParam('export');
         $this->inJectInitParam();
         $this->cli->createParam('databasetype', 'dt', 'longflag')
-            ->setRelated(['common', 'export', 'generate','definition'])
+            ->setRelated(['common', 'export', 'generate', 'definition'])
             ->setRequired(false)
             ->setDescription('The type of database', 'Select the type of database', [
                 'Values allowed: <cyan><option/></cyan>'])
@@ -240,7 +235,7 @@ class PdoOneCli
             ->setCurrentAsDefault()
             ->add();
         $this->cli->createParam('server', 'srv', 'longflag')
-            ->setRelated(['common', 'export', 'generate','definition'])
+            ->setRelated(['common', 'export', 'generate', 'definition'])
             ->setRequired(false)
             ->setDefault('127.0.0.1')
             ->setCurrentAsDefault()
@@ -250,7 +245,7 @@ class PdoOneCli
             ->setInput($interactive)
             ->add();
         $this->cli->createParam('user', 'u', 'longflag')
-            ->setRelated(['common', 'export', 'generate','definition'])
+            ->setRelated(['common', 'export', 'generate', 'definition'])
             ->setDescription('The username to access to the database', 'Select the username',
                 ['Example: <dim>sa, root</dim>'], 'usr')
             ->setRequired(false)
@@ -258,14 +253,14 @@ class PdoOneCli
             ->setInput($interactive)
             ->add();
         $this->cli->createParam('password', 'p', 'longflag')
-            ->setRelated(['common', 'export', 'generate','definition'])
+            ->setRelated(['common', 'export', 'generate', 'definition'])
             ->setRequired(false)
             ->setDescription('The password to access to the database', '', ['Example: <dim>12345</dim>'], 'pwd')
             ->setCurrentAsDefault()
             ->setInput($interactive, 'password')
             ->add();
         $this->cli->createParam('database', 'db', 'longflag')
-            ->setRelated(['common', 'export', 'generate','definition'])
+            ->setRelated(['common', 'export', 'generate', 'definition'])
             ->setRequired(false)
             ->setDescription('The database/schema', 'Select the database/schema', [
                 'Example: <dim>sakila,contoso,adventureworks</dim>'], 'db')
@@ -302,7 +297,7 @@ class PdoOneCli
             ->add();
         $listPHPFiles = $this->getFiles('.', 'php');
         $this->cli->createParam('loadconfig', [], 'longflag')
-            ->setRelated(['common', 'export', 'generate','definition'])
+            ->setRelated(['common', 'export', 'generate', 'definition'])
             ->setRequired(false)
             ->setDescription('Select the configuration file to load', '', [
                     'It loads a configuration file, the file mustn\'t have extension',
@@ -312,7 +307,7 @@ class PdoOneCli
             ->setInput(false, 'string', $listPHPFiles)
             ->add();
         $this->cli->createParam('saveconfig', [], 'longflag')
-            ->setRelated(['common', 'export', 'generate','definition'])
+            ->setRelated(['common', 'export', 'generate', 'definition'])
             ->setRequired(false)
             ->setCurrentAsDefault()
             ->setDescription('save a configuration file', 'Select the configuration file to save', [
@@ -1051,8 +1046,6 @@ PdoOne: $v  Cli: $vc
             $this->cli->showCheck('CRITICAL', 'red', 'Unable to read tables');
             die(1);
         }
-
-
         switch ($defType) {
             case 'table':
             case '':
@@ -1069,33 +1062,31 @@ PdoOne: $v  Cli: $vc
                 $result = [];
                 foreach ($tables as $table) {
                     $result[$table] = $pdo->getDefTable($table);
-                    foreach($result[$table] as $col=>$values) {
+                    foreach ($result[$table] as $col => $values) {
                         // we set empty key
-                        $result[$table][$col]['key']='NORMAL';
+                        $result[$table][$col]['key'] = 'NORMAL';
                     }
                 }
-
                 //die(1);
                 $this->databaseScan($tables, $pdo);
-                $result2=[];
-
-                foreach($tables as $tableName) {
+                $result2 = [];
+                foreach ($tables as $tableName) {
                     $pks = $pdo->service->getPK($tableName, '??');
-                    $keys = $pdo->service->getDefTableKeys($tableName,true);
-                    if(count($keys)>0) {
-                        foreach($keys as $col=>$keytype) {
+                    $keys = $pdo->service->getDefTableKeys($tableName, true);
+                    if (count($keys) > 0) {
+                        foreach ($keys as $col => $keytype) {
                             // we set the keys for primary and index (but no foreign keys or relations)
-                            $result[$tableName][$col]['key']=$keytype;
+                            $result[$tableName][$col]['key'] = $keytype;
                         }
                     }
                     $pkFirst = (is_array($pks) && count($pks) > 0) ? $pks[0] : null;
                     // we get the relations and foreign keys.
                     [$relation, $linked] = $pdo->generateGetRelations($tableName, $this->columnsTable, $pkFirst, $this->columnsAlias);
-                    $result2[$tableName]=$relation;
+                    $result2[$tableName] = $relation;
                 }
                 // merging
-                foreach($tables as $tableName) {
-                    foreach($result2[$tableName] as $kcol=>$kval) {
+                foreach ($tables as $tableName) {
+                    foreach ($result2[$tableName] as $kcol => $kval) {
                         if (strpos($kcol, '_') !== 0) {
                             // we don't add "_relational" columns
                             if (isset($result[$tableName][$kcol])) {
@@ -1111,16 +1102,15 @@ PdoOne: $v  Cli: $vc
                         }
                     }
                 }
-
                 break;
             case 'relation2':
                 $this->databaseScan($tables, $pdo);
-                $result=[];
-                foreach($tables as $tableName) {
+                $result = [];
+                foreach ($tables as $tableName) {
                     $pk = $pdo->service->getPK($tableName, '??');
                     $pkFirst = (is_array($pk) && count($pk) > 0) ? $pk[0] : null;
                     [$relation, $linked] = $pdo->generateGetRelations($tableName, $this->columnsTable, $pkFirst, $this->columnsAlias);
-                    $result[$tableName]=$relation;
+                    $result[$tableName] = $relation;
                 }
                 break;
             case 'conversion':
@@ -1163,6 +1153,7 @@ PdoOne: $v  Cli: $vc
             echo $result;
         }
     }
+
     /**
      * @return void
      * @throws Exception

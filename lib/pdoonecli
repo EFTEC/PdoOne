@@ -10,7 +10,6 @@ if (!defined('PHPUNIT_COMPOSER_INSTALL') && !defined('__PHPUNIT_PHAR__')
 ) {
     // we also excluded it if it is called by phpunit.
     $path = PdoOneCli::findVendorPath();
-    /** @noinspection PhpIncludeInspection */
     include_once __DIR__ . '/' . $path . '/autoload.php';
     $cli = new PdoOneCli();
     /** @noinspection PhpUnhandledExceptionInspection */

@@ -656,7 +656,7 @@ abstract class _BasePdoOneRepo
      *                                  first()
      * @return array
      */
-    public static function executePlan0(PdoOneQuery $currentQuery, ?array $conditions = null, $first = false)
+    public static function executePlan0(PdoOneQuery $currentQuery, ?array $conditions = null, bool $first = false)
     {
         //$currentQuery = self::getQuery();
         $currentQuery->ormClass = null;
@@ -823,7 +823,7 @@ abstract class _BasePdoOneRepo
      * @param array  $where          the conditions if any.
      * @return string Returns the query.
      */
-    public static function startPlan(string $absolutePrefix, array $dependency, &$where): string
+    public static function startPlan(string $absolutePrefix, array $dependency, array &$where): string
     {
         [$cols, $tables, $where] = self::plan($absolutePrefix, $dependency);
         $query = implode(",", $cols) . '|FROM|' . static::TABLE . " ";
@@ -839,7 +839,8 @@ abstract class _BasePdoOneRepo
      * @param string $noTableBack      the name of the parent table (no alias). it is used to avoid a ping-pong.
      * @return array=[$cols, $table, $where]
      */
-    public static function plan(string $absolutePrefix = '', array $recursive = [], $prefix = '', $aliasTableParent = '', $noTableBack = ''): array
+    public static function plan(string $absolutePrefix = '', array $recursive = [], string $prefix = ''
+        , string                       $aliasTableParent = '', string $noTableBack = ''): array
     {
         $defs = static::DEF;
         $fks = static::DEFFK;
@@ -1289,7 +1290,7 @@ abstract class _BasePdoOneRepo
      *                       in a "where".
      * @return array
      */
-    public static function convertAliasToDB($aliasRows, $isWhere = false): array
+    public static function convertAliasToDB(array $aliasRows, bool $isWhere = false): array
     {
         $db = [];
         $aliasCol = static::ALIAS2COL;
@@ -1932,7 +1933,7 @@ abstract class _BasePdoOneRepo
                 }
             }*/
             self::recursiveDMLManyToOne('insert', $entityAlias, $defs, $pdoOneQuery, $recursiveBackup, $ns, $entityCopy);
-            $insert = $pdoOneQuery->insertObject(static::TABLE, $entityCopy, static::PK);
+            $insert = $pdoOneQuery->insertObject(static::TABLE, $entityCopy, $identityDB === null ? [] : [$identityDB], static::PK);
             // obtain the identity if any
             if ($identityDB !== null) {
                 $pks = static::COL2ALIAS[$identityDB];

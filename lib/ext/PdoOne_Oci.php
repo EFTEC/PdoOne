@@ -1,4 +1,6 @@
-<?php /** @noinspection PhpMissingParamTypeInspection */
+<?php /** @noinspection SqlNoDataSourceInspection */
+/** @noinspection SqlDialectInspection */
+/** @noinspection PhpMissingParamTypeInspection */
 /** @noinspection UnknownInspectionInspection */
 /** @noinspection SqlWithoutWhere */
 /** @noinspection SqlResolve */

@@ -41,7 +41,7 @@ $columnRemove=[
     //'TableParent'=>['idchild2FK']
 ];
 $extraColumn = [
-    'TableParent' => ['extracol' => 'CURRENT_TIMESTAMP', 'extracol2' => '20']
+//    'TableParent' => ['extracol' => 'CURRENT_TIMESTAMP', 'extracol2' => '20']
 ];
 
 $tables = $dao->tableSorted();

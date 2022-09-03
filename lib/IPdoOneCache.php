@@ -1,5 +1,5 @@
 <?php /** @noinspection PhpMissingParamTypeInspection */
-/** @noinspection ReturnTypeCanBeDeclaredInspection */
+
 /** @noinspection AccessModifierPresentedInspection */
 
 namespace eftec;
@@ -30,6 +30,7 @@ interface IPdoOneCache
      *                                If int then it is the duration of the cache (in seconds)
      *
      * @return void.
+     * @noinspection ReturnTypeCanBeDeclaredInspection
      */
     function setCache($uid, $family = '', $data = null, $ttl = null);
 

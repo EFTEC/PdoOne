@@ -201,7 +201,7 @@ class PdoOne_mysql_gen_test extends TestCase
         $p['fieldKey'] = 1;
         $p['fieldDateTime'] = DateTime::createFromFormat('j-m-Y', '15-02-2009');
         $p['_TableParentxCategory'] = [TableCategoryRepo::first(1), TableCategoryRepo::first(2)];
-        self::assertEquals(1, TableParentRepo::setRecursive(['_TableParentxCategory'])->insert($p));
+        self::assertEquals(1, TableParentRepo::recursive(['/_TableParentxCategory'])->insert($p));
 
 
         $pex = TableParentExtRepo::factory();
@@ -219,7 +219,7 @@ class PdoOne_mysql_gen_test extends TestCase
         $p['fieldKey'] = 1;
         $p['fieldDateTime'] = DateTime::createFromFormat('j-m-Y', '15-02-2009');
         $p['_TableParentxCategory'] = [TableCategoryRepo::first(1), TableCategoryRepo::first(2)];
-        self::assertEquals(2, TableParentRepo::setRecursive(['_TableParentxCategory'])->insert($p));
+        self::assertEquals(2, TableParentRepo::recursive(['/_TableParentxCategory'])->insert($p));
 
         $pex = TableParentExtRepo::factory();
         $pex['idtablaparentExtPK'] =2; // $p['idtablaparentPK'];
@@ -265,7 +265,7 @@ class PdoOne_mysql_gen_test extends TestCase
             }
         } catch (Exception $e) {
         }
-        $gc = TableGrandChildTagRepo::factoryNull();
+        $gc = TableGrandChildTagRepo::factory();
         $gc['IdTablaGrandChildTagPK'] = 1;
         $gc['Name'] = 'GrandChild Cat #1';
         $gc['IdgrandchildFK'] = 1;
@@ -290,7 +290,7 @@ class PdoOne_mysql_gen_test extends TestCase
             }
         } catch (Exception $e) {
         }
-        $gc = TableChildRepo::factoryNull();
+        $gc = TableChildRepo::factory();
 
         $gc['valuechild'] = 'Child #1';
         $gc['idgrandchildFK'] = 1;
@@ -318,7 +318,7 @@ class PdoOne_mysql_gen_test extends TestCase
             }
         } catch (Exception $e) {
         }
-        $gc = TableParentRepo::factoryNull();
+        $gc = TableParentRepo::factory();
         //$gc['idtablaparentPK'] = 1;
         $gc['fieldInt'] = 111;
         $gc['fieldVarchar'] = 'hi';
@@ -334,7 +334,7 @@ class PdoOne_mysql_gen_test extends TestCase
 
         self::assertGreaterThan(1, $in1);
         self::assertEquals(1, TableParentRepo::deleteById($in1));
-        $gc = TableParentRepo::factoryNull();
+        $gc = TableParentRepo::factory();
         $gc['idtablaparentPK'] = 2;
         $gc['fieldVarchar'] = 'Parent #2';
         $gc['idchildFK'] = 1;
@@ -360,7 +360,7 @@ class PdoOne_mysql_gen_test extends TestCase
             }
         } catch (Exception $e) {
         }
-        $gc = TableCategoryRepo::factoryNull();
+        $gc = TableCategoryRepo::factory();
         $gc['IdTableCategoryPK'] = 1;
         $gc['Name'] = 'Category #1';
         try {
@@ -383,7 +383,7 @@ class PdoOne_mysql_gen_test extends TestCase
             TableParentxCategoryRepo::truncate(true);
             TableParentxCategoryRepo::delete([]);
         }
-        $gc = TableParentxCategoryRepo::factoryNull();
+        $gc = TableParentxCategoryRepo::factory();
         $gc['idtablaparentPKFK'] = 1;
         $gc['idcategoryPKFK'] = 1;
         self::assertEquals(1, TableParentxCategoryRepo::insert($gc));
@@ -475,7 +475,7 @@ class PdoOne_mysql_gen_test extends TestCase
         $cs = new CacheServicesmysql();
         TableParentRepo::base()->setCacheService($cs);
         //$rows = TableParentRepo::setRecursive(['_idchildFK'])->useCache(2000)->limit("0,2")->toList();
-        $rows = TableParentRepo::setRecursive(['_idchildFK'])->useCache(2000)->first();
+        $rows = TableParentRepo::recursive(['/_idchildFK'])->useCache(2000)->first();
         //$rows = TableParentRepo::setRecursive(['_idchildFK'])->useCache(2000)->limit("0,2")->toList();
         //$this->assertEquals(3,count($rows[0]['_idchildFK']));
         self::assertEquals([
@@ -612,7 +612,7 @@ class PdoOne_mysql_gen_test extends TestCase
             'fielDecimal' => 0.0,
             'fieldDateTime' => '',
             'fieldUnique' => '',
-            'fieldKey' => ''], TableParentRepo::setRecursive('*')->factory());
+            'fieldKey' => ''], TableParentRepo::recursive('*')->factory());
 
     }
 
@@ -645,7 +645,7 @@ class PdoOne_mysql_gen_test extends TestCase
             }
         } catch (Exception $e) {
         }
-        $gc = TableGrandChildRepo::factoryNull();
+        $gc = TableGrandChildRepo::factory();
         $gc['idgrandchildPK'] = 1;
         $gc['NameGrandChild'] = 'GrandChild #1';
         try {
@@ -667,7 +667,7 @@ class PdoOne_mysql_gen_test extends TestCase
 
     public function testOneToMany(): void
     {
-        $rows = TableChildRepo::setRecursive(['_TableParent'])->first(1);
+        $rows = TableChildRepo::recursive(['/_TableParent'])->first(1);
         $rows['_TableParent'][0]['fieldDateTime'] = null;
         $rows['_TableParent'][1] = null;
         self::assertEquals([
@@ -718,7 +718,7 @@ class PdoOne_mysql_gen_test extends TestCase
         $rows = TableParentRepo::toList();
         self::assertGreaterThan(0, count($rows));
 
-        $rows = TableParentRepo::setRecursive(['_idchildFK'])->limit("0,2")->toList();
+        $rows = TableParentRepo::recursive(['/_idchildFK'])->limit("0,2")->toList();
 
         $rows[0]['fieldDateTime'] = null;
         $rows[0]['extracol'] = null;
@@ -761,7 +761,7 @@ class PdoOne_mysql_gen_test extends TestCase
         ], $rows);
 
         try {
-            $rows = TableParentRepo::setRecursive(['_idchildFK'])->first('1');
+            $rows = TableParentRepo::recursive(['/_idchildFK'])->first('1');
         } catch (Exception $e) {
         }
 
@@ -788,10 +788,10 @@ class PdoOne_mysql_gen_test extends TestCase
         ], $rows);
 
         try {
-            $rows = TableParentRepo::setRecursive([
-                '_idchildFK',
-                '_idchildFK/_idgrandchildFK',
-                '_idchildFK/_idgrandchildFK/_tablagrandchildcat'
+            $rows = TableParentRepo::recursive([
+                '/_idchildFK',
+                '/_idchildFK/_idgrandchildFK',
+                '/_idchildFK/_idgrandchildFK/_tablagrandchildcat'
             ])->first('1');
         } catch (Exception $e) {
         }
@@ -826,8 +826,8 @@ class PdoOne_mysql_gen_test extends TestCase
     public function testSelectManyToMany(): void
     {
         try {
-            $rows = (TableParentRepo::setRecursive([
-                '_TableParentxCategory'
+            $rows = (TableParentRepo::recursive([
+                '/_TableParentxCategory'
             ]))->first('1');
         } catch (Exception $e) {
         }
@@ -858,8 +858,8 @@ class PdoOne_mysql_gen_test extends TestCase
     public function testSelectManyToOne_ManyToOne_OneToMany(): void
     {
         try {
-            $rows = (TableParentRepo::setRecursive([
-                '_TableParentxCategory'
+            $rows = (TableParentRepo::recursive([
+                '/_TableParentxCategory'
             ]))->first('1');
         } catch (Exception $e) {
         }
@@ -890,8 +890,8 @@ class PdoOne_mysql_gen_test extends TestCase
     public function testSelectOneToMany_ManyToOne(): void
     {
         try {
-            $rows = (TableParentRepo::setRecursive([
-                '_TableParentxCategory',
+            $rows = (TableParentRepo::recursive([
+                '/_TableParentxCategory',
                 // '_TableParentxCategory/_idcategoryPKFK'
             ]))->first(1);
         } catch (Exception $e) {

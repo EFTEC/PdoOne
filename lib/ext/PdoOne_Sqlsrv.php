@@ -1,4 +1,6 @@
-<?php /** @noinspection PhpMissingParamTypeInspection */
+<?php /** @noinspection SqlNoDataSourceInspection */
+/** @noinspection SqlDialectInspection */
+/** @noinspection PhpMissingParamTypeInspection */
 /** @noinspection UnknownInspectionInspection */
 /** @noinspection SqlWithoutWhere */
 /** @noinspection SqlResolve */
@@ -198,7 +200,6 @@ class PdoOne_Sqlsrv implements PdoOne_IExt
      * @param bool        $assocArray
      * @return array
      * @throws Exception
-     * @noinspection GrazieInspection
      */
     public function getDefTableFK(string $table, bool $returnSimple, string $filter = null, bool $assocArray = false): array
     {

@@ -93,12 +93,12 @@ abstract class Abstract{classname} extends {baseclass}
         if ($column !== null) {
             if ($filter === null) {
                 foreach ($r as $k => $v) {
-                    $r[$k] = $v[$column];
+                    $r[$k] = $v[$column] ?? null;
                 }
             } else {
                 $new = [];
                 foreach ($r as $k => $v) {
-                    if ($v[$column] === $filter) {
+                    if (isset($v[$column]) && $v[$column] === $filter) {
                         $new[] = $k;
                     }
                 }

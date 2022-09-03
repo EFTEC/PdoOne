@@ -1,5 +1,4 @@
 <?php /** @noinspection PhpUnused */
-/** @noinspection PhpRedundantVariableDocTypeInspection */
 /** @noinspection SqlDialectInspection */
 /** @noinspection SqlNoDataSourceInspection */
 /** @noinspection PhpConditionAlreadyCheckedInspection */
@@ -26,17 +25,17 @@ use stdClass;
  * @package       eftec
  * @author        Jorge Castro Castillo
  * @copyright (c) Jorge Castro C. Dual Licence: MIT and Commercial License  https://github.com/EFTEC/PdoOne
- * @version       3.12.1
+ * @version       3.12.2
  */
 class PdoOne
 {
-    public const VERSION = '3.12.1';
+    public const VERSION = '3.12.2';
     /** @var int We need this value because null and false could be a valid value. */
     public const NULL = PHP_INT_MAX;
     /** @var string Prefix of the related columns. It is used for ORM */
     public static $prefixBase = '_';
     /** @var string the prefix of every table, example "t_" */
-    public $prefixTable='';
+    public $prefixTable = '';
     /** @var int Used for the method page() */
     public static $pageSize = 20;
     /** @var string|null Static date (when the date is empty) */
@@ -442,10 +441,8 @@ class PdoOne
      */
     public static function dateConvert($sqlField, string $inputFormat, string $outputFormat, ?string $force = null)
     {
-        /** @var boolean $ms if true then the value has microseconds */
-        $ms = false;
-        /** @var boolean $time if true then the value has time */
-        $time = false;
+        $ms = false; // if true then the value has microseconds
+        $time = false; //  if true then the value has time
         $tmpDate = self::dateConvertInput($sqlField, $inputFormat, $ms, $time);
         if (!$tmpDate) {
             return false;
@@ -1481,7 +1478,7 @@ class PdoOne
         if ($this->logLevel === 2) {
             $txtW .= ' param:' . json_encode($this->lastParam);
         }
-        if ($level === 'INFO') {
+        if ($level === 'INFO' && $this->logLevel >= 2) {
             $errorfile = ini_get('error_log');
             if ($errorfile) {
                 $infoFile = str_replace('.', '_warning.', $errorfile);
@@ -2148,7 +2145,7 @@ class PdoOne
                             }
                         }
                     }
-                    if (@$after[$table][$name]) {
+                    if ($after[$table][$name] ?? false) {
                         if (!$defaultNull) {
                             if ($classRelations === null || !isset($classRelations[$after[$table][$name]])) {
                                 $className = self::camelize($after[$table][$name]) . 'Repo';
@@ -2425,9 +2422,9 @@ class PdoOne
 
     /**
      * It returns an associative array with the relations between the tables.
-     * @param string     $tableName The name of the table (no alias)
+     * @param string     $tableName        The name of the table (no alias)
      * @param array|null $columnRelations
-     * @param mixed      $pkFirst the first primary key
+     * @param mixed      $pkFirst          the first primary key
      * @param array      $aliasesAllTables an associative array with all the aliases of the columns of all tables<br>
      *                                     ['table2'=>['col'=>'alias'..],'table20>['col'=>'alias'],..]
      * @return array|string
@@ -2441,13 +2438,13 @@ class PdoOne
             $this->endTry();
             return 'Error: Unable read table dependencies ' . $e->getMessage();
         } //  ["city"]=> {["city_id"]=> "address"}
-        $after = @$deps[1][$tableName];
+        $after = $deps[1][$tableName] ?? null;
         if ($after === null) {
-            $after = @$deps[1][strtolower($tableName)];
+            $after = $deps[1][strtolower($tableName)] ?? null;
         }
-        $before = @$deps[2][$tableName];
+        $before = $deps[2][$tableName] ?? null;
         if ($before === null) {
-            $before = @$deps[2][strtolower($tableName)];
+            $before = $deps[2][strtolower($tableName)] ?? null;
         }
         $aliases = $aliasesAllTables[$tableName] ?? [];
         $relation = $this->getDefTableFK($tableName, false, true);
@@ -2916,7 +2913,6 @@ class PdoOne
         foreach ($getDefTable as $k => $v) {
             $listAlias[$k] = $v['alias'];
         }
-
         try {
             $r = str_replace(array(
                 '{pk}',
@@ -2953,9 +2949,9 @@ class PdoOne
                 self::varExport($relation, "\t\t"), //{deffktype}
                 self::varExport($relation2, "\t\t"), //{deffktype2}
                 self::varExport($this->generateCodeArrayConst(
-                    $getDefTable, $classRelations??[], $relation, 'function'), "\t\t"), // {array}
+                    $getDefTable, $classRelations ?? [], $relation, 'function'), "\t\t"), // {array}
                 self::varExport($this->generateCodeArrayConst(
-                    $getDefTable, $classRelations??[], $relation, 'constant'), "\t\t"), // {factory}
+                    $getDefTable, $classRelations ?? [], $relation, 'constant'), "\t\t"), // {factory}
                 $linked // {linked}
             ), $r);
         } catch (Exception $e) {
@@ -2974,7 +2970,7 @@ class PdoOne
     public function getRelations(string $tableName, ?string $pkFirst): array
     {
         try {
-            $relation = $this->getDefTableFK($this->prefixTable.$tableName, false, true);
+            $relation = $this->getDefTableFK($this->prefixTable . $tableName, false, true);
         } catch (Exception $e) {
             $this->endTry();
             throw new RuntimeException('Error: Unable read fk of table ' . $e->getMessage());
@@ -2991,13 +2987,13 @@ class PdoOne
             $this->endTry();
             throw new RuntimeException('Error: Unable read table dependencies ' . $e->getMessage());
         } //  ["city"]=> {["city_id"]=> "address"}
-        $after = @$deps[1][$tableName];
+        $after = $deps[1][$tableName] ?? null;
         if ($after === null) {
-            $after = @$deps[1][strtolower($tableName)];
+            $after = $deps[1][strtolower($tableName)] ?? null;
         }
-        $before = @$deps[2][$tableName];
+        $before = $deps[2][$tableName] ?? null;
         if ($before === null) {
-            $before = @$deps[2][strtolower($tableName)];
+            $before = $deps[2][strtolower($tableName)] ?? null;
         }
         if (is_array($after) && is_array($before)) {
             foreach ($before as $key => $rows) { // $value is [relcol,table]
@@ -3954,13 +3950,13 @@ class PdoOne
             $this->endTry();
             return 'Error: Unable read table dependencies ' . $e->getMessage();
         } //  ["city"]=> {["city_id"]=> "address"}
-        $after = @$deps[1][$tableName];
+        $after = $deps[1][$tableName] ?? null;
         if ($after === null) {
-            $after = @$deps[1][strtolower($tableName)];
+            $after = $deps[1][strtolower($tableName)] ?? null;
         }
-        $before = @$deps[2][$tableName];
+        $before = $deps[2][$tableName] ?? null;
         if ($before === null) {
-            $before = @$deps[2][strtolower($tableName)];
+            $before = $deps[2][strtolower($tableName)] ?? null;
         }
         if (is_array($after) && is_array($before)) {
             foreach ($before as $key => $rows) { // $value is [relcol,table]
@@ -4386,6 +4382,7 @@ class PdoOne
         $this->endTry();
         return $this;
     }
+
     /**
      * It changes the hash type.
      *
@@ -4393,7 +4390,7 @@ class PdoOne
      * @return void
      * @see https://www.php.net/manual/en/function.hash-algos.php
      */
-    public function setHashType($hashType): void
+    public function setHashType(string $hashType): void
     {
         $this->encryption->setHashType($hashType);
     }
@@ -4744,7 +4741,7 @@ BOOTS;
     public function dropTable(string $tableName, string $extra = ''): bool
     {
         $this->beginTry();
-        $r = $this->drop($this->prefixTable.$tableName, 'table', $extra);
+        $r = $this->drop($this->prefixTable . $tableName, 'table', $extra);
         $this->endTry();
         return $r;
     }
@@ -4784,7 +4781,7 @@ BOOTS;
     public function truncate(string $tableName, string $extra = '', bool $forced = false)
     {
         $this->beginTry();
-        $r = $this->service->truncate($this->prefixTable.$tableName, $extra, $forced);
+        $r = $this->service->truncate($this->prefixTable . $tableName, $extra, $forced);
         $this->endTry();
         return $r;
     }
@@ -4830,7 +4827,7 @@ BOOTS;
     public function resetIdentity(string $tableName, int $newValue = 0)
     {
         $this->beginTry();
-        $r = $this->service->resetIdentity($this->prefixTable.$tableName, $newValue);
+        $r = $this->service->resetIdentity($this->prefixTable . $tableName, $newValue);
         $this->endTry();
         return $r;
     }
@@ -4955,11 +4952,12 @@ BOOTS;
         bool    $universal = false
     ): bool
     {
+        $definition = array_filter($definition); // we delete null values
         if ($universal) {
             $definition = $this->convertUniversal($definition);
         }
         $this->endTry();
-        $sql = $this->service->createTable($this->prefixTable.$tableName, $definition, $primaryKey, $extra, $extraOutside);
+        $sql = $this->service->createTable($this->prefixTable . $tableName, $definition, $primaryKey, $extra ?? '', $extraOutside ?? '');
         $r = $this->runMultipleRawQuery($sql);
         $this->endTry();
         return $r;
@@ -5079,7 +5077,7 @@ BOOTS;
     public function createFK(string $tableName, array $definitions): bool
     {
         $this->beginTry();
-        $sql = $this->service->createFK($this->prefixTable.$tableName, $definitions);
+        $sql = $this->service->createFK($this->prefixTable . $tableName, $definitions);
         $r = $this->runMultipleRawQuery($sql);
         $this->endTry();
         return $r;
@@ -5100,7 +5098,7 @@ BOOTS;
     public function createIndex(string $tableName, array $definitions): bool
     {
         $this->beginTry();
-        $sql = $this->service->createIndex($this->prefixTable.$tableName, $definitions);
+        $sql = $this->service->createIndex($this->prefixTable . $tableName, $definitions);
         $r = $this->runMultipleRawQuery($sql);
         $this->endTry();
         return $r;
@@ -5312,7 +5310,7 @@ BOOTS;
     public function tableExist(string $tableName): bool
     {
         $this->beginTry();
-        $r = $this->objectExist($this->prefixTable.$tableName);
+        $r = $this->objectExist($this->prefixTable . $tableName);
         $this->endTry();
         return $r;
     }
@@ -5506,7 +5504,7 @@ BOOTS;
     public function columnTable(string $tableName)
     {
         $this->beginTry();
-        $query = $this->service->columnTable($this->prefixTable.$tableName);
+        $query = $this->service->columnTable($this->prefixTable . $tableName);
         $r = $this->runRawQuery($query);
         $this->endTry();
         return $r;
@@ -5523,7 +5521,7 @@ BOOTS;
     public function foreignKeyTable(string $tableName)
     {
         $this->beginTry();
-        $query = $this->service->foreignKeyTable($this->prefixTable.$tableName);
+        $query = $this->service->foreignKeyTable($this->prefixTable . $tableName);
         $r = $this->runRawQuery($query);
         $this->endTry();
         return $r;

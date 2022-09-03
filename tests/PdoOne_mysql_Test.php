@@ -1,4 +1,5 @@
-<?php /** @noinspection ForgottenDebugOutputInspection */
+<?php /** @noinspection UnnecessaryAssertionInspection */
+/** @noinspection ForgottenDebugOutputInspection */
 /** @noinspection PhpMultipleClassDeclarationsInspection */
 /** @noinspection PhpUnusedLocalVariableInspection */
 /** @noinspection UnknownInspectionInspection */
@@ -646,6 +647,9 @@ class PdoOne_mysql_Test extends TestCase
             'min must value 2');
         self::assertEquals(123, $this->pdoOne->from('product_category')->max('id_category'),
             'max must value 123');
+        self::assertEquals(false,$this->pdoOne->from('product_category')->setThrowOnError()->hasWhere());
+        self::assertEquals([],$this->pdoOne->from('product_category')->getSetParamAssoc());
+        self::assertEquals([],$this->pdoOne->from('product_category')->getHavingParamAssoc());
         self::assertEquals(27.4, $this->pdoOne->from('product_category')->avg('id_category'),
             'avg must value 27.4');
         self::assertEquals([
