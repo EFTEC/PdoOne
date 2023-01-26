@@ -365,7 +365,7 @@ class PdoOneQuery
      * @param Exception|null $exception         If we already have an exception, then we could use to throw it.
      *
      * @throws Exception
-     * @see \eftec\PdoOne::$logLevel
+     * @see PdoOne
      */
     public function throwErrorChain(string $txt, bool $throwError = true, ?Exception $exception = null): void
     {
@@ -691,7 +691,7 @@ class PdoOneQuery
      *
      * @return array|null
      * @throws Exception
-     * @see \eftec\PdoOne::first
+     * @see PdoOne::first
      */
     public function last(): ?array
     {
@@ -744,7 +744,7 @@ class PdoOneQuery
      */
     public function toListSimple()
     {
-        $this->usingORM(true);
+        $this->usingORM(!$this->select);
         $useCache = $this->useCache; // because builderReset cleans this value
         $this->beginTry();
         $rows = $this->runGen(true, PDO::FETCH_COLUMN, 'tolistsimple', false);
@@ -908,7 +908,7 @@ class PdoOneQuery
      * Alias of from()
      * @param $sql
      * @return $this
-     * @see \eftec\PdoOneQuery::from
+     * @see PdoOneQuery::from
      */
     public function table($sql): self
     {
@@ -1003,7 +1003,7 @@ class PdoOneQuery
     {
         if ($this->ormClass !== null) {
             $cls = $this->ormClass;
-            /** @see \eftec\_BasePdoOneRepo::executePlan0 */
+            /** @see _BasePdoOneRepo::executePlan0 */
             return $cls::executePlan0($this);
         }
         return $this->_toList($pdoMode);
@@ -1046,7 +1046,7 @@ class PdoOneQuery
     {
         if ($this->ormClass !== null) {
             $cls = $this->ormClass;
-            /** @see \eftec\_BasePdoOneRepo::_first */
+            /** @see _BasePdoOneRepo::_first */
             return $cls::first($pk, $this);
             //return $cls::executePlan0($this, $condition, true);
         }
@@ -1176,7 +1176,7 @@ class PdoOneQuery
      */
     public function firstScalar(?string $colName = null)
     {
-        $this->usingORM(true);
+        $this->usingORM(!$this->select); // if select has a field, then it does not add new columns (for orm)
         $useCache = $this->useCache; // because builderReset cleans this value
         if ($useCache !== false) {
             $sql = $this->sqlGen();
@@ -1487,7 +1487,7 @@ class PdoOneQuery
      * @param string     $prefix A prefix added to the UNID generated.
      *
      * @return string
-     * @see \eftec\PdoOneEncryption::$hashType
+     * @see PdoOneEncryption
      */
     public function buildUniqueID($extra = null, string $prefix = ''): string
     {
@@ -1620,7 +1620,7 @@ class PdoOneQuery
      *
      * @param array|mixed $fields The fields to load recursively.
      * @return $this
-     * @see \eftec\PdoOne::recursive
+     * @see PdoOne::recursive
      */
     public function include($fields): self
     {
@@ -1711,7 +1711,7 @@ class PdoOneQuery
      * @param bool $error
      *
      * @return PdoOneQuery
-     * @see \eftec\PdoOne::$errorText
+     * @see PdoOne
      */
     public function genError(bool $error = false): PdoOneQuery
     {
@@ -1918,7 +1918,7 @@ class PdoOneQuery
         if ($this->ormClass !== null) {
             $cls = $this->ormClass;
             $this->ormClass = null; // toavoid recursivity
-            /** @see \eftec\_BasePdoOneRepo::_delete() */
+            /** @see _BasePdoOneRepo::_delete */
             return $cls::setPdoOneQuery($this)::delete($tableOrObject);
         }
         if ($tableOrObject === null) {
@@ -1972,7 +1972,7 @@ class PdoOneQuery
         if ($this->ormClass !== null) {
             $cls = $this->ormClass;
             $this->ormClass = null; // to avoid recursivity
-            /** @see \eftec\_BasePdoOneRepo::deleteById() */
+            /** @see _BasePdoOneRepo::deleteById */
             return $cls::setPdoOneQuery($this)::deleteById($pks, $transaction);
         }
         if (!$this->from) {
@@ -2024,7 +2024,7 @@ class PdoOneQuery
         if ($this->ormClass !== null) {
             $cls = $this->ormClass;
             $this->ormClass = null; // toavoid recursivity
-            /** @see \eftec\_BasePdoOneRepo::_update() */
+            /** @see _BasePdoOneRepo::_update */
             return $cls::setPdoOneQuery($this)::update($tableOrObject);
         }
         if ($tableOrObject === null) {
@@ -2142,7 +2142,7 @@ class PdoOneQuery
      * @param string $condition
      *
      * @return PdoOneQuery
-     * @see \eftec\PdoOne::join
+     * @see PdoOne::join
      */
     public function innerjoin(string $sql, string $condition = ''): PdoOneQuery
     {
@@ -2203,7 +2203,7 @@ class PdoOneQuery
      *                                  <b>*</b> If "*" then it uses the tables assigned by from() and join()
      *
      * @return $this
-     * @see \eftec\PdoOne::invalidateCache
+     * @see PdoOne::invalidateCache
      */
     public function useCache($ttl = 0, $family = ''): self
     {

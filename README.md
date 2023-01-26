@@ -6,7 +6,7 @@ This library tries to **work as fast as possible**. Most of the operations are s
 
 [![Packagist](https://img.shields.io/packagist/v/eftec/PdoOne.svg)](https://packagist.org/packages/eftec/PdoOne)
 [![Total Downloads](https://poser.pugx.org/eftec/PdoOne/downloads)](https://packagist.org/packages/eftec/PdoOne)
-[![Maintenance](https://img.shields.io/maintenance/yes/2022.svg)]()
+[![Maintenance](https://img.shields.io/maintenance/yes/2023.svg)]()
 [![composer](https://img.shields.io/badge/composer-%3E1.6-blue.svg)]()
 [![php](https://img.shields.io/badge/php-7.1-green.svg)]()
 [![php](https://img.shields.io/badge/php-8.x-green.svg)]()
@@ -46,114 +46,113 @@ ProductRepo // this class was generated with echo $pdoOne()->generateCodeClass([
 
 # Table of contents
 
-- [Database Access Object wrapper for PHP and PDO in a single class](#database-access-object-wrapper-for-php-and-pdo-in-a-single-class)
-  - [Examples](#examples)
-  - [Installation](#installation)
-    - [Install (using composer)](#install-using-composer)
-    - [Install (manually)](#install-manually)
-  - [How to create a Connection?](#how-to-create-a-connection)
-    - [OCI](#oci)
-  - [How to run a SQL command?](#how-to-run-a-sql-command)
-    - [1. Running a raw query](#1-running-a-raw-query)
-    - [2. Running a native PDO statement](#2-running-a-native-pdo-statement)
-    - [3. Running using the query builder](#3-running-using-the-query-builder)
-    - [4. Running using a ORM](#4-running-using-a-orm)
-  - [How to work with Date values?](#how-to-work-with-date-values)
-  - [How to run a transaction?](#how-to-run-a-transaction)
-  - [Custom Queries](#custom-queries)
-    - [tableExist($tableName)](#tableexisttablename)
-    - [statValue($tableName,$columnName)](#statvaluetablenamecolumnname)
-    - [columnTable($tablename)](#columntabletablename)
-    - [foreignKeyTable($tableName)](#foreignkeytabletablename)
-    - [createTable($tableName,$definition,$primaryKey=null,$extra='',$extraOutside='')](#createtabletablenamedefinitionprimarykeynullextraextraoutside)
-    - [tableSorted($maxLoop = 5, $returnProblems = false, $debugTrace = false)](#tablesortedmaxloop--5-returnproblems--false-debugtrace--false)
-    - [validateDefTable($pdoInstance,$tablename,$defTable,$defTableKey)](#validatedeftablepdoinstancetablenamedeftabledeftablekey)
-    - [foreignKeyTable](#foreignkeytable)
-  - [Query Builder (DQL)](#query-builder-dql)
-    - [select($columns)](#selectcolumns)
-    - [count($sql,$arg='*')](#countsqlarg)
-    - [min($sql,$arg='*')](#minsqlarg)
-    - [max($sql,$arg='*')](#maxsqlarg)
-    - [sum($sql,$arg='*')](#sumsqlarg)
-    - [avg($sql,$arg='*')](#avgsqlarg)
-    - [distinct($distinct='distinct')](#distinctdistinctdistinct)
-    - [from($tables)](#fromtables)
-    - [where($where,[$arrayParameters=array()])](#wherewherearrayparametersarray)
-      - [Where() without parameters.](#where-without-parameters)
-      - [Where() with parameters defined by a indexed array.](#where-with-parameters-defined-by-a-indexed-array)
-      - [Where() using an associative array](#where-using-an-associative-array)
-      - [Where() using an associative array and named arguments](#where-using-an-associative-array-and-named-arguments)
-      - [Examples of where()](#examples-of-where)
-    - [order($order)](#orderorder)
-    - [group($group)](#groupgroup)
-    - [having($having,[$arrayParameters])](#havinghavingarrayparameters)
-    - [End of the chain](#end-of-the-chain)
-      - [runGen($returnArray=true)](#rungenreturnarraytrue)
-      - [toList($pdoMode)](#tolistpdomode)
-      - [toMeta()](#tometa)
-      - [toListSimple()](#tolistsimple)
-      - [toListKeyValue()](#tolistkeyvalue)
-      - [toResult()](#toresult)
-      - [firstScalar($colName=null)](#firstscalarcolnamenull)
-      - [first()](#first)
-      - [last()](#last)
-      - [sqlGen()](#sqlgen)
-  - [Query Builder (DML)](#query-builder-dml)
-    - [insert($table,$schema,[$values])](#inserttableschemavalues)
-    - [insertObject($table,[$declarativeArray],$excludeColumn=[])](#insertobjecttabledeclarativearrayexcludecolumn)
-    - [update($$table,$schema,$values,[$schemaWhere],[$valuesWhere])](#updatetableschemavaluesschemawherevalueswhere)
-    - [delete([$table],[$schemaWhere],[$valuesWhere])](#deletetableschemawherevalueswhere)
-  - [Cache](#cache)
-    - [How to configure it?](#how-to-configure-it)
-    - [Example using apcu](#example-using-apcu)
-  - [Sequence](#sequence)
-    - [Creating a sequence](#creating-a-sequence)
-    - [Creating a sequence without a table.](#creating-a-sequence-without-a-table)
-    - [Using the sequence](#using-the-sequence)
-  - [Fields](#fields)
-  - [Encryption](#encryption)
-  - [How to debug and trace errors in the database?](#how-to-debug-and-trace-errors-in-the-database)
-    - [Setting the log level](#setting-the-log-level)
-    - [Throwing errors](#throwing-errors)
-    - [Getting the last Query](#getting-the-last-query)
-    - [Generating a log file](#generating-a-log-file)
-  - [CLI](#cli)
-    - [Run as cli](#run-as-cli)
-    - [Run as CLI interative](#run-as-cli-interative)
-      - [Examples](#examples)
-    - [Run CLI to generate repository classes.](#run-cli-to-generate-repository-classes)
-    - [cli-classcode](#cli-classcode)
-    - [cli-selectcode](#cli-selectcode)
-    - [cli-arraycode](#cli-arraycode)
-    - [cli-json](#cli-json)
-    - [cli-csv](#cli-csv)
-    - [UI](#ui)
-    - [How to run the UI?](#how-to-run-the-ui)
-  - [ORM](#orm)
-    - [What is an ORM?](#what-is-an-orm)
-    - [Building and installing the ORM](#building-and-installing-the-orm)
-      - [Creating the repository class](#creating-the-repository-class)
-      - [Creating multiples repositories classes](#creating-multiples-repositories-classes)
-      - [Creating all repositories classes](#creating-all-repositories-classes)
-    - [Using the Repository class.](#using-the-repository-class)
-      - [Using multiples connections](#using-multiples-connections)
-    - [DDL  Database Design Language](#ddl--database-design-language)
-    - [Nested Operators](#nested-operators)
-    - [DQL Database Query Language](#dql-database-query-language)
-    - [DML Database Model Language](#dml-database-model-language)
-    - [Validate the model](#validate-the-model)
-    - [Recursive](#recursive)
-      - [recursive()](#recursive)
-      - [getRecursive()](#getrecursive)
-      - [hasRecursive()](#hasrecursive)
-  - [Benchmark (mysql, estimated)](#benchmark-mysql-estimated)
-  - [Error FAQs](#error-faqs)
-    - [Uncaught Error: Undefined constant eftec\_BasePdoOneRepo::COMPILEDVERSION](#uncaught-error-undefined-constant-eftec_basepdoonerepocompiledversion)
-  - [Changelist](#changelist)
-
-
-
-
+<!-- TOC -->
+* [Database Access Object wrapper for PHP and PDO in a single class](#database-access-object-wrapper-for-php-and-pdo-in-a-single-class)
+* [Table of contents](#table-of-contents)
+  * [Examples](#examples)
+  * [Installation](#installation)
+    * [Install (using composer)](#install--using-composer-)
+    * [Install (manually)](#install--manually-)
+  * [How to create a Connection?](#how-to-create-a-connection)
+    * [OCI](#oci)
+  * [How to run a SQL command?](#how-to-run-a-sql-command)
+    * [1. Running a raw query](#1-running-a-raw-query)
+    * [2. Running a native PDO statement](#2-running-a-native-pdo-statement)
+    * [3. Running using the query builder](#3-running-using-the-query-builder)
+    * [4. Running using a ORM](#4-running-using-a-orm)
+  * [How to work with Date values?](#how-to-work-with-date-values)
+  * [How to run a transaction?](#how-to-run-a-transaction)
+  * [Custom Queries](#custom-queries)
+    * [tableExist($tableName)](#tableexist--tablename-)
+    * [statValue($tableName,$columnName)](#statvalue--tablenamecolumnname-)
+    * [columnTable($tablename)](#columntable--tablename-)
+    * [foreignKeyTable($tableName)](#foreignkeytable--tablename-)
+    * [createTable($tableName,$definition,$primaryKey=null,$extra='',$extraOutside='')](#createtable--tablenamedefinitionprimarykeynullextra--extraoutside--)
+    * [tableSorted($maxLoop = 5, $returnProblems = false, $debugTrace = false)](#tablesorted--maxloop--5-returnproblems--false-debugtrace--false-)
+    * [validateDefTable($pdoInstance,$tablename,$defTable,$defTableKey)](#validatedeftable--pdoinstancetablenamedeftabledeftablekey-)
+    * [foreignKeyTable](#foreignkeytable)
+  * [Query Builder (DQL)](#query-builder--dql-)
+    * [select($columns)](#select--columns-)
+    * [count($sql,$arg='*')](#count--sqlarg---)
+    * [min($sql,$arg='*')](#min--sqlarg---)
+    * [max($sql,$arg='*')](#max--sqlarg---)
+    * [sum($sql,$arg='*')](#sum--sqlarg---)
+    * [avg($sql,$arg='*')](#avg--sqlarg---)
+    * [distinct($distinct='distinct')](#distinct--distinctdistinct--)
+    * [from($tables)](#from--tables-)
+    * [where($where,[$arrayParameters=array()])](#where--where-arrayparametersarray-)
+      * [Where() without parameters.](#where---without-parameters)
+      * [Where() with parameters defined by an indexed array.](#where---with-parameters-defined-by-an-indexed-array)
+      * [Where() using an associative array](#where---using-an-associative-array)
+      * [Where() using an associative array and named arguments](#where---using-an-associative-array-and-named-arguments)
+      * [Examples of where()](#examples-of-where--)
+    * [order($order)](#order--order-)
+    * [group($group)](#group--group-)
+    * [having($having,[$arrayParameters])](#having--having-arrayparameters-)
+    * [End of the chain](#end-of-the-chain)
+      * [runGen($returnArray=true)](#rungen--returnarraytrue-)
+      * [toList($pdoMode)](#tolist--pdomode-)
+      * [toMeta()](#tometa--)
+      * [toListSimple()](#tolistsimple--)
+      * [toListKeyValue()](#tolistkeyvalue--)
+      * [toResult()](#toresult--)
+      * [firstScalar($colName=null)](#firstscalar--colnamenull-)
+      * [first()](#first--)
+      * [last()](#last--)
+      * [sqlGen()](#sqlgen--)
+  * [Query Builder (DML)](#query-builder--dml-)
+    * [insert($table,$schema,[$values])](#insert--tableschema-values-)
+    * [insertObject($table,[$declarativeArray],$excludeColumn=[])](#insertobject--table-declarativearray-excludecolumn---)
+    * [update($$table,$schema,$values,[$schemaWhere],[$valuesWhere])](#update--tableschemavalues-schemawhere--valueswhere-)
+    * [delete([$table],[$schemaWhere],[$valuesWhere])](#delete--table--schemawhere--valueswhere-)
+  * [Cache](#cache)
+    * [How to configure it?](#how-to-configure-it)
+    * [Example using apcu](#example-using-apcu)
+  * [Sequence](#sequence)
+    * [Creating a sequence](#creating-a-sequence)
+    * [Creating a sequence without a table.](#creating-a-sequence-without-a-table)
+    * [Using the sequence](#using-the-sequence)
+  * [Fields](#fields)
+  * [Encryption](#encryption)
+  * [How to debug and trace errors in the database?](#how-to-debug-and-trace-errors-in-the-database)
+    * [Setting the log level](#setting-the-log-level)
+    * [Throwing errors](#throwing-errors)
+    * [Getting the last Query](#getting-the-last-query)
+    * [Generating a log file](#generating-a-log-file)
+  * [CLI](#cli)
+    * [Run as cli](#run-as-cli)
+    * [Run as CLI interative](#run-as-cli-interative)
+      * [Examples](#examples-1)
+    * [Run CLI to generate repository classes.](#run-cli-to-generate-repository-classes)
+    * [cli-classcode](#cli-classcode)
+    * [cli-selectcode](#cli-selectcode)
+    * [cli-arraycode](#cli-arraycode)
+    * [cli-json](#cli-json)
+    * [cli-csv](#cli-csv)
+    * [UI](#ui)
+    * [How to run the UI?](#how-to-run-the-ui)
+  * [ORM](#orm)
+      * [What is an ORM?](#what-is-an-orm)
+    * [Building and installing the ORM](#building-and-installing-the-orm)
+      * [Creating the repository class](#creating-the-repository-class)
+      * [Creating multiples repositories classes](#creating-multiples-repositories-classes)
+      * [Creating all repositories classes](#creating-all-repositories-classes)
+    * [Using the Repository class.](#using-the-repository-class)
+      * [Using multiples connections](#using-multiples-connections)
+    * [DDL  Database Design Language](#ddl--database-design-language)
+    * [Nested Operators](#nested-operators)
+    * [DQL Database Query Language](#dql-database-query-language)
+    * [DML Database Model Language](#dml-database-model-language)
+    * [Validate the model](#validate-the-model)
+    * [Recursive](#recursive)
+      * [recursive()](#recursive--)
+      * [getRecursive()](#getrecursive--)
+      * [hasRecursive()](#hasrecursive--)
+  * [Benchmark (mysql, estimated)](#benchmark--mysql-estimated-)
+  * [Error FAQs](#error-faqs)
+    * [Uncaught Error: Undefined constant eftec\_BasePdoOneRepo::COMPILEDVERSION](#uncaught-error--undefined-constant-eftecbasepdoonerepo---compiledversion)
+  * [Changelist](#changelist)
+<!-- TOC -->
 
 ## Examples
 
@@ -289,7 +288,7 @@ $values=$con->runRawQuery("select * from table where name='$name'"); // it will 
 
 With the method **runQuery()** we could execute a prepared statement in PDO. It is useful when we want to pass arguments to it.   **runQuery()** requires a PDO **PreparedStatement**.
 
-> This method is not recommended unless you are already working with PDO statements and you don't want to adapt all your code.
+> This method is not recommended unless you are already working with PDO statements, and you don't want to adapt all your code.
 
 ```php
 $sql="insert into `product`(name) values(?)";
@@ -328,7 +327,8 @@ Where **ProductRepo** is a service class generated by using the ORM.
 
 PdoOne allows 5 types of dates.
 
-* **SQL Format** It is the format how the date is stored into the database. It depends on the type of the database. For example MySQL could uses the format Y-m-d.
+* **SQL Format** It is the format how the date is stored into the database. It depends on the type of the database. 
+For example MySQL could use the format Y-m-d.
 
 * **Human Format**  It is the format how the end user looks our date.
 
@@ -679,13 +679,13 @@ The where could be expressed in different ways.
 
 #### Where() without parameters.
 
-It is possible to write the where without parameters as follow:
+It is possible to write the where without parameters as follows:
 
 ```php
 $results = $pdoOne->select("*")->from('table')->where("p1=1 and p2>2.5 or p3 like '%aa%'");
 ```
 
-#### Where() with parameters defined by a indexed array.
+#### Where() with parameters defined by an indexed array.
 
 ```php
 $aa='aa';
@@ -718,7 +718,7 @@ $results = $pdoOne->select("*")->from('table')->where(['p1'=>1
                                                        ,'p3'=>'aa']);  
 ```
 
-Also it is possible to specify the type of parameter.
+Also, it is possible to specify the type of parameter.
 
 ```php
 // select * from table where p1=1 and p2='2.5' and p3='aa'
@@ -743,7 +743,7 @@ $results = $pdoOne->select("*")->from("table")
 
 > Generates the query: select * **from table** where p1=1
 
-> Note: ArrayParameters is an array as follow: **type,value.**     
+> Note: ArrayParameters is an array as follows: **type,value.**     
 >   Where type is i=integer, d=double, s=string or b=blob. In case of doubt, use "s" (see table bellow)   
 > Example of arrayParameters:   
 > [1 ,'hello' ,20.3 ,'world']
@@ -783,7 +783,7 @@ $results = $pdoOne->select("*")->from("table")
 
 
 ### order($order)
-Generates a order command.
+Generates an order command.
 ```php
 $results = $pdoOne->select("*")
 ->from('table')
@@ -803,7 +803,7 @@ $results = $pdoOne->select("*")
 ### having($having,[$arrayParameters])
 Generates a having command.
 
-> Note: it uses the same parameters than **where()**
+> Note: it uses the same parameters as **where()**
 
 ```php
 $results = $pdoOne->select("*")
@@ -835,7 +835,7 @@ $results = $pdoOne->select("*")
 ```
 
 #### toMeta()
-It returns a **metacode** (definitions) of each columns of a query.
+It returns a **metacode** (definitions) of each column of a query.
 
 ```php
 $results = $pdoOne->select("*")
@@ -997,7 +997,7 @@ $pdoOne->insert("table"
 ```
 
 ### insert($table,$schema,[$values])
-Generates a insert command.
+Generates an insert command.
 
 ```php
 $pdoOne->insert("producttype"
@@ -1115,8 +1115,8 @@ $pdoOne->from("producttype")
 ## Cache
 
 It is possible to optionally cache the result of the queries. The duration of the query is also defined in the query.
-If the result of the query is not cached, then it is calculated normally (executing the query in the database.   For
-identify a query as unique, the system generates an unique id (uid) based in sha256 created with the query,
+If the result of the query is not cached, then it is calculated normally (executing the query in the database).   For
+identify a query as unique, the system generates a unique id (uid) based in sha256 created with the query,
 parameters, methods and the type of operation.
 
 The library does not do any cache operation directly, instead it allows to cache the results using an external library.
@@ -1162,7 +1162,7 @@ $cache=new CacheService();
     $cache=new CacheService();
     $$pdoOne->setCacheService($cache);
 ```
-(3) Use the cache as as follow, we must add the method **useCache()** in any part of the query.
+(3) Use the cache as follows, we must add the method **useCache()** in any part of the query.
 
 ```php
     $pdoOne->select('select * from table')
@@ -1194,10 +1194,10 @@ $cache=new CacheService();
 
 Sequence is an alternative to AUTO_NUMERIC (identity) field.  It has two methods to create a sequence: **snowflake** and **sequence**.  It is an alternative to create a GUID mainly because it returns a number (a GUID usually is a string that it is more expensive to index and to store)
 
-The goal of the sequence is to create an unique number that it is never repeated.
+The goal of the sequence is to create a unique number that it is never repeated.
 
-* **sequence**: It uses the functionality of the database to create and use a sequence. MySql doesn't not have sequences but they are emulated.  The main problem of the sequence is it returns a consecutive number, example: 1,2,3,4...  This number is predictable. For example, if you are the user number **20**, then you can guess another user = **19, 21**, etc.
-* **snowflakes**: It uses a table to generate an unique ID.   The sequence used is based on Twitter's Snowflake and it is generated based on
+* **sequence**: It uses the functionality of the database to create and use a sequence. MySql doesn't have sequences but they are emulated.  The main problem of the sequence is it returns a consecutive number, example: 1,2,3,4...  This number is predictable. For example, if you are the user number **20**, then you can guess another user = **19, 21**, etc.
+* **snowflakes**: It uses a table to generate a unique ID.   The sequence used is based on Twitter's Snowflake, and it is generated based on
   time (with microseconds), **nodeId** and a unique sequence.   This generates a LONG (int 64) value that it's unique. Example: **10765432100123456789**. This number is partially predictable .
 
 ### Creating a sequence
@@ -1213,12 +1213,12 @@ $dao->createSequence(); // it creates a table (and it could create a store proce
 
 ### Creating a sequence without a table.
 
-It is possible to create a new sequence without any table. It is fast but it could have problems of collisions.
+It is possible to create a new sequence without any table. It is fast, but it could have problems of collisions.
 
 > It ensures a collision free number only if we don't do more **than one operation per 0.0001 second** However, it also adds a pseudo random number (0-4095 based in time) so the chances of collision is **1/4095** (per two operations done every 0.0001 second). It is based on Twitter's Snowflake number. i.e.. **you are safe of collisions if you are doing less than 1 million of operations per second** (technically: 45 millions).
 
 * **$pdo->getSequencePHP([unpredictable=false])** Returns a sequence without using a table.
-  This sequence is more efficient than $dao->getSequence but it uses a random value to deals
+  This sequence is more efficient than $dao->getSequence, but it uses a random value to deals
   with collisions.
 
 * If upredictable is true then it returns an unpredictable number (it flips some digits)
@@ -1236,7 +1236,7 @@ $dao->getSequencePHP(true) // string(19) "1739032938181434311"
 ### Using the sequence
 
 * **$dao->getSequence([unpredictable=false])** returns the last sequence. If the sequence fails to generate, then it returns -1.
-  The function could fails if the function is called more than 4096 times every 1/1000th second.
+  The function could fail if the function is called more than 4096 times every 1/1000th second.
 
 ```php
 $pdo->getSequence() // string(19) "3639032938181434317" 
@@ -1329,7 +1329,7 @@ $pdoOne->logLevel=3; // the highest for debug.
 
 ### Throwing errors
 
-By default, PdoOne throws PHP errors but we could avoid it by setting the field $throwOnError to false.
+By default, PdoOne throws PHP errors, but we could avoid it by setting the field $throwOnError to false.
 
 ```php
 $pdoOne->throwOnError=false; // it could be used in production.
@@ -1416,7 +1416,7 @@ You could use the flag "-cli" to generate the repository classes
 
 ![](examples/cli3.jpg)
 
-The CLI is interactive and it allows to load and save the configuration.
+The CLI is interactive, and it allows to load and save the configuration.
 
 
 
@@ -1502,7 +1502,7 @@ $actors=$actorArray=ActorRepo::select(); // it returns all the rows.
 
 ```
 
-Alternatively, you could generate the php file automatically as follow:
+Alternatively, you could generate the php file automatically as follows:
 
 > php pdoone.php -database mysql -server 127.0.0.1:3306 -user root -pwd abc.123 -db sakila
 > -input "Actor" -output classcode >ActorRepo.php
@@ -1737,7 +1737,7 @@ It will generate the next classes:
 * Repo Classes are classes that works as a placeholder of the Abstract class. These classes are safe for edit, so we could add our own methods and logic.
   * Note: if you run **generateAllClasses**() again, then those classes are not touched unless we force it (argument **$forced**) or we delete those files.
 * Base Class is a unique class (per schema) where it contains the definition of all the tables and the relations between them.
-  * This class should be rebuild if the table changes. How? You must run the method **generateAllClasses**() again.
+  * This class should be rebuilt if the table changes. How? You must run the method **generateAllClasses**() again.
 
 #### Creating all repositories classes
 
@@ -2040,6 +2040,8 @@ In a nutshell:
 >
 > Every decimal version means that it patches/fixes/refactoring a previous functionality i.e. 1.5.0 -> 1.5.1 (fix)
 
+* 3.13 2023-01-26
+  * [PdoOneQuery] Fixed a problem with single() value. 
 * 3.12.2 2022-09-03
   * [_BasePdoOneRepo] Added some missing argument hinting
   * [_BasePdoOneRepo] Fixed a problem with Insert()
@@ -2057,7 +2059,7 @@ In a nutshell:
 * 3.10 2022-07-30
   * [CLI] update CLI to 1.5.  
 * 3.9  2022-07-23
-  * [ORM] [CLI] Now, you can savely edit some part of the code generated under the comment blocks marked as "EDIT". 
+  * [ORM] \[CLI] Now, you can savely edit some part of the code generated under the comment blocks marked as "EDIT". 
 * 3.8.1 2022-07-23
   * [ORM] fixed another problem with where() when the filter use a named parameter. 
   * [CLI] Exit option exists instantly. And create does not exit.
@@ -2249,7 +2251,7 @@ In a nutshell:
 
 * 2.9.4 2021-03-22
   * **ORM:** **_BasePdoOneRepo** is updated to BINARYVERSION=4. If you are using the ORM, then you should rebuild all ORM classes.
-  * **CORE:** Query chains creates a new instance of **PdoOneQuery** instead of a instance of **PdoOne**, so it is possible to define
+  * **CORE:** Query chains creates a new instance of **PdoOneQuery** instead of an instance of **PdoOne**, so it is possible to define
     multiples chains without interfering each others.
   * **ORM:** Fixed a problem with the base class. Now the Base class contains the constant COMPILEDVERSION
   * **ORM**: Fixed a problem with the model and the method toArray()
@@ -2268,7 +2270,7 @@ In a nutshell:
 
 * 2.9 2021-02-16
   * BasePdoOneRepo::getPdoOne() validates if the static class uses the right version.  It is only done once 
-    (when it creates the instance of pdoOne), so it must not affects the performance.
+    (when it creates the instance of pdoOne), so it must not affect the performance.
   * **You should re-generate all ORM classes generated (if you are generated one)**  
 
 * **2.8** 2021-02-13
@@ -2347,7 +2349,7 @@ In a nutshell:
 
 * 2.2 2020-08-14
   * New method setUseInternalCache() and flushInternalCache() where we could set an internal cache. The internal cache stores
-    results and they are keep into memory.   For example
+    results, and they are keep into memory.   For example
 
 ```php
 $this->setUseInternalCache(true);
@@ -2366,7 +2368,7 @@ echo $this->internalCacheCounter;
 * 2.0.1 2020-08-12
   * Fixed a bug with the generated code with linked relation manytoone and onetonone.
 * 2.0 2020-08-11
-  * **Core**: The arguments are rebuild from scratch.  Now, arguments are more natural and we don't need to specify the type.  It also allows many other different kind of combinations.
+  * **Core**: The arguments are rebuild from scratch.  Now, arguments are more natural, and we don't need to specify the type.  It also allows many other different kind of combinations.
   * Before: **$this->runRawQuery($sql,['i',20,'s','hello]);**
   * Now: **$this->runRawQuery($sql,[20,'hello']);**
   * Also (named): **$this->runRawQuery($sql,['col1'=>20,'col2'=>'hello']);**
@@ -2416,7 +2418,7 @@ echo $this->internalCacheCounter;
 * 1.49 2020-6-19
   * New method generateAllClasses()
 * 1.48 2020-6-15
-  * dateTextNow() now returns a human readable format
+  * dateTextNow() now returns a human-readable format
   * New method dateNow() that returns a date in a normal format.
   * BasePdoOne::count() now works with setRecursive()
 * 1.47 2020-6-14
@@ -2553,7 +2555,7 @@ echo $this->internalCacheCounter;
 * 1.19 2020-jan-15
   * getSequence() now has a new argument (name of the sequence, optional)
   * createSequence() has a new argument (type of sequence) and it allows to create a sequential sequence.
-  * objectexist() now is public and it allows to works with functions
+  * objectexist() now is public, and it allows to works with functions
   * Bug fixed: objectExist() now works correctly (used by tableExist())
   * new DDL methods drop(), dropTable() and truncate()
 * 1.16 2020-jan-14

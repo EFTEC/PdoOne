@@ -88,7 +88,7 @@ abstract class _BasePdoOneRepo
      * </pre>
      *
      * @return PdoOne
-     * @see \eftec\_BasePdoOneRepo::getPdoOne
+     * @see _BasePdoOneRepo::getPdoOne
      */
     public static function base(): PdoOne
     {
@@ -104,7 +104,7 @@ abstract class _BasePdoOneRepo
      * It is the same as PdoOne->addQuotes() but it avoids an extra call.
      * @param string $txt the column or value to quote
      * @return string
-     * @see \eftec\PdoOne::addQuote
+     * @see PdoOne::addQuote
      */
     public static function addQuote(string $txt): string
     {
@@ -772,7 +772,7 @@ abstract class _BasePdoOneRepo
                     if ($dependency === ['*'] || in_array($colCurrent, $dependency, true)) {
                         if (($v1['key'] === 'ONETOMANY') && !isset($row[$v1['alias']])) {
                             $class = $ns . static::RELATIONS[$reftable];
-                            /** @see \eftec\_BasePdoOneRepo::planOneToMany */
+                            /** @see _BasePdoOneRepo::planOneToMany */
                             $valueToFilter = $row[$v1['colalias']];
                             $row[$v1['alias']] = $class::planOneToMany(
                                 $absolutePrefix . '/' . $v1['alias'],
@@ -783,7 +783,7 @@ abstract class _BasePdoOneRepo
                         if (($v1['key'] === 'MANYTOMANY') && !isset($row[$v1['alias']])) {
                             $valueToFilter = $row[$v1['colalias']];
                             $class = $ns . static::RELATIONS[$reftable];
-                            /** @see \eftec\_BasePdoOneRepo::planManyToMany */
+                            /** @see _BasePdoOneRepo::planManyToMany */
                             $row[$v1['alias']] = $class::planManyToMany("$absolutePrefix/{$v1['alias']}", $dependency, $v1, $valueToFilter);
                         }
                     }
@@ -945,7 +945,7 @@ abstract class _BasePdoOneRepo
                             $newQuery['joins'] .= " left join {$keyRel['reftable']} as $tableRelAlias "
                                 . "on $pt$col=$tableRelAlias.$refCol \n"; // $recursiveInit$nameCol\n"; // adds a query to the current query
                             /** @noinspection PhpUndefinedMethodInspection */
-                            /** @see \eftec\_BasePdoOneRepo::generationRecursive */
+                            /** @see _BasePdoOneRepo::generationRecursive */
                             $class::generationRecursive($newQuery, $tableRelAlias . '.', $colRelAlias . '.',
                                 $recursiveComplete, false); // $recursiveInit . $nameCol
                             break;
@@ -960,7 +960,7 @@ abstract class _BasePdoOneRepo
                             $newQuery['joins'] .= " left join {$keyRel['reftable']} as $tableRelAlias "
                                 . "on $pt$col=$tableRelAlias.$refCol \n"; // $recursiveInit$nameCol\n"; // adds a query to the current query
                             /** @noinspection PhpUndefinedMethodInspection */
-                            /** @see \eftec\_BasePdoOneRepo::generationRecursive */
+                            /** @see _BasePdoOneRepo::generationRecursive */
                             $class::generationRecursive($newQuery, $tableRelAlias . '.', $colRelAlias . '.',
                                 $recursiveComplete, false); // $recursiveInit . $nameCol
                             break;
@@ -973,7 +973,7 @@ abstract class _BasePdoOneRepo
                             $class = $ns
                                 . static::RELATIONS[$keyRel['reftable']]; // $ns . PdoOne::camelize($keyRel['reftable']) . $postfix;
                             /** @noinspection PhpUndefinedMethodInspection */
-                            /** @see \eftec\_BasePdoOneRepo::generationRecursive */
+                            /** @see _BasePdoOneRepo::generationRecursive */
                             $class::generationRecursive($other, '', '', $pColumn . $recursiveComplete,
                                 false); //$recursiveInit . $nameCol
                             static::$gQuery[] = $other;
@@ -989,7 +989,7 @@ abstract class _BasePdoOneRepo
                             self::generationRecursiveHelp($keyRel, $other, $pColumn, $nameCol);
                             $class = $ns . static::RELATIONS[$keyRel['reftable']]; // $ns . PdoOne::camelize($keyRel['reftable']) . $postfix;
                             /** @noinspection PhpUndefinedMethodInspection */
-                            /** @see \eftec\_BasePdoOneRepo::generationRecursive */
+                            /** @see _BasePdoOneRepo::generationRecursive */
                             $class::generationRecursive($other, '', '', $pColumn . $recursiveComplete,
                                 false); //$recursiveInit . $nameCol
                             // we reduce a level
@@ -1158,7 +1158,7 @@ abstract class _BasePdoOneRepo
         }
         $newQuery = self::getQuery();
         $newQuery->ormClass = null;
-        /** @see \eftec\_BasePdoOneRepo::executePlan0 */
+        /** @see _BasePdoOneRepo::executePlan0 */
         return self::executePlan0($newQuery);
         //return self::_toList($filter, $filterValue);
     }
@@ -1178,7 +1178,7 @@ abstract class _BasePdoOneRepo
         $newQuery = self::getQuery();
         $newQuery->ormClass = null;
         $newQuery->where($filter, $filterValue);
-        /** @see \eftec\_BasePdoOneRepo::executePlan0 */
+        /** @see _BasePdoOneRepo::executePlan0 */
         return self::executePlan0($newQuery);
     }
 
@@ -1208,19 +1208,19 @@ abstract class _BasePdoOneRepo
                         case 'MANYTOONE':
                             $class = $ns . static::RELATIONS[$v['reftable']];
                             /** @noinspection PhpUndefinedMethodInspection */
-                            /** @see \eftec\_BasePdoOneRepo::convertSQLValueInit */
+                            /** @see _BasePdoOneRepo::convertSQLValueInit */
                             $class::convertSQLValueInit($colName, false);
                             break;
                         case 'ONETOMANY':
                             $class = $ns . static::RELATIONS[$v['reftable']];
                             /** @noinspection PhpUndefinedMethodInspection */
-                            /** @see \eftec\_BasePdoOneRepo::convertSQLValueInit */
+                            /** @see _BasePdoOneRepo::convertSQLValueInit */
                             $class::convertSQLValueInit($colName, true);
                             break;
                         case 'MANYTOMANY':
                             $class = $ns . static::RELATIONS[$v['table2']];
                             /** @noinspection PhpUndefinedMethodInspection */
-                            /** @see \eftec\_BasePdoOneRepo::convertSQLValueInit */
+                            /** @see _BasePdoOneRepo::convertSQLValueInit */
                             $class::convertSQLValueInit($colName, true);
                             break;
                     }
@@ -1277,7 +1277,7 @@ abstract class _BasePdoOneRepo
         $query = $query ?? self::getQuery();
         $query->ormClass = null;
         $query->where($pk);
-        /** @see \eftec\_BasePdoOneRepo::executePlan0 */
+        /** @see _BasePdoOneRepo::executePlan0 */
         return self::executePlan0($query, null, true);
     }
 
@@ -1522,13 +1522,13 @@ abstract class _BasePdoOneRepo
                         if (static::_exist($entityAlias[$columnAlias])) {
                             /**
                              * @noinspection PhpUndefinedMethodInspection
-                             * @see          \eftec\_BasePdoOneRepo::_update
+                             * @see          _BasePdoOneRepo::_update
                              */
                             $classMO::_update($entityAlias[$columnAlias], false, true);
                         } else {
                             /**
                              * @noinspection PhpUndefinedMethodInspection
-                             * @see          \eftec\_BasePdoOneRepo::_insert
+                             * @see          _BasePdoOneRepo::_insert
                              */
                             $objectInserted = $classMO::_insert($entityAlias[$columnAlias], false, true);
                             $colRightAlias = static::ALIAS2COL[ltrim($col, PdoOne::$prefixBase)];
@@ -1542,7 +1542,7 @@ abstract class _BasePdoOneRepo
                         break;
                     case 'delete':
                         /** @noinspection PhpUndefinedMethodInspection
-                         * @see          \eftec\_BasePdoOneRepo::_delete
+                         * @see          _BasePdoOneRepo::_delete
                          */
                         $classMO::_delete($entityAlias[$columnAlias], false, true);
                         break;
@@ -1597,7 +1597,7 @@ abstract class _BasePdoOneRepo
                                     $item[$refcol] = $fatherPK;
                                     /**
                                      * @noinspection PhpUndefinedMethodInspection
-                                     * @see          \eftec\_BasePdoOneRepo::_insert
+                                     * @see          _BasePdoOneRepo::_insert
                                      */
                                     $classRef::_insert($item, false, true);
                                 } elseif (!in_array($item[$refpk], $deleteKeys)) {
@@ -1640,7 +1640,8 @@ abstract class _BasePdoOneRepo
                         //self::_recursive([$def['refcol2']]);
                         //self::_recursive([]);
                         /** @noinspection PhpUndefinedMethodInspection */
-                        $oldRowsAlias = ($classRef::where($classRef::ALIAS2COL[$refcol], $entityAlias[$col1]))->toList();
+                        $oldRowsAlias = ($classRef::where($classRef::ALIAS2COL[$refcol]
+                            , $entityAlias[$col1]))->toList();
                         $oldRowsKeys = [];
                         foreach ($oldRowsAlias as $v) {
                             $oldRowsKeys[] = $v[$refcol2alias];
@@ -1654,12 +1655,12 @@ abstract class _BasePdoOneRepo
                                 //if (static::getPdoOne()->recursive($columnAlias, $recursiveBack)) {
                                 if ($hasRecursive === 'multiple') {
                                     /** @noinspection PhpUndefinedMethodInspection */
-                                    /** @see \eftec\_BasePdoOneRepo::_first */
+                                    /** @see _BasePdoOneRepo::_first */
                                     $oldItem = $class2::_first($pk2);
                                     if (is_array($oldItem) && self::compareEntity($oldItem, $item) === false) {
                                         /**
                                          * @noinspection PhpUndefinedMethodInspection
-                                         * @see          \eftec\_BasePdoOneRepo::_insert
+                                         * @see          _BasePdoOneRepo::_insert
                                          */
                                         $pk2 = $class2::_insert($item, false, true);
                                     } else {
@@ -1671,7 +1672,7 @@ abstract class _BasePdoOneRepo
                                 $relationalObjInsert = [$refcol => $fatherPK, $refcol2alias => $pk2];
                                 /**
                                  * @noinspection PhpUndefinedMethodInspection
-                                 * @see          \eftec\_BasePdoOneRepo::_insert
+                                 * @see          _BasePdoOneRepo::_insert
                                  */
                                 $classRef::_insert($relationalObjInsert, false, true);
                             }
@@ -1750,7 +1751,7 @@ abstract class _BasePdoOneRepo
     }
 
     /**
-     * It filter an associative array<br>
+     * It filters an associative array<br>
      * <b>Example:</b><br>
      * <pre>
      * self::intersectArraysNotNull(['a1'=>1,'a2'=>2],['a1','a3']); // ['a1'=>1]

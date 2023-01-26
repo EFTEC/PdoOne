@@ -89,7 +89,7 @@ class PdoOne
      * number 14,15,16,17 ($masks1) has the highest entrophy
      *
      * @var array
-     * @see \eftec\PdoOne::getUnpredictable
+     * @see PdoOne::getUnpredictable
      */
     public $masks0 = [2, 0, 4, 5];
     public $masks1 = [16, 13, 12, 11];
@@ -157,8 +157,8 @@ class PdoOne
     public $useInternalCache = false;
     /**
      * @var array
-     * @see \eftec\PdoOne::generateCodeClassConversions
-     * @see \eftec\PdoOne::generateAbstractRepo
+     * @see PdoOne::generateCodeClassConversions
+     * @see PdoOne::generateAbstractRepo
      */
     public $codeClassConversion = [];
     //</editor-fold>
@@ -874,7 +874,7 @@ class PdoOne
     }
 
     /**
-     * It get the definition of a table as an associative array<br>
+     * It gets the definition of a table as an associative array<br>
      * <ul>
      * <li><b>phptype</b>: The PHP type of the column, for example int</li>
      * <li><b>conversion</b>: If the column requires a special conversion</li>
@@ -1263,7 +1263,7 @@ class PdoOne
      *
      * @param Exception|null $exception
      *
-     * @see \eftec\PdoOne::$logLevel
+     * @see PdoOne
      */
     public function throwError(string $txt, $txtExtra, $extraParam = '', bool $throwError = true, ?Exception $exception = null): void
     {
@@ -1745,7 +1745,7 @@ class PdoOne
      *
      * @return array|bool|PDOStatement
      * @throws Exception
-     * @see \eftec\PdoOne::runRawQuery
+     * @see PdoOne::runRawQuery
      */
     private function runRawQueryParamLess(string $rawSql, bool $returnArray)
     {
@@ -2538,7 +2538,7 @@ class PdoOne
             $aliasRef = self::$prefixBase . @$aliasesAllTables[$v['reftable']][$refcol] ?? $refcol;
             $relation[$k]['alias'] = $alias;
             if (isset($v['col'])) {
-                $relation[$k]['colalias'] = $aliases[$v['col']];
+                $relation[$k]['colalias'] = $aliases[$v['col']]??$v['col'];
             }
             $relation[$k]['refcolalias'] = $aliasesAllTables[$v['reftable']][$refcol] ?? $refcol;
             $relation[$k]['refcol2alias'] = $aliasesAllTables[$v['reftable']][$refcol2] ?? $refcol2;
@@ -3044,7 +3044,7 @@ class PdoOne
      * @param string $txt
      *
      * @return string
-     * @see \eftec\PdoOne::addDelimiter to considers points
+     * @see PdoOne::addDelimiter to considers points
      */
     public function addQuote(string $txt): string
     {
@@ -3189,7 +3189,7 @@ class PdoOne
     }
 
     /**
-     * It sets conversions depending of the type of data. This method is used together with generateCodeClassAll().
+     * It sets conversions depending on the type of data. This method is used together with generateCodeClassAll().
      * <b>This value persists across calls</b><br>
      * For example, if we always want to convert <b>tinyint</b> into <b>boolean</b>, then we could use this function
      * , instead of specify per each column.<br>
@@ -3206,7 +3206,7 @@ class PdoOne
      * <b>PHP Conversions</b>:
      * <ul>
      * <li>encrypt (encrypt value. Encryption must be set)</li>
-     * <li>decrypt (decrypt a value if can. Encryption must be set)</li>
+     * <li>decrypt (decrypt a value if the value can be decrypted). Encryption must be set)</li>
      * <li>datetime4 (sql string, no conversion). input (2020-12-30) --> db (2020-12-30) ---> output (30/12/2010)</li>
      * <li>datetime3 (human string). input (30/12/2010) --> db (2020-12-30) ---> output (30/12/2010)</li>
      * <li>datetime2 (iso format)</li>
@@ -3222,8 +3222,8 @@ class PdoOne
      * @param array $conversion An associative array where the key is the type and the value is the conversion.
      *
      * @link https://github.com/EFTEC/PdoOne
-     * @see  \eftec\PdoOne::generateAbstractRepo
-     * @see  \eftec\PdoOne::setEncryption
+     * @see  PdoOne::generateAbstractRepo
+     * @see  PdoOne::setEncryption
      */
     public function generateCodeClassConversions(array $conversion = []): void
     {
@@ -3304,7 +3304,7 @@ class PdoOne
      * @param array        $aliases         An associative array with the alias of every column.<br>
      *                                      If this array is empty, then it keeps the current value
      * @return array It returns an array with all the errors or warnings (if any).
-     * @see \eftec\PdoOne::generateCodeClassConversions
+     * @see PdoOne::generateCodeClassConversions
      */
     public function generateAllClasses(
         array  $relations,
@@ -4240,7 +4240,7 @@ class PdoOne
      *
      * @param bool $useInternalCache if true then it enables the internal cache.
      *
-     * @see \eftec\PdoOne::setUseInternalCache
+     * @see PdoOne::setUseInternalCache
      */
     public function flushInternalCache(bool $useInternalCache = false): void
     {
@@ -4286,7 +4286,7 @@ class PdoOne
      *                                    related with a table.
      *
      * @return $this
-     * @see \eftec\PdoOneEncryption::$hashType
+     * @see PdoOneEncryption
      */
     public function invalidateCache($uid = '', $family = ''): PdoOne
     {
@@ -4404,7 +4404,7 @@ class PdoOne
      *                    If the method is other, then it could be any method compatible with your installation<br>
      *
      * @return int|string|null
-     * @see \eftec\PdoOneEncryption::encrypt
+     * @see PdoOneEncryption::encrypt
      */
     public function encrypt($data)
     {
@@ -4427,7 +4427,7 @@ class PdoOne
      *
      * @param mixed $data The data to decrypt.
      * @return bool|string|int
-     * @see \eftec\PdoOneEncryption::decrypt
+     * @see PdoOneEncryption::decrypt
      * @see https://www.php.net/manual/en/function.openssl-get-cipher-methods.php
      */
     public function decrypt($data)
@@ -4792,7 +4792,7 @@ BOOTS;
      * <pre>
      * $this->callProcedure('procexample',['in_name'=>'aa','in_description'=>'bbb'],['in_description])
      * </pre><br>
-     * <b>Note:<b>sqlsrv could returns an associative array.
+     * <b>Note:<b>sqlsrv could return an associative array.
      *
      * @param string $procName      The name of the store procedure.
      * @param array  $arguments     An associative array with the name of the argument and it's value
@@ -5084,7 +5084,7 @@ BOOTS;
     }
 
     /**
-     * It creates indexes. It doesn't replace previous indexes. The definition could depend in the type of database<br>
+     * It creates indexes. It doesn't replace previous indexes. The definition could depend on the type of database<br>
      * <b>Example:</b><br>
      * <pre>
      * $this->createIndex('table',['col1'=>'INDEX','col2=>'UNIQUE INDEX']);
@@ -5187,7 +5187,7 @@ BOOTS;
      * 0 to 4095
      * So, the limit of this function is 4096 operations per 0.0001 second.
      *
-     * @see \eftec\PdoOne::getSequencePHP It's the same but it uses less
+     * @see PdoOne::getSequencePHP It's the same but it uses less
      *      resources but lacks of a sequence.
      *
      * @param bool   $asFloat          It returns the value as a float.
@@ -5231,7 +5231,7 @@ BOOTS;
      * @param bool $unpredictable
      *
      * @return string
-     * @see \eftec\PdoOne::getSequence
+     * @see PdoOne::getSequence
      */
     public function getSequencePHP(bool $unpredictable = false): string
     {
@@ -5283,8 +5283,8 @@ BOOTS;
      * @param $number
      *
      * @return mixed
-     * @see \eftec\PdoOne::$masks0
-     * @see \eftec\PdoOne::$masks1
+     * @see PdoOne
+     * @see PdoOne
      */
     public function getUnpredictableInv($number)
     {
@@ -5625,7 +5625,7 @@ BOOTS;
      * @param bool $error
      *
      * @return PdoOneQuery
-     * @see \eftec\PdoOne::$errorText
+     * @see PdoOne
      */
     public function genError(bool $error = false): PdoOneQuery
     {
@@ -5997,7 +5997,7 @@ BOOTS;
 //</editor-fold>
 //<editor-fold desc="cli utils">
     /**
-     * It adds an "limit" in a query. It depends on the type of database<br>
+     * It adds a "limit" in a query. It depends on the type of database<br>
      * <b>Example:</b><br>
      * <pre>
      *      ->select("")->limit("10,20")->toList();

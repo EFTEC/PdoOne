@@ -1137,6 +1137,7 @@ class PdoOne_mysql_Test extends TestCase
     {
         self::assertEquals(true, $this->pdoOne->runQuery($this->pdoOne->prepare('select 1 from dual')));
         self::assertEquals([1 => 1], $this->pdoOne->select('1')->from('dual')->first(), 'it must runs');
+        self::assertEquals('a', $this->pdoOne->select("'a',2,3")->from('dual')->firstScalar(), 'it must runs');
     }
 
 

@@ -168,7 +168,7 @@ class PdoOneCli
             ->setRelated([])
             ->setRequired(false)
             ->setAllowEmpty()
-            ->setDescription('', '', [])
+            ->setDescription('', '')
             ->setInput(false)
             ->add();
         $first = $this->cli->evalParam('first');
