@@ -25,11 +25,11 @@ use stdClass;
  * @package       eftec
  * @author        Jorge Castro Castillo
  * @copyright (c) Jorge Castro C. Dual Licence: MIT and Commercial License  https://github.com/EFTEC/PdoOne
- * @version       3.12.2
+ * @version       3.13
  */
 class PdoOne
 {
-    public const VERSION = '3.12.2';
+    public const VERSION = '3.13';
     /** @var int We need this value because null and false could be a valid value. */
     public const NULL = PHP_INT_MAX;
     /** @var string Prefix of the related columns. It is used for ORM */
@@ -174,7 +174,7 @@ class PdoOne
     public $tableDependencyArray;
     /** @var null|array $partition is an associative array [column=>value] with a fixed and pre-established conditions */
     public $partition;
-    /** @var MessageContainer it stores the messages. */
+    /** @var MessageContainer|null it stores the messages. */
     private $messageContainer;
 
     protected $phpstart = "<?php\n";
@@ -213,11 +213,11 @@ class PdoOne
     )
     {
         $this->construct($databaseType, $server, $user, $pwd, $db, $logFile, $charset, $nodeId);
-        if (!class_exists('eftec\MessageContainer')) {
-            throw new RuntimeException('MessageContainer class does not exist');
+        if (class_exists('eftec\MessageContainer')) {
+            // autowire MessageContainer if the method exists.
+            $this->messageContainer = MessageContainer::instance();
+
         }
-        // autowire MessageContainer if the method exists.
-        $this->messageContainer = MessageContainer::instance();
         if (self::$instance === null) {
             self::$instance = $this;
         }
@@ -1301,7 +1301,10 @@ class PdoOne
                     $txt = $this->custom_exception_handler($exception, $txt, true);
                 }
             }
-            $this->messageContainer->addItem($this->lockerId, $txt);
+            if($this->messageContainer!==null) {
+                $this->messageContainer->addItem($this->lockerId, $txt);
+            }
+
             $this->debugFile($txt, 'ERROR');
             $this->errorText = $txt;
         }
@@ -1315,6 +1318,9 @@ class PdoOne
     public function clearError(): void
     {
         $this->errorText = '';
+        if($this->messageContainer === null) {
+            return;
+        }
         $this->messageContainer->resetLocker($this->lockerId);
     }
 
@@ -1406,43 +1412,67 @@ class PdoOne
         return $this->messageContainer;
     }
 
-    public function getMessages($level = null): array
+    public function getMessages($level = null): ?array
     {
+        if($this->messageContainer===null) {
+            return null;
+        }
         return $this->messageContainer->getLocker($this->lockerId)->all($level);
     }
 
-    public function getErrors(): array
+    public function getErrors(): ?array
     {
+        if($this->messageContainer===null) {
+            return null;
+        }
         return $this->messageContainer->getLocker($this->lockerId)->allError();
     }
 
     public function getFirstError(): ?string
     {
+        if($this->messageContainer===null) {
+            return null;
+        }
         return $this->messageContainer->getLocker($this->lockerId)->firstError();
     }
 
     public function getLastError(): ?string
     {
+        if($this->messageContainer===null) {
+            return null;
+        }
         return $this->messageContainer->getLocker($this->lockerId)->lastError();
     }
 
     public function hasError($includeWarning = false): ?string
     {
+        if($this->messageContainer===null) {
+            return null;
+        }
         return $this->messageContainer->getLocker($this->lockerId)->hasError($includeWarning);
     }
 
-    public function getInfos(): array
+    public function getInfos(): ?array
     {
+        if($this->messageContainer===null) {
+            return null;
+        }
         return $this->messageContainer->getLocker($this->lockerId)->allInfo();
     }
 
     public function getFirstInfo(): ?string
     {
+        if($this->messageContainer===null) {
+            return null;
+        }
         return $this->messageContainer->getLocker($this->lockerId)->firstInfo();
     }
 
     public function getLastInfo(): ?string
     {
+        if($this->messageContainer===null) {
+            return null;
+        }
         return $this->messageContainer->getLocker($this->lockerId)->lastInfo();
     }
 
@@ -1511,6 +1541,9 @@ class PdoOne
     public function storeInfo(string $txt): void
     {
         if ($this->logLevel < 2) {
+            return;
+        }
+        if($this->messageContainer===null) {
             return;
         }
         $this->messageContainer->addItem($this->lockerId, $txt, 'info');

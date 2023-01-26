@@ -2042,6 +2042,7 @@ In a nutshell:
 
 * 3.13 2023-01-26
   * [PdoOneQuery] Fixed a problem with single() value. 
+  * [PdoOne] Fixed if MessageContainer is not loaded (now, it is ignored)
 * 3.12.2 2022-09-03
   * [_BasePdoOneRepo] Added some missing argument hinting
   * [_BasePdoOneRepo] Fixed a problem with Insert()
