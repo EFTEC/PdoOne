@@ -33,7 +33,7 @@
     "eftec/clione": "^1.22.1",
     "ext-pdo": "*",
     "ext-readline": "*",
-    "eftec/messagecontainer": "^2.5"
+    "eftec/messagecontainer": "^2.8"
   },
   "bin": [
     "lib/pdoonecli"

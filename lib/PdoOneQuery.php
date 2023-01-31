@@ -1,5 +1,5 @@
 <?php /** @noinspection SqlNoDataSourceInspection */
-
+/** @noinspection PhpMissingParentCallMagicInspection */
 /** @noinspection DuplicatedCode */
 
 namespace eftec;
@@ -12,7 +12,7 @@ use RuntimeException;
 /**
  * Class PdoOneQuery
  *
- * @version       3.9
+ * @version       3.12
  * @package       eftec
  * @author        Jorge Castro Castillo
  * @copyright (c) Jorge Castro C. Dual Licence: MIT and Commercial License  https://github.com/EFTEC/PdoOne
@@ -372,8 +372,9 @@ class PdoOneQuery
         if ($this->parent->logLevel === 0) {
             $txt = 'Error on database';
         }
-        $this->parent->getMessagesContainer()->addItem($this->parent->lockerId, $txt);
-        $this->parent->debugFile($txt, 'ERROR');
+        if ($this->parent->getMessagesContainer()) {
+            $this->parent->getMessagesContainer()->addItem($this->parent->lockerId, $txt);
+        }
         $this->parent->errorText = $txt;
         if ($throwError && $this->parent->throwOnError && $this->parent->genError) {
             if ($exception !== null) {
@@ -982,7 +983,7 @@ class PdoOneQuery
     }
 
     /**
-     * It returns an declarative array of rows.<br>
+     * It returns a declarative array of rows.<br>
      * If not data is found, then it returns an empty array<br>
      * This method is an <b>end of the chain method</b>, so it clears the method stack<br>
      * <b>Example</b>:<br>
@@ -1038,11 +1039,11 @@ class PdoOneQuery
      *
      * </pre>
      *
-     * @param int $pk the argument is used together with ORM.
+     * @param mixed $pk the argument is used together with ORM.
      * @return array|null|false
      * @throws Exception
      */
-    public function first(int $pk = PdoOne::NULL)
+    public function first($pk = PdoOne::NULL)
     {
         if ($this->ormClass !== null) {
             $cls = $this->ormClass;
@@ -1350,7 +1351,7 @@ class PdoOneQuery
     }
 
     /**
-     * It adds an "limit" in a query. It depends on the type of database<br>
+     * It adds a "limit" in a query. It depends on the type of database<br>
      * <b>Example:</b><br>
      * <pre>
      *      ->select("")->limit("10,20")->toList();
@@ -1387,6 +1388,7 @@ class PdoOneQuery
      * @param string     $recursivePrefix It is the prefix of the recursivity.
      *
      * @return array
+     * @noinspection PhpUnused
      */
     public function factoryNull(?array $values = null, string $recursivePrefix = ''): array
     {
@@ -1987,6 +1989,21 @@ class PdoOneQuery
         }
         $primaryKey = array_keys($pks)[0];
         return $this->delete([$primaryKey => $pks]);
+    }
+
+    /**
+     * It gets the current date and time from the database.
+     * @return string|null The value is returned in SQL format.
+     */
+    public function now(): ?string
+    {
+        $sql = $this->parent->service->now();
+        try {
+            $r = $this->parent->runRawQuery($sql);
+        } catch (Exception $e) {
+            $this->parent->throwError('Unable to read now() ' . $e->getMessage(), $sql);
+        }
+        return $r[0]['NOW'] ?? null;
     }
 
     /**

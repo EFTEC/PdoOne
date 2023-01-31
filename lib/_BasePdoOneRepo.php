@@ -20,7 +20,7 @@ use RuntimeException;
 abstract class _BasePdoOneRepo
 {
     // it is used for compatibility.
-    public const BINARYVERSION = 11;
+    public const BINARYVERSION = 12;
 
     /**
      * If true then it returns false on exception. Otherwise, it throws an exception.
@@ -230,8 +230,8 @@ abstract class _BasePdoOneRepo
         try {
             $query = self::getQuery();
             if ($query->useCache && $query->parent->getCacheService() !== null) {
-                static::$uid = $query->buildUniqueID([$sql, $param], 'query');
-                $getCache = $query->parent->getCacheService()->getCache(static::$uid, static::TABLE);
+                static::$uid = $query->buildUniqueID([$sql, $param], static::ENTITY . ':' . 'query');
+                $getCache = $query->parent->getCacheService()->getCache(static::$uid, static::ENTITY);
                 if ($getCache !== false) {
                     self::reset();
                     return $getCache;
@@ -589,8 +589,8 @@ abstract class _BasePdoOneRepo
     {
         $pdoOne = self::getQuery();
         if ($pdoOne->useCache && $pdoOne->parent->getCacheService() !== null) {
-            static::$uid = $pdoOne->buildUniqueID([$where], static::TABLE . '::count');
-            $getCache = $pdoOne->parent->getCacheService()->getCache(static::$uid, static::TABLE);
+            static::$uid = $pdoOne->buildUniqueID([$where], static::ENTITY . ':count');
+            $getCache = $pdoOne->parent->getCacheService()->getCache(static::$uid, static::ENTITY);
             if ($getCache !== false) {
                 self::reset();
                 return $getCache;
@@ -661,8 +661,8 @@ abstract class _BasePdoOneRepo
         //$currentQuery = self::getQuery();
         $currentQuery->ormClass = null;
         if ($currentQuery->useCache && $currentQuery->parent->getCacheService() !== null) {
-            static::$uid = $currentQuery->buildUniqueID(['$filter', '$filterValue'], static::TABLE . '::' . $first);
-            $getCache = $currentQuery->parent->getCacheService()->getCache(static::$uid, static::TABLE);
+            static::$uid = $currentQuery->buildUniqueID(['$filter', '$filterValue'], static::ENTITY . ':' . $first);
+            $getCache = $currentQuery->parent->getCacheService()->getCache(static::$uid, static::ENTITY);
             if ($getCache !== false) {
                 self::reset();
                 return $getCache;

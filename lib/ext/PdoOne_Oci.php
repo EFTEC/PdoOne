@@ -559,6 +559,15 @@ class PdoOne_Oci implements PdoOne_IExt
     }
 
     /**
+     * todo: not tested
+     * @return string
+     */
+    public function now(): string
+    {
+        return "select TO_CHAR(SYSDATE, 'YYYY-DD-MM HH24:MI:SS') as NOW from dual";
+    }
+
+    /**
      *
      * @param string $tableKV
      * @param bool   $memoryKV You must set this value in the tablespace and not here.

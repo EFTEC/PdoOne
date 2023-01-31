@@ -40,6 +40,7 @@ use eftec\PdoOneQuery;
  */
 abstract class Abstract{classname} extends {baseclass}
 {
+    public const ENTITY = '{classname}';
     public const TABLE = '{table}';
     /** @var string A string with the name of the class. It is used to identify itself. */
     public const IDENTITY = {identity};

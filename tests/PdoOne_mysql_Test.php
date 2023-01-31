@@ -6,15 +6,12 @@
 /** @noinspection SqlResolve */
 /** @noinspection PhpPossiblePolymorphicInvocationInspection */
 /** @noinspection SuspiciousAssignmentsInspection */
-
 /** @noinspection PhpUndefinedClassInspection */
-
 /** @noinspection PhpUnhandledExceptionInspection */
 /** @noinspection SqlNoDataSourceInspection */
 /** @noinspection SqlDialectInspection */
 
 namespace eftec\tests;
-
 
 use eftec\IPdoOneCache;
 use eftec\MessageContainer;
@@ -38,7 +35,6 @@ class CacheServicesmysql implements IPdoOneCache
 
     public function getCache($uid, $family = '')
     {
-
         if (isset($this->cacheData[$uid])) {
             $this->cacheCounter++;
             return $this->cacheData[$uid];
@@ -64,7 +60,6 @@ class CacheServicesmysql implements IPdoOneCache
                 if (!isset($this->cacheDataFamily[$fam])) {
                     $this->cacheDataFamily[$fam] = [];
                 }
-
                 $this->cacheDataFamily[$fam][] = $uid;
                 $this->cacheData[$uid] = $data;
                 //var_dump($fam);
@@ -115,27 +110,26 @@ class PdoOne_mysql_Test extends TestCase
         $this->pdoOne = new PdoOne('mysql', '127.0.0.1', 'travis', '', 'travisdb');
         $this->pdoOne->connect();
         $this->pdoOne->logLevel = 3;
-
         $cache = new CacheServicesmysql();
         $this->pdoOne->setCacheService($cache);
     }
+
     public function test_prefix_table(): void
     {
-        $this->pdoOne->prefixTable='table_';
-        if(!$this->pdoOne->tableExist('city')) {
+        $this->pdoOne->prefixTable = 'table_';
+        if (!$this->pdoOne->tableExist('city')) {
             $this->pdoOne->createTable('city', ['id' => 'int not null AUTO_INCREMENT', 'name' => 'varchar(45)'], ['id' => 'PRIMARY KEY']);
         }
-        $r=$this->pdoOne->truncate('city');
+        $r = $this->pdoOne->truncate('city');
         $this->assertNotFalse($r);
-
-        $r=$this->pdoOne->delete('city');
+        $r = $this->pdoOne->delete('city');
         $this->assertNotFalse($r);
-        $id=$this->pdoOne->insert('city',['id'=>0,'name'=>'city1']);
-        $this->assertTrue($id>0);
-        $r=$this->pdoOne->update('city',['name'=>'city2'],['id'=>$id]);
+        $id = $this->pdoOne->insert('city', ['id' => 0, 'name' => 'city1']);
+        $this->assertTrue($id > 0);
+        $r = $this->pdoOne->update('city', ['name' => 'city2'], ['id' => $id]);
         $this->assertNotFalse($r);
-        $r=$this->pdoOne->select('*')->from('city')->where(['id'=>$r])->first();
-        $this->assertEquals(['id'=>$id,'name'=>'city2'],$r);
+        $r = $this->pdoOne->select('*')->from('city')->where(['id' => $r])->first();
+        $this->assertEquals(['id' => $id, 'name' => 'city2'], $r);
     }
 
 
@@ -147,7 +141,6 @@ class PdoOne_mysql_Test extends TestCase
                     , ['id' => 'int not null AUTO_INCREMENT', 'name' => 'varchar(45)', 'description' => 'varchar(45)'],
                     ['id' => 'PRIMARY KEY']));
         }
-
         if ($this->pdoOne->objectExist('new_procedure', 'procedure')) {
             $this->pdoOne->drop('new_procedure', 'procedure');
         }
@@ -161,7 +154,6 @@ class PdoOne_mysql_Test extends TestCase
         );
         $args = ['in_name' => 'aa', 'in_description' => 'bbb'];
         self::assertEquals(true, $this->pdoOne->callProcedure('new_procedure', $args, ['in_description']));
-
         self::assertEquals('done!', $args['in_description']);
     }
 
@@ -180,7 +172,6 @@ class PdoOne_mysql_Test extends TestCase
             ['cityid' => 'int not null', 'name' => 'varchar(50)', 'countryfk' => 'int not null'],
             ['cityid' => 'PRIMARY KEY']));
         $this->pdoOne->createFK('city', ['countryfk' => 'FOREIGN KEY REFERENCES`country`(`countryid`)']);
-
         $this->assertEquals([
             '_city' => [
                 'key' => 'ONETOMANY',
@@ -237,22 +228,17 @@ class PdoOne_mysql_Test extends TestCase
             $rows = false;
         }
         self::assertEquals(false, $rows);
-
         try {
             $rows = $this->pdoOne->genError(true)->select('select 123 field1 from dual222')->toList();
         } catch (Exception $exception) {
             $rows = false;
         }
         self::assertEquals(false, $rows);
-
         $this->pdoOne->throwOnError = false;
         $this->pdoOne->traceBlackList = [];
         $rows = $this->pdoOne->select('select 123 field1 from dual222')->toList();
         $this->pdoOne->throwOnError = true;
-
         self::assertEquals(false, $rows);
-
-
         self::assertNotEmpty($this->pdoOne->errorText); // there is an error.
     }
 
@@ -267,21 +253,16 @@ class PdoOne_mysql_Test extends TestCase
             $rows = false;
         }
         self::assertEquals(false, $rows);
-
         try {
             $rows = $this->pdoOne->genError(true)->select('select 123 field1 from dual222')->toListSimple();
         } catch (Exception $exception) {
             $rows = false;
         }
         self::assertEquals(false, $rows);
-
         $this->pdoOne->throwOnError = false;
         $rows = $this->pdoOne->select('select 123 field1 from dual222')->toListSimple();
         $this->pdoOne->throwOnError = true;
-
         self::assertEquals(false, $rows);
-
-
         self::assertNotEmpty($this->pdoOne->errorText); // there is an error.
     }
 
@@ -309,21 +290,16 @@ class PdoOne_mysql_Test extends TestCase
             $rows = false;
         }
         self::assertEquals(false, $rows);
-
         try {
             $rows = $this->pdoOne->genError(true)->select('select 123 field1 from dual222')->toMeta();
         } catch (Exception $exception) {
             $rows = false;
         }
         self::assertEquals(false, $rows);
-
         $this->pdoOne->throwOnError = false;
         $rows = $this->pdoOne->select('select 123 field1 from dual222')->toMeta();
         $this->pdoOne->throwOnError = true;
-
         self::assertEquals(false, $rows);
-
-
         self::assertNotEmpty($this->pdoOne->errorText); // there is an error.
     }
 
@@ -338,23 +314,17 @@ class PdoOne_mysql_Test extends TestCase
             $rows = false;
         }
         self::assertEquals(false, $rows);
-
         try {
             $rows = $this->pdoOne->genError(true)->select('select 123 field1 from dual222')->first();
         } catch (Exception $exception) {
             $rows = false;
         }
         self::assertEquals(false, $rows);
-
         $this->pdoOne->throwOnError = false;
         $rows = $this->pdoOne->select('select 123 field1 from dual222')->first();
         $this->pdoOne->throwOnError = true;
-
         self::assertEquals(false, $rows);
-
-
         self::assertNotEmpty($this->pdoOne->errorText); // there is an error.
-
         //$this->pdoOne->builderReset();
         //$rows=$this->pdoOne->select('select 123 field1 from dual')->toList();
         //$this->assertEquals([['field1'=>123]],$rows);
@@ -373,23 +343,17 @@ class PdoOne_mysql_Test extends TestCase
             $rows = false;
         }
         self::assertEquals(false, $rows);
-
         try {
             $rows = $this->pdoOne->genError(true)->select('select 123 field1 from dual222')->last();
         } catch (Exception $exception) {
             $rows = false;
         }
         self::assertEquals(false, $rows);
-
         $this->pdoOne->throwOnError = false;
         $rows = $this->pdoOne->select('select 123 field1 from dual222')->last();
         $this->pdoOne->throwOnError = true;
-
         self::assertEquals(false, $rows);
-
-
         self::assertNotEmpty($this->pdoOne->errorText); // there is an error.
-
     }
 
     public function test_createtable(): void
@@ -400,7 +364,6 @@ class PdoOne_mysql_Test extends TestCase
         $r = $this->pdoOne->createTable('table5', ['id' => 'int NOT NULL', 'name' => 'varchar(50)'],
             ['id' => 'PRIMARY KEY']);
         self::assertEquals(true, $r);
-
         self::assertEquals(array(
             'id' => [
                 'phptype' => 'int',
@@ -410,7 +373,7 @@ class PdoOne_mysql_Test extends TestCase
                 'null' => false,
                 'identity' => false,
                 'sql' => 'int not null',
-                'alias'=>'id'
+                'alias' => 'id'
             ],
             'name' => [
                 'phptype' => 'string',
@@ -420,22 +383,21 @@ class PdoOne_mysql_Test extends TestCase
                 'null' => true,
                 'identity' => false,
                 'sql' => 'varchar(50)',
-                'alias'=>'name'
-
+                'alias' => 'name'
             ]
         ), $this->pdoOne->getDefTable('table5'));
         self::assertEquals(array('id' => 'PRIMARY KEY'), $this->pdoOne->getDefTableKeys('table5'));
         self::assertEquals(array(), $this->pdoOne->getDefTableFK('table5'));
     }
+
     public function test_createtableUniversal(): void
     {
         if ($this->pdoOne->tableExist('table5')) {
             $this->pdoOne->dropTable('table5');
         }
-        $r = $this->pdoOne->createTable('table5',['id int','name string(50) null'],
-            ['id' => 'PRIMARY KEY'],'','',true);
+        $r = $this->pdoOne->createTable('table5', ['id int', 'name string(50) null'],
+            ['id' => 'PRIMARY KEY'], '', '', true);
         self::assertEquals(true, $r);
-
         self::assertEquals(array(
             'id' => [
                 'phptype' => 'int',
@@ -445,7 +407,7 @@ class PdoOne_mysql_Test extends TestCase
                 'null' => false,
                 'identity' => false,
                 'sql' => 'int not null',
-                'alias'=>'id'
+                'alias' => 'id'
             ],
             'name' => [
                 'phptype' => 'string',
@@ -455,8 +417,7 @@ class PdoOne_mysql_Test extends TestCase
                 'null' => true,
                 'identity' => false,
                 'sql' => 'varchar(50)',
-                'alias'=>'name'
-
+                'alias' => 'name'
             ]
         ), $this->pdoOne->getDefTable('table5'));
         self::assertEquals(array('id' => 'PRIMARY KEY'), $this->pdoOne->getDefTableKeys('table5'));
@@ -475,16 +436,11 @@ class PdoOne_mysql_Test extends TestCase
     public function test_cache(): void
     {
         $this->pdoOne->getCacheService()->cacheCounter = 0;
-
         $rows = $this->pdoOne->select('select 123 field1 from dual')->useCache()->toList();
         self::assertEquals([['field1' => 123]], $rows);
-
         $this->pdoOne->select('select 123 field1 from dual')->where('1=1')->order('1')->useCache()->toList();
-
         $rows = $this->pdoOne->select('select 123 field1 from dual')->useCache()->toList();
         self::assertEquals([['field1' => 123]], $rows);
-
-
         self::assertEquals(1, $this->pdoOne->getCacheService()->cacheCounter); // 1= cache used 1 time
         $this->pdoOne->invalidateCache();
         $rows = $this->pdoOne->select('select 123 field1 from dual')->useCache()
@@ -502,7 +458,6 @@ class PdoOne_mysql_Test extends TestCase
         sleep(2); // enough time to expire the cache.
         $rows = $this->pdoOne->select('select 123 field1 from dual')->useCache(1, 'dual')->toList(); // +1 cache
         self::assertEquals(1, $this->pdoOne->getCacheService()->cacheCounter); // 1= cache used 1 time
-
     }
 
     public function test_cache_family(): void
@@ -532,14 +487,11 @@ class PdoOne_mysql_Test extends TestCase
         $rows = $this->pdoOne->select('select 123 field2 from dual')->useCache(5555, 'dual2')
             ->toList(); // +1 cache used
         self::assertEquals(3, $this->pdoOne->getCacheService()->cacheCounter); // 1= cache used 1 time
-
     }
 
     public function test_cache_noCache(): void
     {
         $this->pdoOne->setCacheService(null);
-
-
         $rows = $this->pdoOne->select('select 123 field1 from dual')->useCache()->toList();
         self::assertEquals([['field1' => 123]], $rows);
         $rows = $this->pdoOne->select('select 123 field1 from dual')->where('1=1')->order('1')->useCache()->toList();
@@ -547,12 +499,10 @@ class PdoOne_mysql_Test extends TestCase
         self::assertEquals([['field1' => 123]], $rows);
         //$this->assertEquals(1,$this->pdoOne->getCacheService()->cacheCounter); // 1= cache used 1 time
         $rows = $this->pdoOne->invalidateCache();
-
         $rows = $this->pdoOne->select('select 123 field1 from dual')->useCache()->toList();
         self::assertEquals([['field1' => 123]], $rows);
         //$this->assertEquals(1,$this->pdoOne->getCacheService()->cacheCounter); // 1= cache used 1 time
         //$this->pdoOne->getCacheService()->cacheCounter=0;
-
         $cache = new CacheServicesmysql();
         $this->pdoOne->setCacheService($cache);
     }
@@ -568,13 +518,10 @@ class PdoOne_mysql_Test extends TestCase
             $r = false;
             // drops silently
         }
-
-
         $sqlT2 = 'CREATE TABLE `product_category` (
 	    `id_category` INT NOT NULL,
 	    `catname` VARCHAR(45) NULL,
 	    PRIMARY KEY (`id_category`));';
-
         try {
             $r = $this->pdoOne->runRawQuery($sqlT2);
         } catch (Exception $e) {
@@ -582,46 +529,37 @@ class PdoOne_mysql_Test extends TestCase
         }
         self::assertEquals(true, $r, 'failed to create table');
         $this->pdoOne->getCacheService()->cacheCounter = 0;
-
         self::assertGreaterThan(1, count($this->pdoOne->objectList()));
         // we add some values
         $this->pdoOne->set(['id_category' => 123, 'catname' => 'cheap'])->from('product_category')->insert();
         $this->pdoOne->insert('product_category', ['id_category', 'catname'],
             ['id_category' => 2, 'catname' => 'cheap']);
-
         $this->pdoOne->insert('product_category', ['id_category' => 3, 'catname' => 'cheap']);
-
         $this->pdoOne->insert('product_category', ['id_category' => 4, 'catname' => 'cheap4']);
         $this->pdoOne->insert('product_category', ['id_category', '5', 'catname', 'cheap']);
         $count = $this->pdoOne->count('from product_category');
         self::assertEquals(5, $count, 'insert must value 5');
-
         $count = $this->pdoOne->select('select id_category from product_category where id_category=123')->useCache()
             ->firstScalar();
         self::assertEquals(123, $count, 'insert must value 123');
         $count = $this->pdoOne->select('select id_category from product_category where id_category=123')->useCache()
             ->firstScalar();
         self::assertEquals(123, $count, 'insert must value 123');
-
         self::assertEquals(1, $this->pdoOne->getCacheService()->cacheCounter); // 1= cache used 1 time
-
         $count = $this->pdoOne->select('select catname from product_category where id_category>0')->useCache()
             ->firstScalar();
         self::assertEquals('cheap', $count);
         $count = $this->pdoOne->select('select catname from product_category where id_category>0')->useCache()
             ->firstScalar();
         self::assertEquals('cheap', $count);
-
         $count = $this->pdoOne->select('select catname from product_category where id_category=4')->useCache()->first();
         self::assertEquals(['catname' => 'cheap4'], $count);
         $count = $this->pdoOne->select('select catname from product_category where id_category=4')->useCache()->first();
         self::assertEquals(['catname' => 'cheap4'], $count);
-
         $count = $this->pdoOne->select('select catname from product_category')->useCache()->last();
         self::assertEquals(['catname' => 'cheap'], $count);
         $count = $this->pdoOne->select('select catname from product_category')->useCache()->last();
         self::assertEquals(['catname' => 'cheap'], $count);
-
         $count = $this->pdoOne->select('select catname from product_category')->where('id_category=?', [4])->useCache()
             ->firstScalar();
         self::assertEquals('cheap4', $count, 'insert must value cheap4');
@@ -634,7 +572,6 @@ class PdoOne_mysql_Test extends TestCase
         $count = $this->pdoOne->select('select catname from product_category')->where('id_category=?', [3])->useCache()
             ->firstScalar();
         self::assertEquals('cheap', $count, 'insert must value cheap');
-
         $count = $this->pdoOne->select('select catname from product_category')
             ->where('id_category=:idcat', ['idcat' => 4])->firstScalar();
         self::assertEquals('cheap4', $count, 'insert must value cheap4');
@@ -647,9 +584,9 @@ class PdoOne_mysql_Test extends TestCase
             'min must value 2');
         self::assertEquals(123, $this->pdoOne->from('product_category')->max('id_category'),
             'max must value 123');
-        self::assertEquals(false,$this->pdoOne->from('product_category')->setThrowOnError()->hasWhere());
-        self::assertEquals([],$this->pdoOne->from('product_category')->getSetParamAssoc());
-        self::assertEquals([],$this->pdoOne->from('product_category')->getHavingParamAssoc());
+        self::assertEquals(false, $this->pdoOne->from('product_category')->setThrowOnError()->hasWhere());
+        self::assertEquals([], $this->pdoOne->from('product_category')->getSetParamAssoc());
+        self::assertEquals([], $this->pdoOne->from('product_category')->getHavingParamAssoc());
         self::assertEquals(27.4, $this->pdoOne->from('product_category')->avg('id_category'),
             'avg must value 27.4');
         self::assertEquals([
@@ -659,7 +596,6 @@ class PdoOne_mysql_Test extends TestCase
             ['id_category' => 5],
             ['id_category' => 123]
         ], $this->pdoOne->select('id_category')->from('product_category')->useCache()->toList());
-
         self::assertEquals([
             ['id_category' => 2],
             ['id_category' => 3],
@@ -668,7 +604,6 @@ class PdoOne_mysql_Test extends TestCase
             ['id_category' => 123]
         ], $this->pdoOne->select('id_category')->from('product_category')->useCache()->toList());
         self::assertEquals(6, $this->pdoOne->getCacheService()->cacheCounter); // 1= cache used 1 time
-
         self::assertEquals([2, 3, 4, 5, 123],
             $this->pdoOne->select('id_category')->from('product_category')->useCache()->toListSimple());
         self::assertEquals([2, 3, 4, 5, 123],
@@ -677,9 +612,7 @@ class PdoOne_mysql_Test extends TestCase
             $this->pdoOne->select('id_category,catname')->from('product_category')->useCache()->toListKeyValue());
         self::assertEquals([2 => 'cheap', 3 => 'cheap', '4' => 'cheap4', 5 => 'cheap', 123 => 'cheap'],
             $this->pdoOne->select('id_category,catname')->from('product_category')->useCache()->toListKeyValue());
-
         self::assertEquals(8, $this->pdoOne->getCacheService()->cacheCounter); // 3= cache used 1 time
-
         self::assertEquals([['id_category' => 3]],
             $this->pdoOne->select('id_category')->from('product_category')->where('id_category', 3)->useCache()->toList());
         self::assertEquals([['id_category' => 4]],
@@ -701,13 +634,10 @@ class PdoOne_mysql_Test extends TestCase
             $r = false;
             // drops silently
         }
-
-
         $sqlT2 = 'CREATE TABLE `product_category` (
 	    `id_category` INT NOT NULL,
 	    `catname` VARCHAR(45) NULL,
 	    PRIMARY KEY (`id_category`));';
-
         try {
             $r = $this->pdoOne->runRawQuery($sqlT2);
         } catch (Exception $e) {
@@ -715,22 +645,18 @@ class PdoOne_mysql_Test extends TestCase
         }
         self::assertEquals(true, $r, 'failed to create table');
         $this->pdoOne->getCacheService()->cacheCounter = 0;
-
         self::assertGreaterThan(1, count($this->pdoOne->objectList()));
         // we add some values
         $this->pdoOne->set(['id_category' => 123, 'catname' => 'cheap'])->from('product_category')->insert();
         $this->pdoOne->insert('product_category', ['id_category', 'catname'],
             ['id_category' => 2, 'catname' => 'cheap']);
-
         $this->pdoOne->insert('product_category', ['id_category' => 3, 'catname' => 'cheap']);
-
         $this->pdoOne->insert('product_category', ['id_category' => 4, 'catname' => 'cheap4']);
         $this->pdoOne->insert('product_category', ['id_category', '5', 'catname', 'cheap']);
         $query1 = $this->pdoOne->select('*')->from('product_category', 'travisdb')->where('1=1')->order('id_category');
         $r = $query1->toList();
         $query2 = $this->pdoOne->select('*')->from('product_category')->where('catname=?', ['cheap'])->order('id_category');
         $r2 = $query2->toList();
-
         //var_dump(var_export($r));
         self::assertEquals([
             0 =>
@@ -781,14 +707,12 @@ class PdoOne_mysql_Test extends TestCase
                     'catname' => 'cheap',
                 ],
         ], $r2);
-
         $query1 = $this->pdoOne->select('*')->from('product_category')->where('1=1')->order('id_category')->useCache(10);
         $r = $query1->toList();
         $query2 = $this->pdoOne->select('*')->from('product_category')->where('catname=?', ['cheap'])->order('id_category')->useCache(10);
         $r2 = $query2->toList();
         $query3 = $this->pdoOne->select('*')->from('product_category')->where('catname=?', ['cheap4'])->order('id_category')->useCache(10);
         $r3 = $query3->toList();
-
         //var_dump(var_export($r));
         self::assertEquals([
             0 =>
@@ -869,11 +793,9 @@ class PdoOne_mysql_Test extends TestCase
             $r = $this->pdoOne->drop('product_category', 'table');
         }
         self::assertEquals(true, $r, 'Drop failed');
-
         if ($this->pdoOne->objectExist('category')) {
             $r = $this->pdoOne->drop('category', 'table');
         }
-
         $sqlT2 = 'CREATE TABLE `product_category` (`id_category` INT NOT NULL,`catname` 
                 VARCHAR(45) NULL, PRIMARY KEY (`id_category`));';
         try {
@@ -894,28 +816,21 @@ class PdoOne_mysql_Test extends TestCase
         $this->pdoOne->set(['id_category' => 2, 'catname' => 'cheap2'])->from('product_category')->insert();
         $this->pdoOne->set("id_category=2,catname='cheap1'")->where('id_category=2')->from('product_category')
             ->update();
-
         $sr = $this->pdoOne->from('product_category')->set("catname='expensive'")->where('id_category=1')->update();
-
         self::assertEquals(['id_category' => 1, 'catname' => 'expensive'],
             $this->pdoOne->select('select * from product_category where id_category=1')->first());
         self::assertEquals(['id_category' => 2, 'catname' => 'cheap1'],
             $this->pdoOne->select('select * from product_category where id_category=2')->first());
-
         $this->pdoOne->runMultipleRawQuery("insert into product_category(id_category,catname) values (3,'multi');
                 insert into product_category(id_category,catname) values (4,'multi'); ");
         self::assertEquals(4, $this->pdoOne->from('product_category')->count());
         $r = $this->pdoOne->set(['id_category', 1, 'catname', 'c1'])->from('category')->insert();
         $obj = ['id_category' => 2, 'catname' => 'c2'];
         $r = $this->pdoOne->insertObject('category', $obj);
-
         $query = $this->pdoOne->select('*')->from('product_category')
             ->innerjoin('category on product_category.id_category=category.id_category')->toList();
-
         self::assertEquals([['id_category' => 1, 'catname' => 'c1'], ['id_category' => 2, 'catname' => 'c2']], $query);
-
         $this->pdoOne->delete('product_category where id_category>0');
-
         self::assertEquals(0, $this->pdoOne->from('product_category')->count());
     }
 
@@ -926,12 +841,9 @@ class PdoOne_mysql_Test extends TestCase
         PdoOne::$dateFormat = 'Y-m-d';
         self::assertEquals('2019-02-06 05:06:07', PdoOne::dateText2Sql('2019-02-06T05:06:07Z'));
         self::assertEquals('2019-02-06 00:00:00', PdoOne::dateText2Sql('2019-02-06', false));
-
         self::assertEquals('2018-02-06 05:06:07.123000', PdoOne::dateText2Sql('2018-02-06T05:06:07.123Z'));
-
         // sql format -> human format dd/mm/yyyy
         self::assertEquals('06/02/2019', PdoOne::dateSql2Text('2019-02-06'));
-
         // 2019-02-06T05:06:07Z -> 2019-02-06 05:06:07 -> 06/02/2019 05:06:07
         self::assertEquals('06/02/2019 05:06:07',
             PdoOne::dateSql2Text(PdoOne::dateText2Sql('2019-02-06T05:06:07Z')));
@@ -948,13 +860,12 @@ class PdoOne_mysql_Test extends TestCase
         try {
             $this->pdoOne->createSequence();
         } catch (Exception $ex) {
-            var_dump("it should show some errors:---------");
+            var_dump("it should show some errors:---------------");
             var_dump($ex->getMessage());
             var_dump($this->pdoOne->lastError());
             var_dump($this->pdoOne->lastQuery);
-            var_dump("---------");
+            var_dump("-end of errors--------------------");
         }
-
         self::assertLessThan(3639088446091303982, $this->pdoOne->getSequence(true),
             'sequence must be greater than 3639088446091303982');
     }
@@ -964,14 +875,12 @@ class PdoOne_mysql_Test extends TestCase
         $this->pdoOne->setKvDefaultTable('KVTABLA');
         try {
             $this->assertEquals(true, $this->pdoOne->dropTableKV());
-
         } catch (Exception $ex) {
             var_dump('warning:' . $ex->getMessage());
             var_dump('table not deleted');
         }
         $t = $this->pdoOne->createTableKV();
         $this->assertEquals(true, $t);
-
         $this->assertEquals(true, $this->pdoOne->setKV('hello', 'it is a value', 2));
         $this->assertEquals('it is a value', $this->pdoOne->getKV('hello'));
         $this->assertEquals(true, $this->pdoOne->existKV('hello'));
@@ -1016,17 +925,29 @@ class PdoOne_mysql_Test extends TestCase
     public function test_getMessages(): void
     {
         $this->assertInstanceOf(MessageContainer::class, $this->pdoOne->getMessagesContainer());
-
         $this->pdoOne->clearError();
         try {
             $this->pdoOne->select('*')->from('wrongtable')->where('1=1')->toList();
         } catch (Exception $ex) {
             $this->assertNotEmpty($this->pdoOne->getErrors());
+            $this->assertStringContainsString('Base table or view not found', $this->pdoOne->getFirstError());
             $this->assertStringContainsString('Uncaught Exception', $this->pdoOne->getFirstError());
         }
-
+        $this->pdoOne->select('*')->from('city')->where('1=1')->toList();
+        $this->assertEquals([0 => 'select * from wrongtable where 1=1',
+            1 => 'select * from city where 1=1'], $this->pdoOne->getInfos());
     }
 
+    public function test_Log():void
+    {
+        $this->assertInstanceOf(MessageContainer::class, $this->pdoOne->getMessagesContainer());
+        $this->pdoOne->clearError();
+        $this->pdoOne->setUseLog();
+        $this->pdoOne->throwOnError=false;
+
+        $this->pdoOne->select('*')->from('wrongtable')->where('1=1')->toList();
+        $this->pdoOne->select('*')->from('city')->where('1=1')->toList();
+    }
 
     public function test_startTransaction(): void
     {
@@ -1037,6 +958,12 @@ class PdoOne_mysql_Test extends TestCase
     public function test_commit(): void
     {
         self::assertEquals(false, (false), 'transaction is not open');
+    }
+    public function test_now():void
+    {
+        $year=new \DateTime();
+        $year=$year->format('Y-m');
+        self::assertStringContainsString($year.'-',$this->pdoOne->now());
     }
 
     public function test_rollback(): void
@@ -1053,27 +980,19 @@ class PdoOne_mysql_Test extends TestCase
     public function test_sqlGen(): void
     {
         $this->pdoOne->clearError();
-
         self::assertEquals('select 1 from DUAL', $this->pdoOne->select('select 1 from DUAL')->sqlGen(true));
-
         self::assertEquals('select 1 from DUAL', $this->pdoOne->select('select 1')->from('DUAL')->sqlGen(true));
-
         self::assertEquals('select 1, 2 from DUAL',
             $this->pdoOne->select('1')->select('2')->from('DUAL')->sqlGen(true));
-
         self::assertEquals('select 1, 2 from DUAL', $this->pdoOne->select(['1', '2'])->from('DUAL')->sqlGen(true));
-
         self::assertEquals('select 1, 2 from DUAL where field=?',
             $this->pdoOne->select(['1', '2'])->from('DUAL')->where('field=?', [20])->sqlGen(true));
-
         self::assertEquals('select 1, 2 from DUAL where field=:field',
             $this->pdoOne->select(['1', '2'])->from('DUAL')->where('field=:field', [':field' => 20])->sqlGen(true));
-
         /** @noinspection SqlAggregates */
         self::assertEquals('select 1, 2 from DUAL where field=? group by 2 having field2=? order by 1',
             $this->pdoOne->select(['1', '2'])->from('DUAL')->where('field=?', [20])->order('1')->group('2')
                 ->having('field2=?', [4])->sqlGen(true));
-
     }
 
     public function test_join(): void
@@ -1159,7 +1078,6 @@ class PdoOne_mysql_Test extends TestCase
         self::assertTrue(strlen($value) > 10, 'Encrypted');
         $return = $this->pdoOne->decrypt($value);
         self::assertEquals("bv `lfg+hlc ,vc´,c35'ddl ld_vcvñvc +*=/\\", $return, 'decrypt correct');
-
         $return = $this->pdoOne->decrypt('wrong' . $value);
         self::assertEquals(false, $return, 'decrypt must fail');
         $return = $this->pdoOne->decrypt('');

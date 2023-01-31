@@ -2040,9 +2040,13 @@ In a nutshell:
 >
 > Every decimal version means that it patches/fixes/refactoring a previous functionality i.e. 1.5.0 -> 1.5.1 (fix)
 
+* 3.14 2023-01-30
+  * [PdoOneQuery] 3.9 Fixed a problem with first() where the primary key is not numeric.
+  * [Pdo] /[PdoOneQuery] New method now() to obtain the date and time of the database.
+  * [_BasePdoOneRepo] 12 Updated to binary version 12. You must rebuild the ORM files.
 * 3.13 2023-01-26
   * [PdoOneQuery] Fixed a problem with single() value. 
-  * [PdoOne] Fixed if MessageContainer is not loaded (now, it is ignored)
+  * [PdoOne] Fixed if MessageContainer is not loaded (now, it is ignored and not used)
 * 3.12.2 2022-09-03
   * [_BasePdoOneRepo] Added some missing argument hinting
   * [_BasePdoOneRepo] Fixed a problem with Insert()

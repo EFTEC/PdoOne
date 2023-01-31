@@ -40,6 +40,7 @@ use eftec\PdoOneQuery;
 */
 abstract class Abstract{classname} extends {baseclass}
 {
+    public const ENTITY = '{classname}';
     public const TABLE = '{table}';
     public const IDENTITY = {identity};
     public const PK = {pk};

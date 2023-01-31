@@ -542,6 +542,11 @@ class PdoOne_Sqlsrv implements PdoOne_IExt
         }
         return " OFFSET $first ROWS FETCH NEXT $second ROWS ONLY";
     }
+    public function now(): string
+    {
+        return "select GETDATE() as NOW";
+    }
+
 
     /**
      *

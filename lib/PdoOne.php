@@ -25,11 +25,11 @@ use stdClass;
  * @package       eftec
  * @author        Jorge Castro Castillo
  * @copyright (c) Jorge Castro C. Dual Licence: MIT and Commercial License  https://github.com/EFTEC/PdoOne
- * @version       3.13
+ * @version       3.14
  */
 class PdoOne
 {
-    public const VERSION = '3.13';
+    public const VERSION = '3.14';
     /** @var int We need this value because null and false could be a valid value. */
     public const NULL = PHP_INT_MAX;
     /** @var string Prefix of the related columns. It is used for ORM */
@@ -127,26 +127,26 @@ class PdoOne
      * @var bool If true (default), then it throws a customer message.. If false, then it uses the default (PHP) style
      */
     public $customError = true;
-    /** @var string[] PHP classes excluded by the custom error log todo: quitar */
-    public $traceBlackList = []; //['PdoOne.php', 'PdoOneQuery.php', 'PdoOne_Mysql.php', 'PdoOne.Sqlsrv.php', 'PdoOne.Oci.php'
-    //, 'PdoOneTestMockup.php', '_BasePdoOneRepo.php'];
+    /** @var string[] PHP classes excluded by the custom error log */
+    public $traceBlackList = ['PdoOne.php', 'PdoOneQuery.php', 'PdoOne_Mysql.php', 'PdoOne.Sqlsrv.php', 'PdoOne.Oci.php'
+        , 'PdoOneTestMockup.php', '_BasePdoOneRepo.php'];
     /** @var  PDO */
     public $conn1;
     /** @var  bool True if the transaction is open */
     public $transactionOpen;
     /** @var bool if the database is in READ ONLY mode or not. If true then we must avoid to write in the database. */
     public $readonly = false;
-    /** @var boolean if not false then it logs the file using the php log file (if enabled) */
+    /** @var boolean if true then it logs the file using the php log file (if enabled) */
     private $logFile = false;
     /** @var string It stores the last error. runGet and beginTry resets it */
     public $errorText = '';
     public $isThrow = false;
-    /** @var int=[0,1,2,3,4][$i]
-     * <b>0</b>=no debug for production (all messages of errors are generic)<br>
-     * <b>1</b>=it shows an error message<br>
-     * <b>2</b>=it shows the error messages and the last query<br>
-     * <b>3</b>=it shows the error messages, the last query, the trace and the last parameters (if any).
-     * Note: it could show passwords<br>
+    /** @var int=[0,1,2,3,4][$i]<br>
+     * <b>0</b>=no debug for production (all messages of errors are generic). Log only errors<br>
+     * <b>1</b>=it shows an error message. Log only errors<br>
+     * <b>2</b>=it shows the error messages and the last query. Log everthing<br>
+     * <b>3</b>=it shows the error messages, the last query, the trace and the last parameters (if any). Log on error
+     * and info Note: it could show passwords and confidential information<br>
      */
     public $logLevel = 0;
     /** @var string last query executed */
@@ -216,12 +216,12 @@ class PdoOne
         if (class_exists('eftec\MessageContainer')) {
             // autowire MessageContainer if the method exists.
             $this->messageContainer = MessageContainer::instance();
-
         }
         if (self::$instance === null) {
             self::$instance = $this;
         }
     }
+
 
     /**
      * It returns the instance of PdoOne or throw an error if the instance is not set.
@@ -280,6 +280,17 @@ class PdoOne
         // by default, the encryption uses the same password as the db.
         $this->encryption = new PdoOneEncryption($pwd, $user . $pwd);
     }
+
+    /**
+     * It sets if the library will use the log file or not.
+     * @param bool $useLog
+     * @return void
+     */
+    public function setUseLog(bool $useLog = true): void
+    {
+        $this->logFile = $useLog;
+    }
+
 
     public static function newColFK($key, $refcol, $reftable, $extra = null, $name = null): array
     {
@@ -1140,7 +1151,7 @@ class PdoOne
     )
     {
         $this->construct($database, $server, $user, $pwd, $db);
-        //$this->logLevel = 3;
+        //$this->_logLevel = 3;
         $this->connect(false);
         if (!$this->isOpen) {
             $r = "Unable to open database $database $server $user **** $db\n";
@@ -1301,11 +1312,18 @@ class PdoOne
                     $txt = $this->custom_exception_handler($exception, $txt, true);
                 }
             }
-            if($this->messageContainer!==null) {
+            if ($this->messageContainer !== null) {
+                if ($this->logFile) {
+                    $this->messageContainer->backupLog();
+                    if ($this->logLevel >= 2) {
+                        $this->messageContainer->setLog(true, true, true, true);
+                    } else {
+                        $this->messageContainer->setLog(true, true);
+                    }
+                }
                 $this->messageContainer->addItem($this->lockerId, $txt);
+                $this->messageContainer->restoreLog();
             }
-
-            $this->debugFile($txt, 'ERROR');
             $this->errorText = $txt;
         }
         if ($throwError && $this->throwOnError && $this->genError) {
@@ -1315,13 +1333,13 @@ class PdoOne
         $this->endTry();
     }
 
-    public function clearError(): void
+    public function clearError(): PdoOne
     {
         $this->errorText = '';
-        if($this->messageContainer === null) {
-            return;
+        if ($this->messageContainer !== null) {
+            $this->messageContainer->resetLocker($this->lockerId);
         }
-        $this->messageContainer->resetLocker($this->lockerId);
+        return $this;
     }
 
     /**
@@ -1407,73 +1425,73 @@ class PdoOne
      * @return MessageContainer
      * @test equals null,this(),'this is not a message container'
      */
-    public function getMessagesContainer(): MessageContainer
+    public function getMessagesContainer(): ?MessageContainer
     {
         return $this->messageContainer;
     }
 
     public function getMessages($level = null): ?array
     {
-        if($this->messageContainer===null) {
-            return null;
+        if ($this->messageContainer !== null) {
+            return $this->messageContainer->getLocker($this->lockerId)->all($level);
         }
-        return $this->messageContainer->getLocker($this->lockerId)->all($level);
+        return null;
     }
 
     public function getErrors(): ?array
     {
-        if($this->messageContainer===null) {
-            return null;
+        if ($this->messageContainer !== null) {
+            return $this->messageContainer->getLocker($this->lockerId)->allError();
         }
-        return $this->messageContainer->getLocker($this->lockerId)->allError();
+        return null;
     }
 
     public function getFirstError(): ?string
     {
-        if($this->messageContainer===null) {
-            return null;
+        if ($this->messageContainer !== null) {
+            return $this->messageContainer->getLocker($this->lockerId)->firstError();
         }
-        return $this->messageContainer->getLocker($this->lockerId)->firstError();
+        return null;
     }
 
     public function getLastError(): ?string
     {
-        if($this->messageContainer===null) {
-            return null;
+        if ($this->messageContainer !== null) {
+            return $this->messageContainer->getLocker($this->lockerId)->lastError();
         }
-        return $this->messageContainer->getLocker($this->lockerId)->lastError();
+        return null;
     }
 
     public function hasError($includeWarning = false): ?string
     {
-        if($this->messageContainer===null) {
-            return null;
+        if ($this->messageContainer !== null) {
+            return $this->messageContainer->getLocker($this->lockerId)->hasError($includeWarning);
         }
-        return $this->messageContainer->getLocker($this->lockerId)->hasError($includeWarning);
+        return null;
     }
 
     public function getInfos(): ?array
     {
-        if($this->messageContainer===null) {
-            return null;
+        if ($this->messageContainer !== null) {
+            return $this->messageContainer->getLocker($this->lockerId)->allInfo();
         }
-        return $this->messageContainer->getLocker($this->lockerId)->allInfo();
+        return null;
     }
 
     public function getFirstInfo(): ?string
     {
-        if($this->messageContainer===null) {
-            return null;
+        if ($this->messageContainer !== null) {
+            return $this->messageContainer->getLocker($this->lockerId)->firstInfo();
         }
-        return $this->messageContainer->getLocker($this->lockerId)->firstInfo();
+        return null;
     }
 
     public function getLastInfo(): ?string
     {
-        if($this->messageContainer===null) {
-            return null;
+        if ($this->messageContainer !== null) {
+            return $this->messageContainer->getLocker($this->lockerId)->lastInfo();
         }
-        return $this->messageContainer->getLocker($this->lockerId)->lastInfo();
+        return null;
     }
 
 
@@ -1489,44 +1507,6 @@ class PdoOne
         $this->messageContainer = $messageContainer;
     }
 
-    /**
-     * @param mixed  $txt   the message to send. If it is an object or an array, then it is serialized.
-     * @param string $level The level of the message
-     * @return void
-     */
-    public function debugFile($txt, string $level = 'INFO'): void
-    {
-        if (!$this->logFile) {
-            return; // debug file is disabled.
-        }
-        $maxl = 200 * 1024 * 1024; // 200mb
-        if (is_object($txt) || is_array($txt)) {
-            $txtW = print_r($txt, true);
-        } else {
-            $txtW = $txt;
-        }
-        if ($this->logLevel === 2) {
-            $txtW .= ' param:' . json_encode($this->lastParam);
-        }
-        if ($level === 'INFO' && $this->logLevel >= 2) {
-            $errorfile = ini_get('error_log');
-            if ($errorfile) {
-                $infoFile = str_replace('.', '_warning.', $errorfile);
-                if (@filesize($infoFile) > $maxl) {
-                    $fp = @fopen($infoFile, 'wb');
-                    @fclose($fp);
-                }
-                /** @noinspection ForgottenDebugOutputInspection */
-                error_log('[' . date("M d H:i:s") . "] [PdoOne]\t[$level]\t$txtW\n\n", 3, $infoFile);
-            } else {
-                /** @noinspection ForgottenDebugOutputInspection */
-                error_log("[PdoOne]\t[$level]\t" . $txtW);
-            }
-        } else {
-            /** @noinspection ForgottenDebugOutputInspection */
-            error_log("[PdoOne]\t[$level]\t" . $txtW);
-        }
-    }
 
     //<editor-fold desc="transaction functions">
 
@@ -1543,11 +1523,18 @@ class PdoOne
         if ($this->logLevel < 2) {
             return;
         }
-        if($this->messageContainer===null) {
-            return;
+        if ($this->messageContainer !== null) {
+            $this->messageContainer->backupLog(); // we don't want to alter the current configuration
+            if ($this->logFile) {
+                if ($this->logLevel >= 2) {
+                    $this->messageContainer->setLog(true, true, true, true);
+                } else {
+                    $this->messageContainer->setLog(true, true);
+                }
+            }
+            $this->messageContainer->addItem($this->lockerId, $txt, 'info');
+            $this->messageContainer->restoreLog();
         }
-        $this->messageContainer->addItem($this->lockerId, $txt, 'info');
-        $this->debugFile($txt);
     }
 
     /**
@@ -1649,24 +1636,27 @@ class PdoOne
                 // we have an internal cache, so we will return it.
                 $this->internalCacheCounter++;
                 $this->endTry();
+                $this->storeInfo("OK (USING CACHE)");
                 return $this->internalCache[$uid];
             }
         }
         $this->lastParam = $params;
         $this->lastQuery = $rawSql;
-        $this->storeInfo($rawSql);
+        $this->storeInfo("[INFO]\t$rawSql");
         if ($params === null) {
             $rows = $this->runRawQueryParamLess($rawSql, $returnArray);
             if ($uid !== false && $returnArray) {
                 $this->internalCache[$uid] = $rows;
             }
             $this->endTry();
+            $this->storeInfo("OK QUERY");
             return $rows;
         }
         // the "where" has parameters.
         $stmt = $this->prepare($rawSql);
         if ($stmt === false) {
             $this->throwError("Unable to prepare statement", $rawSql);
+            $this->storeInfo("ERROR QUERY");
             return false;
         }
         $counter = 0;
@@ -1716,6 +1706,7 @@ class PdoOne
                     $this->internalCache[$uid] = $result;
                 }
                 $this->endTry();
+                $this->storeInfo("OK CACHED");
                 return $result;
             }
         } else {
@@ -1730,6 +1721,7 @@ class PdoOne
                 $this->internalCache[$uid] = $rows;
             }
             $this->endTry();
+            $this->storeInfo("OK");
             return $rows;
         }
         if ($stmt instanceof PDOStatement) {
@@ -1738,6 +1730,7 @@ class PdoOne
             $this->affected_rows = 0;
         }
         $this->endTry();
+        $this->storeInfo("OK");
         return $stmt;
     }
 
@@ -1837,17 +1830,21 @@ class PdoOne
                 $this->throwError('Database is in READ ONLY MODE', '');
             }
         }
-        $this->storeInfo($sql);
         try {
             $stmt = $this->conn1->prepare($sql);
         } catch (Exception $ex) {
             $stmt = false;
+            $this->storeInfo("[INFO] [ERROR1] Statement:\t$sql ");
             $this->throwError('Failed to prepare', $ex->getMessage() . $this->lastError(), ['param' => $this->lastParam], true, $ex);
         }
         if (($stmt === false) && $this->errorText === '') {
+            $this->storeInfo("[INFO] [ERROR2] Statement:\t$sql ");
             $this->throwError('Unable to prepare query', $this->lastQuery, ['param' => $this->lastParam]);
         }
         $this->endTry();
+        if ($stmt !== false) {
+            $this->storeInfo("[INFO] [OK] Statement:\t$sql ");
+        }
         return $stmt;
     }
 
@@ -2387,6 +2384,15 @@ class PdoOne
     }
 
     /**
+     * It gets the current date and time from the database.
+     * @return string|null The value is returned in SQL format.
+     */
+    public function now(): string
+    {
+        return (new PdoOneQuery($this))->now();
+    }
+
+    /**
      * @param $sql
      * @return PdoOneQuery
      */
@@ -2571,7 +2577,7 @@ class PdoOne
             $aliasRef = self::$prefixBase . @$aliasesAllTables[$v['reftable']][$refcol] ?? $refcol;
             $relation[$k]['alias'] = $alias;
             if (isset($v['col'])) {
-                $relation[$k]['colalias'] = $aliases[$v['col']]??$v['col'];
+                $relation[$k]['colalias'] = $aliases[$v['col']] ?? $v['col'];
             }
             $relation[$k]['refcolalias'] = $aliasesAllTables[$v['reftable']][$refcol] ?? $refcol;
             $relation[$k]['refcol2alias'] = $aliasesAllTables[$v['reftable']][$refcol2] ?? $refcol2;
@@ -3515,8 +3521,9 @@ class PdoOne
     }
 
     /**
-     * @param string      $filename
-     * @param string|null $content
+     * It saves a file with some code or content
+     * @param string      $filename The name of the filename
+     * @param string|null $content  The content
      * @return false|int
      */
     public static function saveFile(string $filename, ?string $content)
@@ -5069,7 +5076,7 @@ BOOTS;
                     }
                 }
                 $this->lastQuery = $rawSql;
-                $this->storeInfo($rawSql);
+                //$this->storeInfo($rawSql);
                 $msgError = '';
                 try {
                     $r = $this->conn1->query($rawSql);

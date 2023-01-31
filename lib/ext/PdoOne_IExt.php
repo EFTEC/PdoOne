@@ -274,6 +274,7 @@ interface PdoOne_IExt
      */
     public function limit(?int $first, ?int $second): string;
 
+    public function now():string;
     public function createTableKV($tableKV, $memoryKV = false): string;
 
     /**

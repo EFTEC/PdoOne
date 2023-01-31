@@ -310,6 +310,10 @@ class PdoOne_TestMockup implements PdoOne_IExt
     {
         return $second === null ? ' limit ' . $first : " limit $first,$second";
     }
+    public function now(): string
+    {
+        return 'select NOW() as NOW';
+    }
 
     public function createTableKV($tableKV, $memoryKV = false): string
     {

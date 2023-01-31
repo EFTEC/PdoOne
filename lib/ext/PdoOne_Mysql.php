@@ -361,8 +361,14 @@ class PdoOne_Mysql implements PdoOne_IExt
             $this->parent->throwError("Unable to insert in table $tableSequence", '');
             return [''];
         }
-        $sql = 'SET GLOBAL log_bin_trust_function_creators = 1';
-        $this->parent->runRawQuery($sql);
+        $sql = 'SET GLOBAL log_bin_trust_function_creators = ?';
+        try {
+            $this->parent->runRawQuery($sql, [1]);
+        } catch(Exception $ex) {
+            // it crashed with "Wrong COM_STMT_PREPARE response size. Received 7"
+            // however, the operation is correctly executed, so let's do nothing.
+        }
+
         if ($method === 'snowflake') {
             $sql = "CREATE FUNCTION `next_$tableSequence`(node integer) RETURNS BIGINT(20)
                     MODIFIES SQL DATA
@@ -564,6 +570,10 @@ class PdoOne_Mysql implements PdoOne_IExt
     public function limit(?int $first, ?int $second): string
     {
         return $second === null ? ' limit ' . $first : " limit $first,$second";
+    }
+    public function now(): string
+    {
+        return 'select NOW() as NOW';
     }
 
     public function createTableKV($tableKV, $memoryKV = false): string
