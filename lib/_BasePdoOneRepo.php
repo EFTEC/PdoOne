@@ -69,7 +69,7 @@ abstract class _BasePdoOneRepo
      * It resets the stack
      *
      */
-    protected static function reset(): void
+    public static function reset(): void
     {
         static::$uid = null;
         static::$gQueryCounter = 0;

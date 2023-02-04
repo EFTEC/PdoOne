@@ -12,7 +12,7 @@ use RuntimeException;
 /**
  * Class PdoOneQuery
  *
- * @version       3.12
+ * @version       3.10
  * @package       eftec
  * @author        Jorge Castro Castillo
  * @copyright (c) Jorge Castro C. Dual Licence: MIT and Commercial License  https://github.com/EFTEC/PdoOne
@@ -865,7 +865,9 @@ class PdoOneQuery
     {
         if ($this->ormClass !== null) {
             $cls = $this->ormClass;
-            return $cls::setPdoOneQuery($this)::exist($conditions);
+            $r= $cls::setPdoOneQuery($this)::exist($conditions);
+            $cls::reset();
+            return $r;
         }
         $useCache = $this->useCache; // because builderReset cleans this value
         if ($useCache !== false) {
@@ -1885,7 +1887,9 @@ class PdoOneQuery
     {
         if ($this->ormClass !== null) {
             $cls = $this->ormClass;
-            return $cls::setPdoOneQuery($this)::insert($tableNameOrValues);
+            $r=$cls::setPdoOneQuery($this)::insert($tableNameOrValues);
+            $cls::reset();
+            return $r;
         }
         if (is_string($tableNameOrValues)) {
             $tableNameOrValues = $this->parent->prefixTable . $tableNameOrValues;
@@ -1921,7 +1925,9 @@ class PdoOneQuery
             $cls = $this->ormClass;
             $this->ormClass = null; // toavoid recursivity
             /** @see _BasePdoOneRepo::_delete */
-            return $cls::setPdoOneQuery($this)::delete($tableOrObject);
+            $r=$cls::setPdoOneQuery($this)::delete($tableOrObject);
+            $cls::reset();
+            return $r;
         }
         if ($tableOrObject === null) {
             $tableOrObject = $this->from;
@@ -1975,7 +1981,9 @@ class PdoOneQuery
             $cls = $this->ormClass;
             $this->ormClass = null; // to avoid recursivity
             /** @see _BasePdoOneRepo::deleteById */
-            return $cls::setPdoOneQuery($this)::deleteById($pks, $transaction);
+            $r= $cls::setPdoOneQuery($this)::deleteById($pks, $transaction);
+            $cls::reset();
+            return $r;
         }
         if (!$this->from) {
             throw  new RuntimeException('PdoOneQuery::deleteById table not set');
@@ -2042,7 +2050,9 @@ class PdoOneQuery
             $cls = $this->ormClass;
             $this->ormClass = null; // toavoid recursivity
             /** @see _BasePdoOneRepo::_update */
-            return $cls::setPdoOneQuery($this)::update($tableOrObject);
+            $r=$cls::setPdoOneQuery($this)::update($tableOrObject);
+            $cls::reset();
+            return $r;
         }
         if ($tableOrObject === null) {
             // using builder. from()->set()->where()->update()

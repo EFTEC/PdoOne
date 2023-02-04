@@ -2040,6 +2040,9 @@ In a nutshell:
 >
 > Every decimal version means that it patches/fixes/refactoring a previous functionality i.e. 1.5.0 -> 1.5.1 (fix)
 
+* 3.15 2023-02-03
+  * [PdoOneQuery] 3.10 Fixed a problem with insert(),update(),delete(), it will not reset the stack correctly.
+  * [_BasePdoOneRepo] reset() method is now public.
 * 3.14 2023-01-30
   * [PdoOneQuery] 3.9 Fixed a problem with first() where the primary key is not numeric.
   * [Pdo] /[PdoOneQuery] New method now() to obtain the date and time of the database.
