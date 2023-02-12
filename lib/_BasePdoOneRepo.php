@@ -1,4 +1,5 @@
-<?php /** @noinspection PhpMultipleClassDeclarationsInspection */
+<?php
+/** @noinspection PhpMultipleClassDeclarationsInspection */
 
 /** @noinspection SqlNoDataSourceInspection */
 
@@ -8,11 +9,12 @@ use Exception;
 use PDOStatement;
 use RuntimeException;
 
+
 /**
  * Class _BasePdoOneRepo.<br>
  * This class is used together with the repository classes.
  *
- * @version       6.5 2022-07-22
+ * @version       6.7 2023-02-12
  * @package       eftec
  * @author        Jorge Castro Castillo
  * @copyright (c) Jorge Castro C. Dual Licence: MIT and Commercial License  https://github.com/EFTEC/PdoOne
@@ -27,12 +29,12 @@ abstract class _BasePdoOneRepo
      *
      * @param bool $falseOnError
      *
-     * @return mixed
+     * @return PdoOneQuery
      */
-    public static function setFalseOnError(bool $falseOnError = true)
+    public static function setFalseOnError(bool $falseOnError = true): PdoOneQuery
     {
         static::$falseOnError = $falseOnError;
-        return static::ME;
+        return static::newQuery()->setThrowOnError(!$falseOnError);
     }
 
 
@@ -330,6 +332,7 @@ abstract class _BasePdoOneRepo
      *
      * @return bool
      * @throws Exception
+     * @noinspection PhpUnused
      */
     public static function createFk(): bool
     {
@@ -1086,16 +1089,24 @@ abstract class _BasePdoOneRepo
                     case 'date':
                         $bool = false;
                         $time = false;
-                        $r = false;
-                        if ($def['conversion'] === 'datetime2') {
-                            $r = PdoOne::dateConvertInput($curCol, 'iso', $bool, $time);
-                        } elseif ($def['conversion'] === 'datetime3') {
-                            $r = PdoOne::dateConvertInput($curCol, 'human', $bool, $time);
-                        } elseif ($def['conversion'] === 'datetime') {
-                            $r = PdoOne::dateConvertInput($curCol, 'class', $bool, $time);
-                        } elseif ($def['conversion'] === 'datetime4') {
-                            $r = PdoOne::dateConvertInput($curCol, 'sql', $bool, $time);
+                        switch ($def['conversion']) {
+                            case 'datetime2':
+                                $r = PdoOne::dateConvertInput($curCol, 'iso', $bool, $time);
+                                break;
+                            case 'datetime3':
+                                $r = PdoOne::dateConvertInput($curCol, 'human', $bool, $time);
+                                break;
+                            case 'datetime':
+                                $r = PdoOne::dateConvertInput($curCol, 'class', $bool, $time);
+                                break;
+                            case 'datetime4':
+                                $r = PdoOne::dateConvertInput($curCol, 'sql', $bool, $time);
+                                break;
+                            default:
+                                $dummy = PdoOne::dateConvert($curCol,'sql','class');
+                                $r=$dummy===false?false: $curCol;
                         }
+
                         if ($r === false) {
                             static::getPdoOne()->errorText = "field $col is not a proper date";
                             return false;
@@ -1129,6 +1140,7 @@ abstract class _BasePdoOneRepo
                 }
             }
         }
+        static::getPdoOne()->errorText='';
         return true;
     }
 
@@ -1468,7 +1480,7 @@ abstract class _BasePdoOneRepo
                 ->set($entityCopy)
                 ->where(static::intersectArrays($entityDB, static::PK))
                 ->update();
-            $pdoOnequery->_recursive($recursiveBackup); // update() delete the value of recursive
+            $pdoOnequery->_recursive($recursiveBackup); // update() cleans the value of recursive, so we return it back
             $defs = static::DEFFK;
             $ns = self::getNamespace();
             //$pk=static::COL2ALIAS[static::PK[0]];
@@ -1485,7 +1497,7 @@ abstract class _BasePdoOneRepo
             return $r;
         } catch (Exception $exception) {
             if ($transaction) {
-                static::getPdoOne()->rollback(false);
+                static::getPdoOne()->rollback(false, $exception->getMessage());
             }
             self::reset();
             if (static::$falseOnError) {
@@ -1519,7 +1531,11 @@ abstract class _BasePdoOneRepo
                     case 'insert':
                     case 'update':
                         //  $classMO::_merge($entityAlias[$columnAlias], false, true);
-                        if (static::_exist($entityAlias[$columnAlias])) {
+                    /**
+                     * @noinspection PhpUndefinedMethodInspection
+                     * * @see          _BasePdoOneRepo::_exist()
+                     */
+                    if ($classMO::_exist($entityAlias[$columnAlias])) {
                             /**
                              * @noinspection PhpUndefinedMethodInspection
                              * @see          _BasePdoOneRepo::_update
@@ -1934,8 +1950,7 @@ abstract class _BasePdoOneRepo
                 }
             }*/
             self::recursiveDMLManyToOne('insert', $entityAlias, $defs, $pdoOneQuery, $recursiveBackup, $ns, $entityCopy);
-            $insert = $pdoOneQuery->insertObject(static::TABLE, $entityCopy, $identityDB === null ? [] : [$identityDB], static::PK);
-            // obtain the identity if any
+            $insert = $pdoOneQuery->insertObject(static::TABLE, $entityCopy, $identityDB === null ? [] : [$identityDB], static::PK);            // obtain the identity if any
             if ($identityDB !== null) {
                 $pks = static::COL2ALIAS[$identityDB];
                 // we update the identity of $entity ($entityCopy is already updated).
@@ -1961,7 +1976,7 @@ abstract class _BasePdoOneRepo
             return $insert;
         } catch (Exception $exception) {
             if ($transaction) {
-                $pdoOneQuery->parent->rollback();
+                $pdoOneQuery->parent->rollback(true, $exception->getMessage());
             }
             self::reset();
             if (static::$falseOnError) {
@@ -2099,7 +2114,7 @@ abstract class _BasePdoOneRepo
             return $r;
         } catch (Exception $exception) {
             if ($transaction) {
-                static::getPdoOne()->rollback();
+                static::getPdoOne()->rollback(true, $exception->getMessage());
             }
             self::reset();
             if (static::$falseOnError) {

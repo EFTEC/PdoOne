@@ -25,11 +25,11 @@ use stdClass;
  * @package       eftec
  * @author        Jorge Castro Castillo
  * @copyright (c) Jorge Castro C. Dual Licence: MIT and Commercial License  https://github.com/EFTEC/PdoOne
- * @version       3.15
+ * @version       3.16
  */
 class PdoOne
 {
-    public const VERSION = '3.15';
+    public const VERSION = '3.16';
     /** @var int We need this value because null and false could be a valid value. */
     public const NULL = PHP_INT_MAX;
     /** @var string Prefix of the related columns. It is used for ORM */
@@ -39,14 +39,14 @@ class PdoOne
     /** @var int Used for the method page() */
     public static $pageSize = 20;
     /** @var string|null Static date (when the date is empty) */
-    public static $dateEpoch = '2000-01-01 00:00:00.00000';
+    public static $dateEpoch = '2000-01-01 00:00:00.00000'; // we don't need to set the epoch to 1970.
     /**
      * Text date format
      *
      * @var string
      * @see https://secure.php.net/manual/en/function.date.php
      */
-    public static $dateFormat = 'Y-m-d'; // we don't need to set the epoch to 1970.
+    public static $dateFormat = 'Y-m-d';
     public static $dateHumanFormat = 'd/m/Y';
     /**
      * Text datetime format
@@ -128,8 +128,8 @@ class PdoOne
      */
     public $customError = true;
     /** @var string[] PHP classes excluded by the custom error log */
-    public $traceBlackList = ['PdoOne.php', 'PdoOneQuery.php', 'PdoOne_Mysql.php', 'PdoOne.Sqlsrv.php', 'PdoOne.Oci.php'
-        , 'PdoOneTestMockup.php', '_BasePdoOneRepo.php'];
+    public $traceBlackList = []; //['PdoOne.php', 'PdoOneQuery.php', 'PdoOne_Mysql.php', 'PdoOne.Sqlsrv.php', 'PdoOne.Oci.php'
+    //, 'PdoOneTestMockup.php', '_BasePdoOneRepo.php'];
     /** @var  PDO */
     public $conn1;
     /** @var  bool True if the transaction is open */
@@ -427,7 +427,7 @@ class PdoOne
     }
 
     /**
-     * It converts a date (as string) into another format.<br>
+     * It converts a date (as string) into another format or false if it fails.<br>
      * Example:
      * <pre>
      * $pdoOne->dateConvert('01/01/2019','human','sql'); // 2019-01-01
@@ -564,6 +564,10 @@ class PdoOne
                     $tmpDate = DateTime::createFromFormat(self::$isoDateTime, $inputValue);
                 } else {
                     $tmpDate = DateTime::createFromFormat(self::$isoDate, $inputValue);
+                    if($tmpDate===false) {
+                        // unable to convert
+                        return false;
+                    }
                     $tmpDate->setTime(0, 0);
                 }
                 break;
@@ -1712,7 +1716,12 @@ class PdoOne
         } else {
             $this->uid = null;
         }
-        $this->runQuery($stmt);
+        $resultQuery = $this->runQuery($stmt);
+        if ($resultQuery === false) {
+            $this->endTry();
+            $this->storeInfo("error");
+            return false;
+        }
         if ($returnArray && $stmt instanceof PDOStatement) {
             $rows = ($stmt->columnCount() > 0) ? $stmt->fetchAll(PDO::FETCH_ASSOC) : [];
             $this->affected_rows = $stmt->rowCount();
@@ -1934,7 +1943,7 @@ class PdoOne
             $r = @$stmt->execute($namedArgument);
         } catch (Exception $ex) {
             //@$stmt->closeCursor();
-            $this->throwError($this->databaseType . ':Failed to run query', $this->lastQuery,
+            $this->throwError($this->databaseType . ':Failed to run query ', $this->lastQuery,
                 ['param' => $this->lastParam, 'error_last' => json_encode(error_get_last())], $throwError, $ex);
             return false;
         }
@@ -2220,6 +2229,32 @@ class PdoOne
         $result .= ']' . $ln;
         $this->endTry();
         return str_replace(",$ln]", "$ln]", $result);
+    }
+
+    /**
+     * This function is used to generate a list of recursive fields.
+     * @param array  $getDefTable
+     * @param array  $classRelations
+     * @param array  $relation
+     * @param string $type
+     * @return array
+     */
+    protected function generateCodeArrayRecursive(array  $getDefTable,
+                                                  array  $classRelations,
+                                                  array  $relation,
+                                                  string $type): array
+    {
+        $values = $this->generateCodeArrayConst($getDefTable, $classRelations, $relation, $type);
+        if ($values === null) {
+            return [];
+        }
+        $result = [];
+        foreach ($values as $k => $v) {
+            if (strpos($k, '_') === 0) {
+                $result[] = '/' . $k;
+            }
+        }
+        return $result;
     }
 
     /**
@@ -2970,6 +3005,7 @@ class PdoOne
                 '{deffktype2}',
                 '{array}',
                 '{factory}',
+                '{factoryrecursive}',
                 '{linked}'
             ), array(
                 self::varExport($pk),
@@ -2991,6 +3027,8 @@ class PdoOne
                     $getDefTable, $classRelations ?? [], $relation, 'function'), "\t\t"), // {array}
                 self::varExport($this->generateCodeArrayConst(
                     $getDefTable, $classRelations ?? [], $relation, 'constant'), "\t\t"), // {factory}
+                str_replace(["\n","\t","    "],"",self::varExport($this->generateCodeArrayRecursive(
+                    $getDefTable, $classRelations ?? [], $relation, 'function'))),// {factoryrecursive}
                 $linked // {linked}
             ), $r);
         } catch (Exception $e) {
@@ -3201,17 +3239,16 @@ class PdoOne
     /**
      * Rollback and close a transaction
      *
-     * @param bool $throw [optional] if true, and it fails then it throws an error.
-     *
+     * @param bool   $throw [optional] if true, and it fails then it throws an error.
+     * @param string $cause
      * @return bool
-     * @throws Exception
      * @test equals false,(false),'transaction is not open'
      */
-    public function rollback(bool $throw = true): bool
+    public function rollback(bool $throw = true, string $cause = ''): bool
     {
         $this->beginTry();
         if (!$this->transactionOpen && $throw) {
-            $this->throwError('Transaction not open  to rollback()', '');
+            $this->throwError("Transaction not open to rollback($cause)", '');
         }
         if (!$this->isOpen && $throw) {
             $this->throwError("It's not connected to the database", '');

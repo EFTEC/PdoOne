@@ -225,7 +225,7 @@ abstract class Abstract{classname} extends {baseclass}
     * If array then it uses the values to set the recursivity.<br>
     * If string then the values allowed are '*', 'MANYTOONE','ONETOMANY','MANYTOMANY','ONETOONE' (first level only)<br>
     *
-    * @param string|array $recursive=self::factory();
+    * @param string|array $recursive={factoryrecursive};
     *
     * @return PdoOneQuery
     */
@@ -238,14 +238,15 @@ abstract class Abstract{classname} extends {baseclass}
     }
 
     /**
-    * It adds an "limit" in a query. It depends on the type of database<br>
+    * It adds a "limit" in a query. It depends on the type of database<br>
     * <b>Example:</b><br>
     * <pre>
     *      self::limit("10,20")->toList(); // start row 10th, fetches 20 next 20 rows
     *      self::limit(10,20)->toList();   // start row 10th, fetches 20 next 20 rows
     * </pre>
     *
-    * @param string $sql Input SQL query
+    * @param mixed $first the first (initial) value or the sql query expression
+    * @param mixed|null $second the values to fetches.
     *
     * @return PdoOneQuery
     * @throws Exception
@@ -283,7 +284,7 @@ abstract class Abstract{classname} extends {baseclass}
     *  <b>Example:</b><br>
     *  <pre>
          *  $this->exist(['id'=>'a1','name'=>'name']); // using an array
-         *  $this->exist('a1'); // using the primary key. The table needs a pks and it only works with the first pk.
+         *  $this->exist('a1'); // using the primary key. The table needs a pks, and it only works with the first pk.
          *  </pre>
     *
     * @param array|mixed $entity =self::factory()
@@ -308,7 +309,7 @@ abstract class Abstract{classname} extends {baseclass}
     }
 
     /**
-    * It merge a new entity(row) into the database. If the entity exists then it is updated, otherwise the entity is
+    * It merges a new entity(row) into the database. If the entity exists then it is updated, otherwise the entity is
     * inserted<br>
     * @param array|object $entity        =self::factory()
     * @param bool         $transactional If true (default) then the operation is transactional

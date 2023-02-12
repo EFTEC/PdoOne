@@ -9,10 +9,11 @@ use PDO;
 use PDOStatement;
 use RuntimeException;
 
+
 /**
  * Class PdoOneQuery
  *
- * @version       3.10
+ * @version       3.11
  * @package       eftec
  * @author        Jorge Castro Castillo
  * @copyright (c) Jorge Castro C. Dual Licence: MIT and Commercial License  https://github.com/EFTEC/PdoOne
@@ -865,7 +866,10 @@ class PdoOneQuery
     {
         if ($this->ormClass !== null) {
             $cls = $this->ormClass;
-            $r= $cls::setPdoOneQuery($this)::exist($conditions);
+            $this->ormClass = null; // to avoid recursivity
+            $cls::setPdoOneQuery($this);
+            /** @noinspection PhpPossiblePolymorphicInvocationInspection */
+            $r=$cls::exist($conditions);
             $cls::reset();
             return $r;
         }
@@ -1752,7 +1756,7 @@ class PdoOneQuery
             $pks = $pks ?? $this->parent->setUseInternalCache()->service->getDefTableKeys($tmpTable, true, 'PRIMARY KEY');
             if (count($pks) > 0) {
                 // we update the object because it returned an identity.
-                $k = array_keys($pks)[0]; // first primary key
+                $k = $pks[0]; // first primary key
                 if (is_array($object)) {
                     $object[$k] = $id;
                 } else {
@@ -1813,9 +1817,7 @@ class PdoOneQuery
         }
         if ($this->parent->databaseType === 'oci') {
             if ($identityColumn !== null) {
-                //todo: aqui se debe recuperar el valor insertado
-                /** @noinspection ForgottenDebugOutputInspection */
-                var_dump($param);
+                //todo: we should recover the value inserted (Oracle OCI)
                 throw new RuntimeException('Insert with identity: Not defined for OCI');
             }
             return null;
@@ -1887,7 +1889,10 @@ class PdoOneQuery
     {
         if ($this->ormClass !== null) {
             $cls = $this->ormClass;
-            $r=$cls::setPdoOneQuery($this)::insert($tableNameOrValues);
+            $this->ormClass = null; // to avoid recursivity
+            $cls::setPdoOneQuery($this);
+            /** @noinspection PhpPossiblePolymorphicInvocationInspection */
+            $r=$cls::insert($tableNameOrValues);
             $cls::reset();
             return $r;
         }
@@ -1914,6 +1919,7 @@ class PdoOneQuery
      *
      * @return false|int If successes then it returns the number of rows deleted.
      * @throws Exception
+     * @noinspection PhpPossiblePolymorphicInvocationInspection
      */
     public function delete(
         $tableOrObject = null,
@@ -1923,9 +1929,19 @@ class PdoOneQuery
     {
         if ($this->ormClass !== null) {
             $cls = $this->ormClass;
-            $this->ormClass = null; // toavoid recursivity
+            $this->ormClass = null; // to avoid recursivity
+            if(count($this->where)>0) {
+                // it is processed as non-orm, using the table of the orm.
+                $cls::reset();
+                return $this->delete($cls::TABLE);
+            }
             /** @see _BasePdoOneRepo::_delete */
-            $r=$cls::setPdoOneQuery($this)::delete($tableOrObject);
+            $cls::setPdoOneQuery($this);
+            /** @var ChamberRepo::delete $r */
+            $r=$cls::delete($tableOrObject);
+            // it goes to the repo class.
+            // If the method is not override, then it goes to the abstract class
+            // repo->abstract->_delete method.
             $cls::reset();
             return $r;
         }
@@ -1974,6 +1990,7 @@ class PdoOneQuery
      *
      * @return false|int
      * @throws Exception
+     * @noinspection PhpPossiblePolymorphicInvocationInspection
      */
     public function deleteById($pks, bool $transaction = true)
     {
@@ -1981,7 +1998,8 @@ class PdoOneQuery
             $cls = $this->ormClass;
             $this->ormClass = null; // to avoid recursivity
             /** @see _BasePdoOneRepo::deleteById */
-            $r= $cls::setPdoOneQuery($this)::deleteById($pks, $transaction);
+            $cls::setPdoOneQuery($this);
+            $r=$cls::deleteById($pks, $transaction);
             $cls::reset();
             return $r;
         }
@@ -2037,6 +2055,7 @@ class PdoOneQuery
      *
      * @return false|int
      * @throws Exception
+     * @noinspection PhpPossiblePolymorphicInvocationInspection
      */
     public function update(
         $tableOrObject = null,
@@ -2050,7 +2069,8 @@ class PdoOneQuery
             $cls = $this->ormClass;
             $this->ormClass = null; // toavoid recursivity
             /** @see _BasePdoOneRepo::_update */
-            $r=$cls::setPdoOneQuery($this)::update($tableOrObject);
+            $cls::setPdoOneQuery($this);
+            $r=$cls::update($tableOrObject);
             $cls::reset();
             return $r;
         }

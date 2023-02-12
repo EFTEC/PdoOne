@@ -3,7 +3,6 @@
  * @noinspection PhpUnusedAliasInspection
  * @noinspection UnknownInspectionInspection
  * @noinspection PhpUnused
- * @noinspection ReturnTypeCanBeDeclaredInspection
  */
 {namespace}
 {modelnamespace}

@@ -2040,9 +2040,24 @@ In a nutshell:
 >
 > Every decimal version means that it patches/fixes/refactoring a previous functionality i.e. 1.5.0 -> 1.5.1 (fix)
 
+* 3.16 2023-12-02
+  * [PdoOneQuery] 3.11
+    * exists(),insert(),update(),delete(),deleteById() fixed a bug that caused a recursivity
+    * insertObjects() avoids to add a numeric index. Now it adds the correct index
+  * [PdoOne] 3.16
+    * dateConvertInput() does not crash if the date is incorrect, and it tries to determine the current time.
+    * runRawQuery() returns false if the inmediate query fails
+    * Added the method generateCodeArrayRecursive() used to generate code.
+    * rollback() allows to show the cause why it failed
+    * The templates (used to generate the code) now validates some input and output values.
+  * [BasePdoOneRepo] 6.7
+    * validateModel() now works with date. If the date is incorrect then it returns false. It also cleans the last error.
+if the cause is correct.
+    * recursive insert or update now validates if the record exists using the right class.
+    * called to rollback() now stores the cause of why it failed.
 * 3.15 2023-02-03
   * [PdoOneQuery] 3.10 Fixed a problem with insert(),update(),delete(), it will not reset the stack correctly.
-  * [_BasePdoOneRepo] reset() method is now public.
+  * [_BasePdoOneRepo] reset() method is now public.]()
 * 3.14 2023-01-30
   * [PdoOneQuery] 3.9 Fixed a problem with first() where the primary key is not numeric.
   * [Pdo] /[PdoOneQuery] New method now() to obtain the date and time of the database.
