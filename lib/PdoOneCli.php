@@ -26,15 +26,14 @@ use RuntimeException;
  */
 class PdoOneCli
 {
-    public const VERSION = '2.0';
+    public const VERSION = '2.0.1';
 //</editor-fold>
-
     /** @var CliOne */
     public $cli;
     /**
      * @var CliOneParam
      */
-    public $mainMenu=[];
+    public $mainMenu = [];
     protected $help;
 
     public function __construct()
@@ -86,10 +85,10 @@ class PdoOneCli
         return $result;
     }
 
-    public function cliEngine(bool $run=true): void
+    public function cliEngine(bool $run = true): void
     {
-        $this->mainMenu['connect'] ='[{{connect}}] Configure,load and save the connection to the database';
-        $this->cli->variables['connect']='<red>pending</red>';
+        $this->mainMenu['connect'] = '[{{connect}}] Configure,load and save the connection to the database';
+        $this->cli->variables['connect'] = '<red>pending</red>';
         $listPHPFiles = $this->getFiles('.', '.config.php');
         $this->cli->createOrReplaceParam('fileconnect', [], 'longflag')
             ->setRequired(false)
@@ -109,16 +108,17 @@ class PdoOneCli
             ->setDefault('')
             ->setInput(false, 'string', $listPHPFiles)
             ->evalParam();
-        if($this->cli->getParameter('fileconnect')->missing===false) {
+        if ($this->cli->getParameter('fileconnect')->missing === false) {
             $this->doReadConfig();
         }
-        if($run) {
+        if ($run) {
             if ($this->cli->getSTDIN() === null) {
                 $this->showLogo();
             }
             $this->menuInit();
         }
     }
+
     public function menuInit(): void
     {
         $this->cli->createParam('command', ['cmd'])
@@ -155,8 +155,8 @@ class PdoOneCli
                     'configure' => '[{{connect}}] configure and connect to the database',
                     'query' => '[{{connect}}] run a query',
                     'load' => '[{{connect}}] load the configuration',
-                    'save' => 'save the configuration',
-                    'savephp' => 'save the configuration as PHP file'
+                    'save' => '[{{connect}}] save the configuration',
+                    'savephp' => '[{{connect}}] save the configuration as PHP file'
                 ])
                 ->setAllowEmpty()
                 ->evalParam(true)->valueKey;
@@ -194,7 +194,7 @@ class PdoOneCli
             ->setDefault('yes')
             ->evalParam(true);
         if ($sg->value === 'yes') {
-            $saveconfig = $this->cli->evalParam('fileconnect', true);
+            $saveconfig = $this->cli->getParameter('fileconnect')->setInput()->evalParam(true);
             if ($saveconfig->value) {
                 $r = $this->cli->saveData($this->cli->getValue('fileconnect'), [
                     'databaseType' => $this->cli->getValue('databaseType'),
@@ -223,12 +223,12 @@ class PdoOneCli
             $saveconfig = $this->cli->getParameter('fileconnectphp')->setInput()->evalParam(true);
             if ($saveconfig->value) {
                 $r = $this->cli->saveDataPHPFormat($this->cli->getValue('fileconnectphp'), [
-                    'databaseType' => $this->cli->getValue('databaseType'),
-                    'server' => $this->cli->getValue('server'),
-                    'user' => $this->cli->getValue('user'),
-                    'pwd' => $this->cli->getValue('pwd'),
-                    'database' => $this->cli->getValue('database'),]
-                    ,'.php','pdoOneConfig','it is the configuration of PdoOne');
+                        'databaseType' => $this->cli->getValue('databaseType'),
+                        'server' => $this->cli->getValue('server'),
+                        'user' => $this->cli->getValue('user'),
+                        'pwd' => $this->cli->getValue('pwd'),
+                        'database' => $this->cli->getValue('database'),]
+                    , '.php', 'pdoOneConfig', 'it is the configuration of PdoOne');
                 if ($r === '') {
                     $this->cli->showCheck('OK', 'green', 'file saved correctly');
                 }
@@ -236,18 +236,19 @@ class PdoOneCli
         }
         $this->cli->downLevel();
     }
+
     public function menuConnect_Query(): void
     {
         $this->cli->upLevel('query');
         $this->cli->setColor(['byellow'])->showBread();
-        while(true) {
+        while (true) {
             $query = $this->cli->createOrReplaceParam('query', [], 'none')
                 ->setAddHistory()
                 ->setDescription('query', 'query (empty to exit)')
                 ->setInput()
                 ->setAllowEmpty()
                 ->evalParam(true);
-            if($query->value===$this->cli->emptyValue || $query->value==='') {
+            if ($query->value === $this->cli->emptyValue || $query->value === '') {
                 break;
             }
             $pdo = $this->createPdoInstance();
@@ -273,23 +274,24 @@ class PdoOneCli
             ->setInput()
             ->evalParam(true);
         if ($saveconfig->value) {
-           $this->doReadConfig();
+            $this->doReadConfig();
         }
         $this->cli->downLevel();
     }
-    public function doReadConfig():void {
-        $r = $this->cli->readData($this->cli->getValue('fileconnect'));
 
-        if ($r !==null && $r[0]===true) {
+    public function doReadConfig(): void
+    {
+        $r = $this->cli->readData($this->cli->getValue('fileconnect'));
+        if ($r !== null && $r[0] === true) {
             $this->cli->showCheck('OK', 'green', 'file read correctly');
-            $this->cli->variables['connect']='<green>ok</green>';
-            $this->cli->setParam('databaseType',$r[1]['databaseType'],false,true);
-            $this->cli->setParam('server',$r[1]['server'],false,true);
-            $this->cli->setParam('user',$r[1]['user'],false,true);
-            $this->cli->setParam('pwd',$r[1]['pwd'],false,true);
-            $this->cli->setParam('database',$r[1]['database'],false,true);
+            $this->cli->variables['connect'] = '<green>ok</green>';
+            $this->cli->setParam('databaseType', $r[1]['databaseType'], false, true);
+            $this->cli->setParam('server', $r[1]['server'], false, true);
+            $this->cli->setParam('user', $r[1]['user'], false, true);
+            $this->cli->setParam('pwd', $r[1]['pwd'], false, true);
+            $this->cli->setParam('database', $r[1]['database'], false, true);
         } else {
-            $this->cli->showCheck('ERROR', 'red', 'unable to read file '.$this->cli->getValue('fileconnect').", cause ".$r[1]);
+            $this->cli->showCheck('ERROR', 'red', 'unable to read file ' . $this->cli->getValue('fileconnect') . ", cause " . $r[1]);
         }
     }
 
@@ -339,7 +341,7 @@ class PdoOneCli
                     throw new RuntimeException('trying');
                 }
                 $this->cli->showCheck('OK', 'green', 'Connected to the database <bold>' . $this->cli->getValue('database') . '</bold>');
-                $this->cli->variables['connect']='<green>ok</green>';
+                $this->cli->variables['connect'] = '<green>ok</green>';
                 //$result = $pdo;
                 break;
             } catch (Exception $ex) {
@@ -359,7 +361,6 @@ class PdoOneCli
     public function createPdoInstance()
     {
         try {
-
             $pdo = new PdoOne(
                 $this->cli->getValue('databaseType'),
                 $this->cli->getValue('server'),
@@ -377,18 +378,16 @@ class PdoOneCli
         return $pdo;
     }
 
-
     public function getCli(): CliOne
     {
         return $this->cli;
     }
 
-
-
     public static function isCli(): bool
     {
         return !http_response_code();
     }
+
     /***
      * It finds the vendor path (where composer is located).
      * @param string|null $initPath
@@ -414,21 +413,22 @@ class PdoOneCli
     /**
      * It gets a list of files filtered by extension.
      * @param string $path
-     * @param string $extension. Example: ".php", "php" (it could generate false positives)
+     * @param string $extension . Example: ".php", "php" (it could generate false positives)
      * @return array
      */
-    protected function getFiles(string $path,string $extension): array
+    protected function getFiles(string $path, string $extension): array
     {
-        $scanned_directory = array_diff(scandir($path), array('..', '.'));
+        $scanned_directory = array_diff(scandir($path), ['..', '.']);
         $scanned2 = [];
         foreach ($scanned_directory as $k) {
-            $fullname=pathinfo($k)['extension']??'';
-            if (str_ends_with($fullname,$extension)) {
+            $fullname = pathinfo($k)['extension'] ?? '';
+            if (str_ends_with($fullname, $extension)) {
                 $scanned2[$k] = $k;
             }
         }
         return $scanned2;
     }
+
     protected function showLogo(): void
     {
         $v = PdoOne::VERSION;
@@ -487,7 +487,4 @@ PdoOne: $v  Cli: $vc
         }
         return $newArray;
     }
-
-
-
 }
