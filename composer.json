@@ -7,7 +7,7 @@
     "pdo",
     "mysql",
     "oracle",
-    "sqlserver",
+    "sqlserver"
   ],
   "homepage": "https://github.com/EFTEC/PdoOne",
   "authors": [
