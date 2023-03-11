@@ -1,5 +1,6 @@
-<?php /** @noinspection SqlNoDataSourceInspection */
-/** @noinspection PhpMissingParentCallMagicInspection */
+<?php /** @noinspection PhpUnused */
+/** @noinspection PhpUndefinedClassInspection */
+/** @noinspection SqlNoDataSourceInspection */
 /** @noinspection DuplicatedCode */
 
 namespace eftec;
@@ -13,7 +14,7 @@ use RuntimeException;
 /**
  * Class PdoOneQuery
  *
- * @version       3.11
+ * @version       4.00
  * @package       eftec
  * @author        Jorge Castro Castillo
  * @copyright (c) Jorge Castro C. Dual Licence: MIT and Commercial License  https://github.com/EFTEC/PdoOne
@@ -444,17 +445,20 @@ class PdoOneQuery
      * Add a condition to the query.
      * <b>Example:</b><br>
      * <pre>
-     *  where( ['field'=>20] ) // associative array with automatic type
-     *  where( ['/_field/subfield',20] ) // (for ORM) recursive query
+     *  $this->where( ['field'=>20] ) // associative array with automatic type
+     *  $this->where( ['/_field/subfield',20] ) // (for ORM) recursive query
      *                                   //, where _field is a relational column (alias).
-     *  where('field=20') // literal value
-     *  where('field=?',[20]) // positional argument.
+     *  $this->where('field=20') // literal value
+     *  $this->where('field=?',[20]) // positional argument.
      *                        // You can also use >, < , >=, <=, in, etc.
-     *  where('field',[20])
-     *  where('field=?',[20])
-     *  where('field=?,field2=?', [20,'hello'] )
-     *  where('field=:field,field2=:field2',
+     *  $this->where('field',[20])
+     *  $this->where('field=?',[20])
+     *  $this->where('field=?,field2=?', [20,'hello'] )
+     *  $this->where('field=:field,field2=:field2',
      *       ['field'=>'hello','field2'=>'world'] ) // associative array as value
+     *  $this->where('field like ?',['%'.$value.'%']); // OK, like condition. Note: the % is added in the value.
+     *  $this->where("field like concat('%', ?, '%')",[$value]); // this will work using Mysql.
+     *  $this->where('field like %?%',[$value]); // THIS WILL NOT WORK.
      * </pre>
      *
      * @param string|array $sql          Input SQL query or associative/indexed
@@ -771,10 +775,8 @@ class PdoOneQuery
             /** @var _BasePdoOneRepo $cls */
             $cls = $this->ormClass;
             if ($addColumns) {
-                /** @noinspection PhpPossiblePolymorphicInvocationInspection */
                 $this->select($cls::getDefName());
             }
-            /** @noinspection PhpPossiblePolymorphicInvocationInspection */
             $this->from($cls::TABLE);
             //throw new RuntimeException('Method toListKeyValue not yet implemented for PdoOne::ORM');
         }
@@ -868,7 +870,6 @@ class PdoOneQuery
             $cls = $this->ormClass;
             $this->ormClass = null; // to avoid recursivity
             $cls::setPdoOneQuery($this);
-            /** @noinspection PhpPossiblePolymorphicInvocationInspection */
             $r=$cls::exist($conditions);
             $cls::reset();
             return $r;
@@ -1340,7 +1341,6 @@ class PdoOneQuery
      *                           or it uses the PdoOne::$pageSize (20)
      * @return PdoOneQuery
      * @throws Exception
-     * @noinspection PhpPossiblePolymorphicInvocationInspection
      */
     public function page(int $numPage, ?int $pageSize = null): PdoOneQuery
     {
@@ -1656,7 +1656,6 @@ class PdoOneQuery
         if ($this->ormClass !== null) {
             $cls = $this->ormClass;
             if (is_string($rec)) {
-                /** @noinspection PhpPossiblePolymorphicInvocationInspection */
                 $rec = $cls::getRelations($rec);
             }
         }
@@ -1891,7 +1890,6 @@ class PdoOneQuery
             $cls = $this->ormClass;
             $this->ormClass = null; // to avoid recursivity
             $cls::setPdoOneQuery($this);
-            /** @noinspection PhpPossiblePolymorphicInvocationInspection */
             $r=$cls::insert($tableNameOrValues);
             $cls::reset();
             return $r;
@@ -1919,7 +1917,6 @@ class PdoOneQuery
      *
      * @return false|int If successes then it returns the number of rows deleted.
      * @throws Exception
-     * @noinspection PhpPossiblePolymorphicInvocationInspection
      */
     public function delete(
         $tableOrObject = null,
@@ -1990,7 +1987,6 @@ class PdoOneQuery
      *
      * @return false|int
      * @throws Exception
-     * @noinspection PhpPossiblePolymorphicInvocationInspection
      */
     public function deleteById($pks, bool $transaction = true)
     {
@@ -2033,17 +2029,25 @@ class PdoOneQuery
     }
 
     /**
-     * Generate and run an update in the database.
-     * <br><b>Example</b>:<br>
+     * Generate and run an update in the database.<br>
+     * <b>Example</b>:<br>
      * <pre>
-     *      update('table',['col1',10,'col2','hello world'],['wherecol',10]);
-     *      update('table',['col1'=>10=>'col2'=>'hello world'],['wherecol'=>10]);
-     *      update('table',['col1','col2'],[10,'hello world'],['wherecol'],[10]);
-     *      $this->from("producttype")
-     *          ->set("name=?",['Captain-Crunch'])
-     *          ->where('idproducttype=?',[6])
-     *          ->update();
-     *      update('product_category set col1=10 where idproducttype=1')
+     * update('table',['col1',10,'col2','hello world'],['wherecol',10]);
+     * update('table',['col1'=>10=>'col2'=>'hello world'],['wherecol'=>10]);
+     * update('table',['col1','col2'],[10,'hello world'],['wherecol'],[10]);
+     * $this->from("producttype")
+     *     ->set("name=?",['Captain-Crunch'])
+     *     ->where('idproducttype=?',[6])
+     *     ->update();
+     * update('product_category set col1=10 where idproducttype=1')
+     * </pre>
+     * <b>Example ORM</b>:<br>
+     * If <b>$entity</b> has a missing field, then the missing field will not be updated.<br>
+     * If <b>$entity</b> has an extra field (a field not defined in the table), then it will throw an error<br>
+     * <pre>
+     * $result=self::factory();
+     * $result['name']='name changed';
+     * $ok=self::update($customer);
      * </pre>
      *
      * @param string|null|array $tableOrObject The name of the table or the whole
@@ -2055,7 +2059,6 @@ class PdoOneQuery
      *
      * @return false|int
      * @throws Exception
-     * @noinspection PhpPossiblePolymorphicInvocationInspection
      */
     public function update(
         $tableOrObject = null,

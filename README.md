@@ -1,8 +1,10 @@
 # Database Access Object wrapper for PHP and PDO in a single class
 
-PdoOne. It's a simple wrapper for PHP's PDO library compatible with SQL Server (2008 R2 or higher), MySQL (5.7 or higher) and Oracle (12.1 or higher).
+PdoOne. It's a simple wrapper for PHP's PDO library compatible with SQL Server (2008 R2 or higher), MySQL (5.7 or
+higher) and Oracle (12.1 or higher).
 
-This library tries to **work as fast as possible**. Most of the operations are simple string/array managements and work in the bare metal of the PDO library, but it also allows to create an ORM.
+This library tries to **work as fast as possible**. Most of the operations are simple string/array managements and work
+in the bare metal of the PDO library, but it also allows to create an ORM using the extension [eftec/PdoOneORM](https://github.com/EFTEC/PdoOneORM).
 
 [![Packagist](https://img.shields.io/packagist/v/eftec/PdoOne.svg)](https://packagist.org/packages/eftec/PdoOne)
 [![Total Downloads](https://poser.pugx.org/eftec/PdoOne/downloads)](https://packagist.org/packages/eftec/PdoOne)
@@ -36,7 +38,7 @@ $products=$pdoOne
     ->toList();
 ```
 
-or using the ORM.
+or using the ORM (using [eftec/PdoOneORM](https://github.com/EFTEC/PdoOneORM) library)
 
 ```php
 ProductRepo // this class was generated with echo $pdoOne()->generateCodeClass(['Product']); or using the cli.
@@ -131,14 +133,6 @@ ProductRepo // this class was generated with echo $pdoOne()->generateCodeClass([
     * [cli-csv](#cli-csv)
     * [UI](#ui)
     * [How to run the UI?](#how-to-run-the-ui)
-  * [ORM](#orm)
-      * [What is an ORM?](#what-is-an-orm)
-    * [Building and installing the ORM](#building-and-installing-the-orm)
-      * [Creating the repository class](#creating-the-repository-class)
-      * [Creating multiples repositories classes](#creating-multiples-repositories-classes)
-      * [Creating all repositories classes](#creating-all-repositories-classes)
-    * [Using the Repository class.](#using-the-repository-class)
-      * [Using multiples connections](#using-multiples-connections)
     * [DDL  Database Design Language](#ddl--database-design-language)
     * [Nested Operators](#nested-operators)
     * [DQL Database Query Language](#dql-database-query-language)
@@ -149,14 +143,13 @@ ProductRepo // this class was generated with echo $pdoOne()->generateCodeClass([
       * [getRecursive()](#getrecursive--)
       * [hasRecursive()](#hasrecursive--)
   * [Benchmark (mysql, estimated)](#benchmark--mysql-estimated-)
+  * [migration from 3 to 4](#migration-from-3-to-4)
   * [Error FAQs](#error-faqs)
     * [Uncaught Error: Undefined constant eftec\_BasePdoOneRepo::COMPILEDVERSION](#uncaught-error--undefined-constant-eftecbasepdoonerepo---compiledversion)
   * [Changelist](#changelist)
 <!-- TOC -->
 
 ## Examples
-
-
 
 | [ExampleTicketPHP](https://github.com/jorgecc/ExampleTicketPHP)                                                                                                                                                                                                        | [Example cupcakes](https://github.com/EFTEC/example.cupcakes)                                                                     | [Example Search](https://github.com/EFTEC/example-search)                                                                              | [Example Different Method](https://github.com/escuelainformatica/example-pdoone)                          |
 |------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------|
@@ -168,7 +161,8 @@ More examples:
 
 ## Installation
 
-This library requires PHP 7.1 and higher, and it requires the extension PDO and the extension PDO-MYSQL (Mysql), PDO-SQLSRV (sql server) or PDO-OCI (Oracle)
+This library requires PHP 7.1 and higher, and it requires the extension PDO and the extension PDO-MYSQL (Mysql),
+PDO-SQLSRV (sql server) or PDO-OCI (Oracle)
 
 ### Install (using composer)
 
@@ -181,17 +175,20 @@ Edit  **composer.json** the next requirement, then update composer.
       }
   }
 ```
+
 or install it via cli using
 
 > composer require eftec/PdoOne
 
 ### Install (manually)
 
-Just download the folder lib from the library and put in your folder project.  Then you must include all the files included on it.
+Just download the folder lib from the library and put in your folder project. Then you must include all the files
+included on it.
 
 ## How to create a Connection?
 
-Create an instance of the class PdoOne as follows. Then, you can open the connection using the method connect() or open()
+Create an instance of the class PdoOne as follows. Then, you can open the connection using the method connect() or
+open()
 
 ```php
 use eftec\PdoOne;
@@ -209,7 +206,7 @@ $dao->connect();
 $dao=new PdoOne("test","anyy","any","any","any","");
 $dao->connect();
 
-// oci (oracle) ez-connect
+// oci (oracle) ez-connect. Remember that you must have installed Oracle Instant client and added to the path.
 
 $cs='(DESCRIPTION =(ADDRESS = (PROTOCOL = TCP)(HOST = localhost)(PORT = 1521))(CONNECT_DATA =(SERVER = DEDICATED)(SERVICE_NAME = instancia1)))';
 $dao=new PdoOne("oci",$cs,"sa","abc.123"); // oracle uses the user as the schema
@@ -236,15 +233,16 @@ where
 * "" (optional) it could be a log file, such as c:\temp\log.txt
 
 ### OCI
+
 Oracle is tricky to install. In Windows, from the Oracle home's bin folder, you must copy all the dll
 to the PHP folder and Apache Folder.
-
 
 ## How to run a SQL command?
 
 ### 1. Running a raw query
 
-With the method **RunRawQuery()**, we could execute a command directly to PDO with or without parameters. And it could return a **PdoStatement** or an **array**. It is useful when we want speed.
+With the method **RunRawQuery()**, we could execute a command directly to PDO with or without parameters. And it could
+return a **PdoStatement** or an **array**. It is useful when we want speed.
 
 > **RunRawQuery($rawSql,$param,$returnArray)**
 >
@@ -282,13 +280,13 @@ $values=$con->runRawQuery("select * from table where name=?",[$name]); // it wor
 $values=$con->runRawQuery("select * from table where name='$name'"); // it will crash.❌
 ```
 
-
-
 ### 2. Running a native PDO statement
 
-With the method **runQuery()** we could execute a prepared statement in PDO. It is useful when we want to pass arguments to it.   **runQuery()** requires a PDO **PreparedStatement**.
+With the method **runQuery()** we could execute a prepared statement in PDO. It is useful when we want to pass arguments
+to it.   **runQuery()** requires a PDO **PreparedStatement**.
 
-> This method is not recommended unless you are already working with PDO statements, and you don't want to adapt all your code.
+> This method is not recommended unless you are already working with PDO statements, and you don't want to adapt all
+> your code.
 
 ```php
 $sql="insert into `product`(name) values(?)";
@@ -301,7 +299,8 @@ $allRows=$rows->fetch_all(PDO::FETCH_ASSOC);
 
 ### 3. Running using the query builder
 
-You can use the query builder to build your command.  You could check the chapter about [Query Builder (DQL)](#query-builder--dql-) for more information.
+You can use the query builder to build your command. You could check the chapter
+about [Query Builder (DQL)](#query-builder--dql-) for more information.
 
 ```php
 // query builder
@@ -313,7 +312,8 @@ $pdoOne->set(['name'=>'cocacola'])
 
 ### 4. Running using a ORM
 
-This library also allows to create an **[orm]**(#orm) of your tables. If you are generated an ORM, then you can use the next code
+This library also allows to create an **[orm]**(#orm) of your tables. If you are generated an ORM, then you can use the
+next code
 
 ```php
 ProductRepo::toList(['category'=>'drink']);
@@ -321,14 +321,12 @@ ProductRepo::toList(['category'=>'drink']);
 
 Where **ProductRepo** is a service class generated by using the ORM.
 
-
-
 ## How to work with Date values?
 
 PdoOne allows 5 types of dates.
 
-* **SQL Format** It is the format how the date is stored into the database. It depends on the type of the database. 
-For example MySQL could use the format Y-m-d.
+* **SQL Format** It is the format how the date is stored into the database. It depends on the type of the database.
+  For example MySQL could use the format Y-m-d.
 
 * **Human Format**  It is the format how the end user looks our date.
 
@@ -337,8 +335,6 @@ For example MySQL could use the format Y-m-d.
 * **Timestamp**: It counts the number of seconds after 1-1-1970
 
 * **Class / PHP Class**: It is an **DateTime** object.
-
-  
 
 ## How to run a transaction?
 
@@ -362,9 +358,6 @@ try {
     $pdoOne->rollback(false); // error, transaction cancelled, the false means that it doesn't throw an exception if we want rollback.
 }
 ```
-
-
-
 
 ## Custom Queries
 
@@ -409,16 +402,16 @@ Creates a table using a definition and primary key.
 
 * **$definition** The definition is an associative array with the name of the column as key and the definition as value.
 * **primaryKey** It could be a string or associative array.
-  * if it is a string then it is the name of the primary key, example "user_id";
-  * if it is an associative array, then it could be used to define primary key, unique, key and foreign keys:
-    * 'key_name'=>'PRIMARY KEY'
-    * 'key_name'=>'KEY'
-    * 'key_name'=>'UNIQUE KEY'
-    * 'key_name'=>'FOREIGN KEY REFERENCES TABLEREF(COLREF) ...'
+    * if it is a string then it is the name of the primary key, example "user_id";
+    * if it is an associative array, then it could be used to define primary key, unique, key and foreign keys:
+        * 'key_name'=>'PRIMARY KEY'
+        * 'key_name'=>'KEY'
+        * 'key_name'=>'UNIQUE KEY'
+        * 'key_name'=>'FOREIGN KEY REFERENCES TABLEREF(COLREF) ...'
 * **$extra** It defines an extra definition inside the definition of the table.
 * **extraOutside** It defines an extra definition after the definition of the table.
 
->Note: You could generate a code to create a table using an existing table by executing cli (output classcode)   
+> Note: You could generate a code to create a table using an existing table by executing cli (output classcode)   
 > php pdoone.php -database mysql -server 127.0.0.1 -user root -pwd abc.123 -db sakila -input film -output classcode
 
 Example: (mysql)
@@ -468,8 +461,6 @@ $pdo->createTable('film',
 
 Example (sqlsrv)
 
-
-
 ```php
 $pdo->createTable('film',
    [
@@ -508,8 +499,6 @@ var_dump($dao->tableSorted(3, true, true)); // it returns all the tables that ca
 echo "</pre>";
 ```
 
-
-
 ### validateDefTable($pdoInstance,$tablename,$defTable,$defTableKey)
 
 It validates a table if the table matches the definition asigned by values.
@@ -539,12 +528,9 @@ $keys=[
 var_dump(PdoOne::validateDefTable(self::getPdoOne(),self::TABLE,$def,$keys));
 ```
 
-
-
 ### foreignKeyTable
 
 It returns all the foreign keys of a table.
-
 
 ```php
 
@@ -557,12 +543,12 @@ $result=$pdoOne->foreignKeyTable('actor');
 | rental_id   | rental   | rental_id   |
 | staff_id    | staff    | staff_id    |
 
-
-
 ## Query Builder (DQL)
+
 You could also build a procedural query.
 
 Example:
+
 ```php
 $results = $pdoOne->select("*")->from("producttype")
     ->where('name=?', [ 'Cocacola'])
@@ -571,10 +557,14 @@ $results = $pdoOne->select("*")->from("producttype")
 ```
 
 ### select($columns)
-Indicates the columns to return. The argument is a SQL command, so it allows any operation that the database support, including functions, constants, operators, alias and such.
+
+Indicates the columns to return. The argument is a SQL command, so it allows any operation that the database support,
+including functions, constants, operators, alias and such.
+
 ```php
 $results = $pdoOne->select("col1,col2"); //...
 ```
+
 > Generates the query: **select col1,col2** ....
 
 ```php
@@ -642,19 +632,25 @@ $result = $pdoOne->avg('from table','col1'); // select avg(col1) from table
 ```
 
 ### distinct($distinct='distinct')
+
 Generates a select command.
+
 ```php
 $results = $pdoOne->select("col1,col2")->distinct(); //...
 ```
+
 > Generates the query: select **distinct** col1,col2 ....
 
->Note: ->distinct('unique') returns select **unique** ..
+> Note: ->distinct('unique') returns select **unique** ..
 
 ### from($tables)
+
 Generates a "from" sql command.
+
 ```php
 $results = $pdoOne->select("*")->from('table'); //...
 ```
+
 > Generates the query: select * **from table**
 
 **$tables** could be a single table or a sql construction. For examp, the next command is valid:
@@ -703,11 +699,10 @@ $results = $pdoOne->select("*")->from('table')->where("p1=?",[1]);  // = where("
 $results = $pdoOne->select("*")->from('table')->where("p1",[1]); // = where("p1=?",[1]);
 ```
 
-
-
 #### Where() using an associative array
 
-It is a shorthand definition of a query using an associative array, where the key is the name of the column and the value is the value to compare
+It is a shorthand definition of a query using an associative array, where the key is the name of the column and the
+value is the value to compare
 
 It only works with **equality** (=) and the logic operator **'and'**  (the type is defined automatically)
 
@@ -744,7 +739,7 @@ $results = $pdoOne->select("*")->from("table")
 > Generates the query: select * **from table** where p1=1
 
 > Note: ArrayParameters is an array as follows: **type,value.**     
->   Where type is i=integer, d=double, s=string or b=blob. In case of doubt, use "s" (see table bellow)   
+> Where type is i=integer, d=double, s=string or b=blob. In case of doubt, use "s" (see table bellow)   
 > Example of arrayParameters:   
 > [1 ,'hello' ,20.3 ,'world']
 
@@ -753,6 +748,7 @@ $results = $pdoOne->select("*")
 ->from('table')
 ->where('p1=?',[1]); //...
 ```
+
 > Generates the query: select * from table **where p1=?(1)**
 
 ```php
@@ -764,43 +760,52 @@ $results = $pdoOne->select("*")
 > Generates the query: select * from table **where p1=?(1) and p2=?('hello')**
 
 > Note. where could be nested.
+
 ```php
 $results = $pdoOne->select("*")
 ->from('table')
 ->where('p1=?',[1])
 ->where('p2=?',['hello']); //...
 ```
+
 > Generates the query: select * from table **where p1=?(1) and p2=?('hello')**
 
 You could also use:
+
 ```php
 $results = $pdoOne->select("*")->from("table")
     ->where(['p1'=>'Coca-Cola','p2'=>1])
     ->toList();
 ```
+
 > Generates the query: select * from table **where p1=?(Coca-Cola) and p2=?(1)**
 
-
-
 ### order($order)
+
 Generates an order command.
+
 ```php
 $results = $pdoOne->select("*")
 ->from('table')
 ->order('p1 desc'); //...
 ```
+
 > Generates the query: select * from table **order by p1 desc**
 
 ### group($group)
+
 Generates a group command.
+
 ```php
 $results = $pdoOne->select("*")
 ->from('table')
 ->group('p1'); //...
 ```
+
 > Generates the query: select * from table **group by p1**
 
 ### having($having,[$arrayParameters])
+
 Generates a having command.
 
 > Note: it uses the same parameters as **where()**
@@ -811,6 +816,7 @@ $results = $pdoOne->select("*")
 ->group('p1')
 ->having('p1>?',array(1)); //...
 ```
+
 > Generates the query: select * from table group by p1 having p1>?(1)
 
 > Note: Having could be nested having()->having()  
@@ -819,13 +825,15 @@ $results = $pdoOne->select("*")
 ### End of the chain
 
 #### runGen($returnArray=true)
+
 Run the query generate.
 
->Note if returnArray is true then it returns an associative array.
+> Note if returnArray is true then it returns an associative array.
 > if returnArray is false then it returns a mysqli_result  
->Note: It resets the current parameters (such as current select, from, where, etc.)
+> Note: It resets the current parameters (such as current select, from, where, etc.)
 
 #### toList($pdoMode)
+
 It's a macro of **runGen()**. It returns an associative array or false if the operation fails.
 
 ```php
@@ -835,6 +843,7 @@ $results = $pdoOne->select("*")
 ```
 
 #### toMeta()
+
 It returns a **metacode** (definitions) of each column of a query.
 
 ```php
@@ -897,6 +906,7 @@ array(3) {
 ```
 
 #### toListSimple()
+
 It's a macro of runGen. It returns an indexed array from the first column
 
 ```php
@@ -904,7 +914,9 @@ $results = $pdoOne->select("*")
 ->from('table')
 ->toListSimple(); // ['1','2','3','4']
 ```
+
 #### toListKeyValue()
+
 It returns an associative array where the first value is the key and the second is the value.  
 If the second value does not exist then it uses the index as value (first value).
 
@@ -914,8 +926,8 @@ $results = $pdoOne->select("cod,name")
 ->toListKeyValue(); // ['cod1'=>'name1','cod2'=>'name2']
 ```
 
-
 #### toResult()
+
 It's a macro of runGen. It returns a mysqli_result or null.
 
 ```php
@@ -934,6 +946,7 @@ $count=$this->count('from product_category')->firstScalar();
 ```
 
 #### first()
+
 It's a macro of runGen. It returns the first row if any, if not then it returns false, as an associative array.
 
 ```php
@@ -943,6 +956,7 @@ $results = $pdoOne->select("*")
 ```
 
 #### last()
+
 It's a macro of runGen. It returns the last row (if any, if not, it returns false) as an associative array.
 
 ```php
@@ -950,11 +964,13 @@ $results = $pdoOne->select("*")
 ->from('table')
 ->last(); 
 ```
+
 > Sometimes is more efficient to run order() and first() because last() reads all values.
 
 #### sqlGen()
 
 It returns the sql command and string.
+
 ```php
 $sql = $pdoOne->select("*")
 ->from('table')
@@ -962,6 +978,7 @@ $sql = $pdoOne->select("*")
 echo $sql; // returns select * from table
 $results=$pdoOne->toList(); // executes the query
 ```
+
 > Note: it doesn't reset the query.
 
 ## Query Builder (DML)
@@ -970,13 +987,18 @@ There are four ways to execute each command.
 
 Let's say that we want to add an **integer** in the column **col1** with the value **20**
 
-__Schema and values using a list of values__: Where the first value is the column, the second is the type of value (i=integer,d=double,s=string,b=blob) and second array contains the values.
+__Schema and values using a list of values__: Where the first value is the column, the second is the type of value (
+i=integer,d=double,s=string,b=blob) and second array contains the values.
+
 ```php
 $pdoOne->insert("table"
     ,['col1']
     ,[20]);
 ```
-__Schema and values in the same list__: Where the first value is the column, the second is the type of value (i=integer,d=double,s=string,b=blob) and the third is the value.
+
+__Schema and values in the same list__: Where the first value is the column, the second is the type of value (
+i=integer,d=double,s=string,b=blob) and the third is the value.
+
 ```php
 $pdoOne->insert("table"
     ,['col1',20]);
@@ -989,6 +1011,7 @@ $pdoOne->insert("table"
     ,['col1']
     ,['col1'=>20]);
 ```
+
 __Schema and values using a single associative array__: The type is calculated automatically.
 
 ```php
@@ -997,6 +1020,7 @@ $pdoOne->insert("table"
 ```
 
 ### insert($table,$schema,[$values])
+
 Generates an insert command.
 
 ```php
@@ -1006,6 +1030,7 @@ $pdoOne->insert("producttype"
 ```
 
 Using nested chain (single array)
+
 ```php
     $pdoOne->from("producttype")
         ->set(['idproducttype',0 ,'name','Pepsi' ,'type',1])
@@ -1013,6 +1038,7 @@ Using nested chain (single array)
 ```
 
 Using nested chain multiple set
+
 ```php
     $pdoOne->from("producttype")
         ->set("idproducttype=?",[101])
@@ -1020,7 +1046,9 @@ Using nested chain multiple set
         ->set('type=?',[1])
         ->insert();
 ```
+
 or (the type is defined, in the possible, automatically by MySql)
+
 ```php
     $pdoOne->from("producttype")
         ->set("idproducttype=?",[101])
@@ -1030,23 +1058,23 @@ or (the type is defined, in the possible, automatically by MySql)
 ```
 
 ### insertObject($table,[$declarativeArray],$excludeColumn=[])
+
 ```php
     $pdoOne->insertObject('table',['Id'=>1,'Name'=>'CocaCola']);
 ```
 
-
 Using nested chain declarative set
+
 ```php
     $pdoOne->from("producttype")
         ->set('(idproducttype,name,type) values (?,?,?)',[100,'Pepsi',1])
         ->insert();
 ```
 
-
 > Generates the query: **insert into productype(idproducttype,name,type) values(?,?,?)** ....
 
-
 ### update($$table,$schema,$values,[$schemaWhere],[$valuesWhere])
+
 Generates an insert command.
 
 ```php
@@ -1081,10 +1109,10 @@ $pdoOne->from("producttype")
     ->update(); // update
 ```
 
-
 > Generates the query: **update producttype set `name`=?,`type`=? where `idproducttype`=?** ....
 
 ### delete([$table],[$schemaWhere],[$valuesWhere])
+
 Generates a delete command.
 
 ```php
@@ -1092,41 +1120,45 @@ $pdoOne->delete("producttype"
     ,['idproducttype'] // where
     ,[7]); // where
 ```
+
 ```php
 $pdoOne->delete("producttype"
     ,['idproducttype'=>7]); // where
 ```
+
 > Generates the query: **delete from producttype where `idproducttype`=?** ....
 
 You could also delete via a DQL builder chain.
+
 ```php
 $pdoOne->from("producttype")
     ->where('idproducttype=?',[7]) // where
     ->delete(); 
 ```
+
 ```php
 $pdoOne->from("producttype")
     ->where(['idproducttype'=>7]) // where
     ->delete(); 
 ```
-> Generates the query: **delete from producttype where `idproducttype`=?** ....
 
+> Generates the query: **delete from producttype where `idproducttype`=?** ....
 
 ## Cache
 
 It is possible to optionally cache the result of the queries. The duration of the query is also defined in the query.
-If the result of the query is not cached, then it is calculated normally (executing the query in the database).   For
+If the result of the query is not cached, then it is calculated normally (executing the query in the database). For
 identify a query as unique, the system generates a unique id (uid) based in sha256 created with the query,
 parameters, methods and the type of operation.
 
 The library does not do any cache operation directly, instead it allows to cache the results using an external library.
 
 * Cache works with the next methods.
-  * toList()
-  * toListSimple()
-  * first()
-  * firstScalar()
-  * last()
+    * toList()
+    * toListSimple()
+    * first()
+    * firstScalar()
+    * last()
 
 ### How to configure it?
 
@@ -1162,6 +1194,7 @@ $cache=new CacheService();
     $cache=new CacheService();
     $$pdoOne->setCacheService($cache);
 ```
+
 (3) Use the cache as follows, we must add the method **useCache()** in any part of the query.
 
 ```php
@@ -1189,20 +1222,27 @@ class CacheService implements \eftec\IPdoOneCache {
 $cache=new CacheService();
 ```
 
-
 ## Sequence
 
-Sequence is an alternative to AUTO_NUMERIC (identity) field.  It has two methods to create a sequence: **snowflake** and **sequence**.  It is an alternative to create a GUID mainly because it returns a number (a GUID usually is a string that it is more expensive to index and to store)
+Sequence is an alternative to AUTO_NUMERIC (identity) field. It has two methods to create a sequence: **snowflake** and
+**sequence**. It is an alternative to create a GUID mainly because it returns a number (a GUID usually is a string that
+it is more expensive to index and to store)
 
 The goal of the sequence is to create a unique number that it is never repeated.
 
-* **sequence**: It uses the functionality of the database to create and use a sequence. MySql doesn't have sequences but they are emulated.  The main problem of the sequence is it returns a consecutive number, example: 1,2,3,4...  This number is predictable. For example, if you are the user number **20**, then you can guess another user = **19, 21**, etc.
-* **snowflakes**: It uses a table to generate a unique ID.   The sequence used is based on Twitter's Snowflake, and it is generated based on
-  time (with microseconds), **nodeId** and a unique sequence.   This generates a LONG (int 64) value that it's unique. Example: **10765432100123456789**. This number is partially predictable .
+* **sequence**: It uses the functionality of the database to create and use a sequence. MySql doesn't have sequences but
+  they are emulated. The main problem of the sequence is it returns a consecutive number, example: 1,2,3,4... This
+  number is predictable. For example, if you are the user number **20**, then you can guess another user = **19, 21**,
+  etc.
+* **snowflakes**: It uses a table to generate a unique ID. The sequence used is based on Twitter's Snowflake, and it is
+  generated based on
+  time (with microseconds), **nodeId** and a unique sequence. This generates a LONG (int 64) value that it's unique.
+  Example: **10765432100123456789**. This number is partially predictable .
 
 ### Creating a sequence
 
-* **$dao->nodeId** set the node value (default is 1). If we want unique values amongst different clusters, then we could set the value of the node as unique. The limit is up to 1024 nodes.
+* **$dao->nodeId** set the node value (default is 1). If we want unique values amongst different clusters, then we could
+  set the value of the node as unique. The limit is up to 1024 nodes.
 * **$dao->tableSequence** it sets the table (and function), the default value is snowflake.
 
 ```php
@@ -1215,7 +1255,10 @@ $dao->createSequence(); // it creates a table (and it could create a store proce
 
 It is possible to create a new sequence without any table. It is fast, but it could have problems of collisions.
 
-> It ensures a collision free number only if we don't do more **than one operation per 0.0001 second** However, it also adds a pseudo random number (0-4095 based in time) so the chances of collision is **1/4095** (per two operations done every 0.0001 second). It is based on Twitter's Snowflake number. i.e.. **you are safe of collisions if you are doing less than 1 million of operations per second** (technically: 45 millions).
+> It ensures a collision free number only if we don't do more **than one operation per 0.0001 second** However, it also
+> adds a pseudo random number (0-4095 based in time) so the chances of collision is **1/4095** (per two operations done
+> every 0.0001 second). It is based on Twitter's Snowflake number. i.e.. **you are safe of collisions if you are doing
+less than 1 million of operations per second** (technically: 45 millions).
 
 * **$pdo->getSequencePHP([unpredictable=false])** Returns a sequence without using a table.
   This sequence is more efficient than $dao->getSequence, but it uses a random value to deals
@@ -1231,11 +1274,10 @@ $pdo->getSequencePHP() // string(19) "3639032938181434317"
 $dao->getSequencePHP(true) // string(19) "1739032938181434311" 
 ```
 
-
-
 ### Using the sequence
 
-* **$dao->getSequence([unpredictable=false])** returns the last sequence. If the sequence fails to generate, then it returns -1.
+* **$dao->getSequence([unpredictable=false])** returns the last sequence. If the sequence fails to generate, then it
+  returns -1.
   The function could fail if the function is called more than 4096 times every 1/1000th second.
 
 ```php
@@ -1311,12 +1353,12 @@ $user=$this->select(['username','password'])
 // $user= if false or null then the user does not exist or the password is incorrect.
 ```
 
-
 ## How to debug and trace errors in the database?
 
 ### Setting the log level
 
-You can set the log level to 3. The log level works when the operation fails, the higher the log level, then it shows most information.
+You can set the log level to 3. The log level works when the operation fails, the higher the log level, then it shows
+most information.
 
 ```php
 $pdoOne->logLevel=3; // the highest for debug.
@@ -1325,7 +1367,8 @@ $pdoOne->logLevel=3; // the highest for debug.
 * 0=no debug for production (all message of error are generic)<br>
 * 1=it shows an error message<br>
 * 2=it shows the error messages and the last query
-* 3=it shows the error message, the last query and the last parameters (if any). It could be unsafe (it could show passwords)
+* 3=it shows the error message, the last query and the last parameters (if any). It could be unsafe (it could show
+  passwords)
 
 ### Throwing errors
 
@@ -1334,8 +1377,6 @@ By default, PdoOne throws PHP errors, but we could avoid it by setting the field
 ```php
 $pdoOne->throwOnError=false; // it could be used in production.
 ```
-
-
 
 ### Getting the last Query
 
@@ -1352,16 +1393,11 @@ If empty then it will not generate a log file (using the php log file)
 $pdoOne->logFile=true; 
 ```
 
-
-
 ## CLI
 
 **PdoOne** has some features available only in CLI.
 
 ![](examples/cli.jpg)
-
-
-
 
 ### Run as cli
 
@@ -1378,8 +1414,6 @@ Execute the next line (in the lib folder)
 You could use the flag "-i" to enter in interactive mode.
 
 You could use the TAB key to autocomplete values (if any).
-
-
 
 ![](examples/cli2.jpg)
 
@@ -1408,8 +1442,6 @@ Load the configuration from a file
 php pdoonecli --loadconfig myconfig -in actor -out csv
 ```
 
-
-
 ### Run CLI to generate repository classes.
 
 You could use the flag "-cli" to generate the repository classes
@@ -1418,8 +1450,6 @@ You could use the flag "-cli" to generate the repository classes
 
 The CLI is interactive, and it allows to load and save the configuration.
 
-
-
 ### cli-classcode
 
 The functionality will generate a ready-to-use repository class.
@@ -1427,12 +1457,13 @@ The functionality will generate a ready-to-use repository class.
 Let's say the next example
 
 > mysql:  
-> php pdoone.php --database mysql --server 127.0.0.1:3306 --user root -p abc.123 -db sakila --input "Actor" --output classcode  
+> php pdoone.php --database mysql --server 127.0.0.1:3306 --user root -p abc.123 -db sakila --input "Actor" --output
+> classcode  
 > sqlsrv:  
-> php pdoone.php --database sqlsrv --server PCJC\SQLEXPRESS --user sa -p abc.123 -db sakila --input "Actor" --output classcode
+> php pdoone.php --database sqlsrv --server PCJC\SQLEXPRESS --user sa -p abc.123 -db sakila --input "Actor" --output
+> classcode
 
 It will connect to the database mysql, ip: 127.0.0.1 and database sakila, and it will read the "actor" table.
-
 
 It will return the next result
 
@@ -1509,14 +1540,13 @@ Alternatively, you could generate the php file automatically as follows:
 
 Note: the code lacks of php-tags, namespace and use but everything else is here.
 
-
 ### cli-selectcode
 
 It will take a query and will return a php code with the query formatted.
 
 Example:
 
->  php pdoone.php -database mysql -server 127.0.0.1:3306 -user root -pwd abc.123 -db sakila
+> php pdoone.php -database mysql -server 127.0.0.1:3306 -user root -pwd abc.123 -db sakila
 > -input "select * from actor" -output selectcode
 
 It will generate the next code:
@@ -1533,7 +1563,7 @@ It will generate the next code:
 
 It will generate an associative array (with default values) based in the query or table selected.
 
->  php pdoone.php -database mysql -server 127.0.0.1:3306 -user root -pwd abc.123 -db sakila
+> php pdoone.php -database mysql -server 127.0.0.1:3306 -user root -pwd abc.123 -db sakila
 > -input "select * from actor" -output arraycode
 
 It will return:
@@ -1546,7 +1576,7 @@ It will return:
 
 It will return the result of the query as a json
 
->  php pdoone.php -database mysql -server 127.0.0.1:3306 -user root -pwd abc.123 -db sakila
+> php pdoone.php -database mysql -server 127.0.0.1:3306 -user root -pwd abc.123 -db sakila
 > -input "select * from actor" -output json
 
 It will return:
@@ -1562,7 +1592,7 @@ It will return:
 
 It will return the result of the query as a json
 
->  php pdoone.php -database mysql -server 127.0.0.1:3306 -user root -pwd abc.123 -db sakila
+> php pdoone.php -database mysql -server 127.0.0.1:3306 -user root -pwd abc.123 -db sakila
 > -input "select * from actor" -output csv
 
 It will return:
@@ -1599,241 +1629,7 @@ $dao->logLevel=3;
 $dao->render();
 ```
 
-
-
 > There is an example in the folder examples/testui.php
-
-
-
-## ORM
-
-This library also allows creating and use it as an ORM. To use it as an ORM, you must create the classes.
-
-#### What is an ORM?
-
-An ORM transforms queries to the database in objects serializables.
-
-Let's say the next example
-
-```php
-$result=$pdoOne->runRawQuery('select IdCustomer,Name from Customers where IdCustomer=?',1); 
-```
-
-You can also run using the Query Builder
-
-```php
-$result=$pdoOne->select('IdCustomer,Name')->from('Customers')->where('IdCustomer=?',1)->toList();
-```
-
-What if you use the same table over and over.  You can generate a new class called **CustomerRepo** and calls the code as
-
-```php
-$result=CustomerRepo::where('IdCustomer=?',1)::toList();
-```
-
-While it is simple, but it also hides part of the implementation.  It could hurt the performance a bit, but it adds more simplicity and consistency.
-
-
-
-### Building and installing the ORM
-
-There are several ways to generate a Repository code, it is possible to generate a code using the CLI, the GUI or using the next code:
-
-```php
-$pdo=new PdoOne('mysql','127.0.0.1','root','abc.123','sakila');
-$pdo->connect();
-$table=$pdo->generateCodeClass('Tablename','repo'); // where Tablename is the name of the table to analyze. it must exsits.
-echo $clase;
-```
-
-The code generated looks like this one
-
-```php
-class TableNameRepo extends _BasePdoOneRepo
-{
-// ....
-}
-```
-
-#### Creating the repository class
-
-> This method is not recommended. Uses the method to create multiple classes.
-
-There are several ways to create a class, you could use the UI, the CLI or directly via code.
-
-It is an example to create our repository class
-
-```php
-$class = $pdoOne->generateCodeClass('Customer'); // The table Customer must exists in the database
-file_put_contents('CustomerRepo.php',$clase); // and we write the code into a file.
-```
-
-It will build our Repository class.
-
-```php
-<?php
-use eftec\PdoOne;
-use eftec\_BasePdoOneRepo;
-
-class CustomerRepo extends _BasePdoOneRepo
-{
-    //....
-}
-```
-
-```php
-$class = $pdoOne->generateCodeClass('Customer','namespace\anothernamespace'); 
-```
-
-It will generate the next class
-
-```php
-<?php
-namespace namespace\anothernamespace;    
-use eftec\PdoOne;
-use eftec\_BasePdoOneRepo;
-
-class CustomerRepo extends _BasePdoOneRepo
-{
-    //....
-}
-```
-
-#### Creating multiples repositories classes
-
-In this example, we have two classes, messages and users
-
-```php
-// converts all datetime columns into a ISO date.
-$pdoOne->generateCodeClassConversions(['datetime'=>'datetime2']);
-
-$errors=$pdoOne->generateAllClasses(
-    ['messages'=>'MessageRepo','users'=>'UserRepo'] // the tables and their name of classes
-    ,'BaseClass' // a base class.
-    ,'namespace1\repo' // the namespaces that we will use
-    ,'/folder/repo' // the folders where we store our classes
-    ,false // [optional] if true the we also replace the Repo classes
-    ,[] // [optional] Here we could add a custom relation of conversion per column.
-    ,[] // [optional] Extra columns. We could add extra columns to our repo.
-    ,[] // [optional] Columns to exclude.    
-);
-var_dump($errors); // it shows any error or an empty array if success.
-```
-
-It will generate the next classes:
-
-```
-📁 folder
-   📁repo
-       📃AbstractMessageRepo.php   [namespace1\repo\AbstractMessageRepo] NOT EDIT OR REFERENCE THIS FILE
-       📃MessageRepo.php         [namespace1\repo\MessageRepo] EDITABLE
-       📃AbstractUserRepo.php     [namespace1\repo\AbstractUserRepo] NOT EDIT OR REFERENCE THIS FILE
-       📃UserRepo.php               [namespace1\repo\UserRepo]  EDITABLE
-       📃BaseClass.php              [namespace1\repo\BaseClass] NOT EDIT OR REFERENCE THIS FILE      
-```
-
-* Abstract Classes are classes with all the definitions of the tables, indexes and such. They contain the whole definition of a class.
-  * This class should be rebuilded if the table changes. How? You must run the method **generateAllClasses**() again.
-* Repo Classes are classes that works as a placeholder of the Abstract class. These classes are safe for edit, so we could add our own methods and logic.
-  * Note: if you run **generateAllClasses**() again, then those classes are not touched unless we force it (argument **$forced**) or we delete those files.
-* Base Class is a unique class (per schema) where it contains the definition of all the tables and the relations between them.
-  * This class should be rebuilt if the table changes. How? You must run the method **generateAllClasses**() again.
-
-#### Creating all repositories classes
-
-We could automate even further
-
-```php
-$allTablesTmp=$pdoOne->objectList('table',true); // we get all the tables from the current schema.
-$allTables=[];
-foreach($allTablesTmp as $table) {
-    $allTables[$table]=ucfirst($table).'Repo';
-}
-$errors=$pdoOne->generateAllClasses(
-   $allTables // tables=>repo class
-    ,'MiniChat' // a base class.
-    ,'eftec\minichat\repo' // the namespaces that we will use
-    ,'/folder/repo' // the folders where we store our classes
-);
-echo "Errors (empty if it is ok:)";
-var_dump($errors);
-```
-
-
-
-### Using the Repository class.
-
-For started, the library must know to know where to connect, so you must set an instance of the PdoOne and there are 3 ways to instance it.
-
-The repository class is smart, and it does the next operation:
-
-> If the Repository base doesn't have a connection, then it will try to use the latest connection available.
-
-
-The easiest way is to create an instance of PdoOne();
-
-```php
-$pdo=new PdoOne('mysql','127.0.0.1','root','abc.123','sakila');
-$pdo->connect();
-$listing=TableNameRepo::toList(); // it will inject automatically into the Repository base class, instance of PdoOne.
-```
-
-You could also do it by creating a root function called **pdoOne()**
-
-```php
-function pdoOne() {
-   $pdo=new PdoOne('mysql','127.0.0.1','root','abc.123','sakila');
-   $pdo->connect();
-}
-```
-
-Or creating a global variable called **$pdoOne**
-
-```php
-$pdoOne=new PdoOne('mysql','127.0.0.1','root','abc.123','sakila');
-$pdoOne->connect();
-```
-
-Or injecting the instance into the class using the static method **Class::setPdoOne()**
-
-```php
-$pdo=new PdoOne('mysql','127.0.0.1','root','abc.123','sakila');
-$pdo->connect();
-TableNameRepo::setPdoOne($pdo); // TableNameRepo is our class generated. You must inject it once per all schema.
-```
-
-#### Using multiples connections
-
-Note: If you are using multiples connections, then you must use the method **RepoClass::setPdoOne()** and it injects the connection inside the Repository Base. 
-
-Every repository base could hold only one connection at the same time
-
-Example:
-
-* BaseAlpha (Base class)
-  * Table1AlphaRepo (Repository class)
-  * Table2AlphaRepo (Repository class)
-* BaseBeta (Base class)
-  * Table1BetaRepo (Repository class)
-  * Table2BetaRepo (Repository class)
-
-```php
-$con1=new PdoOne('mysql','127.0.0.1','root','abc.123','basealpha');
-$con1->connect();
-$con2=new PdoOne('mysql','127.0.0.1','root','abc.123','basebeta');
-$con2->connect();
-// every base with its own connection:
-Table1AlphaRepo::setPdoOne($pdo); // ✅ Table1AlphaRepo and Table2AlphaRepo will use basealpha
-Table1BetaRepo::setPdoOne($pdo); // ✅ Table1BetaRepo and Table2BetaRepo will use basebeta
-// however, it will not work as expected
-// every base with its own connection:
-Table1AlphaRepo::setPdoOne($pdo); // ✅ Table1AlphaRepo and Table2AlphaRepo will use basealpha
-Table2AlphaRepo::setPdoOne($pdo); // ❌ And now, Table1AlphaRepo and Table2AlphaRepo will use basebeta
-```
-
-What if you want to use the same base for different connections? You can't. However, you could copy the files and create two different bases and repositories (or you could generate a code to create a new base and repository classes), then you can use multiples connections.
-
-
 
 ### DDL  Database Design Language
 
@@ -1860,7 +1656,7 @@ $ok=TablaParentRepo::validTable(); // it returns true if the table matches with 
 
 The nested operators are methods that should be in between of our chain of methods.
 
-> ClassRepo::op()::where()::op() is ✅
+> ClassRepo::op()::where()::finalop() is ✅
 >
 > ClassRepo::op()::op()::where() will left the chain open ❌
 
@@ -1890,8 +1686,6 @@ $results=$pdo->select('*')
 
 ```
 
-
-
 | Method      | Description                           | Example                      |
 |-------------|---------------------------------------|------------------------------|
 | where()     | It adds a where to the chain          | TablaParentRepo::where()     |
@@ -1903,15 +1697,13 @@ $results=$pdo->select('*')
 | left()      | It adds a left join to the query      | TablaParentRepo::left()      |
 | right()     | It adds a right join to the query     | TablaParentRepo::right()     |
 
-
-
 ### DQL Database Query Language
 
 We have different methods to generate a DQL (query) command in our database.
 
 > If the operation fails, they return a FALSE, and they could trigger an exception.
 >
-> The next methods should be at the end of the chain.  Examples:
+> The next methods should be at the end of the chain. Examples:
 >
 > ClassRepo::op()::op()::toList() is ✅
 >
@@ -1935,8 +1727,6 @@ The next methods allow inserting,update or delete values in the database.
 | delete     | It deletes a value from the database.                                      | TablaParentRepo::delete($obj);           |
 | deletebyId | It deletes a value (using the primary key as condition) from the database. | TablaParentRepo::deleteById($pk);        |
 
-
-
 ```php
 // where obj is an associative array or an object, where the keys are the name of the columns (case sensitive)
 $identity=TablaParentRepo::insert($obj); 
@@ -1945,11 +1735,10 @@ TablaParentRepo::delete($obj);
 TablaParentRepo::deleteById(id);
 ```
 
-
-
 ### Validate the model
 
-It is possible to validate the model. The model is validated using the information of the database, using the type of the column, the length, if the value allows null and if it is identity (auto numeric).
+It is possible to validate the model. The model is validated using the information of the database, using the type of
+the column, the length, if the value allows null and if it is identity (auto numeric).
 
 ```php
 $obj=['IdUser'=>1,'Name'='John Doe']; 
@@ -1958,8 +1747,10 @@ UserRepo::validateModel($obj,false,['_messages']); // returns true if $obj is a 
 
 ### Recursive
 
-A recursive array is an array of  strings with values that it could be read or obtained or compared.  For example, to join a table conditionally.
-PdoOne does not use it directly but _BasePdoOneRepo uses it (_BasePdoOneRepo is a class used when we generate a repository service class automatically).
+A recursive array is an array of strings with values that it could be read or obtained or compared. For example, to join
+a table conditionally.
+PdoOne does not use it directly but _BasePdoOneRepo uses it (_BasePdoOneRepo is a class used when we generate a
+repository service class automatically).
 
 Example
 
@@ -1996,7 +1787,6 @@ $this->select('*')->from('table')->recursive(['*']);
 $this->hasRecursive('anything'); // it always returns true.
 ```
 
-
 ## Benchmark (mysql, estimated)
 
 | Library                 | Insert | findPk | hydrate | with | time   |
@@ -2021,14 +1811,19 @@ $this->hasRecursive('anything'); // it always returns true.
 
 PdoOne adds a bit of ovehead over PDO, however it is simple a wrapper to pdo.
 
+## migration from 3 to 4
+
+* If you are not using ORM features, then you don't need to do any change.
+* If you are using ORM features then:
+  * Add the new library [eftec/PdoOneORM](https://github.com/EFTEC/PdoOneORM)
+  * Use $pdo=new PdoOneORM(); instead of $pdo=new PdoOne();
+  * The filename configuration of the CLI must be rebuilt again.
 
 ## Error FAQs
 
 ### Uncaught Error: Undefined constant eftec\_BasePdoOneRepo::COMPILEDVERSION
 
 It means that you are updated PdoOne, and you are using one class generated by the ORM. This class must be re-generated.
-
-
 
 ## Changelist
 
@@ -2040,339 +1835,363 @@ In a nutshell:
 >
 > Every decimal version means that it patches/fixes/refactoring a previous functionality i.e. 1.5.0 -> 1.5.1 (fix)
 
+* 4.00 2023-11-03
+  * [PdoOne] 4.0 Now ORM features are separated in a different library called [eftec/PdoOneORM](https://github.com/EFTEC/PdoOneORM).
+    * If you want to use ORM, then install the library [eftec/PdoOneORM](https://github.com/EFTEC/PdoOneORM) and use it instead.  
+    * See [migration from 3 to 4](#migration-from-3-to-4) for further information.
+  * [PdoOne] new method factoryFromArray()
+  * [PdoOne] Removed all old GUI features that are not available anymore.
+  * [CLI] The cli was rebuilt. Only a few features are present. Now, it allows to save the configuration, load and save
+it as a PHP file.
+  * [_BasePdoOne] Now it is separated in eftec/pdoonerepo
+
 * 3.16 2023-12-02
-  * [PdoOneQuery] 3.11
-    * exists(),insert(),update(),delete(),deleteById() fixed a bug that caused a recursivity
-    * insertObjects() avoids to add a numeric index. Now it adds the correct index
-  * [PdoOne] 3.16
-    * dateConvertInput() does not crash if the date is incorrect, and it tries to determine the current time.
-    * runRawQuery() returns false if the inmediate query fails
-    * Added the method generateCodeArrayRecursive() used to generate code.
-    * rollback() allows to show the cause why it failed
-    * The templates (used to generate the code) now validates some input and output values.
-  * [BasePdoOneRepo] 6.7
-    * validateModel() now works with date. If the date is incorrect then it returns false. It also cleans the last error.
-if the cause is correct.
-    * recursive insert or update now validates if the record exists using the right class.
-    * called to rollback() now stores the cause of why it failed.
+    * [PdoOneQuery] 3.11
+        * exists(),insert(),update(),delete(),deleteById() fixed a bug that caused a recursivity
+        * insertObjects() avoids to add a numeric index. Now it adds the correct index
+    * [PdoOne] 3.16
+        * dateConvertInput() does not crash if the date is incorrect, and it tries to determine the current time.
+        * runRawQuery() returns false if the inmediate query fails
+        * Added the method generateCodeArrayRecursive() used to generate code.
+        * rollback() allows to show the cause why it failed
+        * The templates (used to generate the code) now validates some input and output values.
+    * [BasePdoOneRepo] 6.7
+        * validateModel() now works with date. If the date is incorrect then it returns false. It also cleans the last
+          error.
+          if the cause is correct.
+        * recursive insert or update now validates if the record exists using the right class.
+        * called to rollback() now stores the cause of why it failed.
 * 3.15 2023-02-03
-  * [PdoOneQuery] 3.10 Fixed a problem with insert(),update(),delete(), it will not reset the stack correctly.
-  * [_BasePdoOneRepo] reset() method is now public.]()
+    * [PdoOneQuery] 3.10 Fixed a problem with insert(),update(),delete(), it will not reset the stack correctly.
+    * [_BasePdoOneRepo] reset() method is now public.]()
 * 3.14 2023-01-30
-  * [PdoOneQuery] 3.9 Fixed a problem with first() where the primary key is not numeric.
-  * [Pdo] /[PdoOneQuery] New method now() to obtain the date and time of the database.
-  * [_BasePdoOneRepo] 12 Updated to binary version 12. You must rebuild the ORM files.
+    * [PdoOneQuery] 3.9 Fixed a problem with first() where the primary key is not numeric.
+    * [Pdo] /[PdoOneQuery] New method now() to obtain the date and time of the database.
+    * [_BasePdoOneRepo] 12 Updated to binary version 12. You must rebuild the ORM files.
 * 3.13 2023-01-26
-  * [PdoOneQuery] Fixed a problem with single() value. 
-  * [PdoOne] Fixed if MessageContainer is not loaded (now, it is ignored and not used)
+    * [PdoOneQuery] Fixed a problem with single() value.
+    * [PdoOne] Fixed if MessageContainer is not loaded (now, it is ignored and not used)
 * 3.12.2 2022-09-03
-  * [_BasePdoOneRepo] Added some missing argument hinting
-  * [_BasePdoOneRepo] Fixed a problem with Insert()
-  * [PdoOne] fixed some problem when some indexes are missing
-  * [PdoOneEncryption] Added some missing argument hinting
+    * [_BasePdoOneRepo] Added some missing argument hinting
+    * [_BasePdoOneRepo] Fixed a problem with Insert()
+    * [PdoOne] fixed some problem when some indexes are missing
+    * [PdoOneEncryption] Added some missing argument hinting
 * 3.12.1 2022-08-26
-  * [PdoOneQuery] fixed a problem with page() in an ORM. 
-* 3.12  2022-08-14
-  * [PdoOne] Added field $prefixTable to prefix every table in the database.
-    * It works with select,insert,update,delete,from,count and many others operations.
+    * [PdoOneQuery] fixed a problem with page() in an ORM.
+* 3.12 2022-08-14
+    * [PdoOne] Added field $prefixTable to prefix every table in the database.
+        * It works with select,insert,update,delete,from,count and many others operations.
 * 3.11.1 2022-07-30
-  * [CLI] update CLI to 1.6.1 Added the column "key" to "tablefull".
+    * [CLI] update CLI to 1.6.1 Added the column "key" to "tablefull".
 * 3.11 2022-07-30
-  * [CLI] update CLI to 1.6. Added "relation2" and "tablefull" to definitions. 
+    * [CLI] update CLI to 1.6. Added "relation2" and "tablefull" to definitions.
 * 3.10 2022-07-30
-  * [CLI] update CLI to 1.5.  
-* 3.9  2022-07-23
-  * [ORM] \[CLI] Now, you can savely edit some part of the code generated under the comment blocks marked as "EDIT". 
+    * [CLI] update CLI to 1.5.
+* 3.9 2022-07-23
+    * [ORM] \[CLI] Now, you can savely edit some part of the code generated under the comment blocks marked as "EDIT".
 * 3.8.1 2022-07-23
-  * [ORM] fixed another problem with where() when the filter use a named parameter. 
-  * [CLI] Exit option exists instantly. And create does not exit.
+    * [ORM] fixed another problem with where() when the filter use a named parameter.
+    * [CLI] Exit option exists instantly. And create does not exit.
 * 3.8 2022-07-22
-  * [ORM] fixed a problem when where is used and more than two column (different tables) use the same name of column. 
-* 3.7 2022-07-16 
-  * [ORM] fixed a problem with first
-  * [ORM] fixed a problem with insert and conversion of columns
-  * _BasePdoOne update to binary version 11. It will require regeneration of repository classes.
+    * [ORM] fixed a problem when where is used and more than two column (different tables) use the same name of column.
+* 3.7 2022-07-16
+    * [ORM] fixed a problem with first
+    * [ORM] fixed a problem with insert and conversion of columns
+    * _BasePdoOne update to binary version 11. It will require regeneration of repository classes.
 * 3.6 2022-07-07
-  * [CLI] update CLI to 1.1 
+    * [CLI] update CLI to 1.1
 * 3.5 2022-07-06
-  * [ORM] fixed recursive when "query", "insert","update" and "delete". Now recursive work with aliases.
-  * _BasePdoOne update to binary version BINARYVERSION. It will require regeneration of repository classes.
+    * [ORM] fixed recursive when "query", "insert","update" and "delete". Now recursive work with aliases.
+    * _BasePdoOne update to binary version BINARYVERSION. It will require regeneration of repository classes.
 * 3.3 2022-06-27
-  * [CLI] updated CLI to 1.0
+    * [CLI] updated CLI to 1.0
 * 3.2 2022-06-27
-  * [CLI] updated CLI to 0.14 
+    * [CLI] updated CLI to 0.14
 * 3.1.6 2022-06-24
-  * [CLI] solved a problem with the conversion per type of column 
-  * [_BasePdoOneRepo] Fixed a problem with the conversion of the end results.
+    * [CLI] solved a problem with the conversion per type of column
+    * [_BasePdoOneRepo] Fixed a problem with the conversion of the end results.
 * 3.1.5 2022-06-23
-  * [PdoOneQuery] Solved a bug when the cache is invalidated when insert(),update(), etc. 
+    * [PdoOneQuery] Solved a bug when the cache is invalidated when insert(),update(), etc.
 * 3.1.4 2022-06-21
-  * [CACHE] fixed a problem with the cache and type hinting. 
+    * [CACHE] fixed a problem with the cache and type hinting.
 * 3.1.3 2022-06-18
-  * [ORM] fixed a bug with the template of the abstract file and limit() 
+    * [ORM] fixed a bug with the template of the abstract file and limit()
 * 3.1.2 2022-06-18
-  * [ORM] fixed a bug with the template of the abstract file and limit() 
+    * [ORM] fixed a bug with the template of the abstract file and limit()
 * 3.1.1 2022-06-17
-  * fixed a bug with limit() and page() 
+    * fixed a bug with limit() and page()
 * 3.1 2022-06-11
-  * fixed a problem with mysql in Linux in the method getdeftablefk()
+    * fixed a problem with mysql in Linux in the method getdeftablefk()
 * 3.0 2022-06-1
-  * _BasePdoOneRepo rebuild from scratch.
-  * [ORM] the use of dependencies are changed.
+    * _BasePdoOneRepo rebuild from scratch.
+    * [ORM] the use of dependencies are changed.
 * 2.32 2022-03-20
-  * createTable() allows to specify the definition of the columns universally using a pseudo php syntax. 
+    * createTable() allows to specify the definition of the columns universally using a pseudo php syntax.
 * 2.31 2022-03-04
-  * PdoOneCli updated to version 0.10 
+    * PdoOneCli updated to version 0.10
 * 2.30 2022-02-28
-  * Update PdoOneCli to version 0.9
-    * The CLI is almost functional with the new engine however it requires some cleanups.
+    * Update PdoOneCli to version 0.9
+        * The CLI is almost functional with the new engine however it requires some cleanups.
 * 2.29 2022-02-20
-  
-  * Added as a binary file (vendor/bin/pdoonecli)
-  
+
+    * Added as a binary file (vendor/bin/pdoonecli)
+
 * 2.27 2022-02-19
 
-  * **[core]** lots of cleanups.
-  * **[_BasePdoOneRepo]** update to binary version 8.  **You must rebuild the repository classes to rebuild the base class.**
+    * **[core]** lots of cleanups.
+    * **[_BasePdoOneRepo]** update to binary version 8.  **You must rebuild the repository classes to rebuild the base
+      class.**
 
 * 2.26 2022-02-19
-  * **[core]** **[new]** added more type hiting for the arguments for safety and stability of the tool.
-  * **[cli]** now the CLI is located a different file called pdoonecli  Also the CLI has more features than before, including the generation of the OOP classes.
+    * **[core]** **[new]** added more type hiting for the arguments for safety and stability of the tool.
+    * **[cli]** now the CLI is located a different file called pdoonecli Also the CLI has more features than before,
+      including the generation of the OOP classes.
 
 * 2.25 2022-02-01
-  * **[core]** **[new]** Key-Value functionalities:setKvDefaultTable(),kv(),createTableKV(),dropTableKV(),getKV(),setKV(),garbageCollectorKV(),delKV(),flushKV(),existKV()
-  * **[core]** **[new]** createIndex()
+    * **[core]** **[new]** Key-Value functionalities:setKvDefaultTable(),kv(),createTableKV(),dropTableKV(),getKV()
+      ,setKV(),garbageCollectorKV(),delKV(),flushKV(),existKV()
+    * **[core]** **[new]** createIndex()
 
 * 2.24.1 2022-02-06
 
-  * **[core]** **[fix]** Now, most generation of classes are defined in templates instead of the code. It will keep the code clean while it will also save a few bits of memories (old: 6446 lines, current: 5963 lines).
+    * **[core]** **[fix]** Now, most generation of classes are defined in templates instead of the code. It will keep
+      the code clean while it will also save a few bits of memories (old: 6446 lines, current: 5963 lines).
 
 * 2.24 2022-02-06
 
-  * **[repo]** Now the library allows multiple connections using different repository class bases.
-  * **[_BasePdoOne]** Updated to version 7. **You must rebuild the repository classes to rebuild the base class.**
-  * **[core]** **[new]** Now **MessageContainer** is injected automatically
-  * **[core]** **[new]** You can obtain an instance of PdoOne using the static method PdoOne::instance()
-  * **[core]** **[fix]** Method lastError() always returns a string (empty if not error) instead of a NULL.
-  * **[core]** **[change]** <u>Method getMessages() rename to getMessageContainer()</u>
-  * **[core]** **[new]** Method getMessages() returns all the messages.
-  * **[core]** **[new]** Method getErrors(),getFirstError(),getLastError(),hasError() return error messages.
-  * **[core]** **[new]** Method getInfos(),getFirstInfo(),getLastInfo() return info messages.
+    * **[repo]** Now the library allows multiple connections using different repository class bases.
+    * **[_BasePdoOne]** Updated to version 7. **You must rebuild the repository classes to rebuild the base class.**
+    * **[core]** **[new]** Now **MessageContainer** is injected automatically
+    * **[core]** **[new]** You can obtain an instance of PdoOne using the static method PdoOne::instance()
+    * **[core]** **[fix]** Method lastError() always returns a string (empty if not error) instead of a NULL.
+    * **[core]** **[change]** <u>Method getMessages() rename to getMessageContainer()</u>
+    * **[core]** **[new]** Method getMessages() returns all the messages.
+    * **[core]** **[new]** Method getErrors(),getFirstError(),getLastError(),hasError() return error messages.
+    * **[core]** **[new]** Method getInfos(),getFirstInfo(),getLastInfo() return info messages.
 
 * 2.23 2022-02-04
 
-  * **[PdoOneQuery]** **[PdoOne]** **[fix]** Fixed compatibility with PHP 8.1. PHP 8.1 deprecates a lot of functionalities.
-  * **[new]** update dependency to php>=7.2.5 to stay in sync with Composer. If you have trouble, then you can use an old version of the library
+    * **[PdoOneQuery]** **[PdoOne]** **[fix]** Fixed compatibility with PHP 8.1. PHP 8.1 deprecates a lot of
+      functionalities.
+    * **[new]** update dependency to php>=7.2.5 to stay in sync with Composer. If you have trouble, then you can use an
+      old version of the library
 
 * 2.22.2 2022-02-01
-  * **[PdoOneQuery]** **[fix]** when the argument of a method is empty or zero.  Now, it throws an exception. 
+    * **[PdoOneQuery]** **[fix]** when the argument of a method is empty or zero. Now, it throws an exception.
 
 * 2.22.1 2022-01-03
-  * **[core]** **[edit]** generateAllClasses() now returns errors and warnings. 
+    * **[core]** **[edit]** generateAllClasses() now returns errors and warnings.
 
 * 2.22 2022-01-30
-  * **[core]** **[edit]** A new static value called $pageSize 
-  * **[PdoOneQuery]** **[edit]** the method page() allows to specify the size of the page. 
-  * **[_BasePdoOne]** **[edit]** the method page() allows to specify the size of the page.
+    * **[core]** **[edit]** A new static value called $pageSize
+    * **[PdoOneQuery]** **[edit]** the method page() allows to specify the size of the page.
+    * **[_BasePdoOne]** **[edit]** the method page() allows to specify the size of the page.
 
 * 2.21 2022-01-28
-  * **[core]** **[fix]** method singularTable() is now more exact to convert plural names to singular.
-  *               However, it is far from perfect.
-  * **[_BasePdoOne]** [fixed] now several methods store the last error.
+    * **[core]** **[fix]** method singularTable() is now more exact to convert plural names to singular.
+    *               However, it is far from perfect.
+    * **[_BasePdoOne]** [fixed] now several methods store the last error.
 
 * 2.20 2022-01-04
-  * **[new]** update dependency to php>=7.1.3. PHP 5.6 was discontinued 3 years ago.    
+    * **[new]** update dependency to php>=7.1.3. PHP 5.6 was discontinued 3 years ago.
 
 * 2.19
-  * **[new]** **[core]** callProcedure() could return a value other than true or false (SQL server only)
-  * **[new]** **[sqlsrv]** implemented callProcedure() and createProcedure()
+    * **[new]** **[core]** callProcedure() could return a value other than true or false (SQL server only)
+    * **[new]** **[sqlsrv]** implemented callProcedure() and createProcedure()
 
 * 2.18
-  * **[new]** [oci] added oci (oracle) as a new driver.
-  * **[fix]** **[core]** dbTypeToPHP() and datesql2Text()
-  * **[new]** **[core]** clearError(),removeDoubleQuotes() and a new argument for connect()
+    * **[new]** [oci] added oci (oracle) as a new driver.
+    * **[fix]** **[core]** dbTypeToPHP() and datesql2Text()
+    * **[new]** **[core]** clearError(),removeDoubleQuotes() and a new argument for connect()
 
 * 2.16
-  * **[fix]** **[sqlsrv]** fixed the format of the date-time of sql.
-  * **[fix]** **[sqlsrv]** columnTable() returns distinct values.
+    * **[fix]** **[sqlsrv]** fixed the format of the date-time of sql.
+    * **[fix]** **[sqlsrv]** columnTable() returns distinct values.
 
 * 2.15 2021-07-24
 
 * 2.14.3 2021-06-15
-  * **[fix]** **[orm]** setCache()::first() and setCache()::count() didn't work correctly. fixed.
-  * Query now supports factoryNull()
+    * **[fix]** **[orm]** setCache()::first() and setCache()::count() didn't work correctly. fixed.
+    * Query now supports factoryNull()
 
 * 2.14.2 2021-06-13
-  * **[fix]** **[orm]** useCache() and setRelation() do not chain correctly, fixed.
-  * **[fix]** **[orm]** useCache() doubled the cache. fixed.
+    * **[fix]** **[orm]** useCache() and setRelation() do not chain correctly, fixed.
+    * **[fix]** **[orm]** useCache() doubled the cache. fixed.
 
 * 2.14.1 2021-06-09
-  * **[fix]** custom_exception_handler when the error returned does not have an argument, or the argument is not an array.
+    * **[fix]** custom_exception_handler when the error returned does not have an argument, or the argument is not an
+      array.
 
 * 2.14 2021-06-04
 
-* * **_BasePdoOneRepo** now works more closely with the class **PdoOneQuery**, so each query is a different instance.
+*
+    * **_BasePdoOneRepo** now works more closely with the class **PdoOneQuery**, so each query is a different instance.
 
-  * **[fix]** **PdoOne** dateConvertInput() does not crashes when the value is not a date.
+    * **[fix]** **PdoOne** dateConvertInput() does not crashes when the value is not a date.
 
-  * **[fix]** **PdoOne** throwError() does not stack errors but still triggers the last error (if any).
+    * **[fix]** **PdoOne** throwError() does not stack errors but still triggers the last error (if any).
 
-  * [changes] ❗ **PdoOne** aggregate functions (sum,min,max,avg) now returns a value instead of generating a query.
+    * [changes] ❗ **PdoOne** aggregate functions (sum,min,max,avg) now returns a value instead of generating a query.
 
-    * ```php
+        * ```php
       $result=$pdo->sum('xxx')->firstScalar(); // before
       $result=$pdo->sum('xxx'); // now
       ```
 
-      
 
-  * **[fix]** **PdoOne**  generateCodeArray() used for the generation of classes, returns the correct name when it is set.
+* **[fix]** **PdoOne**  generateCodeArray() used for the generation of classes, returns the correct name when it is set.
 
-  * [changes] **_BasePdoOneRepo**: reset(),getQuery(),dropTable(),useCache(),limit(),newQuery(),order(),innerjoin(),left(),right()
+* [changes] **_BasePdoOneRepo**: reset(),getQuery(),dropTable(),useCache(),limit(),newQuery(),order(),innerjoin(),left()
+  ,right()
 
-  * [changes] **PdoOneQuery**: Multiples changes.
+* [changes] **PdoOneQuery**: Multiples changes.
 
-    
 
 * 2.13.1 2021-05-22
 
-  * **[fix]** **[orm]** the method where() and limit() generated a new query every time, so the command 
-    ClaseRepo::recursive()::where() failed generated two queries instead of one.
+    * **[fix]** **[orm]** the method where() and limit() generated a new query every time, so the command
+      ClaseRepo::recursive()::where() failed generated two queries instead of one.
 
 * 2.13 2021-04-17
-  * [debug] More changes to how it shows error messages.
-  * /_BasePdoOneRepo updated to version 5.0 (binary 5).
+    * [debug] More changes to how it shows error messages.
+    * /_BasePdoOneRepo updated to version 5.0 (binary 5).
 
 * 2.12 2021-04-17
-  * [debug] Change how it shows the errors. Now it uses a custom error handle
-    (it could be disabled with setting $this->customError=false)
+    * [debug] Change how it shows the errors. Now it uses a custom error handle
+      (it could be disabled with setting $this->customError=false)
 
 * 2.11.1 2021-04-17
-  * **[fix]** Mysql extension now knows the type int24 (plus other types of variables).
-  * **[fix]** Regresion, some removed { } caused a bug when they are followed by []  
-  * [code] 
+    * **[fix]** Mysql extension now knows the type int24 (plus other types of variables).
+    * **[fix]** Regresion, some removed { } caused a bug when they are followed by []
+    * [code]
 
 * 2.11 2021-04-17
 
-  * [code] Lots of cleanups. Removed unneeding { }. Merged common code in branches.
+    * [code] Lots of cleanups. Removed unneeding { }. Merged common code in branches.
 
 * 2.10.3 2021-04-14
-  * **[fix]** BasePdoOne fixed method getRecursive(), it generated a new query, and now it reuses a query (if any).
-  * It also returns the query
+    * **[fix]** BasePdoOne fixed method getRecursive(), it generated a new query, and now it reuses a query (if any).
+    * It also returns the query
 
 * 2.10.2 2021-04-06
 
-  * Fixed
+    * Fixed
 
 * 2.10.1 2021-04-05
 
-  * Fixed the generation of the ORM in the use of where(), limit() and dependencies()     
+    * Fixed the generation of the ORM in the use of where(), limit() and dependencies()
 
 * 2.10 2021-04-04
 
-  * Some CLI cleanups.
+    * Some CLI cleanups.
 
 * 2.9.4 2021-03-22
-  * **ORM:** **_BasePdoOneRepo** is updated to BINARYVERSION=4. If you are using the ORM, then you should rebuild all ORM classes.
-  * **CORE:** Query chains creates a new instance of **PdoOneQuery** instead of an instance of **PdoOne**, so it is possible to define
-    multiples chains without interfering each others.
-  * **ORM:** Fixed a problem with the base class. Now the Base class contains the constant COMPILEDVERSION
-  * **ORM**: Fixed a problem with the model and the method toArray()
+    * **ORM:** **_BasePdoOneRepo** is updated to BINARYVERSION=4. If you are using the ORM, then you should rebuild all
+      ORM classes.
+    * **CORE:** Query chains creates a new instance of **PdoOneQuery** instead of an instance of **PdoOne**, so it is
+      possible to define
+      multiples chains without interfering each others.
+    * **ORM:** Fixed a problem with the base class. Now the Base class contains the constant COMPILEDVERSION
+    * **ORM**: Fixed a problem with the model and the method toArray()
 
 * 2.9.3 2021-02-22
 
-  * fix a bug with **useCache()** when we use with where()   
+    * fix a bug with **useCache()** when we use with where()
 
 * 2.9.2 2021-02-18
 
-  * fixed a bug with createSequence()   
+    * fixed a bug with createSequence()
 
 * 2.9.1 2021-02-16
 
-  * Fixed debugFile() when the file is unable to open.   
+    * Fixed debugFile() when the file is unable to open.
 
 * 2.9 2021-02-16
-  * BasePdoOneRepo::getPdoOne() validates if the static class uses the right version.  It is only done once 
-    (when it creates the instance of pdoOne), so it must not affect the performance.
-  * **You should re-generate all ORM classes generated (if you are generated one)**  
+    * BasePdoOneRepo::getPdoOne() validates if the static class uses the right version. It is only done once
+      (when it creates the instance of pdoOne), so it must not affect the performance.
+    * **You should re-generate all ORM classes generated (if you are generated one)**
 
 * **2.8** 2021-02-13
 
-  * Updated _BasePdoOneRepo to 4.13. **You should re-generate all ORM classes generated (if you are generated one)** 
+    * Updated _BasePdoOneRepo to 4.13. **You should re-generate all ORM classes generated (if you are generated one)**
 
 * 2.7.1 2021-01-21
 
-  * Oracle is still a WIP (OCI)
+    * Oracle is still a WIP (OCI)
 
 * **2.7** 2021-01-10
-  * Many changes, compatibility with PHP 8.0
-  * Fixed a bug with cache where it keeps the cache of previous runs.
-  * Note: $PdoOne->useCache considers = false (no cache) and everything else as use cache. Nulls are not allowed.
-  * Note: Previous generated code must be rebuilt it again.
+    * Many changes, compatibility with PHP 8.0
+    * Fixed a bug with cache where it keeps the cache of previous runs.
+    * Note: $PdoOne->useCache considers = false (no cache) and everything else as use cache. Nulls are not allowed.
+    * Note: Previous generated code must be rebuilt it again.
 
 * **2.6.3** 2020-10-16
-  * Internal, Changed beginTry() and endTry(). Now, if an operation that uses beginTry() and endTry() fails,
-    then the error is throw in endTry().
+    * Internal, Changed beginTry() and endTry(). Now, if an operation that uses beginTry() and endTry() fails,
+      then the error is throw in endTry().
 
 * **2.6.2** 2020-10-09
 
-  * The default argument of _first (code generated) is PdoOne::NULL instead of null because null is a valid value
+    * The default argument of _first (code generated) is PdoOne::NULL instead of null because null is a valid value
 
 * 2.6.1 2020-09-24
-  * update \_BasePdoOneRepo to 4.12.1
-  * Preliminary support to Oracle OCI (only raw operations)
-  * \_BasePdoOneRepo() insert now allows using nulls
-  * \_BasePdoOneRepo() first() the "where" uses the name of the table.
+    * update \_BasePdoOneRepo to 4.12.1
+    * Preliminary support to Oracle OCI (only raw operations)
+    * \_BasePdoOneRepo() insert now allows using nulls
+    * \_BasePdoOneRepo() first() the "where" uses the name of the table.
 
 * 2.6 2020-09-17
-  * the methods insert(),update(),delete() and insertObject() flushes the cache if it is called with useCache()
-    , example: $this->usecache('','customers')->insert(); // delete the group cache customers.
+    * the methods insert(),update(),delete() and insertObject() flushes the cache if it is called with useCache()
+      , example: $this->usecache('','customers')->insert(); // delete the group cache customers.
 
 * 2.5 2020-09-13
-  * update \_BasePdoOneRepo to 4.12
-  * new method setCache()
-  * updated method useCache(). Now it allows '*' to use the same tables assigned by from() and joins()
+    * update \_BasePdoOneRepo to 4.12
+    * new method setCache()
+    * updated method useCache(). Now it allows '*' to use the same tables assigned by from() and joins()
 
 * 2.4.1 2020-09-13
 
-  * The code generated now the method first() returns false if it doesn't found any value, instead of an empty array.
+    * The code generated now the method first() returns false if it doesn't found any value, instead of an empty array.
 
 * 2.4 2020-09-06
-  * update \_BasePdoOneRepo to 4.11
-  * The code generated now store the column of the identity SELF::IDENTITY;
-  * \_BasePdoOneRepo now converts objects to array recursively (array)$obj only converts the first level.
+    * update \_BasePdoOneRepo to 4.11
+    * The code generated now store the column of the identity SELF::IDENTITY;
+    * \_BasePdoOneRepo now converts objects to array recursively (array)$obj only converts the first level.
 
 * 2.3 2020-09-06
-  * new method getDefTableExtended() that returns extended information about the table (motor,description,collation and schema)
-  * method truncate() has a new argument $forced. Now, it is possible to force truncate (for example, when the table has FK)
-  * new method resetIdentity() that reset the identity/autonumeric of a table (if any)
-  * Updated \_BasePdoOneRepo
-  * The code generated now allows setting values using the factory()
-  * The code generated now reset the recursivity when we use the method factory()
+    * new method getDefTableExtended() that returns extended information about the table (motor,description,collation
+      and schema)
+    * method truncate() has a new argument $forced. Now, it is possible to force truncate (for example, when the table
+      has FK)
+    * new method resetIdentity() that reset the identity/autonumeric of a table (if any)
+    * Updated \_BasePdoOneRepo
+    * The code generated now allows setting values using the factory()
+    * The code generated now reset the recursivity when we use the method factory()
 
 * 2.2.6 2020-09-03
-  * Updated \_BasePdoOneRepo
-  * Method validateDefTable() works with table
+    * Updated \_BasePdoOneRepo
+    * Method validateDefTable() works with table
 
 * 2.2.5 2020-08-30
 
-  * Fixed a bug with the method dateConvert(). The conversion from date -> any other format misses the time.
+    * Fixed a bug with the method dateConvert(). The conversion from date -> any other format misses the time.
 
 * 2.2.3 2020-08-23
 
-  * \_BasePdoOneRepo update to 4.8.2. Solved a fix returning a ONETOMANY field.
+    * \_BasePdoOneRepo update to 4.8.2. Solved a fix returning a ONETOMANY field.
 
 * 2.2.2 2020-08-17
 
-  * \_BasePdoOneRepo update to 4.8.2. It solved a problem with insert,update,delete and merge when the input is an object.
+    * \_BasePdoOneRepo update to 4.8.2. It solved a problem with insert,update,delete and merge when the input is an
+      object.
 
 * 2.2.1 2020-08-16
-  * Fixed a bug when the system is unable to convert the date. Now, it returns false.
-  * BasePdoOneRepo update to 4.8.1, if the transaction is open, then it doesn't nest a new transaction.
+    * Fixed a bug when the system is unable to convert the date. Now, it returns false.
+    * BasePdoOneRepo update to 4.8.1, if the transaction is open, then it doesn't nest a new transaction.
 
 * 2.2 2020-08-14
-  * New method setUseInternalCache() and flushInternalCache() where we could set an internal cache. The internal cache stores
-    results, and they are keep into memory.   For example
+    * New method setUseInternalCache() and flushInternalCache() where we could set an internal cache. The internal cache
+      stores
+      results, and they are keep into memory. For example
 
 ```php
 $this->setUseInternalCache(true);
@@ -2386,223 +2205,228 @@ $rows3=$this->select('*')->from('table')->where(['i'=>2])->toList(); // read fro
 echo $this->internalCacheCounter; 
 
 ```
+
 * The internal cache is tested with runRawQuery (if returns an array), toList(), meta() and first()
 
 * 2.0.1 2020-08-12
-  * Fixed a bug with the generated code with linked relation manytoone and onetonone.
+    * Fixed a bug with the generated code with linked relation manytoone and onetonone.
 * 2.0 2020-08-11
-  * **Core**: The arguments are rebuild from scratch.  Now, arguments are more natural, and we don't need to specify the type.  It also allows many other different kind of combinations.
-  * Before: **$this->runRawQuery($sql,['i',20,'s','hello]);**
-  * Now: **$this->runRawQuery($sql,[20,'hello']);**
-  * Also (named): **$this->runRawQuery($sql,['col1'=>20,'col2'=>'hello']);**
-  * Since it is a core change, then former code that uses the version 1.x could not be compatible without changing all references to methods that use arguments specifying the types.
-    * runRawQuery()
-    * set()
-    * select()
-    * where()
-    * insert()
-    * update()
-    * delete()
-    * toMeta()
-    *
+    * **Core**: The arguments are rebuild from scratch. Now, arguments are more natural, and we don't need to specify
+      the type. It also allows many other different kind of combinations.
+    * Before: **$this->runRawQuery($sql,['i',20,'s','hello]);**
+    * Now: **$this->runRawQuery($sql,[20,'hello']);**
+    * Also (named): **$this->runRawQuery($sql,['col1'=>20,'col2'=>'hello']);**
+    * Since it is a core change, then former code that uses the version 1.x could not be compatible without changing all
+      references to methods that use arguments specifying the types.
+        * runRawQuery()
+        * set()
+        * select()
+        * where()
+        * insert()
+        * update()
+        * delete()
+        * toMeta()
+        *
 * 1.55.1 2020-08-05
-  * In the generation of the code, changed is_array() by isset()
+    * In the generation of the code, changed is_array() by isset()
 * 1.55 2020-8-05
-  * Updated generation of code. Now, the relations manytoony and onetoone returns linked values.   Linked values
-    are values that are linked (one of them is a pointer to the other value).
-  * Fixed: the relation onetoone, the field refcol now uses the right column.
+    * Updated generation of code. Now, the relations manytoony and onetoone returns linked values. Linked values
+      are values that are linked (one of them is a pointer to the other value).
+    * Fixed: the relation onetoone, the field refcol now uses the right column.
 * 1.54 2020-8-02
-  * connect does not set attribute directly. Mysql and sql server sets different arguments.
-  * generateCodeClass has an additional argument and it generares an extra field.
-  * generateAllClasses has an additional field (allows adds new fields)
-  * generateAbstractCodeclass has an additional field (allows adds new fields)
-  * BasePdoOneRepo updated to 4.8. Now it uses new functionalities.
-    * It allows custom input and output conversions.
-    * Input and output conversions code is generated at compile time instead to evaluates at runtime.
-    * It allows toList() and first() to returns extra columns. Those columns are also added to the model-class
+    * connect does not set attribute directly. Mysql and sql server sets different arguments.
+    * generateCodeClass has an additional argument and it generares an extra field.
+    * generateAllClasses has an additional field (allows adds new fields)
+    * generateAbstractCodeclass has an additional field (allows adds new fields)
+    * BasePdoOneRepo updated to 4.8. Now it uses new functionalities.
+        * It allows custom input and output conversions.
+        * Input and output conversions code is generated at compile time instead to evaluates at runtime.
+        * It allows toList() and first() to returns extra columns. Those columns are also added to the model-class
 * 1.53 2020-7-27
-  * Method connect() sets PDO::ATTR_EMULATE_PREPARES to false
+    * Method connect() sets PDO::ATTR_EMULATE_PREPARES to false
 * 1.52 2020-7-19
-  * Updated method generateCodeArray()
-  * Updated method generateCodeClass()
-  * Updated method generateCodeClassRepo()
-  * Updated method generateModelClass()
-  * new method generateAbstractModelClass()
+    * Updated method generateCodeArray()
+    * Updated method generateCodeClass()
+    * Updated method generateCodeClassRepo()
+    * Updated method generateModelClass()
+    * new method generateAbstractModelClass()
 * 1.51 2020-7-18
-  * class BasePdoOneRepo updated to 4.7. Now it supports arrays and objects
-  * Updated method generateCodeArray()
-  * Updated method generateCodeClass()
-  * Updated method generateCodeClassRepo()
-  * new method generateModelClass() It generates model from tables
+    * class BasePdoOneRepo updated to 4.7. Now it supports arrays and objects
+    * Updated method generateCodeArray()
+    * Updated method generateCodeClass()
+    * Updated method generateCodeClassRepo()
+    * new method generateModelClass() It generates model from tables
 * 1.50 2020-7-04
-  * Updated method generateCodeArray()
-  * Updated method generateCodeClass()
-  * Updated method generateCodeClassRepo()
+    * Updated method generateCodeArray()
+    * Updated method generateCodeClass()
+    * Updated method generateCodeClassRepo()
 * 1.49 2020-6-19
-  * New method generateAllClasses()
+    * New method generateAllClasses()
 * 1.48 2020-6-15
-  * dateTextNow() now returns a human-readable format
-  * New method dateNow() that returns a date in a normal format.
-  * BasePdoOne::count() now works with setRecursive()
+    * dateTextNow() now returns a human-readable format
+    * New method dateNow() that returns a date in a normal format.
+    * BasePdoOne::count() now works with setRecursive()
 * 1.47 2020-6-14
-  * The flow ->where()->update() now works when "where()" uses named arguments.
-  * Fixed a bug with the next query ->where('a1=:Argument',[])
-  * Added the method PdoOneEncryption::hash() and added the method PdoOne::hash() to wrap the first method.
-  * Added the field PdoOneEncryption:$hashType  And PdoOne uses as the default hash algorythm.
-  * The method RunRawQuery() now accept named arguments.
+    * The flow ->where()->update() now works when "where()" uses named arguments.
+    * Fixed a bug with the next query ->where('a1=:Argument',[])
+    * Added the method PdoOneEncryption::hash() and added the method PdoOne::hash() to wrap the first method.
+    * Added the field PdoOneEncryption:$hashType And PdoOne uses as the default hash algorythm.
+    * The method RunRawQuery() now accept named arguments.
 * 1.46 2020-6-13
-  * _BasePdoOneRepo updated to 4.6
-  * Now generation of code has a Base class, so it is possible to name each independiently of the table.
+    * _BasePdoOneRepo updated to 4.6
+    * Now generation of code has a Base class, so it is possible to name each independiently of the table.
 * 1.45.1 2020-6-11
-  * Method generateCodeClass now creates ONETOMANY relation if the case of the table does not match.
+    * Method generateCodeClass now creates ONETOMANY relation if the case of the table does not match.
 * 1.45 2020-6-7
-  * Added method generateCodeClassRepo()
-  * Modified method generateCodeClass()
+    * Added method generateCodeClassRepo()
+    * Modified method generateCodeClass()
 * 1.44.2 2020-6-3
-  * Solved a problem with BasePdoOneRepo
+    * Solved a problem with BasePdoOneRepo
 * 1.44.1 2020-6-2
-  * Solved a small bug on BasePdoOneRepo
+    * Solved a small bug on BasePdoOneRepo
 * 1.44 2020-5-31
-  * Updated BasePdoOneRepo to 4.4. Now it catches errors or returns false.
+    * Updated BasePdoOneRepo to 4.4. Now it catches errors or returns false.
 * 1.43 2020-5-31
-  * Updated BasePdoOneRepo to 4.3. Now it works with conversions. It doesn't convert fields from **where**
-    , but it converts results, insert and update.
-  * BasePdoOneRepo 4.3 also restricts the columns to insert and update.
-  * BasePdoOneRepo 4.3 also uses a long definition of columns.
+    * Updated BasePdoOneRepo to 4.3. Now it works with conversions. It doesn't convert fields from **where**
+      , but it converts results, insert and update.
+    * BasePdoOneRepo 4.3 also restricts the columns to insert and update.
+    * BasePdoOneRepo 4.3 also uses a long definition of columns.
 * 1.42 2020-5-29
-  * Updated BasePdoOneRepo to 4.2. Now it works with cache
-  * New method buildUniqueID()
+    * Updated BasePdoOneRepo to 4.2. Now it works with cache
+    * New method buildUniqueID()
 * 1.41.2 2020-5-29
-  * Updated BasePdoOneRepo to 4.1.1 In the method _first(), if argument is null then it doesn't query the value.
+    * Updated BasePdoOneRepo to 4.1.1 In the method _first(), if argument is null then it doesn't query the value.
 * 1.41.1 2020-5-28
-  * Added more phpdoc for generateCodeClass()
+    * Added more phpdoc for generateCodeClass()
 * 1.41 2020-5-28
-  * Updated BasePdoOneRepo to 4.0.1. It allows to specify a prefix in classes.
-  * generateCodeClass() allows to specificy a prefix different from 'Repo'.
+    * Updated BasePdoOneRepo to 4.0.1. It allows to specify a prefix in classes.
+    * generateCodeClass() allows to specificy a prefix different from 'Repo'.
 * 1.40.1 2020-5-27
-  * Updated BasePdoOneRepo to 4.0.1 It allows long namespaces. It also adds an alias to the first table.
+    * Updated BasePdoOneRepo to 4.0.1 It allows long namespaces. It also adds an alias to the first table.
 * 1.40 2020-05-21
-  * Updated BasePdoOneRepo 4.0
+    * Updated BasePdoOneRepo 4.0
 * 1.39 2020-05-12
-  * Updated _BasePdoOneRepo to version 4.0
-  * Solved a problem with getDefTableFK (mysql and sqlsrv)
-  * new field (database_identityName)
-  * Solved a problem with getPK (sqlsrv)
+    * Updated _BasePdoOneRepo to version 4.0
+    * Solved a problem with getDefTableFK (mysql and sqlsrv)
+    * new field (database_identityName)
+    * Solved a problem with getPK (sqlsrv)
 * 1.38 2020-05-10
-  * updated _BasePdoOneRepo to version 4.0
+    * updated _BasePdoOneRepo to version 4.0
 * 1.37 2020-05-03
-  * added method setNoReset()
+    * added method setNoReset()
 * 1.36 2020-05-03
-  * added method hasRecursive()
+    * added method hasRecursive()
 * 1.35.1 2020-04-30
-  * autoload.php delete (it's a trash file)
+    * autoload.php delete (it's a trash file)
 * 1.35 2020-04-28
-  * _BasePdoOneRepo 2.3 added relation ONETOMANY
-  * generateCodeClass() supports for _BasePdoOneRepo 2.3
+    * _BasePdoOneRepo 2.3 added relation ONETOMANY
+    * generateCodeClass() supports for _BasePdoOneRepo 2.3
 * 1.34.2 2020-04-27
-  * Updated other components.
-  * left(), right() and innerjoin() don't replace where() anymore
+    * Updated other components.
+    * left(), right() and innerjoin() don't replace where() anymore
 
 
 * 1.34.1 2020-04-27
-  * _BasePdoOneRepo 2.2.1 fixed.
+    * _BasePdoOneRepo 2.2.1 fixed.
 
 * 1.34 2020-04-27
-  * _BasePdoOneRepo 2.2 now it allows load relation many by one.
-  * sniffer is removed. Using Php Inspections ​(EA Extended)​
+    * _BasePdoOneRepo 2.2 now it allows load relation many by one.
+    * sniffer is removed. Using Php Inspections ​(EA Extended)​
 * 1.33 2020-04-15
-  * _BasePdoOneRepo version 2.1
-  * new method hasWhere()
-  * generateCodeArray() has a new argument (recursive)
-  * toList(), first(), firstScalar(), toMeta(), toListSimple() and all related method throws error
-    more close to the method.
-  * Travis has been removed (tests are done locally in my machine. Why? It's because travis is not fully compatible
-    with sqlsrv)
+    * _BasePdoOneRepo version 2.1
+    * new method hasWhere()
+    * generateCodeArray() has a new argument (recursive)
+    * toList(), first(), firstScalar(), toMeta(), toListSimple() and all related method throws error
+      more close to the method.
+    * Travis has been removed (tests are done locally in my machine. Why? It's because travis is not fully compatible
+      with sqlsrv)
 * 1.32.1 BasePdoOneRepo added version 2.0
 * 1.32 2020-04-12
-  * The class generated now extends _BasePdoOneRepo
-    * It implements the default commands: insert,select,update,delete,create table,truncate.
-  * Security: user/password is deleted from memory after connection.
-  * Mysql:createSequence() functions are now marked as "MODIFIES SQL DATA" and "NOT DETERMINISTIC"
-  * Added more test, including test for SQLSRV.
+    * The class generated now extends _BasePdoOneRepo
+        * It implements the default commands: insert,select,update,delete,create table,truncate.
+    * Security: user/password is deleted from memory after connection.
+    * Mysql:createSequence() functions are now marked as "MODIFIES SQL DATA" and "NOT DETERMINISTIC"
+    * Added more test, including test for SQLSRV.
 * 1.31.1 2020-04-11
-  * CLI: Primary key is not required anymore.
-  * new method createFK();
-  * Foreign keys are not created separately of other keys.
-  * new method camelize()
-  * new method isQuery()
-  * new method filterKey()
-  * new method getDefTableFK()
+    * CLI: Primary key is not required anymore.
+    * new method createFK();
+    * Foreign keys are not created separately of other keys.
+    * new method camelize()
+    * new method isQuery()
+    * new method filterKey()
+    * new method getDefTableFK()
 * 1.31 2020-04-11
-  * new method tableSorted()
+    * new method tableSorted()
 * 1.30 2020-04-10
-  * Class separated in 3 new service class
-  * lib/ext/PdoOne_Mysql.php = Service class for Mysql (mysql)
-  * lib/ext/PdoOne_Sqlsrv.php = Service class for Sql Server (sqlsrv)
-  * lib/ext/PdoOne_TestMockup.php = Service class for mockup test (test)
-  * lib/ext/PdoOne_IExt.php = Interface for all services.
-  * the /examples folder is not delivered by default. It allows to reduce the number of size.  Use composer --prefer-source to get the examples
+    * Class separated in 3 new service class
+    * lib/ext/PdoOne_Mysql.php = Service class for Mysql (mysql)
+    * lib/ext/PdoOne_Sqlsrv.php = Service class for Sql Server (sqlsrv)
+    * lib/ext/PdoOne_TestMockup.php = Service class for mockup test (test)
+    * lib/ext/PdoOne_IExt.php = Interface for all services.
+    * the /examples folder is not delivered by default. It allows to reduce the number of size. Use composer
+      --prefer-source to get the examples
 * 1.29 2020-04-10
-  * createTable() now allows more features
-  * new method validateDefTable()
-  * a new UI render()
+    * createTable() now allows more features
+    * new method validateDefTable()
+    * a new UI render()
 * 1.28.1 2020-04-06
-  * cli now supports sqlsrv
+    * cli now supports sqlsrv
 * 1.28 2020-04-06
-  * method toMeta() now allows arguments.
-  * **The library now has a cli interface and a generation of code**
-  * new method isCli()
-  * new method cliEngine()
-  * new method getParameterCli() protected
-  * new method removeTrailSlash() protected
-  * new method fixCsv() protected
-  * new method generateCodeSelect() protected
-  * new method generateCodeArray() protected
-  * new method generateCodeClass() protected
+    * method toMeta() now allows arguments.
+    * **The library now has a cli interface and a generation of code**
+    * new method isCli()
+    * new method cliEngine()
+    * new method getParameterCli() protected
+    * new method removeTrailSlash() protected
+    * new method fixCsv() protected
+    * new method generateCodeSelect() protected
+    * new method generateCodeArray() protected
+    * new method generateCodeClass() protected
 * 1.24 2020-03-26
-  * builderReset() is now public
+    * builderReset() is now public
 * 1.23.1 2020-03-10
-  * Fixed a problem with the cache
+    * Fixed a problem with the cache
 * 1.23 2020-03-10
-  * method toMeta()
+    * method toMeta()
 * 1.22 2020-02-08
-  * method invalidateCache()
-  * changed the interface IPdoOneCache
+    * method invalidateCache()
+    * changed the interface IPdoOneCache
 * 1.21 2020-02-07
-  * method setCacheService() and getCacheService()
-  * method useCache()
+    * method setCacheService() and getCacheService()
+    * method useCache()
 * 1.20 2020-jan-25
-  * Many cleanups.
-  * update() and delete() now allows to set the query.
-  * new method addDelimiter() to add delimiters to the query (i.e. 'table' for mysql and [table] for sql server)
+    * Many cleanups.
+    * update() and delete() now allows to set the query.
+    * new method addDelimiter() to add delimiters to the query (i.e. 'table' for mysql and [table] for sql server)
 * 1.19 2020-jan-15
-  * getSequence() now has a new argument (name of the sequence, optional)
-  * createSequence() has a new argument (type of sequence) and it allows to create a sequential sequence.
-  * objectexist() now is public, and it allows to works with functions
-  * Bug fixed: objectExist() now works correctly (used by tableExist())
-  * new DDL methods drop(), dropTable() and truncate()
+    * getSequence() now has a new argument (name of the sequence, optional)
+    * createSequence() has a new argument (type of sequence) and it allows to create a sequential sequence.
+    * objectexist() now is public, and it allows to works with functions
+    * Bug fixed: objectExist() now works correctly (used by tableExist())
+    * new DDL methods drop(), dropTable() and truncate()
 * 1.16 2020-jan-14
-  * new method toListKeyValue()
+    * new method toListKeyValue()
 * 1.15 2019-dec-29
-  * Fix small bug if the argument of isAssoc() is not an array.
+    * Fix small bug if the argument of isAssoc() is not an array.
 * 1.14 2019-dec-26
-  * method where() works with associative array
+    * method where() works with associative array
 * 1.13 2019-dec-26
-  * new method count()
-  * new method sum()
-  * new method min()
-  * new method max()
-  * new method avg()
-  * method select now allows null definition.
-  * obtainSqlFields() discontinued
+    * new method count()
+    * new method sum()
+    * new method min()
+    * new method max()
+    * new method avg()
+    * method select now allows null definition.
+    * obtainSqlFields() discontinued
 * 1.12 2019-oct-20 Added argument (optional) ->toList($pdomodel) Added method ->toListSimple()
 * 1.11 2019-oct-01 1.11 It is still compatible with php 5.6.Added to composer.json
 * 1.10 2019-oct-01 1.10 Added method dateConvert(). Added trace to the throw.
 * 1.9 2019-aug-10 1.8 republished
 * 1.8 2019-aug-10 Added a date format. Methods dateSql2Text() and dateText2Sql()
-* 1.7 2019-jun-23 Added some benchmark. It also solves a problem with the tags.  Now: table.field=? is converted to `table`.`field`=?
+* 1.7 2019-jun-23 Added some benchmark. It also solves a problem with the tags. Now: table.field=? is converted
+  to `table`.`field`=?
 * 1.6 2019-jun-22 affected_rows() returns a correct value.
-* 1.5 2019-may-31 some cleanups.  columnTable() returns if the column is nullable or not.
+* 1.5 2019-may-31 some cleanups. columnTable() returns if the column is nullable or not.
 * 1.4 2019-may-30 insertobject()
 * 1.3 2019-may-23 New changes
 * 1.2 2019-may-22 New fixed.

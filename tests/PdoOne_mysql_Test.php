@@ -13,6 +13,7 @@
 
 namespace eftec\tests;
 
+use DateTime;
 use eftec\IPdoOneCache;
 use eftec\MessageContainer;
 use eftec\PdoOne;
@@ -266,17 +267,7 @@ class PdoOne_mysql_Test extends TestCase
         self::assertNotEmpty($this->pdoOne->errorText); // there is an error.
     }
 
-    public function test_genCode(): void
-    {
-        if (!$this->pdoOne->tableExist('table1')) {
-            $this->pdoOne->createTable('table1', ['id' => 'int']);
-        }
-        self::assertNotEquals('', $this->pdoOne->generateAbstractRepo('table1'));
-        self::assertEquals("['id'=>0]", $this->pdoOne->generateCodeArray('table1'));
-        self::assertStringContainsString("array \$result=array(['id'=>0])",
-            $this->pdoOne->generateCodeSelect('select * from table1'));
-        self::assertStringContainsString('$pdo->createTable(\'table1', $this->pdoOne->generateCodeCreate('table1'));
-    }
+
 
 
     public function test_chainresetErrorMeta(): void
@@ -870,7 +861,7 @@ class PdoOne_mysql_Test extends TestCase
             'sequence must be greater than 3639088446091303982');
     }
 
-    public function test_kv()
+    public function test_kv(): void
     {
         $this->pdoOne->setKvDefaultTable('KVTABLA');
         try {
@@ -934,8 +925,8 @@ class PdoOne_mysql_Test extends TestCase
             $this->assertStringContainsString('Uncaught Exception', $this->pdoOne->getFirstError());
         }
         $this->pdoOne->select('*')->from('city')->where('1=1')->toList();
-        $this->assertEquals([0 => 'select * from wrongtable where 1=1',
-            1 => 'select * from city where 1=1'], $this->pdoOne->getInfos());
+        $this->assertEquals([0 => '[INFO] [ERROR1] Statement:	select * from wrongtable where 1=1 ',
+            1 => '[INFO] [OK] Statement:	select * from city where 1=1 '], $this->pdoOne->getInfos());
     }
 
     public function test_Log():void
@@ -961,7 +952,7 @@ class PdoOne_mysql_Test extends TestCase
     }
     public function test_now():void
     {
-        $year=new \DateTime();
+        $year=new DateTime();
         $year=$year->format('Y-m');
         self::assertStringContainsString($year.'-',$this->pdoOne->now());
     }

@@ -134,17 +134,7 @@ class PdoOne_sqlsrv_Test extends TestCase
 
         $this->assertNotEmpty($this->pdoOne->errorText); // there is an error.
     }
-    function test_genCode(): void
-    {
-        if(!$this->pdoOne->tableExist('table1')) {
-            $this->pdoOne->createTable('table1', ['id' => 'int']);
-        }
-        $this->assertNotEquals('', $this->pdoOne->generateAbstractRepo('table1'));
-        $this->assertEquals("['id'=>0]",$this->pdoOne->generateCodeArray('table1'));
-        $this->assertStringContainsString("array \$result=array(['id'=>0])",$this->pdoOne->generateCodeSelect('select * from table1'));
-        $this->assertStringContainsString('$pdo->createTable(\'table1',$this->pdoOne->generateCodeCreate('table1'));
 
-    }
    /* function test_debug() {
         $file=__DIR__."/file.txt";
         $this->pdoOne->logFile=$file;

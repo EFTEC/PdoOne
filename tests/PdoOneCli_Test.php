@@ -70,47 +70,7 @@ class PdoOneCli_Test extends TestCase
     /**
      * @throws Exception
      */
-    public function testGenerate(): void
-    {
-        // second test
-        CliOne::testArguments(['program.php',
-            'generate',
-            '-i']);
-        CliOne::testUserInput([
-            'mysql',
-            '127.0.0.1',
-            'root',
-            'abc.123',
-            'sakila',
-            'convert',
-            'folder',
-            'repo2',
-            'eftec\\examples\\clitest\\repo2',
-            'convert',
-            'yes',
-            'yes',
-            'testconfig']);
-        $p = new PdoOneCli();
-        $p->getCli()->echo = false;
-        $p->cliEngine();
-        $this->assertStringContainsString('file saved correctly', $p->getCli()->getMemory(true));
 
-        // test #2
-        CliOne::testArguments(['program.php',
-            'generate',
-            '--loadconfig',
-            'testconfig',
-            '--command',
-            'scan',
-            '--overridegenerate',
-            'yes',
-            ]);
-        CliOne::testUserInput([]);
-        $p = new PdoOneCli();
-        $p->getCli()->echo=false;
-        $p->cliEngine();
-        $this->assertStringContainsString('Done', $p->getCli()->getMemory(true));
-    }
 
     /**
      * @return void

@@ -1,11 +1,13 @@
 {
   "name": "eftec/pdoone",
-  "description": "Procedural PDO Data access class in a single Class",
+  "description": "Minimaist procedural PDO wrapper library",
   "type": "library",
   "keywords": [
-    "dao",
     "php",
-    "pdo"
+    "pdo",
+    "mysql",
+    "oracle",
+    "sqlserver",
   ],
   "homepage": "https://github.com/EFTEC/PdoOne",
   "authors": [
@@ -23,14 +25,13 @@
   "autoload-dev": {
     "psr-4": {
       "eftec\\tests\\": "tests/",
-      "eftec\\examples\\": "examples/",
-      "reposqlsrv\\": "examples/reposqlsrv/"
+      "eftec\\examples\\": "examples/"
     }
   },
   "require": {
     "php": ">=7.2.5",
     "ext-json": "*",
-    "eftec/clione": "^1.22.1",
+    "eftec/clione": "^1.24",
     "ext-pdo": "*",
     "ext-readline": "*",
     "eftec/messagecontainer": "^2.8"
@@ -39,6 +40,7 @@
     "lib/pdoonecli"
   ],
   "suggest": {
+    "eftec/pdooneorm": "The ORM extension for PdoOne",
     "eftec/validationone": "For keeping and storing the messages"
   },
   "require-dev": {

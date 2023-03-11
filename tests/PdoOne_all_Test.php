@@ -362,19 +362,6 @@ class PdoOne_all_Test extends TestCase
         }
     }
 
-    public function test_1(): void
-    {
-        $this->pdoOne->render();
-        $a1 = 1;
-        self::assertEquals(1, $a1);
-    }
-
-    public function test_2(): void
-    {
-        $a1 = 1;
-        $this->pdoOne->cliEngine();
-        self::assertEquals(1, $a1);
-    }
 
 
 

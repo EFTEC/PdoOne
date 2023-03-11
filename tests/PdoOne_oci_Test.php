@@ -105,11 +105,12 @@ class PdoOne_oci_Test extends TestCase
     /** @var PdoOne */
     protected $pdoOne;
 
-    public function setUp()
+    public function setUp(): void
     {
-        $cs='(DESCRIPTION = (ADDRESS = (PROTOCOL = TCP)(HOST = PCJC)(PORT = 1521)) (CONNECT_DATA = (SERVER = DEDICATED) (SERVICE_NAME = XEPDB1)))';
+
+        $cs='(DESCRIPTION = (ADDRESS = (PROTOCOL = TCP)(HOST = 192.168.56.114)(PORT = 1521)) (CONNECT_DATA = (SERVER = DEDICATED) (SERVICE_NAME = hawaiipdb)))';
         //$conn = new PdoOne('oci', $cs, 'books_admin', 'MyPassword');
-        $this->pdoOne = new PdoOne('oci', $cs, 'books_admin', 'MyPassword');
+        $this->pdoOne = new PdoOne('oci', $cs, 'USER', 'password');
         $this->pdoOne->logLevel = 3;
         $this->pdoOne->connect(true,true);
 
@@ -255,17 +256,6 @@ class PdoOne_oci_Test extends TestCase
         self::assertNotEmpty($this->pdoOne->errorText); // there is an error.
     }
 
-    public function test_genCode()
-    {
-        if (!$this->pdoOne->tableExist('TABLE1')) {
-            $this->pdoOne->createTable('TABLE1', ['id' => 'int']);
-        }
-        self::assertNotEquals('', $this->pdoOne->generateAbstractRepo('TABLE1'));
-        self::assertEquals("['id'=>0]", $this->pdoOne->generateCodeArray('TABLE1'));
-        self::assertContains("array \$result=array(['id'=>0])",
-            $this->pdoOne->generateCodeSelect('select * from TABLE1'));
-        self::assertContains('$pdo->createTable(\'TABLE1', $this->pdoOne->generateCodeCreate('TABLE1'));
-    }
 
 
 
