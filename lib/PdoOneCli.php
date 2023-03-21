@@ -1,9 +1,10 @@
-<?php /** @noinspection DuplicatedCode */
+<?php /** @noinspection PhpUnused */
+
+/** @noinspection DuplicatedCode */
 
 namespace eftec;
 
 use eftec\CliOne\CliOne;
-use eftec\CliOne\CliOneParam;
 use Exception;
 use RuntimeException;
 
@@ -22,24 +23,82 @@ use RuntimeException;
  * @package       eftec
  * @author        Jorge Castro Castillo
  * @copyright (c) Jorge Castro C. Dual Licence: MIT and Commercial License  https://github.com/EFTEC/PdoOne
- * @version       2.0
+ * @version       2.3
  */
 class PdoOneCli
 {
-    public const VERSION = '2.0.1';
-//</editor-fold>
+    public const VERSION = '2.3';
+
     /** @var CliOne */
     public $cli;
-    /**
-     * @var CliOneParam
-     */
-    public $mainMenu = [];
+
     protected $help;
 
-    public function __construct()
+    public function __construct(bool $run = true)
     {
         $this->cli = new CliOne();
         $this->cli->setErrorType();
+        $this->cli->addMenu('mainmenu','mainheader','footer');
+        $this->cli->addMenuItem('mainmenu','connect',
+            '[{{connect}}] Configure connection database','navigate:pdooneconnect');
+        $this->cli->addMenu('pdooneconnect','connectheader','footer');
+        $this->cli->addMenuItems('pdooneconnect', [
+            'configure' => ['[{{connect}}] configure and connect to the database','connectconfigure'],
+            'query' => ['[{{connect}}] run a query','connectquery'],
+            'load' => ['[{{connect}}] load the configuration','connectload'],
+            'save' => ['[{{connect}}] save the configuration','connectsave'],
+            'savephp' => ['[{{connect}}] save the configuration as PHP file','connectsavephp']
+        ]);
+
+        //$this->cli->addMenuItem('pdooneconnect');
+
+
+        $this->cli->setVariable('connect', '<red>pending</red>');
+        $listPHPFiles = $this->getFiles('.', '.config.php');
+        $this->cli->createOrReplaceParam('fileconnect', [], 'longflag')
+            ->setRequired(false)
+            ->setCurrentAsDefault()
+            ->setDescription('select a configuration file to load', 'Select the configuration file to use', [
+                    'Example: <dim>"--fileconnect myconfig"</dim>']
+                , 'file')
+            ->setDefault('')
+            ->setInput(false, 'string', $listPHPFiles)
+            ->evalParam();
+        $this->cli->createOrReplaceParam('fileconnectphp', [], 'longflag')
+            ->setRequired(false)
+            ->setCurrentAsDefault()
+            ->setDescription('Select the file to save the configuration as a PHP file', 'Select the configuration file to save as PHP file', [
+                    'Example: <dim>"--fileconnect myconfig --fileconnectphp myphpfile"</dim>']
+                , 'file')
+            ->setDefault('')
+            ->setInput(false, 'string', $listPHPFiles)
+            ->evalParam();
+        if ($this->cli->getParameter('fileconnect')->missing === false) {
+            $this->doReadConfig();
+        }
+
+        if ($run) {
+            if ($this->cli->getSTDIN() === null) {
+                $this->showLogo();
+            }
+            $this->cli->evalMenu('mainmenu',$this);
+        }
+    }
+
+
+    public function menuMainHeader(): void
+    {
+        $this->cli->upLevel('main menu');
+        $this->cli->setColor(['byellow'])->showBread();
+    }
+    public function menuFooter(): void
+    {
+        $this->cli->downLevel();
+    }
+    public function menuConnectHeader(): void
+    {
+        $this->cli->upLevel('connect');
+        $this->cli->setColor(['byellow'])->showBread();
     }
 
     /** @noinspection PhpMissingReturnTypeInspection
@@ -85,106 +144,9 @@ class PdoOneCli
         return $result;
     }
 
-    public function cliEngine(bool $run = true): void
-    {
-        $this->mainMenu['connect'] = '[{{connect}}] Configure,load and save the connection to the database';
-        $this->cli->variables['connect'] = '<red>pending</red>';
-        $listPHPFiles = $this->getFiles('.', '.config.php');
-        $this->cli->createOrReplaceParam('fileconnect', [], 'longflag')
-            ->setRequired(false)
-            ->setCurrentAsDefault()
-            ->setDescription('select a configuration file to load', 'Select the configuration file to use', [
-                    'Example: <dim>"--fileconnect myconfig"</dim>']
-                , 'file')
-            ->setDefault('')
-            ->setInput(false, 'string', $listPHPFiles)
-            ->evalParam();
-        $this->cli->createOrReplaceParam('fileconnectphp', [], 'longflag')
-            ->setRequired(false)
-            ->setCurrentAsDefault()
-            ->setDescription('Select the file to save the configuration as a PHP file', 'Select the configuration file to save as PHP file', [
-                    'Example: <dim>"--fileconnect myconfig --fileconnectphp myphpfile"</dim>']
-                , 'file')
-            ->setDefault('')
-            ->setInput(false, 'string', $listPHPFiles)
-            ->evalParam();
-        if ($this->cli->getParameter('fileconnect')->missing === false) {
-            $this->doReadConfig();
-        }
-        if ($run) {
-            if ($this->cli->getSTDIN() === null) {
-                $this->showLogo();
-            }
-            $this->menuInit();
-        }
-    }
 
-    public function menuInit(): void
-    {
-        $this->cli->createParam('command', ['cmd'])
-            ->setRelated(['generate'])
-            ->setArgument('longflag', true)
-            ->setDescription('The command to run when we are generating a new code'
-                , 'Select a command (empty for exit)'
-                , ['<cyan><optionkey/></cyan>:<option/>'], 'cmd')
-            ->setAllowEmpty()
-            ->setInput(true, 'option', $this->mainMenu)
-            ->add(true);
-        while (true) {
-            $this->cli->upLevel('main menu');
-            $this->cli->setColor(['byellow'])->showBread();
-            $command = $this->cli->evalParam('command', true);
-            if ($command->valueKey === '' || $command->valueKey === $this->cli->emptyValue) {
-                exit;
-            }
-            $method = 'menu' . $command->valueKey;
-            $this->$method();
-        }
-    }
 
-    /** @noinspection PhpUnused */
-    public function menuConnect(): void
-    {
-        while (true) {
-            $this->cli->upLevel('connect');
-            $this->cli->setColor(['byellow'])->showBread();
-            $menuConnect = $this->cli->createParam('connect2', '', 'none')
-                ->setDescription('The type of database', 'Select an option (empty to return)', [
-                    'Values allowed: <cyan><option/></cyan>'])
-                ->setInput(true, 'option', [
-                    'configure' => '[{{connect}}] configure and connect to the database',
-                    'query' => '[{{connect}}] run a query',
-                    'load' => '[{{connect}}] load the configuration',
-                    'save' => '[{{connect}}] save the configuration',
-                    'savephp' => '[{{connect}}] save the configuration as PHP file'
-                ])
-                ->setAllowEmpty()
-                ->evalParam(true)->valueKey;
-            switch ($menuConnect) {
-                case 'configure':
-                    $this->menuconnect_conf();
-                    break;
-                case 'query':
-                    $this->menuConnect_Query();
-                    break;
-                case 'load':
-                    $this->menuConnect_load();
-                    break;
-                case 'save':
-                    $this->menuConnect_save();
-                    break;
-                case 'savephp':
-                    $this->menuConnect_savePHP();
-                    break;
-                case $this->cli->emptyValue:
-                    $this->cli->downLevel(2);
-                    break 2; // swith and while
-            }
-            $this->cli->downLevel();
-        }
-    }
-
-    public function menuConnect_save(): void
+    public function menuConnectSave(): void
     {
         $this->cli->upLevel('save');
         $this->cli->setColor(['byellow'])->showBread();
@@ -210,7 +172,7 @@ class PdoOneCli
         $this->cli->downLevel();
     }
 
-    public function menuConnect_savePHP(): void
+    public function menuConnectSavePHP(): void
     {
         $this->cli->upLevel('save php');
         $this->cli->setColor(['byellow'])->showBread();
@@ -237,7 +199,7 @@ class PdoOneCli
         $this->cli->downLevel();
     }
 
-    public function menuConnect_Query(): void
+    public function menuConnectQuery(): void
     {
         $this->cli->upLevel('query');
         $this->cli->setColor(['byellow'])->showBread();
@@ -266,7 +228,7 @@ class PdoOneCli
         $this->cli->downLevel();
     }
 
-    public function menuConnect_load(): void
+    public function menuConnectload(): void
     {
         $this->cli->upLevel('load');
         $this->cli->setColor(['byellow'])->showBread();
@@ -278,24 +240,7 @@ class PdoOneCli
         }
         $this->cli->downLevel();
     }
-
-    public function doReadConfig(): void
-    {
-        $r = $this->cli->readData($this->cli->getValue('fileconnect'));
-        if ($r !== null && $r[0] === true) {
-            $this->cli->showCheck('OK', 'green', 'file read correctly');
-            $this->cli->variables['connect'] = '<green>ok</green>';
-            $this->cli->setParam('databaseType', $r[1]['databaseType'], false, true);
-            $this->cli->setParam('server', $r[1]['server'], false, true);
-            $this->cli->setParam('user', $r[1]['user'], false, true);
-            $this->cli->setParam('pwd', $r[1]['pwd'], false, true);
-            $this->cli->setParam('database', $r[1]['database'], false, true);
-        } else {
-            $this->cli->showCheck('ERROR', 'red', 'unable to read file ' . $this->cli->getValue('fileconnect') . ", cause " . $r[1]);
-        }
-    }
-
-    public function menuconnect_conf(): void
+    public function menuConnectConfigure(): void
     {
         while (true) {
             $this->cli->upLevel('configure');
@@ -341,7 +286,7 @@ class PdoOneCli
                     throw new RuntimeException('trying');
                 }
                 $this->cli->showCheck('OK', 'green', 'Connected to the database <bold>' . $this->cli->getValue('database') . '</bold>');
-                $this->cli->variables['connect'] = '<green>ok</green>';
+                $this->cli->setVariable('connect', '<green>ok</green>');
                 //$result = $pdo;
                 break;
             } catch (Exception $ex) {
@@ -354,6 +299,24 @@ class PdoOneCli
             }
         }
     }
+
+
+    public function doReadConfig(): void
+    {
+        $r = $this->cli->readData($this->cli->getValue('fileconnect'));
+        if ($r !== null && $r[0] === true) {
+            $this->cli->showCheck('OK', 'green', 'file read correctly');
+            $this->cli->setVariable('connect','<green>ok</green>');
+            $this->cli->setParam('databaseType', $r[1]['databaseType'], false, true);
+            $this->cli->setParam('server', $r[1]['server'], false, true);
+            $this->cli->setParam('user', $r[1]['user'], false, true);
+            $this->cli->setParam('pwd', $r[1]['pwd'], false, true);
+            $this->cli->setParam('database', $r[1]['database'], false, true);
+        } else {
+            $this->cli->showCheck('ERROR', 'red', 'unable to read file ' . $this->cli->getValue('fileconnect') . ", cause " . $r[1]);
+        }
+    }
+
 
     /** @noinspection PhpMissingReturnTypeInspection
      * @noinspection ReturnTypeCanBeDeclaredInspection

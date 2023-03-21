@@ -857,6 +857,7 @@ class PdoOneQuery
             $sqlOrTableName = $this->parent->prefixTable . $sqlOrTableName;
         }
         $this->from = ($sqlOrTableName) ? $sqlOrTableName . $this->from : $this->from;
+
         $this->parent->tables[] = explode(' ', $sqlOrTableName)[0];
         return $this;
     }
