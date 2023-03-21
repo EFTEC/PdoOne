@@ -44,7 +44,7 @@
     "eftec/validationone": "For keeping and storing the messages"
   },
   "require-dev": {
-    "phpunit/phpunit": "^9.5.13"
+    "phpunit/phpunit": "^8.5.13"
   }
 }
 

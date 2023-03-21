@@ -21,8 +21,6 @@ class PdoOneCli_Test extends TestCase
      */
     public function test1(): void
     {
-
-
         CliOne::testUserInput(null);
         CliOne::testArguments(['program.php',
             'export',
@@ -42,7 +40,6 @@ class PdoOneCli_Test extends TestCase
             'csv']);
         $p = new PdoOneCli();
         $p->getCli()->echo = false;
-        $p->cliEngine();
         $this->assertStringContainsString('1,"PENELOPE"', $p->getCli()->getMemory(true));
         // second test
         CliOne::testArguments(['program.php',
@@ -84,7 +81,7 @@ class PdoOneCli_Test extends TestCase
             '-i']);
         $p = new PdoOneCli();
         $p->getCli()->echo = true;
-        $p->cliEngine();
+
         $this->assertEquals([
             'databasetype' => 'mysql',
             'server' => '127.0.0.1',

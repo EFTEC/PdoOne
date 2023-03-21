@@ -1,6 +1,6 @@
 <?php /** @noinspection PhpUnused */
 
-/** @noinspection DuplicatedCode */
+
 
 namespace eftec;
 
@@ -381,11 +381,28 @@ class PdoOneCli
         $scanned2 = [];
         foreach ($scanned_directory as $k) {
             $fullname = pathinfo($k)['extension'] ?? '';
-            if (str_ends_with($fullname, $extension)) {
+            if ($this->str_ends_with($fullname, $extension)) {
                 $scanned2[$k] = $k;
             }
         }
         return $scanned2;
+    }
+
+    /**
+     * for PHP <8.0 compatibility
+     * @param string $haystack
+     * @param string $needle
+     * @return bool
+     *
+     */
+    protected function str_ends_with(string $haystack, string $needle): bool
+    {
+        $needle_len = strlen($needle);
+        $haystack_len = strlen($haystack);
+        if($haystack_len<$needle_len) {
+            return false;
+        }
+        return ($needle_len === 0 || 0 === substr_compare($haystack, $needle, - $needle_len));
     }
 
     protected function showLogo(): void

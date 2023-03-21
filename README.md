@@ -1834,6 +1834,9 @@ In a nutshell:
 > Every minor version means that it adds a new functionality i.e. 1.5 -> 1.6 (new methods)
 >
 > Every decimal version means that it patches/fixes/refactoring a previous functionality i.e. 1.5.0 -> 1.5.1 (fix)
+
+* 4.1.2 2023-03-21
+  * str_start_with() is not defined in PHP older than PHP 8.0, so I replaced. 
 * 4.1.1 2023-03-21
   * [PdoOneCli] Update to 2.3.1. 
   * [composer.json] Update dependency to eftec/clione 1.26 or higher.
