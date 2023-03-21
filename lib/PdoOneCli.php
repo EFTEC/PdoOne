@@ -23,36 +23,41 @@ use RuntimeException;
  * @package       eftec
  * @author        Jorge Castro Castillo
  * @copyright (c) Jorge Castro C. Dual Licence: MIT and Commercial License  https://github.com/EFTEC/PdoOne
- * @version       2.3
+ * @version       2.3.1
  */
 class PdoOneCli
 {
-    public const VERSION = '2.3';
-
+    public const VERSION = '2.3.1';
     /** @var CliOne */
     public $cli;
-
     protected $help;
 
     public function __construct(bool $run = true)
     {
         $this->cli = new CliOne();
         $this->cli->setErrorType();
-        $this->cli->addMenu('mainmenu','mainheader','footer');
-        $this->cli->addMenuItem('mainmenu','connect',
-            '[{{connect}}] Configure connection database','navigate:pdooneconnect');
-        $this->cli->addMenu('pdooneconnect','connectheader','footer');
+        $this->cli->addMenu('mainmenu',
+            function($cli) {
+                $cli->upLevel('main menu');
+                $cli->setColor(['byellow'])->showBread();
+            }
+            , 'footer');
+        $this->cli->addMenuItem('mainmenu', 'connect',
+            '[{{connect}}] Configure connection database', 'navigate:pdooneconnect');
+        $this->cli->addMenu('pdooneconnect',
+            function($cli) {
+                $cli->upLevel('connect');
+                $cli->setColor(['byellow'])->showBread();
+            }
+            , 'footer');
         $this->cli->addMenuItems('pdooneconnect', [
-            'configure' => ['[{{connect}}] configure and connect to the database','connectconfigure'],
-            'query' => ['[{{connect}}] run a query','connectquery'],
-            'load' => ['[{{connect}}] load the configuration','connectload'],
-            'save' => ['[{{connect}}] save the configuration','connectsave'],
-            'savephp' => ['[{{connect}}] save the configuration as PHP file','connectsavephp']
+            'configure' => ['[{{connect}}] configure and connect to the database', 'connectconfigure'],
+            'query' => ['[{{connect}}] run a query', 'connectquery'],
+            'load' => ['[{{connect}}] load the configuration', 'connectload'],
+            'save' => ['[{{connect}}] save the configuration', 'connectsave'],
+            'savephp' => ['[{{connect}}] save the configuration as PHP file', 'connectsavephp']
         ]);
-
         //$this->cli->addMenuItem('pdooneconnect');
-
-
         $this->cli->setVariable('connect', '<red>pending</red>');
         $listPHPFiles = $this->getFiles('.', '.config.php');
         $this->cli->createOrReplaceParam('fileconnect', [], 'longflag')
@@ -76,25 +81,19 @@ class PdoOneCli
         if ($this->cli->getParameter('fileconnect')->missing === false) {
             $this->doReadConfig();
         }
-
         if ($run) {
             if ($this->cli->getSTDIN() === null) {
                 $this->showLogo();
             }
-            $this->cli->evalMenu('mainmenu',$this);
+            $this->cli->evalMenu('mainmenu', $this);
         }
     }
 
-
-    public function menuMainHeader(): void
-    {
-        $this->cli->upLevel('main menu');
-        $this->cli->setColor(['byellow'])->showBread();
-    }
     public function menuFooter(): void
     {
         $this->cli->downLevel();
     }
+
     public function menuConnectHeader(): void
     {
         $this->cli->upLevel('connect');
@@ -143,8 +142,6 @@ class PdoOneCli
         } // retry database.
         return $result;
     }
-
-
 
     public function menuConnectSave(): void
     {
@@ -240,6 +237,7 @@ class PdoOneCli
         }
         $this->cli->downLevel();
     }
+
     public function menuConnectConfigure(): void
     {
         while (true) {
@@ -300,13 +298,12 @@ class PdoOneCli
         }
     }
 
-
     public function doReadConfig(): void
     {
         $r = $this->cli->readData($this->cli->getValue('fileconnect'));
         if ($r !== null && $r[0] === true) {
             $this->cli->showCheck('OK', 'green', 'file read correctly');
-            $this->cli->setVariable('connect','<green>ok</green>');
+            $this->cli->setVariable('connect', '<green>ok</green>');
             $this->cli->setParam('databaseType', $r[1]['databaseType'], false, true);
             $this->cli->setParam('server', $r[1]['server'], false, true);
             $this->cli->setParam('user', $r[1]['user'], false, true);
@@ -316,7 +313,6 @@ class PdoOneCli
             $this->cli->showCheck('ERROR', 'red', 'unable to read file ' . $this->cli->getValue('fileconnect') . ", cause " . $r[1]);
         }
     }
-
 
     /** @noinspection PhpMissingReturnTypeInspection
      * @noinspection ReturnTypeCanBeDeclaredInspection
