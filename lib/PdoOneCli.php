@@ -1,7 +1,5 @@
 <?php /** @noinspection PhpUnused */
 
-
-
 namespace eftec;
 
 use eftec\CliOne\CliOne;
@@ -23,11 +21,11 @@ use RuntimeException;
  * @package       eftec
  * @author        Jorge Castro Castillo
  * @copyright (c) Jorge Castro C. Dual Licence: MIT and Commercial License  https://github.com/EFTEC/PdoOne
- * @version       2.3.1
+ * @version       2.4
  */
 class PdoOneCli
 {
-    public const VERSION = '2.3.1';
+    public const VERSION = '2.4';
     /** @var CliOne */
     public $cli;
     protected $help;
@@ -54,8 +52,7 @@ class PdoOneCli
             'configure' => ['[{{connect}}] configure and connect to the database', 'connectconfigure'],
             'query' => ['[{{connect}}] run a query', 'connectquery'],
             'load' => ['[{{connect}}] load the configuration', 'connectload'],
-            'save' => ['[{{connect}}] save the configuration', 'connectsave'],
-            'savephp' => ['[{{connect}}] save the configuration as PHP file', 'connectsavephp']
+            'save' => ['[{{connect}}] save the configuration', 'connectsave']
         ]);
         //$this->cli->addMenuItem('pdooneconnect');
         $this->cli->setVariable('connect', '<red>pending</red>');
@@ -65,15 +62,6 @@ class PdoOneCli
             ->setCurrentAsDefault()
             ->setDescription('select a configuration file to load', 'Select the configuration file to use', [
                     'Example: <dim>"--fileconnect myconfig"</dim>']
-                , 'file')
-            ->setDefault('')
-            ->setInput(false, 'string', $listPHPFiles)
-            ->evalParam();
-        $this->cli->createOrReplaceParam('fileconnectphp', [], 'longflag')
-            ->setRequired(false)
-            ->setCurrentAsDefault()
-            ->setDescription('Select the file to save the configuration as a PHP file', 'Select the configuration file to save as PHP file', [
-                    'Example: <dim>"--fileconnect myconfig --fileconnectphp myphpfile"</dim>']
                 , 'file')
             ->setDefault('')
             ->setInput(false, 'string', $listPHPFiles)
@@ -100,6 +88,23 @@ class PdoOneCli
         $this->cli->setColor(['byellow'])->showBread();
     }
 
+    /**
+     * @return void
+     */
+    protected function pdoEvalParam(): void
+    {
+        $this->cli->evalParam('databaseType', true);
+        $this->cli->evalParam('server', true);
+        $this->cli->evalParam('user', true);
+        $this->cli->evalParam('password', true);
+        $this->cli->evalParam('database', true);
+        $this->cli->evalParam('logFile', true);
+        $this->cli->evalParam('logFile', true);
+        $this->cli->evalParam('charset', true);
+        $this->cli->evalParam('nodeId', true);
+        $this->cli->evalParam('tableKV', true);
+    }
+
     /** @noinspection PhpMissingReturnTypeInspection
      * @noinspection PhpUnused
      * @noinspection ReturnTypeCanBeDeclaredInspection
@@ -110,11 +115,7 @@ class PdoOneCli
             return null;
         }
         if ($force) {
-            $this->cli->evalParam('databaseType', true);
-            $this->cli->evalParam('server', true);
-            $this->cli->evalParam('user', true);
-            $this->cli->evalParam('password', true);
-            $this->cli->evalParam('database', true);
+            $this->pdoEvalParam();
         }
         $result = null;
         while (true) {
@@ -134,11 +135,7 @@ class PdoOneCli
             if ($rt->value === 'no') {
                 break;
             }
-            $this->cli->evalParam('databaseType', true);
-            $this->cli->evalParam('server', true);
-            $this->cli->evalParam('user', true);
-            $this->cli->evalParam('password', true);
-            $this->cli->evalParam('database', true);
+            $this->pdoEvalParam();
         } // retry database.
         return $result;
     }
@@ -155,12 +152,8 @@ class PdoOneCli
         if ($sg->value === 'yes') {
             $saveconfig = $this->cli->getParameter('fileconnect')->setInput()->evalParam(true);
             if ($saveconfig->value) {
-                $r = $this->cli->saveData($this->cli->getValue('fileconnect'), [
-                    'databaseType' => $this->cli->getValue('databaseType'),
-                    'server' => $this->cli->getValue('server'),
-                    'user' => $this->cli->getValue('user'),
-                    'pwd' => $this->cli->getValue('pwd'),
-                    'database' => $this->cli->getValue('database'),]);
+                $arr=$this->pdoGetConfigArray();
+                $r = $this->cli->saveDataPHPFormat($this->cli->getValue('fileconnect'), $arr);
                 if ($r === '') {
                     $this->cli->showCheck('OK', 'green', 'file saved correctly');
                 }
@@ -169,32 +162,7 @@ class PdoOneCli
         $this->cli->downLevel();
     }
 
-    public function menuConnectSavePHP(): void
-    {
-        $this->cli->upLevel('save php');
-        $this->cli->setColor(['byellow'])->showBread();
-        $sg = $this->cli->createOrReplaceParam('yn', [], 'none')
-            ->setDescription('', 'Do you want to save the configurations of connection?')
-            ->setInput(true, 'optionshort', ['yes', 'no'])
-            ->setDefault('yes')
-            ->evalParam(true);
-        if ($sg->value === 'yes') {
-            $saveconfig = $this->cli->getParameter('fileconnectphp')->setInput()->evalParam(true);
-            if ($saveconfig->value) {
-                $r = $this->cli->saveDataPHPFormat($this->cli->getValue('fileconnectphp'), [
-                        'databaseType' => $this->cli->getValue('databaseType'),
-                        'server' => $this->cli->getValue('server'),
-                        'user' => $this->cli->getValue('user'),
-                        'pwd' => $this->cli->getValue('pwd'),
-                        'database' => $this->cli->getValue('database'),]
-                    , '.php', 'pdoOneConfig', 'it is the configuration of PdoOne');
-                if ($r === '') {
-                    $this->cli->showCheck('OK', 'green', 'file saved correctly');
-                }
-            }
-        }
-        $this->cli->downLevel();
-    }
+
 
     public function menuConnectQuery(): void
     {
@@ -277,6 +245,36 @@ class PdoOneCli
                 ->setCurrentAsDefault()
                 ->setInput()
                 ->evalParam(true);
+            $this->cli->createOrReplaceParam('logFile', [], 'longflag')
+                ->setRequired(false)
+                ->setDefault('no')
+                ->setDescription('Do you want to log into a file?', '', ['Example: <dim>yes</dim>'])
+                ->setCurrentAsDefault()
+                ->setInput(true, 'optionshort',['yes','no'])
+                ->evalParam(true);
+            $this->cli->createOrReplaceParam('charset', [], 'longflag')
+                ->setRequired(false)
+                ->setDefault(null)
+                ->setAllowEmpty()
+                ->setDescription('Select a charset (or empty for default)', '', ['Example: <dim>utf8mb4</dim>'])
+                ->setCurrentAsDefault()
+                ->setInput()
+                ->evalParam(true);
+            $this->cli->createOrReplaceParam('nodeId', [], 'longflag')
+                ->setRequired(false)
+                ->setDefault(1)
+                ->setDescription('Select  the node id used by snowflake, (or empty for default)', '', ['Example: <dim>1</dim>'])
+                ->setCurrentAsDefault()
+                ->setInput(true,'number')
+                ->evalParam(true);
+            $this->cli->createOrReplaceParam('tableKV', [], 'longflag')
+                ->setRequired(false)
+                ->setDefault('')
+                ->setAllowEmpty()
+                ->setDescription('select the table key-value (or empty for default)', '', ['Example: <dim>table1</dim>'])
+                ->setCurrentAsDefault()
+                ->setInput()
+                ->evalParam(true);
             $this->cli->downLevel();
             try {
                 $pdo = $this->createPdoInstance();
@@ -297,18 +295,28 @@ class PdoOneCli
             }
         }
     }
+    public function pdoGetConfigArray():array
+    {
+        $r= $this->cli->getValueAsArray(
+            ['databaseType','server','user','pwd','database','logFile','charset','nodeId','tableKV']);
+        $r['logFile']= $r['logFile']==='yes';
+        return $r;
+    }
+    public function pdoSetConfigArray(array $array): void
+    {
+        $backup=$this->cli->getValue('logFile'); //yes|no
+        $this->cli->setParam('logFile',$array['logFile']?'yes':'no',false,true); //true|false
+        $this->cli->setParamUsingArray($array,['databaseType','server','user','pwd','database','logFile','charset','nodeId','tableKV']);
+        $this->cli->setParam('logFile',$backup);//yes|no
+    }
 
     public function doReadConfig(): void
     {
-        $r = $this->cli->readData($this->cli->getValue('fileconnect'));
+        $r = $this->cli->readDataPHPFormat($this->cli->getValue('fileconnect'));
         if ($r !== null && $r[0] === true) {
             $this->cli->showCheck('OK', 'green', 'file read correctly');
             $this->cli->setVariable('connect', '<green>ok</green>');
-            $this->cli->setParam('databaseType', $r[1]['databaseType'], false, true);
-            $this->cli->setParam('server', $r[1]['server'], false, true);
-            $this->cli->setParam('user', $r[1]['user'], false, true);
-            $this->cli->setParam('pwd', $r[1]['pwd'], false, true);
-            $this->cli->setParam('database', $r[1]['database'], false, true);
+            $this->pdoSetConfigArray($r[1]);
         } else {
             $this->cli->showCheck('ERROR', 'red', 'unable to read file ' . $this->cli->getValue('fileconnect') . ", cause " . $r[1]);
         }
@@ -319,18 +327,27 @@ class PdoOneCli
      */
     public function createPdoInstance()
     {
+        $pdo = null;
         try {
-            $pdo = new PdoOne(
-                $this->cli->getValue('databaseType'),
-                $this->cli->getValue('server'),
-                $this->cli->getValue('user'),
-                $this->cli->getValue('pwd'),
-                $this->cli->getValue('database'));
+            if ($this->cli->getValue('databaseType') === null
+                || $this->cli->getValue('server') === null
+                || $this->cli->getValue('user') === null
+                || $this->cli->getValue('pwd') === null
+                || $this->cli->getValue('database') === null
+            ) {
+                throw new RuntimeException('No configuration');
+            }
+            $r=$this->pdoGetConfigArray();
+            $r=array_values($r);
+            $pdo = new PdoOne(...$r);
             $pdo->logLevel = 1;
             $pdo->connect();
         } catch (Exception $ex) {
-            /** @noinspection PhpUndefinedVariableInspection */
-            $this->cli->showCheck('ERROR', 'red', ['Unable to connect to database', $pdo->lastError(), $pdo->errorText]);
+            if ($pdo !== null) {
+                $this->cli->showCheck('ERROR', 'red', ['Unable to connect to database', $pdo->lastError(), $pdo->errorText]);
+            } else {
+                $this->cli->showCheck('ERROR', 'red', ['Unable to connect to database', $ex->getMessage()]);
+            }
             return null;
         }
         $pdo->logLevel = 2;
@@ -399,10 +416,10 @@ class PdoOneCli
     {
         $needle_len = strlen($needle);
         $haystack_len = strlen($haystack);
-        if($haystack_len<$needle_len) {
+        if ($haystack_len < $needle_len) {
             return false;
         }
-        return ($needle_len === 0 || 0 === substr_compare($haystack, $needle, - $needle_len));
+        return ($needle_len === 0 || 0 === substr_compare($haystack, $needle, -$needle_len));
     }
 
     protected function showLogo(): void

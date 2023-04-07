@@ -1,4 +1,4 @@
-<?php /** @noinspection PhpUnused */
+<?php
 /** @noinspection SqlDialectInspection */
 /** @noinspection SqlNoDataSourceInspection */
 /** @noinspection PhpConditionAlreadyCheckedInspection */
@@ -25,11 +25,11 @@ use stdClass;
  * @package       eftec
  * @author        Jorge Castro Castillo
  * @copyright (c) Jorge Castro C. Dual Licence: MIT and Commercial License  https://github.com/EFTEC/PdoOne
- * @version       4.1.1
+ * @version       4.2
  */
 class PdoOne
 {
-    public const VERSION = '4.1.1';
+    public const VERSION = '4.2';
     /** @var int We need this value because null and false could be a valid value. */
     public const NULL = PHP_INT_MAX;
     /** @var string Prefix of the related columns. It is used for ORM */
@@ -175,9 +175,10 @@ class PdoOne
     public $partition;
     /** @var MessageContainer|null it stores the messages. */
     private $messageContainer;
-    protected $phpstart = "<?php\n";
     /** @var PdoOne */
     protected static $instance;
+    protected $tableKV = '';
+    protected $defaultTableKV = '';
 
     /**
      * PdoOne constructor.  It doesn't open the connection to the database.
@@ -195,7 +196,7 @@ class PdoOne
      * @param int         $nodeId       It is the id of the node (server). It is used
      *                                  for sequence. Form 0 to 1023
      *
-     * @see PdoOne::connect()
+     * @see          PdoOne::connect()
      * @noinspection ClassConstantCanBeUsedInspection
      */
     public function __construct(
@@ -206,10 +207,11 @@ class PdoOne
         string  $db = '',
         bool    $logFile = false,
         ?string $charset = null,
-        int     $nodeId = 1
+        int     $nodeId = 1,
+        string $tableKV=''
     )
     {
-        $this->construct($databaseType, $server, $user, $pwd, $db, $logFile, $charset, $nodeId);
+        $this->construct($databaseType, $server, $user, $pwd, $db, $logFile, $charset, $nodeId,$tableKV);
         if (class_exists('eftec\MessageContainer')) {
             // autowire MessageContainer if the method exists.
             $this->messageContainer = MessageContainer::instance();
@@ -220,20 +222,34 @@ class PdoOne
     }
 
     /**
-     * It generates an instance using an array.
-     * @noinspection PhpMissingReturnTypeInspection
-     * @noinspection ReturnTypeCanBeDeclaredInspection
+     * It generates an instance using an array.<br>
+     * @param array $array =['databaseType','server','user','pwd','database','logFile','charset','nodeId','tableKV'][$i]<br/>
+     *                     it could be an associative array or an indexed array
+     * @return PdoOne
      */
-    public static function factoryFromArray(array $array)
+    public static function factoryFromArray(array $array): PdoOne
     {
-        return new self($array['databaseType'] ?? '',
-            $array['server'] ?? '',
-            $array['user'] ?? '',
-            $array['pwd'] ?? '',
-            $array['database'] ?? '',
-            $array['logfile'] ?? false,
-            $array['charset'] ?? null,
-            $array['nodeid'] ?? 1
+        if(isset($array['databaseType'] )) {
+            return new self($array['databaseType'] ?? '',
+                $array['server'] ?? '',
+                $array['user'] ?? '',
+                $array['pwd'] ?? '',
+                $array['database'] ?? '',
+                $array['logFile'] ?? false,
+                $array['charset'] ?? null,
+                $array['nodeId'] ?? 1,
+                $array['tableKV'] ?? ""
+            );
+        }
+        return new self($array[0] ?? '',
+            $array[1] ?? '',
+            $array[2] ?? '',
+            $array[3] ?? '',
+            $array[4] ?? '',
+            $array[5] ?? false,
+            $array[6] ?? null,
+            $array[7] ?? 1,
+            $array[8] ?? ""
         );
     }
 
@@ -258,7 +274,8 @@ class PdoOne
         $db,
         $logFile = false,
         $charset = null,
-        $nodeId = 1
+        $nodeId = 1,
+        $tableKV =''
     ): void
     {
         $this->databaseType = $databaseType;
@@ -293,6 +310,7 @@ class PdoOne
         $this->nodeId = $nodeId;
         // by default, the encryption uses the same password as the db.
         $this->encryption = new PdoOneEncryption($pwd, $user . $pwd);
+        $this->setKvDefaultTable($tableKV);
     }
 
     /**
@@ -769,7 +787,12 @@ class PdoOne
         return substr($haystack, $ini, $len);
     }
 
-    public static function tableCase($txt)
+    /**
+     * It converts serpent case into proper case, and it singularizes the table.
+     * @param string|null $txt
+     * @return false|mixed|string|null
+     */
+    public static function tableCase(?string $txt)
     {
         if ($txt === null || $txt === '') {
             return $txt;
@@ -1137,10 +1160,6 @@ class PdoOne
         return $this->service->getDefTableExtended($table, $onlyDescription);
     }
 
-    protected static function removeTrailSlash($txt): string
-    {
-        return rtrim($txt, '/\\');
-    }
 
     /**
      * @param string $database
@@ -3516,8 +3535,7 @@ class PdoOne
      * @param array $simpledef
      * @return array
      */
-    protected
-    function convertUniversal(array $simpledef): array
+    protected function convertUniversal(array $simpledef): array
     {
         $result = [];
         foreach ($simpledef as $v) {
@@ -3935,8 +3953,7 @@ class PdoOne
      *
      * @return bool true if the sort is finished and there is nothing wrong.
      */
-    protected
-    function reSort(
+    protected function reSort(
         array $tables,
         array &$tableSorted,
         array $after,
@@ -4632,26 +4649,54 @@ class PdoOne
 
 //</editor-fold>
 //<editor-fold desc="key value">
-    protected
-        $tableKV = '';
-    protected
-        $defaultTableKV = '';
 
-    public function setKvDefaultTable($table): PdoOne
+
+    /**
+     * @return string
+     */
+    public function getTableKV(): string
+    {
+        return $this->tableKV;
+    }
+
+    /**
+     * @return string
+     */
+    public function getDefaultTableKV(): string
+    {
+        return $this->defaultTableKV;
+    }
+
+    /**
+     * It sets the default table and the current table of the type key-value
+     * @param string $table the name of the table
+     * @return $this
+     */
+    public function setKvDefaultTable(string $table=''): PdoOne
     {
         $this->defaultTableKV = $table;
         $this->tableKV = $table;
         return $this;
     }
 
-    public function kv($table): PdoOne
+    /**
+     * It sets the key-value table, but it does not set the default key-value table.<br>
+     * This value could onlt be used in a single chain. Once the chain ends, it returns to the default value
+     * defined by setKvDefaultTable()<br>
+     * @param string $table the name of the table
+     * @return $this
+     */
+    public function kv(string $table): PdoOne
     {
         $this->tableKV = $table;
         return $this;
     }
 
-    protected
-    function resetKVChain(): void
+    /**
+     * It resets the key-value chain and returns the current key-value table to the default value.
+     * @return void
+     */
+    protected function resetKVChain(): void
     {
         $this->tableKV = $this->defaultTableKV;
     }
@@ -4727,9 +4772,9 @@ class PdoOne
     /**
      * It sets a new key in the Key-Value storage. If the key exists, then it is replaced.<br>
      *
-     * @param string $key
-     * @param string $value
-     * @param null   $timeout
+     * @param string $key the name of the key
+     * @param string $value the value to store
+     * @param null   $timeout the timeout where this value will be keep.
      * @return bool
      * @throws Exception
      */
@@ -4785,8 +4830,9 @@ class PdoOne
     }
 
     /**
-     * @param string $key
-     * @return bool
+     * It deletes a key stored in a key-value storage
+     * @param string $key the name of the key
+     * @return bool it returns true if the success.
      * @throws Exception
      */
     public function delKV(string $key): bool
@@ -4822,7 +4868,7 @@ class PdoOne
     /**
      * It returns true if the key exists, and it hasn't expired.
      *
-     * @param string $key
+     * @param string $key the name of the key
      * @return bool|null
      * @throws Exception
      */
@@ -4839,6 +4885,23 @@ class PdoOne
             return null;
         }
         return isset($row[0]);
+    }
+
+    /**
+     * Check if the key-value table exists.
+     * @return bool returns true if the table exists
+     * @throws Exception
+     */
+    public function existKVTable(): ?bool
+    {
+        try {
+            return $this->tableExist($this->tableKV);
+        } catch (Exception $e) {
+            if ($this->throwOnError) {
+                throw $e;
+            }
+            return false;
+        }
     }
 //</editor-fold>
 }

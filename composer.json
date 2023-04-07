@@ -31,7 +31,7 @@
   "require": {
     "php": ">=7.2.5",
     "ext-json": "*",
-    "eftec/clione": "^1.26",
+    "eftec/clione": "^1.28",
     "ext-pdo": "*",
     "ext-readline": "*",
     "eftec/messagecontainer": "^2.8"

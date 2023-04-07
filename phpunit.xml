@@ -11,15 +11,16 @@
          processIsolation="false"
          stopOnFailure="true"
          bootstrap="tests/bootstrap.php"
-         xsi:noNamespaceSchemaLocation="https://schema.phpunit.de/9.3/phpunit.xsd">
-  <coverage processUncoveredFiles="true">
-    <include>
-      <directory suffix=".php">./lib</directory>
-    </include>
-  </coverage>
-  <testsuites>
-    <testsuite name="PdoOne Test Suite">
-      <directory suffix="Test.php">./tests</directory>
-    </testsuite>
-  </testsuites>
+         xsi:noNamespaceSchemaLocation="https://schema.phpunit.de/8.5/phpunit.xsd">
+    <filter>
+        <whitelist processUncoveredFilesFromWhitelist="true">
+            <directory suffix=".php">./lib</directory>
+        </whitelist>
+    </filter>
+
+    <testsuites>
+        <testsuite name="PdoOne Test Suite">
+            <directory suffix="Test.php">./tests</directory>
+        </testsuite>
+    </testsuites>
 </phpunit>

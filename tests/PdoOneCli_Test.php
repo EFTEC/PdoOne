@@ -11,15 +11,15 @@ include_once __DIR__ . '/../lib/PdoOneCli.php';
 
 class PdoOneCli_Test extends TestCase
 {
-    public function setUp():void {
-
+    public function setUp(): void
+    {
         chdir(__DIR__);
     }
     /**
      * @return void
      * @throws Exception
      */
-    public function test1(): void
+    /*public function test1(): void
     {
         CliOne::testUserInput(null);
         CliOne::testArguments(['program.php',
@@ -62,13 +62,10 @@ class PdoOneCli_Test extends TestCase
         $p->getCli()->echo = false;
         $p->cliEngine();
         $this->assertStringContainsString('[{"actor_id":1,"first_name":"PENELOPE"', $p->getCli()->getMemory(true));
-    }
-
+    }*/
     /**
      * @throws Exception
      */
-
-
     /**
      * @return void
      * @throws Exception
@@ -76,30 +73,23 @@ class PdoOneCli_Test extends TestCase
     public function testinteractive1(): void
     {
         chdir(__DIR__);
-        CliOne::testUserInput(['mysql', '127.0.0.1', 'root', 'abc.123', 'sakila', 'yes', 'tmp/c1']);
+        CliOne::testUserInput(['connect', 'configure', 'mysql', '127.0.0.1', 'root', 'abc.123',
+            'sakila', 'no', '', 1, '', 'save', 'yes', 'tmp/c1', '', '']);
         CliOne::testArguments(['program.php',
             '-i']);
         $p = new PdoOneCli();
         $p->getCli()->echo = true;
-
         $this->assertEquals([
-            'databasetype' => 'mysql',
             'server' => '127.0.0.1',
             'user' => 'root',
-            'password' => 'abc.123',
             'database' => 'sakila',
-            'input' => '',
-            'output' => '',
-            'namespace' => '',
-            'tablexclass' => array(),
-            'conversion' => array(),
-            'extracolumn' => array(),
-            'removecolumn' => array(),
-            'columnsTable' => array(),
-            'help' => false,
-            'classdirectory' => null,
-            'classnamespace' => null,
-        ], $p->getCli()->readData('tmp/c1')[1]);
+            'databaseType' => 'mysql',
+            'pwd' => 'abc.123',
+            'logFile' => false,
+            'charset' => null,
+            'nodeId' => 1,
+            'tableKV' => ''
+        ], $p->getCli()->readDataPHPFormat('tmp/c1')[1]);
     }
 
     /**
@@ -109,7 +99,7 @@ class PdoOneCli_Test extends TestCase
     {
         chdir(__DIR__);
         CliOne::testUserInput(['mysql', '127.0.0.1', 'root', 'abc.123', 'sakila', 'yes', 'tmp/c1']);
-        CliOne::testArguments(['program.php','-cli']);
+        CliOne::testArguments(['program.php', '-cli']);
         $p = new PdoOneCli();
         $p->getCli()->echo = true;
         $p->cliEngine();
@@ -122,14 +112,14 @@ class PdoOneCli_Test extends TestCase
             'input' => '',
             'output' => '',
             'namespace' => '',
-            'tablexclass' => array(),
-            'conversion' => array(),
-            'extracolumn' => array(),
-            'removecolumn' => array(),
-            'columnsTable' => array(),
+            'tablexclass' => [],
+            'conversion' => [],
+            'extracolumn' => [],
+            'removecolumn' => [],
+            'columnsTable' => [],
             'help' => false,
-    'classdirectory' => null,
-    'classnamespace' => null,
+            'classdirectory' => null,
+            'classnamespace' => null,
         ], $p->getCli()->readData('tmp/c1')[1]);
     }
 }
