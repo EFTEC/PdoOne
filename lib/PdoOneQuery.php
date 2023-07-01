@@ -10,11 +10,10 @@ use PDO;
 use PDOStatement;
 use RuntimeException;
 
-
 /**
  * Class PdoOneQuery
  *
- * @version       4.00
+ * @version       4.1
  * @package       eftec
  * @author        Jorge Castro Castillo
  * @copyright (c) Jorge Castro C. Dual Licence: MIT and Commercial License  https://github.com/EFTEC/PdoOne
@@ -64,7 +63,6 @@ class PdoOneQuery
     protected $distinct = '';
     /** @var array parameters for the where. [paramvar,value,type,size] */
     private $whereParamAssoc = [];
-
     //</editor-fold>
     //<editor-fold desc="Query Builder DQL functions" defaultstate="collapsed" >
     /**
@@ -82,7 +80,6 @@ class PdoOneQuery
         $this->parent = $parent;
         $this->ormClass = $repo;
     }
-
 
     /**
      * It returns an array with the metadata of each column (i.e. name, type,
@@ -409,7 +406,6 @@ class PdoOneQuery
         }
         return true;
     }
-
 
     /**
      * It adds a having to the query builder.
@@ -857,7 +853,6 @@ class PdoOneQuery
             $sqlOrTableName = $this->parent->prefixTable . $sqlOrTableName;
         }
         $this->from = ($sqlOrTableName) ? $sqlOrTableName . $this->from : $this->from;
-
         $this->parent->tables[] = explode(' ', $sqlOrTableName)[0];
         return $this;
     }
@@ -871,7 +866,7 @@ class PdoOneQuery
             $cls = $this->ormClass;
             $this->ormClass = null; // to avoid recursivity
             $cls::setPdoOneQuery($this);
-            $r=$cls::exist($conditions);
+            $r = $cls::exist($conditions);
             $cls::reset();
             return $r;
         }
@@ -973,13 +968,14 @@ class PdoOneQuery
 
     /**
      * It runs a toList() without transformation. It is used internally.
+     * bool   $returnArray = true
      * @throws Exception
      */
-    public function _toList($pdoMode = PDO::FETCH_ASSOC)
+    public function _toList($pdoMode = PDO::FETCH_ASSOC, bool $returnArray = true)
     {
         $useCache = $this->useCache; // because builderReset cleans this value
         $this->beginTry();
-        $rows = $this->runGen(true, $pdoMode, 'tolist', false);
+        $rows = $this->runGen($returnArray, $pdoMode, 'tolist', false);
         if ($this->endtry() === false) {
             return false;
         }
@@ -1003,23 +999,74 @@ class PdoOneQuery
      *      ->toList();
      * </pre>
      *
-     * @param int $pdoMode (optional) By default is PDO::FETCH_ASSOC
-     *
+     * @param int  $pdoMode (optional) By default is PDO::FETCH_ASSOC
+     * @param bool $returnArray
      * @return array|bool
      * @throws Exception
      */
-    public function toList(int $pdoMode = PDO::FETCH_ASSOC)
+    public function toList(int $pdoMode = PDO::FETCH_ASSOC, bool $returnArray = true)
     {
         if ($this->ormClass !== null) {
             $cls = $this->ormClass;
             /** @see _BasePdoOneRepo::executePlan0 */
             return $cls::executePlan0($this);
         }
-        return $this->_toList($pdoMode);
+        return $this->_toList($pdoMode, $returnArray);
     }
 
     /**
-     * It returns a PDOStatement.<br>
+     * It returns a PdoStatement from a query.<br>
+     * <b>Example</b>:<br>
+     * <pre>
+     * $stmt=$this->select('select id,name from table')->toPdoStatement();
+     * while ($row = $stmt->fetch()) {
+     *    // do something
+     * }
+     * </pre>
+     *
+     * @param int $pdoMode (optional) By default is PDO::FETCH_ASSOC
+     * @return PDOStatement|null It returns a PdoStatement or null if error.
+     * @throws Exception
+     */
+    public function toPdoStatement(int $pdoMode = PDO::FETCH_ASSOC): ?PDOStatement
+    {
+        return $this->_toList($pdoMode, false);
+    }
+
+    /**
+     * It fetches a query for every row.<br>
+     * This method could be used when we don't want to read all the information at once, so you can read and process
+     * each line separately<br>
+     * <b>Example</b>:<br>
+     * <pre>
+     * $this->select('select id,name from table')
+     *      ->fetchLoop(static function($row) {return($row);},\PDO::FETCH_ASSOC)
+     * </pre>
+     *
+     * @param callable $callable the function to call. This function could have an argument with the value of
+     *                           the row<br>
+     *                           This function could return a value. If returns a value, then the value is returned in
+     *                           an array.
+     * @param int      $pdoMode  (default PDO::FETCH_ASSOC)
+     * @return array|null   If nothing is found then it returns an empty array. If error, then it returns null
+     * @throws Exception
+     */
+    public function fetchLoop(callable $callable, int $pdoMode = PDO::FETCH_ASSOC): ?array
+    {
+        $result = [];
+        $stmt = $this->toPdoStatement($pdoMode);
+        if ($stmt === null) {
+            return null;
+        }
+        while ($row = $stmt->fetch($pdoMode)) {
+            $result[] = $callable($row);
+        }
+        $stmt = null;
+        return $result;
+    }
+
+    /**
+     * It returns a PDOStatement of the current query.<br>
      * <b>Note:</b> The result is not cached.
      *
      * @return PDOStatement
@@ -1891,7 +1938,7 @@ class PdoOneQuery
             $cls = $this->ormClass;
             $this->ormClass = null; // to avoid recursivity
             $cls::setPdoOneQuery($this);
-            $r=$cls::insert($tableNameOrValues);
+            $r = $cls::insert($tableNameOrValues);
             $cls::reset();
             return $r;
         }
@@ -1928,15 +1975,14 @@ class PdoOneQuery
         if ($this->ormClass !== null) {
             $cls = $this->ormClass;
             $this->ormClass = null; // to avoid recursivity
-            if(count($this->where)>0) {
+            if (count($this->where) > 0) {
                 // it is processed as non-orm, using the table of the orm.
                 $cls::reset();
                 return $this->delete($cls::TABLE);
             }
             /** @see _BasePdoOneRepo::_delete */
             $cls::setPdoOneQuery($this);
-            /** @var ChamberRepo::delete $r */
-            $r=$cls::delete($tableOrObject);
+            $r = $cls::delete($tableOrObject);
             // it goes to the repo class.
             // If the method is not override, then it goes to the abstract class
             // repo->abstract->_delete method.
@@ -1996,7 +2042,7 @@ class PdoOneQuery
             $this->ormClass = null; // to avoid recursivity
             /** @see _BasePdoOneRepo::deleteById */
             $cls::setPdoOneQuery($this);
-            $r=$cls::deleteById($pks, $transaction);
+            $r = $cls::deleteById($pks, $transaction);
             $cls::reset();
             return $r;
         }
@@ -2074,7 +2120,7 @@ class PdoOneQuery
             $this->ormClass = null; // toavoid recursivity
             /** @see _BasePdoOneRepo::_update */
             $cls::setPdoOneQuery($this);
-            $r=$cls::update($tableOrObject);
+            $r = $cls::update($tableOrObject);
             $cls::reset();
             return $r;
         }

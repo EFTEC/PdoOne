@@ -94,6 +94,8 @@ ProductRepo // this class was generated with echo $pdoOne()->generateCodeClass([
     * [End of the chain](#end-of-the-chain)
       * [runGen($returnArray=true)](#rungenreturnarraytrue)
       * [toList($pdoMode)](#tolistpdomode)
+* [toPdoStatement($pdoMode)](#topdostatementpdomode)
+* [fetchLoop($callable,$pdoMode)](#fetchloopcallablepdomode)
       * [toMeta()](#tometa)
       * [toListSimple()](#tolistsimple)
       * [toListKeyValue()](#tolistkeyvalue)
@@ -300,7 +302,7 @@ $allRows=$rows->fetch_all(PDO::FETCH_ASSOC);
 ### 3. Running using the query builder
 
 You can use the query builder to build your command. You could check the chapter
-about [Query Builder (DQL)](#query-builder--dql-) for more information.
+about [Query Builder (DQL)](#query-builder-dql) for more information.
 
 ```php
 // query builder
@@ -841,6 +843,32 @@ $results = $pdoOne->select("*")
 ->from('table')
 ->toList(); 
 ```
+
+# toPdoStatement($pdoMode)
+
+It returns a PdoStatement from the current query
+> Note: if you want to loop the statement, then you can use fetchLoop()
+
+**Example**:
+```php
+$stmt = $pdoOne->select("*")
+  ->from('table')
+  ->toPdoStatement(); 
+while ($row = $stmt->fetch()) {
+  // do something
+}
+```
+
+# fetchLoop($callable,$pdoMode)
+It fetches a query for every row.  
+This method could be used when we don't want to read all the information at once,
+so you can read and process each line separately  
+**Example**:  
+```php
+$this->select('select id,name from table')
+      ->fetchLoop(static function($row) {return($row);},\PDO::FETCH_ASSOC)
+```
+
 
 #### toMeta()
 
@@ -1834,10 +1862,16 @@ In a nutshell:
 > Every minor version means that it adds a new functionality i.e. 1.5 -> 1.6 (new methods)
 >
 > Every decimal version means that it patches/fixes/refactoring a previous functionality i.e. 1.5.0 -> 1.5.1 (fix)
+
+* 4.3 2023-07-01
+  * [PdoOneQuery] Update to 4.1
+    * _toList() added argument $returnArray
+    * toPdoStatement() new method
+    * fetchLoop() new method.
 * 4.2 2023-04-07
   * [PdoOne] the constructor allows to set the key-value table.
   * [PdoOne] new methods getTableKV() getDefaultTableKV(),existKVTable()
-  * [PdoOneCli] Update to 2.3.1.  Now you can enter more values. Also, load and save works in PHP format (it is more flexible)
+  * [PdoOneCli] Update to 2.3.1.  Now you can enter more values. Also, load and save works in PHP format (it is more flexible4)
 * 4.1.2 2023-03-21
   * str_start_with() is not defined in PHP older than PHP 8.0, so I replaced. 
 * 4.1.1 2023-03-21

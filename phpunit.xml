@@ -17,7 +17,6 @@
             <directory suffix=".php">./lib</directory>
         </whitelist>
     </filter>
-
     <testsuites>
         <testsuite name="PdoOne Test Suite">
             <directory suffix="Test.php">./tests</directory>

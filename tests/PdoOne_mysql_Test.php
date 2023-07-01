@@ -114,6 +114,36 @@ class PdoOne_mysql_Test extends TestCase
         $cache = new CacheServicesmysql();
         $this->pdoOne->setCacheService($cache);
     }
+    public function test_pdo():void
+    {
+        $x1=memory_get_usage();
+        var_dump($x1);
+        $this->pdoOne->prefixTable = 'table_';
+        if (!$this->pdoOne->tableExist('city')) {
+            $this->pdoOne->createTable('city', ['id' => 'int not null AUTO_INCREMENT', 'name' => 'varchar(45)'], ['id' => 'PRIMARY KEY']);
+        } else {
+            $r = $this->pdoOne->truncate('city');
+        }
+        $this->pdoOne->logLevel=0;
+        for($i=1;$i<1000;$i++) {
+            $id = $this->pdoOne->insert('city', ['id' => $i, 'name' => 'city'.$i]);
+            $this->assertTrue($id > 0);
+        }
+        var_dump($this->pdoOne);
+        //$this->pdoOne->conn1->setAttribute(\PDO::MYSQL_ATTR_USE_BUFFERED_QUERY,false);
+        $result=$this->pdoOne
+            ->select('select * from table_city')
+            ->fetchLoop(static function($row) {return($row);},\PDO::FETCH_ASSOC);
+       // var_dump($result);
+        $x2=memory_get_usage();
+        var_dump($x2);
+        var_dump($x2-$x1);
+        /*
+         $this->pdoOne->select('select * from table_city')->toPdoStatement();
+          while ($row=$stat->fetch(\PDO::FETCH_NUM)) {
+            var_dump($row);
+        }*/
+    }
 
     public function test_prefix_table(): void
     {
