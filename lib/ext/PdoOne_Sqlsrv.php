@@ -502,6 +502,24 @@ class PdoOne_Sqlsrv implements PdoOne_IExt
         }
         return $sql;
     }
+    public function addColumn(string $tableName,array $definition):string {
+        $sql = "ALTER TABLE [$tableName] ";
+        foreach ($definition as $key => $type) {
+            $sql .= "ADD [$key] $type,";
+        }
+        return rtrim($sql,',');
+    }
+    public function deleteColumn(string $tableName, $columnName): string {
+        $sql = '';
+        if(!is_array($columnName)) {
+            $columnName=[$columnName];
+        }
+        foreach($columnName as $c) {
+            $sql = "ALTER TABLE [$tableName] ";
+            $sql .= "DROP COLUMN $c;";
+        }
+        return rtrim($sql,';');
+    }
 
     public function createFK(string $tableName, array $foreignKeys): ?string
     {

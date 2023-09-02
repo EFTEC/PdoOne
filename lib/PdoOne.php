@@ -1,4 +1,5 @@
-<?php /** @noinspection PhpUnused */
+<?php /** @noinspection UnknownInspectionInspection */
+/** @noinspection PhpUnused */
 /** @noinspection SqlDialectInspection */
 /** @noinspection SqlNoDataSourceInspection */
 /** @noinspection PhpConditionAlreadyCheckedInspection */
@@ -8,6 +9,7 @@ namespace eftec;
 use DateTime;
 use eftec\ext\PdoOne_IExt;
 use eftec\ext\PdoOne_Mysql;
+use eftec\ext\PdoOne_Sqlite;
 use eftec\ext\PdoOne_Oci;
 use eftec\ext\PdoOne_Sqlsrv;
 use eftec\ext\PdoOne_TestMockup;
@@ -25,11 +27,11 @@ use stdClass;
  * @package       eftec
  * @author        Jorge Castro Castillo
  * @copyright (c) Jorge Castro C. Dual Licence: MIT and Commercial License  https://github.com/EFTEC/PdoOne
- * @version       4.3
+ * @version       4.3.1
  */
 class PdoOne
 {
-    public const VERSION = '4.3';
+    public const VERSION = '4.3.1';
     /** @var int We need this value because null and false could be a valid value. */
     public const NULL = PHP_INT_MAX;
     /** @var string Prefix of the related columns. It is used for ORM */
@@ -94,7 +96,7 @@ class PdoOne
     public $masks1 = [16, 13, 12, 11];
     /** @var PdoOneEncryption */
     public $encryption;
-    /** @var string=['mysql','sqlsrv','test','oci'][$i] */
+    /** @var string=['mysql','sqlsrv','test','sqlite','oci'][$i] */
     public $databaseType;
     /** @var string It is generated and set automatically by the type of database */
     public $database_delimiter0 = '`';
@@ -183,7 +185,7 @@ class PdoOne
     /**
      * PdoOne constructor.  It doesn't open the connection to the database.
      *
-     * @param string      $databaseType =['mysql','sqlsrv','oci','test'][$i]
+     * @param string      $databaseType =['mysql','sqlsrv','oci','sqlite','test'][$i]
      * @param string      $server       server ip. Ex. 127.0.0.1 127.0.0.1:3306<br>
      *                                  In 'oci' it could be 'orcl' or 'localhost/orcl' (instance name) or <br>
      *                                  (DESCRIPTION=(ADDRESS=(PROTOCOL=TCP)(HOST=localhost)(PORT=1521))<br>
@@ -202,16 +204,16 @@ class PdoOne
     public function __construct(
         string  $databaseType,
         string  $server,
-        string  $user,
-        string  $pwd,
+        string  $user = '',
+        string  $pwd = '',
         string  $db = '',
         bool    $logFile = false,
         ?string $charset = null,
         int     $nodeId = 1,
-        string $tableKV=''
+        string  $tableKV = ''
     )
     {
-        $this->construct($databaseType, $server, $user, $pwd, $db, $logFile, $charset, $nodeId,$tableKV);
+        $this->construct($databaseType, $server, $user, $pwd, $db, $logFile, $charset, $nodeId, $tableKV);
         if (class_exists('eftec\MessageContainer')) {
             // autowire MessageContainer if the method exists.
             $this->messageContainer = MessageContainer::instance();
@@ -229,7 +231,7 @@ class PdoOne
      */
     public static function factoryFromArray(array $array): PdoOne
     {
-        if(isset($array['databaseType'] )) {
+        if (isset($array['databaseType'])) {
             return new self($array['databaseType'] ?? '',
                 $array['server'] ?? '',
                 $array['user'] ?? '',
@@ -275,13 +277,16 @@ class PdoOne
         $logFile = false,
         $charset = null,
         $nodeId = 1,
-        $tableKV =''
+        $tableKV = ''
     ): void
     {
         $this->databaseType = $databaseType;
         switch ($this->databaseType) {
             case 'mysql':
                 $this->service = new PdoOne_Mysql($this);
+                break;
+            case 'sqlite':
+                $this->service = new PdoOne_Sqlite($this);
                 break;
             case 'sqlsrv':
                 $this->service = new PdoOne_Sqlsrv($this);
@@ -1159,7 +1164,6 @@ class PdoOne
     {
         return $this->service->getDefTableExtended($table, $onlyDescription);
     }
-
 
     /**
      * @param string $database
@@ -3476,14 +3480,11 @@ class PdoOne
      * @param array             $definition       An associative array with the definition of the columns.<br>
      *                                            <b>Example:</b><br>
      * @param string|null|array $primaryKey       The column's name that is primary key.<br>
-     *                                            If the value is an associative array then it generates all keys
-     * @param string|null       $extra            An extra operation inside of
-     *                                            the definition of the table.
-     * @param string|null       $extraOutside     An extra operation outside of
-     *                                            the definition of the
-     *                                            table.<br> It replaces the
-     *                                            default values outside the
-     *                                            table
+     *                                            If the value is an associative array then it generates all keys.<br>
+     *                                            The primary key could be indicated in the definition (Sqlite)
+     * @param string|null       $extra            An extra operation inside the definition of the table.
+     * @param string|null       $extraOutside     An extra operation outside the definition of the table.<br>
+     *                                            It replaces the default values outside the table
      * @param bool              $universal        (default false), if true, then it expects a universal definition of
      *                                            table<br> This definition is simplified, and it works as: This
      *                                            definition is simplified ("column type null extra") and it doesn't
@@ -3516,6 +3517,51 @@ class PdoOne
         }
         $this->endTry();
         $sql = $this->service->createTable($this->prefixTable . $tableName, $definition, $primaryKey, $extra ?? '', $extraOutside ?? '');
+        $r = $this->runMultipleRawQuery($sql);
+        $this->endTry();
+        return $r;
+    }
+
+    /**
+     * It adds a columns to a table<br>
+     * <b>Example:</b>
+     * <pre>
+     * $this->addColumn("customer",['id'=>'int']);
+     * </pre>
+     * @param string $tableName  The name of the new table.
+     * @param array  $definition The definition of the columns<br>
+     *                           the key is the name of the column.<br>
+     *                           and the value is the definition of the column
+     * @return bool
+     * @throws Exception
+     */
+    public function addColumn(string $tableName, array $definition): bool
+    {
+        $this->endTry();
+        $sql = $this->service->addColumn($tableName, $definition);
+        $r = $this->runMultipleRawQuery($sql);
+        $this->endTry();
+        return $r;
+    }
+
+    /**
+     * It deletes a column/s to a table<br>
+     * <b>Example:</b>
+     * <pre>
+     * $this->deleteColumn("customer",'col1');
+     * $this->deleteColumn("customer",['col1','col2']);
+     * </pre>
+     * @param string       $tableName  The name of the new table.
+     * @param array|string $definition The definition of the columns<br>
+     *                                 the key is the name of the column.<br>
+     *                                 and the value is the definition of the column
+     * @return bool
+     * @throws Exception
+     */
+    public function deleteColumn(string $tableName, $definition): bool
+    {
+        $this->endTry();
+        $sql = $this->service->deleteColumn($tableName, $definition);
         $r = $this->runMultipleRawQuery($sql);
         $this->endTry();
         return $r;
@@ -4050,10 +4096,18 @@ class PdoOne
     }
 
     /**
-     * Returns the columns of a table
-     *
+     * Returns the columns of a table<br>
+     * <ul>
+     *     <li><b></b>colname: </b>name of the column</li>
+     *     <li><b></b>coltype: </b>type of the column</li>
+     *     <li><b></b>colsize: </b>size of the column</li>
+     *     <li><b></b>colpres: </b>precision of the column</li>
+     *     <li><b></b>colscale: </b>colscale of the column</li>
+     *     <li><b></b>iskey: </b>1 if is primary key</li>
+     *     <li><b></b>isidentity: </b>1 if the column is identity</li>
+     *     <li><b></b>isnullable: </b>if the column is nullable</li>
+     * </ul>
      * @param string $tableName The name of the table.
-     *
      * @return array|bool=['colname','coltype','colsize','colpres','colscale','iskey','isidentity','isnullable']
      * @throws Exception
      */
@@ -4062,6 +4116,22 @@ class PdoOne
         $this->beginTry();
         $query = $this->service->columnTable($this->prefixTable . $tableName);
         $r = $this->runRawQuery($query);
+        if ($this->databaseType === 'sqlite') {
+            $tmpArr = $r;
+            $r = [];
+            foreach ($tmpArr as $v) {
+                $row=[];
+                $row['colname'] = $v['cid'];
+                $row['coltype'] = $v['type'];
+                $row['colsize'] = null;
+                $row['colpres'] = null;
+                $row['colscale'] = null;
+                $row['iskey'] = $v['pk'];
+                $row['isidentity'] = null;
+                $row['isnullable'] = $v['notnull'];
+                $r[]=$row;
+            }
+        }
         $this->endTry();
         return $r;
     }
@@ -4071,7 +4141,7 @@ class PdoOne
      *
      * @param string $tableName The name of the table.
      *
-     * @return array|bool
+     * @return array|bool [[collocal,tablerem,colrem,fk_name]]
      * @throws Exception
      */
     public function foreignKeyTable(string $tableName)
@@ -4079,6 +4149,18 @@ class PdoOne
         $this->beginTry();
         $query = $this->service->foreignKeyTable($this->prefixTable . $tableName);
         $r = $this->runRawQuery($query);
+        if ($this->databaseType === 'sqlite') {
+            $tmpR = $r;
+            $r = [];
+            foreach ($tmpR as $v) {
+                $row = [];
+                $row['collocal']=$v['from'];
+                $row['tablerem']=$v['table'];
+                $row['colrem']=$v['to'];
+                $row['fk_name']=$row['tablerem'].'_'.$row['colrem'];
+                $r[]=$row;
+            }
+        }
         $this->endTry();
         return $r;
     }
@@ -4649,8 +4731,6 @@ class PdoOne
 
 //</editor-fold>
 //<editor-fold desc="key value">
-
-
     /**
      * @return string
      */
@@ -4672,7 +4752,7 @@ class PdoOne
      * @param string $table the name of the table
      * @return $this
      */
-    public function setKvDefaultTable(string $table=''): PdoOne
+    public function setKvDefaultTable(string $table = ''): PdoOne
     {
         $this->defaultTableKV = $table;
         $this->tableKV = $table;
@@ -4772,8 +4852,8 @@ class PdoOne
     /**
      * It sets a new key in the Key-Value storage. If the key exists, then it is replaced.<br>
      *
-     * @param string $key the name of the key
-     * @param string $value the value to store
+     * @param string $key     the name of the key
+     * @param string $value   the value to store
      * @param null   $timeout the timeout where this value will be keep.
      * @return bool
      * @throws Exception

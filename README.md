@@ -1862,7 +1862,10 @@ In a nutshell:
 > Every minor version means that it adds a new functionality i.e. 1.5 -> 1.6 (new methods)
 >
 > Every decimal version means that it patches/fixes/refactoring a previous functionality i.e. 1.5.0 -> 1.5.1 (fix)
-
+* 4.3.1 2023-09-02
+  * [PdoOneCli] Update to 2.5
+    * Fixed a problem when the cli ends.
+    * The class is able to return an instance of it.
 * 4.3 2023-07-01
   * [PdoOneQuery] Update to 4.1
     * _toList() added argument $returnArray

@@ -21,18 +21,28 @@ use RuntimeException;
  * @package       eftec
  * @author        Jorge Castro Castillo
  * @copyright (c) Jorge Castro C. Dual Licence: MIT and Commercial License  https://github.com/EFTEC/PdoOne
- * @version       2.4
+ * @version       2.5
  */
 class PdoOneCli
 {
-    public const VERSION = '2.4';
+    public const VERSION = '2.5';
     /** @var CliOne */
     public $cli;
     protected $help;
+    /** @var ?PdoOneCli the current instance */
+    public static $instance;
 
+    public static function instance(bool $run = true): PdoOneCli
+    {
+        if (self::$instance === null) {
+            self::$instance = new PdoOneCli($run);
+        }
+        return self::$instance;
+    }
     public function __construct(bool $run = true)
     {
-        $this->cli = new CliOne();
+        self::$instance=$this;
+        $this->cli = CliOne::instance();
         $this->cli->setErrorType();
         $this->cli->addMenu('mainmenu',
             function($cli) {

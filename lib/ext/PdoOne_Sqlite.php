@@ -10,6 +10,7 @@ namespace eftec\ext;
 use eftec\PdoOne;
 use Exception;
 use PDO;
+use RuntimeException;
 
 /**
  * Class PdoOne_Mysql
@@ -19,7 +20,7 @@ use PDO;
  * @copyright (c) Jorge Castro C. Dual Licence: MIT and Commercial License  https://github.com/EFTEC/PdoOne
  * @package       eftec
  */
-class PdoOne_Mysql implements PdoOne_IExt
+class PdoOne_Sqlite implements PdoOne_IExt
 {
 
     /** @var PdoOne */
@@ -37,8 +38,8 @@ class PdoOne_Mysql implements PdoOne_IExt
 
     public function construct($charset, $config): string
     {
-        $this->parent->database_delimiter0 = '`';
-        $this->parent->database_delimiter1 = '`';
+        $this->parent->database_delimiter0 = '[';
+        $this->parent->database_delimiter1 = ']';
         $this->parent->database_identityName = 'auto_increment';
         $charset = ($charset == null) ? 'utf8' : $charset;
         PdoOne::$dateFormat = 'Y-m-d';
@@ -54,8 +55,7 @@ class PdoOne_Mysql implements PdoOne_IExt
     public function connect($cs, $alterSession = false): void
     {
         $this->parent->conn1
-            = new PDO("{$this->parent->databaseType}:host={$this->parent->server};dbname={$this->parent->db}$cs",
-            $this->parent->user, $this->parent->pwd);
+            = new PDO("sqlite:{$this->parent->server}");
         $this->parent->user = '';
         $this->parent->pwd = '';
         $this->parent->conn1->setAttribute(PDO::ATTR_EMULATE_PREPARES, false);
@@ -71,7 +71,7 @@ class PdoOne_Mysql implements PdoOne_IExt
                 /** @noinspection TypeUnsafeArraySearchInspection */
                 if (in_array($k, $outputColumns)) {
                     $argList .= "@$k,";
-                    $outputFields .= "@$k as `$k`,";
+                    $outputFields .= "@$k as [$k],";
                     $stmt = $this->parent->prepare("set @$k=:$k");
                     $stmt->bindParam($k, $v, $this->parent->getType($v));
                     $stmt->execute();
@@ -127,10 +127,9 @@ class PdoOne_Mysql implements PdoOne_IExt
      */
     public function getDefTableExtended(string $table, bool $onlyDescription = false)
     {
-        $query = "SELECT table_name as `table`,engine as `engine`, table_schema as `schema`," .
-            " table_collation as `collation`, table_comment as `description` " .
-            "FROM information_schema.tables WHERE table_schema = '?' and table_name='?'";
-        $result = $this->parent->runRawQuery($query, [$this->parent->db, $table]);
+        $query = "name as [table],'' as table_schema,'' as collation,'' as description " .
+            "FROM sqlite_master WHERE type='table' and table_name='?'";
+        $result = $this->parent->runRawQuery($query, [ $table]);
         if ($onlyDescription) {
             return $result['description'];
         }
@@ -169,6 +168,7 @@ class PdoOne_Mysql implements PdoOne_IExt
 
     public function getDefTableFK(string $table, bool $returnSimple, string $filter = null, bool $assocArray = false): array
     {
+        throw new RuntimeException('pendiente');
         $columns = [];
         /** @var array $result =array(["CONSTRAINT_NAME"=>'',"COLUMN_NAME"=>'',"REFERENCED_TABLE_NAME"=>''
          * ,"REFERENCED_COLUMN_NAME"=>'',"UPDATE_RULE"=>'',"DELETE_RULE"=>''])
@@ -202,11 +202,11 @@ class PdoOne_Mysql implements PdoOne_IExt
                 $rcn = $item['REFERENCED_COLUMN_NAME'];
                 if (strpos($rcn, ',') !== false) {
                     $tmp = explode(',', $rcn);
-                    $rcn = "`$tmp[0]`,`$tmp[1]`";
+                    $rcn = "[$tmp[0]],[$tmp[1]]";
                 } else {
-                    $rcn = "`$rcn`";
+                    $rcn = "[$rcn]";
                 }
-                $txt = "FOREIGN KEY REFERENCES`{$item['REFERENCED_TABLE_NAME']}`($rcn)";
+                $txt = "FOREIGN KEY REFERENCES[{$item['REFERENCED_TABLE_NAME']}]($rcn)";
                 $extra = '';
                 if ($item['UPDATE_RULE'] && $item['UPDATE_RULE'] !== 'NO ACTION') {
                     $extra .= ' ON UPDATE ' . $item['UPDATE_RULE'];
@@ -266,24 +266,11 @@ class PdoOne_Mysql implements PdoOne_IExt
 
     public function objectExist(string $type = 'table'): ?string
     {
+        // SELECT name FROM sqlite_master WHERE type='table' AND name='{table_name}';
         switch ($type) {
             case 'table':
                 $query
-                    = "SELECT * FROM information_schema.tables where table_schema='{$this->parent->db}' and table_name=?";
-                break;
-            case 'function':
-                $query
-                    = "SELECT * FROM INFORMATION_SCHEMA.ROUTINES where 
-                                                ROUTINE_SCHEMA='{$this->parent->db}' 
-                                            and ROUTINE_NAME=?
-                                            and ROUTINE_TYPE='FUNCTION'";
-                break;
-            case 'procedure':
-                $query
-                    = "SELECT * FROM INFORMATION_SCHEMA.ROUTINES where 
-                                                ROUTINE_SCHEMA='{$this->parent->db}' 
-                                            and ROUTINE_NAME=?
-                                            and ROUTINE_TYPE='PROCEDURE'";
+                    = "SELECT * FROM sqlite_master where type='$type' and name=?";
                 break;
             default:
                 $this->parent->throwError("objectExist: type [$type] not defined for {$this->parent->databaseType}",
@@ -298,16 +285,16 @@ class PdoOne_Mysql implements PdoOne_IExt
         switch ($type) {
             case 'table':
                 $query
-                    = "SELECT * FROM information_schema.tables where table_schema='{$this->parent->db}' and table_type='BASE TABLE'";
+                    = "SELECT * FROM sqlite_master where type='table'";
                 if ($onlyName) {
-                    $query = str_replace('*', 'table_name as name', $query);
+                    $query = str_replace('*', 'name', $query);
                 }
                 break;
-            case 'function':
+            case 'index':
                 $query
-                    = "SELECT * FROM INFORMATION_SCHEMA.ROUTINES where ROUTINE_SCHEMA='{$this->parent->db}'";
+                    = "SELECT * FROM sqlite_master where type='index'";
                 if ($onlyName) {
-                    $query = str_replace('*', 'routine_name', $query);
+                    $query = str_replace('*', 'name', $query);
                 }
                 break;
             default:
@@ -320,27 +307,13 @@ class PdoOne_Mysql implements PdoOne_IExt
 
     public function columnTable($tableName): string
     {
-        return "SELECT column_name colname
-								,data_type coltype
-								,character_maximum_length colsize
-								,numeric_precision colpres
-								,numeric_scale colscale
-								,if(column_key='PRI',1,0) iskey
-								,if(extra='auto_increment',1,0)  isidentity
-								,if(is_nullable='NO',1,0)  isnullable
-					 	FROM information_schema.columns
-						where table_schema='{$this->parent->db}' and table_name='$tableName'";
+        return "PRAGMA table_info([$tableName])";
     }
 
     public function foreignKeyTable($tableName): string
     {
-        return "SELECT 
-							column_name collocal,
-						    REFERENCED_TABLE_NAME tablerem,
-						    REFERENCED_COLUMN_NAME colrem
-						 FROM information_schema.KEY_COLUMN_USAGE
-						where table_name='$tableName' and constraint_schema='{$this->parent->db}'
-						and referenced_table_name is not null;";
+        return "PRAGMA foreign_key_list([$tableName])";
+
     }
 
     public function createSequence(string $tableSequence = null, string $method = 'snowflake'): array
@@ -406,26 +379,7 @@ class PdoOne_Mysql implements PdoOne_IExt
      */
     public function createProcedure(string $procedureName, $arguments = '', string $body = '', string $extra = ''): string
     {
-        if (is_array($arguments)) {
-            $sqlArgs = '';
-            foreach ($arguments as $k => $v) {
-                if (is_array($v)) {
-                    if (count($v) > 2) {
-                        $sqlArgs .= "$v[0] $v[1] $v[2],";
-                    } else {
-                        $sqlArgs .= "in $v[0] $v[1],";
-                    }
-                } else {
-                    $sqlArgs .= "in $k $v,";
-                }
-            }
-            $sqlArgs = trim($sqlArgs, ',');
-        } else {
-            $sqlArgs = $arguments;
-        }
-        $sql = "CREATE PROCEDURE `$procedureName` ($sqlArgs) $extra\n";
-        $sql .= "BEGIN\n$body\nEND";
-        return $sql;
+        throw new RuntimeException('Sqlite does not support store procedure');
     }
 
     public function getSequence($sequenceName): string
@@ -488,11 +442,11 @@ class PdoOne_Mysql implements PdoOne_IExt
         string $extraOutside = ''
     ): string
     {
-        $extraOutside = ($extraOutside === '') ? "ENGINE=InnoDB DEFAULT CHARSET={$this->parent->charset};"
+        $extraOutside = ($extraOutside === '') ? ""
             : $extraOutside;
-        $sql = "CREATE TABLE `$tableName` (";
+        $sql = "CREATE TABLE [$tableName] (";
         foreach ($definition as $key => $type) {
-            $sql .= "`$key` $type,";
+            $sql .= "[$key] $type,";
         }
         if ($primaryKey) {
             if (is_array($primaryKey)) {
@@ -510,17 +464,17 @@ class PdoOne_Mysql implements PdoOne_IExt
                     switch ($type) {
                         case 'PRIMARY':
                             if (!$hasPK) {
-                                $sql .= "PRIMARY KEY (`$key`*pk*) $value,";
+                                $sql .= "PRIMARY KEY ([$key]*pk*) $value,";
                                 $hasPK = true;
                             } else {
-                                $sql = str_replace('*pk*', ",`$key`", $sql);
+                                $sql = str_replace('*pk*', ",[$key]", $sql);
                             }
                             break;
                         case '':
-                            $sql .= "KEY `{$tableName}_{$key}_idx` (`$key`) $value,";
+                            $sql .= "KEY `{$tableName}_{$key}_idx` ([$key]) $value,";
                             break;
                         case 'UNIQUE':
-                            $sql .= "UNIQUE KEY `{$tableName}_{$key}_idx` (`$key`) $value,";
+                            $sql .= "UNIQUE KEY `{$tableName}_{$key}_idx` ([$key]) $value,";
                             break;
                         default:
                             trigger_error("createTable: [$type KEY] not defined");
@@ -530,7 +484,7 @@ class PdoOne_Mysql implements PdoOne_IExt
                 $sql = str_replace('*pk*', '', $sql);
                 $sql = rtrim($sql, ',');
             } else {
-                $sql .= " PRIMARY KEY(`$primaryKey`) ";
+                $sql .= " PRIMARY KEY([$primaryKey]) ";
             }
         } else {
             $sql = substr($sql, 0, -1);
@@ -540,14 +494,14 @@ class PdoOne_Mysql implements PdoOne_IExt
     }
 
     public function addColumn(string $tableName,array $definition):string {
-        $sql = "ALTER TABLE `$tableName`";
+        $sql = "ALTER TABLE [$tableName]";
         foreach ($definition as $key => $type) {
-            $sql .= "ADD COLUMN `$key` $type,";
+            $sql .= "ADD COLUMN [$key] $type,";
         }
         return rtrim($sql,',');
     }
     public function deleteColumn(string $tableName, $columnName): string {
-        $sql = "ALTER TABLE `$tableName`";
+        $sql = "ALTER TABLE [$tableName]";
         if(!is_array($columnName)) {
             $columnName=[$columnName];
         }
@@ -570,7 +524,7 @@ class PdoOne_Mysql implements PdoOne_IExt
             $type = strtoupper(trim(substr($value, 0, $p0)));
             $value = substr($value, $p0 + 4);
             if ($type === 'FOREIGN') {
-                $sql .= "ALTER TABLE `$tableName` ADD CONSTRAINT `fk_{$tableName}_$key` FOREIGN KEY(`$key`) $value;";
+                $sql .= "ALTER TABLE [$tableName] ADD CONSTRAINT `fk_{$tableName}_$key` FOREIGN KEY([$key]) $value;";
             }
         }
         return $sql;
@@ -580,7 +534,7 @@ class PdoOne_Mysql implements PdoOne_IExt
     {
         $sql = '';
         foreach ($indexesAndDef as $key => $typeIndex) {
-            $sql .= "ALTER TABLE `$tableName` ADD $typeIndex `idx_{$tableName}_$key` (`$key`) ;";
+            $sql .= "ALTER TABLE [$tableName] ADD $typeIndex [idx_{$tableName}_$key] ([$key]) ;";
         }
         return $sql;
     }

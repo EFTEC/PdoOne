@@ -1040,11 +1040,12 @@ class PdoOneQuery
      * <b>Example</b>:<br>
      * <pre>
      * $this->select('select id,name from table')
-     *      ->fetchLoop(static function($row) {return($row);},\PDO::FETCH_ASSOC)
+     *      ->fetchLoop(static function($row,$numRow) {return($row);},\PDO::FETCH_ASSOC)
      * </pre>
      *
-     * @param callable $callable the function to call. This function could have an argument with the value of
-     *                           the row<br>
+     * @param callable $callable the function to call. This function <b>could</b> have the next arguments<br>
+     *                           <b>$row</b> (array|null) with the values of the row<br>
+     *                           <b>$numRow</b> with the number of row starting from zero<br>
      *                           This function could return a value. If returns a value, then the value is returned in
      *                           an array.
      * @param int      $pdoMode  (default PDO::FETCH_ASSOC)
@@ -1058,8 +1059,10 @@ class PdoOneQuery
         if ($stmt === null) {
             return null;
         }
+        $numRow=0;
         while ($row = $stmt->fetch($pdoMode)) {
-            $result[] = $callable($row);
+            $result[] = $callable($row,$numRow);
+            $numRow++;
         }
         $stmt = null;
         return $result;

@@ -1,4 +1,6 @@
-<?php
+<?php /** @noinspection UnknownInspectionInspection */
+
+/** @noinspection GrazieInspection */
 
 namespace eftec\ext;
 
@@ -201,7 +203,6 @@ interface PdoOne_IExt
      */
     public function createProcedure(string $procedureName, $arguments = [], string $body = '', string $extra = '');
 
-
     public function getSequence(string $sequenceName);
 
     public function translateExtra(string $universalExtra): string;
@@ -240,6 +241,21 @@ interface PdoOne_IExt
                                 string $extraOutside = ''): string;
 
     /**
+     * DCL command. It adds a column in a table.<br>
+     *  <b>Example:</b>
+     *  <pre>
+     *  $this->addColumn("customer",['id'=>'int']);
+     *  </pre>
+     * @param string $tableName                The name of the table
+     * @param array  $definition               An associative array with the definition of the column.<br>
+     *                                         The key is used as the name of the field
+     * @return string
+     */
+    public function addColumn(string $tableName, array $definition): string;
+
+    public function deleteColumn(string $tableName, $columnName): string;
+
+    /**
      * Create foreign keys (other keys are ignored).
      *
      * @param string $tableName   The name of the table
@@ -274,7 +290,8 @@ interface PdoOne_IExt
      */
     public function limit(?int $first, ?int $second): string;
 
-    public function now():string;
+    public function now(): string;
+
     public function createTableKV($tableKV, $memoryKV = false): string;
 
     /**

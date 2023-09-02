@@ -12,7 +12,5 @@ if (!defined('PHPUNIT_COMPOSER_INSTALL') && !defined('__PHPUNIT_PHAR__')
     $path = PdoOneCli::findVendorPath();
     include_once __DIR__ . '/' . $path . '/autoload.php';
     $cli = new PdoOneCli();
-    /** @noinspection PhpUnhandledExceptionInspection */
-    $cli->cliEngine();
 }
 

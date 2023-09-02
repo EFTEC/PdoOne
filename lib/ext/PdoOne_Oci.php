@@ -513,6 +513,23 @@ class PdoOne_Oci implements PdoOne_IExt
         }
         return $sql;
     }
+    public function addColumn(string $tableName,array $definition):string {
+        $sql = "ALTER TABLE \"$tableName\" ADD (";
+        foreach ($definition as $key => $type) {
+            $sql .= "\"$key\" $type,";
+        }
+        return rtrim($sql,',').')';
+    }
+    public function deleteColumn(string $tableName, $columnName): string {
+        if(!is_array($columnName)) {
+            $columnName=[$columnName];
+        }
+        $sql = "ALTER TABLE \"$tableName\" DROP(";
+        foreach($columnName as $c) {
+            $sql .= "$c,";
+        }
+        return rtrim($sql,';').')';
+    }
 
     public function createFK(string $tableName, array $foreignKeys): ?string
     {
@@ -610,10 +627,11 @@ class PdoOne_Oci implements PdoOne_IExt
             return false;
         }
     }
-
     public function callProcedure(string $procName, array &$arguments = [], array $outputColumns = [])
     {
         // TODO: Implement callProcedure() method.
+        throw new RuntimeException('not defined');
+        return null;
     }
 
     public function createProcedure(string $procedureName, $arguments = [], string $body = '', string $extra = ''): string

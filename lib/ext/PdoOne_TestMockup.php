@@ -292,6 +292,25 @@ class PdoOne_TestMockup implements PdoOne_IExt
         return $sql;
     }
 
+    public function addColumn(string $tableName,array $definition):string {
+        $sql = "ALTER TABLE $tableName";
+        foreach ($definition as $key => $type) {
+            $sql .= "ADD COLUMN $key $type,";
+        }
+        return rtrim($sql,',');
+    }
+    public function deleteColumn(string $tableName, $columnName): string {
+        $sql = "ALTER TABLE $tableName";
+        if(!is_array($columnName)) {
+            $columnName=[$columnName];
+        }
+        foreach($columnName as $c) {
+            $sql .= "DROP COLUMN $c,";
+        }
+        return rtrim($sql,',');
+    }
+
+
     public function createFK(string $tableName, array $foreignKeys): ?string
     {
         return "ALTER TABLE `$tableName` ADD CONSTRAINT `fk_{$tableName}_{key1}` FOREIGN KEY(`key1`);";
