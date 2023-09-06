@@ -27,11 +27,11 @@ use stdClass;
  * @package       eftec
  * @author        Jorge Castro Castillo
  * @copyright (c) Jorge Castro C. Dual Licence: MIT and Commercial License  https://github.com/EFTEC/PdoOne
- * @version       4.3.1
+ * @version       4.3.2
  */
 class PdoOne
 {
-    public const VERSION = '4.3.1';
+    public const VERSION = '4.3.2';
     /** @var int We need this value because null and false could be a valid value. */
     public const NULL = PHP_INT_MAX;
     /** @var string Prefix of the related columns. It is used for ORM */
@@ -1321,7 +1321,7 @@ class PdoOne
             if ($this->logLevel === 0) {
                 $txt .= "\n{{Message:}} [Error on database]";
             }
-            if ($this->logLevel >= 2) {
+            if ($this->logLevel >= 1) {
                 $txt .= "\n{{Message:}} " . is_array($txtExtra) ? json_encode($txtExtra) : $txtExtra;
                 if ($exception !== null) {
                     $txt .= "\n{{Message:}} " . $this->lastError() . ' ' . $exception->getMessage();

@@ -114,6 +114,7 @@ class PdoOne_mysql_Test extends TestCase
         $cache = new CacheServicesmysql();
         $this->pdoOne->setCacheService($cache);
     }
+
     public function test_pdo():void
     {
         $x1=memory_get_usage();

@@ -1,4 +1,6 @@
-<?php /** @noinspection PhpUnused */
+<?php /** @noinspection GrazieInspection */
+/** @noinspection UnknownInspectionInspection */
+/** @noinspection PhpUnused */
 /** @noinspection PhpUndefinedClassInspection */
 /** @noinspection SqlNoDataSourceInspection */
 /** @noinspection DuplicatedCode */

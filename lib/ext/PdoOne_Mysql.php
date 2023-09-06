@@ -21,7 +21,6 @@ use PDO;
  */
 class PdoOne_Mysql implements PdoOne_IExt
 {
-
     /** @var PdoOne */
     protected $parent;
 
@@ -165,7 +164,6 @@ class PdoOne_Mysql implements PdoOne_IExt
         }
         return $result;
     }
-
 
     public function getDefTableFK(string $table, bool $returnSimple, string $filter = null, bool $assocArray = false): array
     {
@@ -364,11 +362,10 @@ class PdoOne_Mysql implements PdoOne_IExt
         $sql = 'SET GLOBAL log_bin_trust_function_creators = ?';
         try {
             $this->parent->runRawQuery($sql, [1]);
-        } catch(Exception $ex) {
+        } catch (Exception $ex) {
             // it crashed with "Wrong COM_STMT_PREPARE response size. Received 7"
             // however, the operation is correctly executed, so let's do nothing.
         }
-
         if ($method === 'snowflake') {
             $sql = "CREATE FUNCTION `next_$tableSequence`(node integer) RETURNS BIGINT(20)
                     MODIFIES SQL DATA
@@ -479,7 +476,6 @@ class PdoOne_Mysql implements PdoOne_IExt
         return $sqlType;
     }
 
-
     public function createTable(
         string $tableName,
         array  $definition,
@@ -539,22 +535,25 @@ class PdoOne_Mysql implements PdoOne_IExt
         return $sql;
     }
 
-    public function addColumn(string $tableName,array $definition):string {
+    public function addColumn(string $tableName, array $definition): string
+    {
         $sql = "ALTER TABLE `$tableName`";
         foreach ($definition as $key => $type) {
             $sql .= "ADD COLUMN `$key` $type,";
         }
-        return rtrim($sql,',');
+        return rtrim($sql, ',');
     }
-    public function deleteColumn(string $tableName, $columnName): string {
+
+    public function deleteColumn(string $tableName, $columnName): string
+    {
         $sql = "ALTER TABLE `$tableName`";
-        if(!is_array($columnName)) {
-            $columnName=[$columnName];
+        if (!is_array($columnName)) {
+            $columnName = [$columnName];
         }
-        foreach($columnName as $c) {
+        foreach ($columnName as $c) {
             $sql .= "DROP COLUMN $c,";
         }
-        return rtrim($sql,',');
+        return rtrim($sql, ',');
     }
 
     /** @noinspection SqlResolve */
@@ -589,6 +588,7 @@ class PdoOne_Mysql implements PdoOne_IExt
     {
         return $second === null ? ' limit ' . $first : " limit $first,$second";
     }
+
     public function now(): string
     {
         return 'select NOW() as NOW';
@@ -624,7 +624,7 @@ class PdoOne_Mysql implements PdoOne_IExt
                     $pkResult[] = '??nopk??';
                 }
             }
-            $pkAsArray = (is_array($pk)) ? $pk : array($pk);
+            $pkAsArray = (is_array($pk)) ? $pk : [$pk];
             return count($pkResult) === 0 ? $pkAsArray : $pkResult;
         } catch (Exception $ex) {
             return false;
