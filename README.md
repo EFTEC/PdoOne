@@ -1686,7 +1686,7 @@ The nested operators are methods that should be in between of our chain of metho
 
 > ClassRepo::op()::where()::finalop() is ✅
 >
-> ClassRepo::op()::op()::where() will left the chain open ❌
+> ClassRepo::op()::op()::where() will leave the chain open ❌
 
 For example:
 
@@ -1862,7 +1862,8 @@ In a nutshell:
 > Every minor version means that it adds a new functionality i.e. 1.5 -> 1.6 (new methods)
 >
 > Every decimal version means that it patches/fixes/refactoring a previous functionality i.e. 1.5.0 -> 1.5.1 (fix)
-
+* 4.3.3 2023-09-05
+  * change the PHPDOC comments, now it uses markdown instead of "pre" tag.
 * 4.3.2 2023-09-05
   * A small fix with the error messages, now on level 1 it shows the cause of the error. 
 * 4.3.1 2023-09-02
@@ -2079,7 +2080,7 @@ it as a PHP file.
 *
     * **_BasePdoOneRepo** now works more closely with the class **PdoOneQuery**, so each query is a different instance.
 
-    * **[fix]** **PdoOne** dateConvertInput() does not crashes when the value is not a date.
+    * **[fix]** **PdoOne** dateConvertInput() does not crash when the value is not a date.
 
     * **[fix]** **PdoOne** throwError() does not stack errors but still triggers the last error (if any).
 
@@ -2267,7 +2268,7 @@ echo $this->internalCacheCounter;
       the type. It also allows many other different kind of combinations.
     * Before: **$this->runRawQuery($sql,['i',20,'s','hello]);**
     * Now: **$this->runRawQuery($sql,[20,'hello']);**
-    * Also (named): **$this->runRawQuery($sql,['col1'=>20,'col2'=>'hello']);**
+    * Also, (named): **$this->runRawQuery($sql,['col1'=>20,'col2'=>'hello']);**
     * Since it is a core change, then former code that uses the version 1.x could not be compatible without changing all
       references to methods that use arguments specifying the types.
         * runRawQuery()

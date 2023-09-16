@@ -62,11 +62,11 @@ interface PdoOne_IExt
      * The results of the table depend on the kind of database. For example, sqlsrv returns the schema used (dbo),
      * while mysql returns the current schema (database).
      * <b>Example:</b><br>
-     * <pre>
+     * ```php
      * $this->getDefTableExtended('table'); // ['name','engine','schema','collation','description']
      * $this->getDefTableExtended('table',true); // "some description of the table"
      *
-     * </pre>
+     * ```
      *
      * @param string $table           The name of the table
      * @param bool   $onlyDescription If true then it only returns a description
@@ -79,10 +79,10 @@ interface PdoOne_IExt
     /**
      * Returns an associative array with the definition of a table (columns of the table).<br>
      * <b>Example:</b><br>
-     * <pre>
+     * ```php
      * $this->getDefTable('table');
      * // ['col1'=>'int not null','col2'=>'varchar(50)']
-     * </pre>
+     * ```
      *
      * @param string $table
      *
@@ -175,7 +175,7 @@ interface PdoOne_IExt
     /**
      * It creates a store procedure<br>
      * <b>Example:</b><br>
-     * <pre>
+     * ```php
      * // arg1 and arg2 are "in" arguments:
      * $this->createProcedure('proc1','in arg1 int,in arg2 varchar(50)','//body here');
      * // arg1 and arg2 are "in" arguments:
@@ -192,7 +192,7 @@ interface PdoOne_IExt
      *                          ['arg1','int'],
      *                          ['arg2','varchar(50)']
      *                      ],'//body here');
-     * </pre>
+     * ```
      *
      * @param string       $procedureName The name of the store procedure
      * @param array|string $arguments     The arguments. It could be an associative array, a string or a multiple array
@@ -212,14 +212,14 @@ interface PdoOne_IExt
     /**
      * DCL command. It creates a database.<br>
      * <b>Example:</b>
-     * <pre>
+     * ```php
      * $this->createtable("customer"
      *      ,['id'=>'int','name'=>'varchar(50)']
      *      ,'id');
      * $this->createtable("customer"
      *      ,['id'=>'int','name'=>'varchar(50)']
      *      ,['id'=>'PRIMARY KEY','name'=>'KEY']);
-     * </pre>
+     * ```
      *
      *
      * @param string            $tableName    The name of the table
@@ -242,10 +242,10 @@ interface PdoOne_IExt
 
     /**
      * DCL command. It adds a column in a table.<br>
-     *  <b>Example:</b>
-     *  <pre>
-     *  $this->addColumn("customer",['id'=>'int']);
-     *  </pre>
+     * <b>Example:</b>
+     * ```php
+     * $this->addColumn("customer",['id'=>'int']);
+     * ```
      * @param string $tableName                The name of the table
      * @param array  $definition               An associative array with the definition of the column.<br>
      *                                         The key is used as the name of the field
@@ -277,10 +277,10 @@ interface PdoOne_IExt
     /**
      * It adds a limit operation for the query. It depends on the type of the database.
      * <b>Example:</b><br>
-     * <pre>
+     * ```php
      *      ->select("")->limit("10,20")->toList();
      *      ->select("")->limit(10,20)->toList();
-     * </pre>
+     * ```
      *
      * @param int|null $first  The whole expression separated by comma, or the first expression (the initial row)
      * @param int|null $second The numbers of row to read. If null, then it uses $sql.
