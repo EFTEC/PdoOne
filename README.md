@@ -61,7 +61,7 @@ ProductRepo // this class was generated with echo $pdoOne()->generateCodeClass([
     * [1. Running a raw query](#1-running-a-raw-query)
     * [2. Running a native PDO statement](#2-running-a-native-pdo-statement)
     * [3. Running using the query builder](#3-running-using-the-query-builder)
-    * [4. Running using a ORM](#4-running-using-a-orm)
+    * [4. Running using an ORM](#4-running-using-an-orm)
   * [How to work with Date values?](#how-to-work-with-date-values)
   * [How to run a transaction?](#how-to-run-a-transaction)
   * [Custom Queries](#custom-queries)
@@ -147,7 +147,7 @@ ProductRepo // this class was generated with echo $pdoOne()->generateCodeClass([
   * [Benchmark (mysql, estimated)](#benchmark-mysql-estimated)
   * [migration from 3 to 4](#migration-from-3-to-4)
   * [Error FAQs](#error-faqs)
-    * [Uncaught Error: Undefined constant eftec\_BasePdoOneRepo::COMPILEDVERSION](#uncaught-error-undefined-constant-eftecbasepdoonerepocompiledversion)
+    * [Uncaught Error: Undefined constant eftec\_BasePdoOneRepo::COMPILEDVERSION](#uncaught-error-undefined-constant-eftec_basepdoonerepocompiledversion)
   * [Changelist](#changelist)
 <!-- TOC -->
 
@@ -312,7 +312,7 @@ $pdoOne->set(['name'=>'cocacola'])
 
 ```
 
-### 4. Running using a ORM
+### 4. Running using an ORM
 
 This library also allows to create an **[orm]**(#orm) of your tables. If you are generated an ORM, then you can use the
 next code
@@ -1862,6 +1862,10 @@ In a nutshell:
 > Every minor version means that it adds a new functionality i.e. 1.5 -> 1.6 (new methods)
 >
 > Every decimal version means that it patches/fixes/refactoring a previous functionality i.e. 1.5.0 -> 1.5.1 (fix)
+
+* 4.4 2023-12-12
+  * updated PodOneQuery to be compatible with PdoOneORM 
+  * update phpdoc to be compatible with Visual Studio Code.
 * 4.3.3 2023-09-05
   * change the PHPDOC comments, now it uses markdown instead of "pre" tag.
 * 4.3.2 2023-09-05
@@ -1916,7 +1920,7 @@ it as a PHP file.
         * called to rollback() now stores the cause of why it failed.
 * 3.15 2023-02-03
     * [PdoOneQuery] 3.10 Fixed a problem with insert(),update(),delete(), it will not reset the stack correctly.
-    * [_BasePdoOneRepo] reset() method is now public.]()
+    * [_BasePdoOneRepo] reset() method is now public.
 * 3.14 2023-01-30
     * [PdoOneQuery] 3.9 Fixed a problem with first() where the primary key is not numeric.
     * [Pdo] /[PdoOneQuery] New method now() to obtain the date and time of the database.

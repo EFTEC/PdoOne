@@ -245,6 +245,7 @@ interface PdoOne_IExt
      * <b>Example:</b>
      * ```php
      * $this->addColumn("customer",['id'=>'int']);
+     * $this->addColumn("customer",['id'=>'int not null']);
      * ```
      * @param string $tableName                The name of the table
      * @param array  $definition               An associative array with the definition of the column.<br>

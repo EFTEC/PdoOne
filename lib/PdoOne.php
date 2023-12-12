@@ -1,4 +1,5 @@
-<?php /** @noinspection UnknownInspectionInspection */
+<?php /** @noinspection GrazieInspection */
+/** @noinspection UnknownInspectionInspection */
 /** @noinspection PhpUnused */
 /** @noinspection SqlDialectInspection */
 /** @noinspection SqlNoDataSourceInspection */
@@ -27,11 +28,11 @@ use stdClass;
  * @package       eftec
  * @author        Jorge Castro Castillo
  * @copyright (c) Jorge Castro C. Dual Licence: MIT and Commercial License  https://github.com/EFTEC/PdoOne
- * @version       4.3.2
+ * @version       4.4
  */
 class PdoOne
 {
-    public const VERSION = '4.3.2';
+    public const VERSION = '4.4';
     /** @var int We need this value because null and false could be a valid value. */
     public const NULL = PHP_INT_MAX;
     /** @var string Prefix of the related columns. It is used for ORM */
@@ -145,8 +146,9 @@ class PdoOne
     /** @var int=[0,1,2,3,4][$i]<br>
      * <b>0</b>=no debug for production (all messages of errors are generic). Log only errors<br>
      * <b>1</b>=it shows an error message. Log only errors<br>
-     * <b>2</b>=it shows the error messages and the last query. Log everthing<br>
-     * <b>3</b>=it shows the error messages, the last query, the trace and the last parameters (if any). Log on error
+     * <b>2</b>=it shows an error message. Log only errors and warnings<br>
+     * <b>3</b>=it shows the error messages and the last query. Log everthing<br>
+     * <b>4</b>=it shows the error messages, the last query, the trace and the last parameters (if any). Log on error
      * and info Note: it could show passwords and confidential information<br>
      */
     public $logLevel = 0;
@@ -335,7 +337,7 @@ class PdoOne
 
     /**
      * We clean a sql that it could contain columns<br>
-     * <b>Example:</b><br>
+     * **Example:**
      * ```php
      * PdoOne::cleanColumns("col1,col2"); // col1,col2
      * PdoOne::cleanColumns("col1';,col2"); // col1;,col2
@@ -541,7 +543,7 @@ class PdoOne
     /**
      * It converts a date and time value (expressed in different means) into a DateTime object or false if the operation
      * fails.<br>
-     * <b>Example:</b><br>
+     * **Example:**
      * ```php
      * $r=PdoOne::dateConvertInput('01/12/2020','human',$ms,$time); // it depends on the fields self::$date*HumanFormat
      * $r=PdoOne::dateConvertInput('2020-12-01','iso',$ms,$time); // it depends on the fields self::$date*Format
@@ -828,7 +830,7 @@ class PdoOne
     /**
      * It converts a name to singular. This method is used automatically for the generation of the repository
      * classes<br>
-     * <b>Example:</b><br>
+     * **Example:**
      * ```php
      * self::singularTable('categories'); // category
      * self::singularTable('churches'); // church
@@ -939,7 +941,7 @@ class PdoOne
      * <li><b>identity</b>: (boolean) if the column is identity</li>
      * <li><b>sql</b>: the sql syntax of the column</li>
      * </ul>
-     * <b>Example:</b><br>
+     * **Example:**
      * ```php
      * $this->getDefTable('tablename',$conversion);
      * // ['col1'=>['alias'=>'','phptype'=>'int','conversion'=>null,'type'=>'int','size'=>null
@@ -998,7 +1000,7 @@ class PdoOne
 
     /**
      * It converts a sql type into a 'php type' and a pdo::param type<br>
-     * <b>Example:</b><br>
+     * **Example:**
      * ```php
      * $this->dbTypeToPHP('varchar'); // ['string',PDO::PARAM_STR]
      * $this->dbTypeToPHP('int'); // ['int',PDO::PARAM_INT]
@@ -1091,7 +1093,7 @@ class PdoOne
      * <b>is_unique</b>: Is 0 if the value is not unique, otherwise 1<br>
      * <b>is_primary_key</b>: Is 1 if the value is a primary key, otherwise 0<br>
      * <b>TYPE</b>: returns PRIMARY KEY, UNIQUE KEY or KEY depending on the type of the key<br>
-     * <b>Example:</b><br>
+     * **Example:**
      * ```php
      * $this->getDefTableKeys('table1');
      * // ["IndexName"=>'',"ColumnName"=>'',"is_unique"=>0,"is_primary_key"=>0,"TYPE"=>'']
@@ -1138,7 +1140,7 @@ class PdoOne
      * It returns an associative array or a string with extended values of a table<br>
      * The results of the table depend on the kind of database. For example, sqlsrv returns the schema used (dbo),
      * while mysql returns the current schema (database).
-     * <b>Example:</b><br>
+     * **Example:**
      * ```php
      * $this->getDefTableExtended('table'); // ['name','engine','schema','collation','description']
      * $this->getDefTableExtended('table',true); // "some description of the table"
@@ -1329,10 +1331,10 @@ class PdoOne
                     $txt .= "\n{{Message:}} " . $this->lastError();
                 }
             }
-            if ($this->logLevel >= 2) {
+            if ($this->logLevel >= 3) {
                 $txt .= "\n{{Last query:}} [$this->lastQuery]";
             }
-            if ($this->logLevel >= 3) {
+            if ($this->logLevel >= 4) {
                 $txt .= "\n{{Database:}} " . $this->server . ' - ' . $this->db;
                 if (is_array($extraParam)) {
                     foreach ($extraParam as $k => $v) {
@@ -1403,7 +1405,7 @@ class PdoOne
         $customMessage = $customMessage ?? $exception->getMessage();
         $r = "Uncaught Exception: [" . get_class($exception) . "] code:" . $exception->getCode() . "\n"
             . $customMessage . "\n";
-        if ($this->logLevel > 2) {
+        if ($this->logLevel > 3) {
             $r .= "{{Trace:}}\n";
             foreach ($exception->getTrace() as $error) {
                 // we remove all trace pointing to this file.
@@ -1555,13 +1557,13 @@ class PdoOne
      */
     public function storeInfo(string $txt): void
     {
-        if ($this->logLevel < 2) {
+        if ($this->logLevel <= 2) {
             return;
         }
         if ($this->messageContainer !== null) {
             $this->messageContainer->backupLog(); // we don't want to alter the current configuration
             if ($this->logFile) {
-                if ($this->logLevel >= 2) {
+                if ($this->logLevel > 2) {
                     $this->messageContainer->setLog(true, true, true, true);
                 } else {
                     $this->messageContainer->setLog(true, true);
@@ -1574,11 +1576,13 @@ class PdoOne
 
     /**
      * It adds a delimiter to a text based in the type of database (` for mysql
-     * and [] for sql server)<br> Example:<br>
+     * and [] for sql server)
+     * **Example:**
+     * ```php
      * $pdoOne->addDelimiter('hello world'); // `hello` world<br>
      * $pdoOne->addDelimiter('hello.world'); // `hello`.`world`<br>
-     * $pdoOne->addDelimiter('hello=value); // `hello`=value<br>
-     *
+     * $pdoOne->addDelimiter('hello=value'); // `hello`=value<br>
+     * ```
      * @param $txt
      *
      * @return mixed|string
@@ -1620,10 +1624,10 @@ class PdoOne
 
     /**
      * It runs a raw query
-     * <br><b>Example</b>:<br>
+     * **Example:**
      * ```php
-     * $values=$con->runRawQuery('select * from table where id=?',[20]',true); // with parameter
-     * $values=$con->runRawQuery('select * from table where id=:name',['name'=>20]',true); // with named parameter
+     * $values=$con->runRawQuery('select * from table where id=?',[20],true); // with parameter
+     * $values=$con->runRawQuery('select * from table where id=:name',['name'=>20],true); // with named parameter
      * $values=$con->runRawQuery('select * from table,[]',true); // without parameter.
      ** $values=$con->runRawQuery('select * from table where id=?,[[1,20,PDO::PARAM_INT]]',true); // a full parameter.
      * </pr>
@@ -1891,7 +1895,7 @@ class PdoOne
     /**
      * It returns true if the array is an associative array.  False
      * otherwise.<br>
-     * <b>Example:</b><br>
+     * **Example:**
      * isAssoc(['a1'=>1,'a2'=>2]); // true<br/>
      * isAssoc(['a1','a2']); // false<br/>
      * isAssoc('aaa'); isAssoc(null); // false<br/>
@@ -1946,7 +1950,7 @@ class PdoOne
 
     /**
      * Run a prepared statement.
-     * <br><b>Example</b>:<br>
+     * **Example:**
      *      $con->runQuery($con->prepare('select * from table'));
      *
      * @param PDOStatement $stmt          PDOStatement
@@ -1957,8 +1961,7 @@ class PdoOne
      *
      * @return bool returns true if the operation is correct, otherwise false
      * @throws Exception
-     * @test equals true,$this->pdoOne->runQuery($this->pdoOne->prepare('select
-     *     1 from dual'))
+     * @test equals true,$this->pdoOne->runQuery($this->pdoOne->prepare('select 1 from dual'))
      * @test equals
      *     [1=>1],$this->pdoOne->select('1')->from('dual')->first(),'it must run'
      */
@@ -2345,7 +2348,7 @@ class PdoOne
 
     /**
      * It returns an array with all the tables of the schema, also the foreign key and references  of each table<br>
-     * <b>Example:</b>
+     * **Example:**
      * ```php
      * $this->tableDependency();
      * // ['table'=>['city','country'],
@@ -2784,7 +2787,7 @@ class PdoOne
 
     /**
      * It sets a value into the query (insert or update)<br>
-     * <b>Example:</b><br>
+     * **Example:**
      *      ->from("table")->set('field1=?',20),set('field2=?','hello')->insert()<br>
      *      ->from("table")->set("type=?",[6])->where("i=1")->update()<br>
      *      set("type=?",6) // automatic<br>
@@ -2894,7 +2897,7 @@ class PdoOne
      * <b>This value persists across calls</b><br>
      * For example, if we always want to convert <b>tinyint</b> into <b>boolean</b>, then we could use this function
      * , instead of specify per each column.<br>
-     * <b>Example:</b><br>
+     * **Example:**
      * ```php
      * $this->parent->generateCodeClassConversions(
      *      ['datetime'=>'datetime2'
@@ -2907,7 +2910,7 @@ class PdoOne
      * <b>PHP Conversions</b>:
      * <ul>
      * <li>encrypt (encrypt value. Encryption must be set)</li>
-     * <li>decrypt (decrypt a value if the value can be decrypted). Encryption must be set)</li>
+     * <li>decrypt (decrypt a value if the value can be decrypted). Encryption must be set</li>
      * <li>datetime4 (sql string, no conversion). input (2020-12-30) --> db (2020-12-30) ---> output (30/12/2010)</li>
      * <li>datetime3 (human string). input (30/12/2010) --> db (2020-12-30) ---> output (30/12/2010)</li>
      * <li>datetime2 (iso format)</li>
@@ -3349,7 +3352,7 @@ class PdoOne
 
     /**
      * It calls a store procedure.<br>
-     * <b>Example:</b><br>
+     * **Example:**
      * ```php
      * $this->callProcedure('procexample',['in_name'=>'aa','in_description'=>'bbb'],['in_description])
      * ```<br>
@@ -3425,7 +3428,7 @@ class PdoOne
 
     /**
      * It creates a store procedure<br>
-     * <b>Example:</b><br>
+     * **Example:**
      * ```php
      * // arg1 and arg2 are "in" arguments:
      * $this->createProcedure('proc1','in arg1 int,in arg2 varchar(50)','//body here');
@@ -3467,7 +3470,7 @@ class PdoOne
 
     /**
      * Create a table<br>
-     * <b>Example:</b><br>
+     * **Example:**
      * ```php
      * // no universal (false indicates native sql)
      * createTable('products',['id'=>'int not null','name'=>'varchar(50) null'],'id','','',false);
@@ -3477,7 +3480,7 @@ class PdoOne
      *
      * @param string            $tableName        The name of the new table. This method will fail if the table exists.
      * @param array             $definition       An associative array with the definition of the columns.<br>
-     *                                            <b>Example:</b><br>
+     *                                            **Example:**
      * @param string|null|array $primaryKey       The column's name that is primary key.<br>
      *                                            If the value is an associative array then it generates all keys.<br>
      *                                            The primary key could be indicated in the definition (Sqlite)
@@ -3523,9 +3526,10 @@ class PdoOne
 
     /**
      * It adds a columns to a table<br>
-     * <b>Example:</b>
+     * **Example:**
      * ```php
      * $this->addColumn("customer",['id'=>'int']);
+     * $this->addColumn("customer",['id'=>'int not null default 0']); // mysql/sql/oracle
      * ```
      * @param string $tableName  The name of the new table.
      * @param array  $definition The definition of the columns<br>
@@ -3545,7 +3549,7 @@ class PdoOne
 
     /**
      * It deletes a column/s to a table<br>
-     * <b>Example:</b>
+     * **Example:**
      * ```php
      * $this->deleteColumn("customer",'col1');
      * $this->deleteColumn("customer",['col1','col2']);
@@ -3569,7 +3573,7 @@ class PdoOne
     /**
      * it converts a natural definition of table to a specific definition of table.<br>
      * This definition is simplified ("column type null extra") and it doesn't contain all the definitions<br>
-     * <b>Example:</b>
+     * **Example:**
      * ```php
      * "name string(20) null" -> "name varchar(20) null"
      * "creationDate datetime null" -> "creationDate date null"
@@ -3600,7 +3604,7 @@ class PdoOne
 
     /**
      * Run multiples unprepared query added as an array or separated by ;<br>
-     * <b>Example:</b><br>
+     * **Example:**
      * ```php
      * $this->runMultipleRawQuery("insert into() values(1); insert into() values(2)");
      * $this->runMultipleRawQuery(["insert into() values(1)","insert into() values(2)"]);
@@ -3663,7 +3667,7 @@ class PdoOne
 
     /**
      * It adds foreign keys to a table<br>
-     * <b>Example:<b><br>
+     * **Example:**
      * ```php
      * $this->createFK('table',['col'=>"FOREIGN KEY REFERENCES`tableref`(`colref`)"]); // mysql
      * $this->createFK('table',['col'=>"FOREIGN KEY REFERENCES[tableref]([colref])"]); // sqlsrv
@@ -3686,8 +3690,18 @@ class PdoOne
     }
 
     /**
+     * It returns true if the array is of the type [[...]], otherwise false
+     * @param array $items
+     * @return bool
+     */
+    protected function isArrayItems(array $items): bool
+    {
+        return(isset($items[0]) && is_array($items[0]));
+    }
+
+    /**
      * It creates indexes. It doesn't replace previous indexes. The definition could depend on the type of database<br>
-     * <b>Example:</b><br>
+     * **Example:**
      * ```php
      * $this->createIndex('table',['col1'=>'INDEX','col2=>'UNIQUE INDEX']);
      * ```
@@ -4199,13 +4213,13 @@ class PdoOne
 
     /**
      * Generates and execute an insert command.<br>
-     * <b>Example:</b><br>
+     * **Example:**
      * ```php
      * insert('table',['col1',10,'col2','hello world']); // simple array: name1,value1,name2,value2..
      * insert('table',null,['col1'=>10,'col2'=>'hello world']); // definition is obtained from the values
      * insert('table',['col1'=>10,'col2'=>'hello world']); // definition is obtained from the values
      * insert('table',['col1','col2'],[10,'hello world']); // definition (binary) and value
-     * insert('table',['col1','col2'],['col1'=>10,'col2'=>'hello world']); // definition declarative array)
+     * insert('table',['col1','col2'],['col1'=>10,'col2'=>'hello world']); // definition declarative array
      *      ->set(['col1',10,'col2','hello world'])
      *      ->from('table')
      *      ->insert();
@@ -4271,7 +4285,7 @@ class PdoOne
 
     /**
      * It generates a query for "min". It is a macro of select()
-     * <br><b>Example</b>:<br>
+     * **Example:**
      * ->min('from table','col')->firstScalar() // select min(col) from
      * table<br>
      * ->min('col')->from('table')->firstScalar() // select min(col) from
@@ -4292,7 +4306,7 @@ class PdoOne
 
     /**
      * It generates a query for "count". It is a macro of select()
-     * <br><b>Example</b>:<br>
+     * **Example:**
      * ```php
      * ->from('table')->count('') // select count(*) from
      * table<br>
@@ -4316,7 +4330,7 @@ class PdoOne
 
     /**
      * It generates a query for "sum". It is a macro of select()
-     * <br><b>Example</b>:<br>
+     * **Example:**
      * ->sum('from table','col')->firstScalar() // select sum(col) from
      * table<br>
      * ->sum('col')->from('table')->firstScalar() // select sum(col) from
@@ -4338,7 +4352,7 @@ class PdoOne
 
     /**
      * It generates a query for "max". It is a macro of select()
-     * <br><b>Example</b>:<br>
+     * **Example:**
      * ->max('from table','col')->firstScalar() // select max(col) from
      * table<br>
      * ->max('col')->from('table')->firstScalar() // select max(col) from
@@ -4359,7 +4373,7 @@ class PdoOne
 
     /**
      * It generates a query for "avg". It is a macro of select()
-     * <br><b>Example</b>:<br>
+     * **Example:**
      * ->avg('from table','col')->firstScalar() // select avg(col) from
      * table<br>
      * ->avg('col')->from('table')->firstScalar() // select avg(col) from
@@ -4381,7 +4395,7 @@ class PdoOne
     /**
      * Adds a from for a query. It could be used by select,insert,update and
      * delete.<br>
-     * <b>Example:</b><br>
+     * **Example:**
      * ```php
      *      from('table')
      *      from('table alias')
@@ -4449,7 +4463,7 @@ class PdoOne
 
     /**
      * Generate and run an update in the database.
-     * <br><b>Example</b>:<br>
+     * **Example:**
      * ```php
      *      update('table',['col1',10,'col2','hello world'],['wherecol',10]);
      *      update('table',['col1','col2'],[10,'hello world'],['wherecol'],[10]);
@@ -4484,7 +4498,7 @@ class PdoOne
     /**
      * Adds a right join to the pipeline. It is possible to chain more than one
      * join<br>
-     * <b>Example:</b><br>
+     * **Example:**
      *      right('table on t1.c1=t2.c2')<br>
      *      right('table on table.c1=t2.c2').right('table2 on
      *      table1.c1=table2.c2')<br>
@@ -4502,7 +4516,7 @@ class PdoOne
     /**
      * Adds a left join to the pipeline. It is possible to chain more than one
      * join<br>
-     * <b>Example:</b><br>
+     * **Example:**
      * ```php
      *      left('table on t1.c1=t2.c2')
      *      left('table on table.c1=t2.c2').left('table2 on
@@ -4520,7 +4534,7 @@ class PdoOne
     }
 
     /**
-     * <b>Example:</b><br>
+     * **Example:**
      *      where( ['field'=>20] ) // associative array with automatic type
      *      where( ['field'=>[20]] ) // associative array with type defined
      *      where( ['field',20] ) // array automatic type
@@ -4544,8 +4558,7 @@ class PdoOne
      *
      * @return PdoOneQuery
      * @see  http://php.net/manual/en/mysqli-stmt.bind-param.php for types
-     * @test InstanceOf
-     *       PdoOne::class,this('field1=?,field2=?',[20,'hello'])
+     * @test InstanceOf PdoOne::class,this('field1=?,field2=?',[20,'hello'])
      */
     public function where($sql, $param = PdoOne::NULL, bool $isHaving = false, ?string $tablePrefix = null): PdoOneQuery
     {
@@ -4554,7 +4567,7 @@ class PdoOne
 
     /**
      * It adds a having to the query builder.
-     * <br><b>Example</b>:<br>
+     * **Example:**
      *      select('*')->from('table')->group('col')->having('field=2')
      *      having( ['field'=>20] ) // associative array with automatic type
      *      having( ['field'=>[20]] ) // associative array with type defined
@@ -4581,7 +4594,7 @@ class PdoOne
 
     /**
      * It generates an inner join<br>
-     * <b>Example:</b><br>
+     * **Example:**
      * ```php
      *          join('tablejoin on t1.field=t2.field')<br>
      *          join('tablejoin','t1.field=t2.field')<br>
@@ -4600,7 +4613,7 @@ class PdoOne
 
     /**
      * It groups by a condition.<br>
-     * <b>Example:</b><br>
+     * **Example:**
      * ->select('col1,count(*)')->from('table')->group('col1')->toList();
      *
      * @param string $sql Input SQL query
@@ -4615,7 +4628,7 @@ class PdoOne
 
     /**
      * It adds an "order by" in a query.<br>
-     * <b>Example:</b><br>
+     * **Example:**
      * ```php
      *      ->select("")->order("column")->toList();
      *      ->select("")->order("col1,col2")->toList();
@@ -4635,7 +4648,7 @@ class PdoOne
 //<editor-fold desc="cli utils">
     /**
      * It adds a "limit" in a query. It depends on the type of database<br>
-     * <b>Example:</b><br>
+     * **Example:**
      * ```php
      *      ->select("")->limit("10,20")->toList();
      * ```
@@ -4671,7 +4684,7 @@ class PdoOne
 
     /**
      * It sets a recursive array.<br>
-     * <b>Example:</b>:<br>
+     * **Example:**
      * ```php
      * $this->recursive(['field1','field2']);
      * ```

@@ -15,7 +15,7 @@ use RuntimeException;
 /**
  * Class PdoOneQuery
  *
- * @version       4.1
+ * @version       4.2
  * @package       eftec
  * @author        Jorge Castro Castillo
  * @copyright (c) Jorge Castro C. Dual Licence: MIT and Commercial License  https://github.com/EFTEC/PdoOne
@@ -411,7 +411,8 @@ class PdoOneQuery
 
     /**
      * It adds a having to the query builder.
-     * <br><b>Example</b>:<br>
+     * **Example:**
+     * ```php
      *      select('*')->from('table')->group('col')->having('field=2')
      *      having( ['field'=>20] ) // associative array with automatic type
      *      having( ['field'=>[20]] ) // associative array with type defined
@@ -422,7 +423,7 @@ class PdoOneQuery
      *      having('field',[20]) // automatic type (it's the same "as")
      *      where('field=?',[20]) having('field=?', [20] ) // type(i,d,s,b)
      *      defined having('field=?,field2=?', [20,'hello'] )
-     *
+     * ```
      * @param string|array $sql
      * @param array|mixed  $param
      *
@@ -441,7 +442,7 @@ class PdoOneQuery
 
     /**
      * Add a condition to the query.
-     * <b>Example:</b><br>
+     * **Example:**
      * ```php
      *  $this->where( ['field'=>20] ) // associative array with automatic type
      *  $this->where( ['/_field/subfield',20] ) // (for ORM) recursive query
@@ -483,7 +484,7 @@ class PdoOneQuery
     }
 
     /**
-     * <b>Example:</b><br>
+     * **Example:**
      * ```php
      * where( ['field'=>20] ) // associative array (named)
      * where( ['field=?'=>20] ) // associative array (numeric)
@@ -688,7 +689,7 @@ class PdoOneQuery
      * This method is an <b>end of the chain method</b>, so it clears the method stack<br>
      * <b>Note</b>: This method could not be efficient because it reads all the values.
      * If you can, then use the methods sort()::first()<br>
-     * <b>Example</b>:<br>
+     * **Example:**
      * ```php
      * $con->select('*')->from('table')->last(); // select * from table (last scalar value)
      * ```
@@ -738,7 +739,7 @@ class PdoOneQuery
     /**
      * It returns an array of simple columns (not declarative). It uses the
      * first column<br>
-     * <b>Example:</b><br>
+     * **Example:**
      * ```php
      * select('select id from table')->toListSimple() // ['1','2','3','4']
      * ```
@@ -775,14 +776,14 @@ class PdoOneQuery
             if ($addColumns) {
                 $this->select($cls::getDefName());
             }
-            $this->from($cls::TABLE);
+            $this->from($cls::$TABLE);
             //throw new RuntimeException('Method toListKeyValue not yet implemented for PdoOne::ORM');
         }
     }
 
     /**
      * It adds a select to the query builder.
-     * <br><b>Example</b>:<br>
+     * **Example:**
      * ```php
      * $this->select("\*")->from('table') //"select * from table"
      * $this->select(['col1','col2'])->from('table') // "select col1,col2 from table"
@@ -813,7 +814,7 @@ class PdoOneQuery
     /**
      * Adds a from for a query. It could be used by select,insert,update and delete.<br>
      * <b>Note:</b> The prefix (PdoOne->$prefixTable) is considered only if the table is defined alone.
-     * <b>Example:</b><br>
+     * **Example:**
      * ```php
      *      from('table')
      *      from('table alias')
@@ -927,7 +928,7 @@ class PdoOneQuery
      * If the second column does not exist then it uses first column as the second value<br>
      * If there is 3 columns, and it does not use a separator, then it only uses the first 2 columns<br>
      * If there is 3 columns, and it does use a separator, then the second value is the merge of the last 2 columns<br>
-     * <b>Example:</b><br>
+     * **Example:**
      * ```php
      * select('select cod,name from table')->toListKeyValue()
      * // ['cod1'=>'name1','cod2'=>'name2']
@@ -992,7 +993,7 @@ class PdoOneQuery
      * It returns a declarative array of rows.<br>
      * If not data is found, then it returns an empty array<br>
      * This method is an <b>end of the chain method</b>, so it clears the method stack<br>
-     * <b>Example</b>:<br>
+     * **Example:**
      * ```php
      * $this->select('select id,name from table')->toList() // [['id'=>'1','name'='john'],['id'=>'2','name'=>'anna']]
      * $this->select('id,name')
@@ -1018,7 +1019,7 @@ class PdoOneQuery
 
     /**
      * It returns a PdoStatement from a query.<br>
-     * <b>Example</b>:<br>
+     * **Example:**
      * ```php
      * $stmt=$this->select('select id,name from table')->toPdoStatement();
      * while ($row = $stmt->fetch()) {
@@ -1039,7 +1040,7 @@ class PdoOneQuery
      * It fetches a query for every row.<br>
      * This method could be used when we don't want to read all the information at once, so you can read and process
      * each line separately<br>
-     * <b>Example</b>:<br>
+     * **Example:**
      * ```php
      * $this->select('select id,name from table')
      *      ->fetchLoop(static function($row,$numRow) {return($row);},\PDO::FETCH_ASSOC)
@@ -1090,7 +1091,7 @@ class PdoOneQuery
     /**
      * It returns the first row.  If there is not a row then it returns false.<br>
      * This method is an <b>end of the chain method</b>, so it clears the method stack<br>
-     * <b>Example</b>:<br>
+     * **Example:**
      * ```php
      *      $con->select('*')->from('table')->first(); // select * from table (first value)
      *      Repo::->method(...)->first(1); // (ORM only), the first value where the primary key is 1
@@ -1170,7 +1171,7 @@ class PdoOneQuery
 
     /**
      * It generates a query for "count". It is a macro of select()
-     * <br><b>Example</b>:<br>
+     * **Example:**
      * ```php
      * ->from('table')->count('') // select count(*) from
      * table<br>
@@ -1224,7 +1225,7 @@ class PdoOneQuery
      * result set returned by the query. Additional columns or rows are ignored.<br>
      * If value is not found then it returns null.<br>
      * * This method is an <b>end of the chain method</b>, so it clears the method stack<br>
-     * <b>Example</b>:<br>
+     * **Example:**
      * ```php
      * $con->select('*')->from('table')->firstScalar(); // select * from table (first scalar value)
      * ```
@@ -1283,7 +1284,7 @@ class PdoOneQuery
 
     /**
      * It generates a query for "sum". It is a macro of select()
-     * <br><b>Example</b>:<br>
+     * **Example:**
      * ->sum('from table','col')->firstScalar() // select sum(col) from
      * table<br>
      * ->sum('col')->from('table')->firstScalar() // select sum(col) from
@@ -1305,7 +1306,7 @@ class PdoOneQuery
 
     /**
      * It generates a query for "min". It is a macro of select()
-     * <br><b>Example</b>:<br>
+     * **Example:**
      * ->min('from table','col') // select min(col) from
      * table<br>
      * ->from('table')->min('col') // select min(col) from
@@ -1329,7 +1330,7 @@ class PdoOneQuery
     //<editor-fold desc="Query Builder functions" defaultstate="collapsed" >
     /**
      * It generates a query for "max". It is a macro of select()
-     * <br><b>Example</b>:<br>
+     * **Example:**
      * ->max('from table','col')->firstScalar() // select max(col) from
      * table<br>
      * ->max('col')->from('table')->firstScalar() // select max(col) from
@@ -1350,7 +1351,7 @@ class PdoOneQuery
 
     /**
      * It generates a query for "avg". It is a macro of select()
-     * <br><b>Example</b>:<br>
+     * **Example:**
      * ->avg('from table','col')->firstScalar() // select avg(col) from
      * table<br>
      * ->avg('col')->from('table')->firstScalar() // select avg(col) from
@@ -1411,7 +1412,7 @@ class PdoOneQuery
 
     /**
      * It adds a "limit" in a query. It depends on the type of database<br>
-     * <b>Example:</b><br>
+     * **Example:**
      * ```php
      *      ->select("")->limit("10,20")->toList();
      * ```
@@ -1522,7 +1523,7 @@ class PdoOneQuery
 
     /**
      * If true then the stack/query builder will not reset the stack (but on error) when it is finished<br>
-     * <b>Example:</b><br>
+     * **Example:**
      * ```php
      * $this->parent->pdoOne->select('*')->from('missintable')->setNoReset(true)->toList();
      * // we do something with the stack
@@ -1575,7 +1576,7 @@ class PdoOneQuery
     /**
      * Adds a left join to the pipeline. It is possible to chain more than one
      * join<br>
-     * <b>Example:</b><br>
+     * **Example:**
      * ```php
      *      left('table on t1.c1=t2.c2')
      *      left('table on table.c1=t2.c2').left('table2 on
@@ -1603,7 +1604,7 @@ class PdoOneQuery
     /**
      * Adds a right join to the pipeline. It is possible to chain more than one
      * join<br>
-     * <b>Example:</b><br>
+     * **Example:**
      *      right('table on t1.c1=t2.c2')<br>
      *      right('table on table.c1=t2.c2').right('table2 on
      *      table1.c1=table2.c2')<br>
@@ -1628,7 +1629,7 @@ class PdoOneQuery
 
     /**
      * It sets a value into the query (insert or update)<br>
-     * <b>Example:</b><br>
+     * **Example:**
      *      ->from("table")->set('field1=?',20),set('field2=?','hello')->insert()<br>
      *      ->from("table")->set("type=?",[6])->where("i=1")->update()<br>
      *      set("type=?",6) // automatic<br>
@@ -1659,7 +1660,7 @@ class PdoOneQuery
 
     /**
      * It groups by a condition.<br>
-     * <b>Example:</b><br>
+     * **Example:**
      * ->select('col1,count(*)')->from('table')->group('col1')->toList();
      *
      * @param ?string $sql Input SQL query
@@ -1690,7 +1691,7 @@ class PdoOneQuery
 
     /**
      * It sets a recursive array.<br>
-     * <b>example:</b>:<br>
+     * **Example:**
      * ```php
      * $this->recursive(['field1','field2']);
      * RepoClass::recursive(['/_relation1','/_relation1/_subrelation1']); // For ORM: use of recursive
@@ -1913,7 +1914,7 @@ class PdoOneQuery
 
     /**
      * Generates and execute an insert command.<br>
-     * <b>Example:</b><br>
+     * **Example:**
      * ```php
      * insert('table',['col1',10,'col2','hello world']); // simple array: name1,value1,name2,value2..
      * insert('table',null,['col1'=>10,'col2'=>'hello world']); // definition is obtained from the values
@@ -1959,10 +1960,12 @@ class PdoOneQuery
     /**
      * Delete a row(s) if they exist.
      * Example:
+     * ```php
      *      delete('table',['col1',10,'col2','hello world']);
      *      delete('table',['col1','col2'],[10,'hello world']);
      *      $db->from('table')->where(..)->delete() // running on a chain
      *      delete('table where condition=1'); // single command.
+     * ```
      *
      * @param string|null|array $tableOrObject
      * @param string[]|null     $tableDefWhere
@@ -1983,7 +1986,7 @@ class PdoOneQuery
             if (count($this->where) > 0) {
                 // it is processed as non-orm, using the table of the orm.
                 $cls::reset();
-                return $this->delete($cls::TABLE);
+                return $this->delete($cls::$TABLE);
             }
             /** @see _BasePdoOneRepo::_delete */
             $cls::setPdoOneQuery($this);
@@ -2082,7 +2085,7 @@ class PdoOneQuery
 
     /**
      * Generate and run an update in the database.<br>
-     * <b>Example</b>:<br>
+     * **Example:**
      * ```php
      * update('table',['col1',10,'col2','hello world'],['wherecol',10]);
      * update('table',['col1'=>10=>'col2'=>'hello world'],['wherecol'=>10]);
@@ -2093,7 +2096,7 @@ class PdoOneQuery
      *     ->update();
      * update('product_category set col1=10 where idproducttype=1')
      * ```
-     * <b>Example ORM</b>:<br>
+     * **Example ORM:**
      * If <b>$entity</b> has a missing field, then the missing field will not be updated.<br>
      * If <b>$entity</b> has an extra field (a field not defined in the table), then it will throw an error<br>
      * ```php
@@ -2211,7 +2214,7 @@ class PdoOneQuery
 
     /**
      * It adds an "order by" in a query.<br>
-     * <b>Example:</b><br>
+     * **Example:**
      * ```php
      *      ->select("")->order("column")->toList();
      *      ->select("")->order("col1,col2")->toList();
@@ -2233,7 +2236,7 @@ class PdoOneQuery
 
     /**
      * Alias of method join().<br>
-     * <b>Example</b>:<br>
+     * **Example:**
      * ```php
      *          innerjoin('tablejoin on t1.field=t2.field')
      *          innerjoin('tablejoin tj on t1.field=t2.field')
@@ -2253,7 +2256,7 @@ class PdoOneQuery
 
     /**
      * It generates an inner join<br>
-     * <b>Example:</b><br>
+     * **Example:**
      * ```php
      *          join('tablejoin on t1.field=t2.field')<br>
      *          join('tablejoin','t1.field=t2.field')<br>
@@ -2281,7 +2284,7 @@ class PdoOneQuery
     /**
      * It sets to use cache for the current pipelines. It is disabled at the end of the pipeline<br>
      * It only works if we set the cacheservice<br>
-     * <b>Example</b><br>
+     * **Example:**
      * ```php
      * $this->setCacheService($instanceCache);
      * $this->useCache()->select()…; // The cache never expires
