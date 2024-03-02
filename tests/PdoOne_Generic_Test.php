@@ -25,7 +25,7 @@ class PdoOne_Generic_Test extends TestCase
         $this->assertEquals('a(b)',PdoOne::replaceBetween('a(1,2,3)','(',')','b'));
         $this->assertEquals('Abc',PdoOne::tableCase('_abc'));
         $this->assertEquals('Abc',PdoOne::tableCase('abc'));
-        $this->assertEquals('Abc',PdoOne:('abc'));
+        //$this->assertEquals('Abc',PdoOne::('abc'));
         $this->assertEquals('AbcDef',PdoOne::tableCase('abc_def'));
         $this->assertEquals('AbcDef',PdoOne::tableCase('abc_defes'));
         $def=$this->pdoOne->getDefTable('city');

@@ -15,6 +15,7 @@ use eftec\ext\PdoOne_Oci;
 use eftec\ext\PdoOne_Sqlsrv;
 use eftec\ext\PdoOne_TestMockup;
 use Exception;
+use JsonException;
 use PDO;
 use PDOStatement;
 use RuntimeException;
@@ -28,37 +29,37 @@ use stdClass;
  * @package       eftec
  * @author        Jorge Castro Castillo
  * @copyright (c) Jorge Castro C. Dual Licence: MIT and Commercial License  https://github.com/EFTEC/PdoOne
- * @version       4.4
+ * @version       4.6
  */
 class PdoOne
 {
-    public const VERSION = '4.4';
+    public const VERSION = '4.6';
     /** @var int We need this value because null and false could be a valid value. */
     public const NULL = PHP_INT_MAX;
     /** @var string Prefix of the related columns. It is used for ORM */
-    public static $prefixBase = '_';
+    public static string $prefixBase = '_';
     /** @var string the prefix of every table, example "t_" */
-    public $prefixTable = '';
+    public string $prefixTable = '';
     /** @var int Used for the method page() */
-    public static $pageSize = 20;
+    public static int $pageSize = 20;
     /** @var string|null Static date (when the date is empty) */
-    public static $dateEpoch = '2000-01-01 00:00:00.00000'; // we don't need to set the epoch to 1970.
+    public static ?string $dateEpoch = '2000-01-01 00:00:00.00000'; // we don't need to set the epoch to 1970.
     /**
      * Text date format
      *
      * @var string
      * @see https://secure.php.net/manual/en/function.date.php
      */
-    public static $dateFormat = 'Y-m-d';
-    public static $dateHumanFormat = 'd/m/Y';
+    public static string $dateFormat = 'Y-m-d';
+    public static string $dateHumanFormat = 'd/m/Y';
     /**
      * Text datetime format
      *
      * @var string
      * @see https://secure.php.net/manual/en/function.date.php
      */
-    public static $dateTimeFormat = 'Y-m-d\TH:i:s\Z';
-    public static $dateTimeHumanFormat = 'd/m/Y H:i:s';
+    public static string $dateTimeFormat = 'Y-m-d\TH:i:s\Z';
+    public static string $dateTimeHumanFormat = 'd/m/Y H:i:s';
     //<editor-fold desc="server fields">
     /**
      * Text datetime format with microseconds
@@ -66,21 +67,21 @@ class PdoOne
      * @var string
      * @see https://secure.php.net/manual/en/function.date.php
      */
-    public static $dateTimeMicroFormat = 'Y-m-d\TH:i:s.u\Z';
-    public static $dateTimeMicroHumanFormat = 'd/m/Y H:i:s.u';
+    public static string $dateTimeMicroFormat = 'Y-m-d\TH:i:s.u\Z';
+    public static string $dateTimeMicroHumanFormat = 'd/m/Y H:i:s.u';
     /** @var string This format is used to determine how the database will return a date */
-    public static $isoDate = 'Y-m-d';
-    public static $isoDateTimeMs = 'Y-m-d H:i:s.u';
-    public static $isoDateTime = 'Y-m-d H:i:s';
+    public static string $isoDate = 'Y-m-d';
+    public static string $isoDateTimeMs = 'Y-m-d H:i:s.u';
+    public static string $isoDateTime = 'Y-m-d H:i:s';
     /** @var string This format is used to determine how the database expect a date value */
-    public static $isoDateInput = '';
-    public static $isoDateInputTimeMs = '';
-    public static $isoDateInputTime = '';
-    public $internalCacheCounter = 0;
-    public $internalCache = [];
+    public static string $isoDateInput = '';
+    public static string $isoDateInputTimeMs = '';
+    public static string $isoDateInputTime = '';
+    public int $internalCacheCounter = 0;
+    public array $internalCache = [];
     /** @var int nodeId It is the identifier of the node. It must be between 0..1023 */
-    public $nodeId = 1;
-    public $tableSequence = 'snowflake';
+    public int $nodeId = 1;
+    public string $tableSequence = 'snowflake';
     /**
      * it is used to generate an unpredictable number by flipping positions. It
      * must be changed.
@@ -93,56 +94,56 @@ class PdoOne
      * @var array
      * @see PdoOne::getUnpredictable
      */
-    public $masks0 = [2, 0, 4, 5];
-    public $masks1 = [16, 13, 12, 11];
+    public array $masks0 = [2, 0, 4, 5];
+    public array $masks1 = [16, 13, 12, 11];
     /** @var PdoOneEncryption */
-    public $encryption;
+    public PdoOneEncryption $encryption;
     /** @var string=['mysql','sqlsrv','test','sqlite','oci'][$i] */
-    public $databaseType;
+    public string $databaseType;
     /** @var string It is generated and set automatically by the type of database */
-    public $database_delimiter0 = '`';
+    public string $database_delimiter0 = '`';
     /** @var string It is generated and set automatically by the type of database */
-    public $database_delimiter1 = '`';
+    public string $database_delimiter1 = '`';
     /** @var string It is generated and set automatically by the type of database */
-    public $database_identityName = 'identity';
+    public string $database_identityName = 'identity';
     /** @var string server ip. Ex. 127.0.0.1 127.0.0.1:3306 */
-    public $server;
-    public $user;
+    public string $server='';
+    public ?string $user=null;
     /** @var null|string the unique id generate by sha256or $hashtype and based in the query, arguments, type
      * and methods
      */
-    public $uid;
-    public $lastBindParam = [];
-    public $pwd;
+    public ?string $uid=null;
+    public array $lastBindParam = [];
+    public ?string $pwd=null;
     /** @var string The name of the database/schema */
-    public $db;
+    public string $db;
     /** @var string the name of the locker */
-    public $lockerId;
-    public $charset = 'utf8';
+    public string $lockerId;
+    public string $charset = 'utf8';
     /** @var bool It is true if the database is connected otherwise,it's false */
-    public $isOpen = false;
+    public bool $isOpen = false;
     /**
      * @var bool If true (default), then it throws an error if happens an error. If false, then the execution continues
      */
-    public $throwOnError = true;
+    public bool $throwOnError = true;
     /**
      * @var bool If true (default), then it throws a customer message.. If false, then it uses the default (PHP) style
      */
-    public $customError = true;
+    public bool $customError = true;
     /** @var string[] PHP classes excluded by the custom error log */
-    public $traceBlackList = []; //['PdoOne.php', 'PdoOneQuery.php', 'PdoOne_Mysql.php', 'PdoOne.Sqlsrv.php', 'PdoOne.Oci.php'
+    public array $traceBlackList = []; //['PdoOne.php', 'PdoOneQuery.php', 'PdoOne_Mysql.php', 'PdoOne.Sqlsrv.php', 'PdoOne.Oci.php'
     //, 'PdoOneTestMockup.php', '_BasePdoOneRepo.php'];
-    /** @var  PDO */
-    public $conn1;
-    /** @var  bool True if the transaction is open */
-    public $transactionOpen;
+    /** @var  PDO|null */
+    public ?PDO $conn1=null;
+    /** @var  bool|null True if the transaction is open */
+    public ?bool $transactionOpen=null;
     /** @var bool if the database is in READ ONLY mode or not. If true then we must avoid to write in the database. */
-    public $readonly = false;
+    public bool $readonly = false;
     /** @var boolean if true then it logs the file using the php log file (if enabled) */
-    private $logFile = false;
+    private bool $logFile = false;
     /** @var string It stores the last error. runGet and beginTry resets it */
-    public $errorText = '';
-    public $isThrow = false;
+    public string $errorText = '';
+    public bool $isThrow = false;
     /** @var int=[0,1,2,3,4][$i]<br>
      * <b>0</b>=no debug for production (all messages of errors are generic). Log only errors<br>
      * <b>1</b>=it shows an error message. Log only errors<br>
@@ -151,38 +152,38 @@ class PdoOne
      * <b>4</b>=it shows the error messages, the last query, the trace and the last parameters (if any). Log on error
      * and info Note: it could show passwords and confidential information<br>
      */
-    public $logLevel = 0;
-    /** @var string last query executed */
-    public $lastQuery;
-    public $lastParam = [];
+    public int $logLevel = 0;
+    /** @var string|null last query executed */
+    public ?string $lastQuery=null;
+    public ?array $lastParam = [];
     /** @var array the tables used in the queries and added by the methods from() and join() */
-    public $tables = [];
-    public $useInternalCache = false;
+    public array $tables = [];
+    public bool $useInternalCache = false;
     /**
      * @var array
      * @see PdoOne::generateCodeClassConversions
      * @see PdoOne::generateAbstractRepo
      */
-    public $codeClassConversion = [];
+    public array $codeClassConversion = [];
     //</editor-fold>
-    public $genError = true;
+    public bool $genError = true;
     /** @var int */
-    public $affected_rows = 0;
+    public int $affected_rows = 0;
     /** @var PdoOne_IExt */
-    public $service;
-    /** @var IPdoOneCache The service of cache [optional] */
-    public $cacheService;
+    public PdoOne_IExt $service;
+    /** @var IPdoOneCache|null The service of cache [optional] */
+    public ?IPdoOneCache $cacheService;
     /** @var null|array it stores the values obtained by $this->tableDependency() */
-    public $tableDependencyArrayCol;
-    public $tableDependencyArray;
+    public ?array $tableDependencyArrayCol=null;
+    public ?array $tableDependencyArray=null;
     /** @var null|array $partition is an associative array [column=>value] with a fixed and pre-established conditions */
-    public $partition;
+    public ?array $partition=null;
     /** @var MessageContainer|null it stores the messages. */
-    private $messageContainer;
-    /** @var PdoOne */
-    protected static $instance;
-    protected $tableKV = '';
-    protected $defaultTableKV = '';
+    private ?MessageContainer $messageContainer;
+    /** @var PdoOne|null */
+    protected static ?PdoOne $instance=null;
+    protected string $tableKV = '';
+    protected string $defaultTableKV = '';
 
     /**
      * PdoOne constructor.  It doesn't open the connection to the database.
@@ -875,12 +876,12 @@ class PdoOne
         $error = [];
         foreach ($defCurrent as $k => $dc) {
             if (!isset($defArray[$k]) && !isset($defFK[$k])) {
-                $error[$k] = "$k " . json_encode($dc) . " deleted";
+                $error[$k] = "$k " . json_encode($dc, JSON_THROW_ON_ERROR) . " deleted";
             }
         }
         foreach ($defArray as $k => $dc) {
             if (!isset($defCurrent[$k])) {
-                $error[$k] = "$k " . json_encode($dc) . " added";
+                $error[$k] = "$k " . json_encode($dc, JSON_THROW_ON_ERROR) . " added";
             }
         }
         foreach ($defCurrent as $k => $dc) {
@@ -914,12 +915,12 @@ class PdoOne
         $defCurrentFK = $this->getDefTableFK($table);
         foreach ($defCurrentFK as $k => $dc) {
             if (!isset($defFK[$k])) {
-                $error[] = "fk: " . json_encode($dc) . " deleted";
+                $error[] = "fk: " . json_encode($dc, JSON_THROW_ON_ERROR) . " deleted";
             }
         }
         foreach ($defFK as $k => $dc) {
             if (!isset($defCurrentFK[$k])) {
-                $error[] = "fk: " . json_encode($dc) . " added";
+                $error[] = "fk: " . json_encode($dc, JSON_THROW_ON_ERROR) . " added";
             }
         }
         foreach ($defCurrentFK as $k => $dc) {
@@ -1230,12 +1231,12 @@ class PdoOne
                 try {
                     $result = $this->runRawQuery($query, []);
                 } catch (Exception $ex) {
-                    return json_encode(['error' => $this->lastError()]);
+                    return json_encode(['error' => $this->lastError()], JSON_THROW_ON_ERROR);
                 }
                 if (!is_array($result)) {
                     return "No result or result error\n";
                 }
-                return json_encode($result);
+                return json_encode($result, JSON_THROW_ON_ERROR);
             case 'selectcode':
                 return $this->generateCodeSelect($query);
             case 'arraycode':
@@ -1252,6 +1253,7 @@ class PdoOne
      *                                   otherwise it does nothing
      * @param bool|null $alterSession
      * @test exception this(false)
+     * @throws JsonException
      */
     public function connect(bool $failIfConnected = true, ?bool $alterSession = null): void
     {
@@ -1312,6 +1314,7 @@ class PdoOne
      *
      * @param Exception|null $exception
      *
+     * @throws JsonException
      * @see PdoOne
      */
     public function throwError(string $txt, $txtExtra, $extraParam = '', bool $throwError = true, ?Exception $exception = null): void
@@ -1324,7 +1327,7 @@ class PdoOne
                 $txt .= "\n{{Message:}} [Error on database]";
             }
             if ($this->logLevel >= 1) {
-                $txt .= "\n{{Message:}} " . is_array($txtExtra) ? json_encode($txtExtra) : $txtExtra;
+                $txt .= "\n{{Message:}} " . is_array($txtExtra) ? json_encode($txtExtra, JSON_THROW_ON_ERROR) : $txtExtra;
                 if ($exception !== null) {
                     $txt .= "\n{{Message:}} " . $this->lastError() . ' ' . $exception->getMessage();
                 } else {
@@ -1339,7 +1342,7 @@ class PdoOne
                 if (is_array($extraParam)) {
                     foreach ($extraParam as $k => $v) {
                         if (is_array($v) || is_object($v)) {
-                            $v = json_encode($v);
+                            $v = json_encode($v, JSON_THROW_ON_ERROR);
                         }
                         $txt .= "\n{{" . $k . ":}} $v";
                     }
@@ -1398,6 +1401,7 @@ class PdoOne
      * @param string|null $customMessage
      * @param false       $returnAsString
      * @return string
+     * @throws JsonException
      */
     public function custom_exception_handler($exception, ?string $customMessage = null, bool $returnAsString = false): string
     {
@@ -1427,7 +1431,7 @@ class PdoOne
                             if (is_object($v)) {
                                 $args[] = get_class($v);
                             } else if (is_array($v)) {
-                                $args[] = json_encode($v);
+                                $args[] = json_encode($v, JSON_THROW_ON_ERROR);
                             } elseif ($v === null) {
                                 $args[] = '(null)';
                             } else {
@@ -1727,7 +1731,7 @@ class PdoOne
                     //$typeP = $this->stringToPdoParam($param[$i]);
                     $this->lastBindParam[$i] = $iValue;
                     //$stmt->bindParam($counter, $param[$i + 1], $typeP);
-                    $stmt->bindParam($i + 1, $params[$i], $this->getType($params[$i]), 0);
+                    $stmt->bindParam($i + 1, $params[$i], $this->getType($params[$i]));
                 }
             }
         }
@@ -1977,7 +1981,7 @@ class PdoOne
         } catch (Exception $ex) {
             //@$stmt->closeCursor();
             $this->throwError($this->databaseType . ':Failed to run query ', $this->lastQuery,
-                ['param' => $this->lastParam, 'error_last' => json_encode(error_get_last())], $throwError, $ex);
+                ['param' => $this->lastParam, 'error_last' => json_encode(error_get_last(), JSON_THROW_ON_ERROR)], $throwError, $ex);
             return false;
         }
         if ($r === false) {
@@ -2871,6 +2875,7 @@ class PdoOne
      * @param string $cause
      * @return bool
      * @test equals false,(false),'transaction is not open'
+     * @throws JsonException
      */
     public function rollback(bool $throw = true, string $cause = ''): bool
     {
@@ -3757,8 +3762,9 @@ class PdoOne
      *
      * @param bool $failIfConnected
      * @param bool $alterSession
-     * @test exception this(false)
-     * @see  PdoOne::connect()
+     * @test      exception this(false)
+     * @throws JsonException
+     * @see       PdoOne::connect()
      */
     public function open(bool $failIfConnected = true, bool $alterSession = false): void
     {

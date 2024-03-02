@@ -8,6 +8,7 @@
 namespace eftec;
 
 use Exception;
+use JsonException;
 use PDO;
 use PDOStatement;
 use RuntimeException;
@@ -24,12 +25,12 @@ class PdoOneQuery
 {
     //<editor-fold desc="query builder fields">
     /** @var PdoOne */
-    public $parent;
+    public PdoOne $parent;
     /** @var _BasePdoOneRepo */
     public $ormClass;
     /** @var array parameters for the having. [paramvar,value,type,size] */
-    public $havingParamAssoc = [];
-    public $whereCounter = 1;
+    public array $havingParamAssoc = [];
+    public int $whereCounter = 1;
     /**
      * @var null|int $ttl If <b>0</b> then the cache never expires.<br>
      *                    If <b>false</b> then we don't use cache.<br>
@@ -42,35 +43,35 @@ class PdoOneQuery
      * @var boolean $numericArgument if true then the arguments are numeric. Otherwise, it doesn't have arguments or
      *                               they are named. This value is used for the method where() and having()
      */
-    protected $numericArgument = false;
-    protected $select = '';
-    protected $limit = '';
-    protected $order = '';
+    protected bool $numericArgument = false;
+    protected string $select = '';
+    protected string $limit = '';
+    protected string $order = '';
     /** @var bool if true then builderReset will not reset (unless it is force), if false then it will reset */
-    protected $noReset = false;
-    protected $uid;
+    protected bool $noReset = false;
+    protected ?string $uid=null;
     /** @var array */
-    protected $where = [];
+    protected array $where = [];
     /** @var array parameters for the set. [paramvar,value,type,size] */
-    protected $setParamAssoc = [];
+    protected array $setParamAssoc = [];
     /** @var array */
-    protected $set = [];
+    protected array $set = [];
     /** @var array */
     //private $whereParamValue = [];
     protected $from = '';
-    protected $group = '';
-    protected $recursive = [];
+    protected string $group = '';
+    protected array $recursive = [];
     /** @var array */
-    protected $having = [];
-    protected $distinct = '';
+    protected array $having = [];
+    protected string $distinct = '';
     /** @var array parameters for the where. [paramvar,value,type,size] */
-    private $whereParamAssoc = [];
+    private array $whereParamAssoc = [];
     //</editor-fold>
     //<editor-fold desc="Query Builder DQL functions" defaultstate="collapsed" >
     /**
      * @var bool
      */
-    private $throwOnErrorB;
+    private bool $throwOnErrorB;
 
     /**
      * PdoOneQuery constructor.
@@ -1549,6 +1550,7 @@ class PdoOneQuery
      * @param string     $prefix A prefix added to the UNID generated.
      *
      * @return string
+     * @throws JsonException
      * @see PdoOneEncryption
      */
     public function buildUniqueID($extra = null, string $prefix = ''): string
@@ -1570,7 +1572,7 @@ class PdoOneQuery
             $this->order,
             $extra
         ];
-        return $prefix . hash($this->parent->encryption->hashType, json_encode($all));
+        return $prefix . hash($this->parent->encryption->hashType, json_encode($all, JSON_THROW_ON_ERROR));
     }
 
     /**

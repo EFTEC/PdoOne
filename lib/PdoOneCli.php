@@ -1,4 +1,6 @@
-<?php /** @noinspection PhpUnused */
+<?php /** @noinspection UnknownInspectionInspection */
+
+/** @noinspection PhpUnused */
 
 namespace eftec;
 
@@ -26,11 +28,11 @@ use RuntimeException;
 class PdoOneCli
 {
     public const VERSION = '2.5';
-    /** @var CliOne */
-    public $cli;
-    protected $help;
+    /** @var CliOne|null */
+    public ?CliOne $cli=null;
+    //protected $help;
     /** @var ?PdoOneCli the current instance */
-    public static $instance;
+    public static ?PdoOneCli $instance;
 
     public static function instance(bool $run = true): PdoOneCli
     {
@@ -192,7 +194,7 @@ class PdoOneCli
             if ($pdo !== null) {
                 try {
                     $result = $pdo->runRawQuery($query->value);
-                    $this->cli->showLine(json_encode($result, JSON_PRETTY_PRINT));
+                    $this->cli->showLine(json_encode($result, JSON_THROW_ON_ERROR | JSON_PRETTY_PRINT));
                 } catch (Exception $e) {
                     $this->cli->showCheck('ERROR', 'red', $e->getMessage());
                 }

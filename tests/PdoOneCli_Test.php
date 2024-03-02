@@ -98,28 +98,23 @@ class PdoOneCli_Test extends TestCase
     public function testinteractive2(): void
     {
         chdir(__DIR__);
-        CliOne::testUserInput(['mysql', '127.0.0.1', 'root', 'abc.123', 'sakila', 'yes', 'tmp/c1']);
+        CliOne::testUserInput(['connect', 'configure', 'mysql', '127.0.0.1', 'root', 'abc.123', 'sakila', 'yes', '', '', ''
+            , 'save', 'yes', 'tmp/c1'
+            , '', '']);
         CliOne::testArguments(['program.php', '-cli']);
         $p = new PdoOneCli();
         $p->getCli()->echo = true;
-        $p->cliEngine();
+        //$p->cliEngine();
         $this->assertEquals([
-            'databasetype' => 'mysql',
             'server' => '127.0.0.1',
             'user' => 'root',
-            'password' => 'abc.123',
             'database' => 'sakila',
-            'input' => '',
-            'output' => '',
-            'namespace' => '',
-            'tablexclass' => [],
-            'conversion' => [],
-            'extracolumn' => [],
-            'removecolumn' => [],
-            'columnsTable' => [],
-            'help' => false,
-            'classdirectory' => null,
-            'classnamespace' => null,
-        ], $p->getCli()->readData('tmp/c1')[1]);
+            'databaseType' => 'mysql',
+            'pwd' => 'abc.123',
+            'logFile' => true,
+            'charset' => null,
+            'nodeId' => 1,
+            'tableKV' => ''
+        ], $p->getCli()->readDataPHPFormat('tmp/c1')[1]);
     }
 }

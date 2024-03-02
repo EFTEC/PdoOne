@@ -8,7 +8,7 @@ in the bare metal of the PDO library, but it also allows to create an ORM using 
 
 [![Packagist](https://img.shields.io/packagist/v/eftec/PdoOne.svg)](https://packagist.org/packages/eftec/PdoOne)
 [![Total Downloads](https://poser.pugx.org/eftec/PdoOne/downloads)](https://packagist.org/packages/eftec/PdoOne)
-[![Maintenance](https://img.shields.io/maintenance/yes/2023.svg)]()
+[![Maintenance](https://img.shields.io/maintenance/yes/2024.svg)]()
 [![composer](https://img.shields.io/badge/composer-%3E1.6-blue.svg)]()
 [![php](https://img.shields.io/badge/php-7.1-green.svg)]()
 [![php](https://img.shields.io/badge/php-8.x-green.svg)]()
@@ -1862,7 +1862,9 @@ In a nutshell:
 > Every minor version means that it adds a new functionality i.e. 1.5 -> 1.6 (new methods)
 >
 > Every decimal version means that it patches/fixes/refactoring a previous functionality i.e. 1.5.0 -> 1.5.1 (fix)
-
+* 4.6 2024-03-02
+  * Updating dependency to PHP 7.4. The extended support of PHP 7.2 ended 3 years ago.
+  * Added more type hinting in the code.
 * 4.4 2023-12-12
   * updated PodOneQuery to be compatible with PdoOneORM 
   * update phpdoc to be compatible with Visual Studio Code.

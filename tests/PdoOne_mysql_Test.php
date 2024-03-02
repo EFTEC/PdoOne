@@ -890,6 +890,8 @@ class PdoOne_mysql_Test extends TestCase
         }
         self::assertLessThan(3639088446091303982, $this->pdoOne->getSequence(true),
             'sequence must be greater than 3639088446091303982');
+        $this->pdoOne->dropTable('testsequence');
+        $this->pdoOne->drop('next_testsequence','function');
     }
 
     public function test_kv(): void
@@ -953,7 +955,7 @@ class PdoOne_mysql_Test extends TestCase
         } catch (Exception $ex) {
             $this->assertNotEmpty($this->pdoOne->getErrors());
             $this->assertStringContainsString('Base table or view not found', $this->pdoOne->getFirstError());
-            $this->assertStringContainsString('Uncaught Exception', $this->pdoOne->getFirstError());
+            $this->assertStringContainsString('SQLSTATE', $this->pdoOne->getFirstError());
         }
         $this->pdoOne->select('*')->from('city')->where('1=1')->toList();
         $this->assertEquals([0 => '[INFO] [ERROR1] Statement:	select * from wrongtable where 1=1 ',

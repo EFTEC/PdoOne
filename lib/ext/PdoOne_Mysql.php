@@ -22,7 +22,7 @@ use PDO;
 class PdoOne_Mysql implements PdoOne_IExt
 {
     /** @var PdoOne */
-    protected $parent;
+    protected PdoOne $parent;
 
     /**
      * PdoOne_Mysql constructor.

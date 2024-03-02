@@ -1,4 +1,4 @@
-<?php
+<?php /** @noinspection UnknownInspectionInspection */
 /** @noinspection UnnecessaryCastingInspection */
 /** @noinspection PhpComposerExtensionStubsInspection */
 /** @noinspection EncryptionInitializationVectorRandomnessInspection */
@@ -22,33 +22,33 @@ class PdoOneEncryption
 {
     //<editor-fold desc="encryption fields">
     /** @var bool Encryption enabled */
-    public $encEnabled = false;
+    public bool $encEnabled = false;
     /**
      * @var string=['sha256','sha512','md5'][$i]
      * @see https://www.php.net/manual/en/function.hash-algos.php
      */
-    public $hashType = 'sha256';
+    public string $hashType = 'sha256';
     /**
      * @var string Encryption password.<br>
      * If the method is INTEGER, then the password must be an integer
      */
-    public $encPassword = '';
+    public string $encPassword = '';
     /** @var string Encryption salt */
-    public $encSalt = '';
+    public string $encSalt = '';
     /**
      * @var bool If iv is true then it is generated randomly, otherwise is it generated via md5<br>
      * If true, then the encrypted value is always different (but the decryption yields the same value).<br>
      * If false, then the value encrypted is the same for the same value.<br>
      * Set to false if you want a deterministic value (it always returns the same value)
      */
-    public $iv = true;
+    public bool $iv = true;
     /**
      * @var string<p> Encryption method, example AES-256-CTR (two ways).</p>
      * <p>If the method is SIMPLE (two ways) then it's uses a simple conversion (short generated value)</p>
      * <p>If the method is INTEGER (two was) then it's uses another simple conversion (returns an integer)</p>
      * @see http://php.net/manual/en/function.openssl-get-cipher-methods.php
      */
-    public $encMethod = '';
+    public string $encMethod = '';
 
     /**
      * PdoOneEncryption constructor.
@@ -259,7 +259,7 @@ class PdoOneEncryption
 
     /** @param int $n
      * @return int
-     * @see \eftec\PdoOneEncryption::encryptInteger
+     * @see PdoOneEncryption::encryptInteger
      */
     private function encrypt32(int $n): int
     {
@@ -268,7 +268,7 @@ class PdoOneEncryption
 
     /** @param int $n
      * @return int
-     * @see \eftec\PdoOneEncryption::decryptInteger
+     * @see PdoOneEncryption::decryptInteger
      */
     private function decrypt32(int $n): int
     {
@@ -277,7 +277,7 @@ class PdoOneEncryption
 
     /** @param int $n
      * @return int
-     * @see \eftec\PdoOneEncryption::encryptInteger
+     * @see PdoOneEncryption::encryptInteger
      */
     private function encrypt64(int $n): int
     {
@@ -287,7 +287,7 @@ class PdoOneEncryption
 
     /** @param int $n
      * @return int
-     * @see \eftec\PdoOneEncryption::decryptInteger
+     * @see PdoOneEncryption::decryptInteger
      */
     private function decrypt64(int $n): int
     {
