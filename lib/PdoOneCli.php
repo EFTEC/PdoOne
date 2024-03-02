@@ -32,7 +32,7 @@ class PdoOneCli
     public ?CliOne $cli=null;
     //protected $help;
     /** @var ?PdoOneCli the current instance */
-    public static ?PdoOneCli $instance;
+    public static ?PdoOneCli $instance=null;
 
     public static function instance(bool $run = true): PdoOneCli
     {

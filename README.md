@@ -1862,6 +1862,10 @@ In a nutshell:
 > Every minor version means that it adds a new functionality i.e. 1.5 -> 1.6 (new methods)
 >
 > Every decimal version means that it patches/fixes/refactoring a previous functionality i.e. 1.5.0 -> 1.5.1 (fix)
+
+* 4.6.1 2024-03-02
+  * [fix]PdoOne::$instance is null by default (instead of undefined)  
+  * updated CliOne dependency.
 * 4.6 2024-03-02
   * Updating dependency to PHP 7.4. The extended support of PHP 7.2 ended 3 years ago.
   * Added more type hinting in the code.
