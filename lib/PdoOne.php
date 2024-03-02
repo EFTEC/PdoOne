@@ -29,11 +29,11 @@ use stdClass;
  * @package       eftec
  * @author        Jorge Castro Castillo
  * @copyright (c) Jorge Castro C. Dual Licence: MIT and Commercial License  https://github.com/EFTEC/PdoOne
- * @version       4.6
+ * @version       4.6.2
  */
 class PdoOne
 {
-    public const VERSION = '4.6';
+    public const VERSION = '4.6.2';
     /** @var int We need this value because null and false could be a valid value. */
     public const NULL = PHP_INT_MAX;
     /** @var string Prefix of the related columns. It is used for ORM */
@@ -171,8 +171,8 @@ class PdoOne
     public int $affected_rows = 0;
     /** @var PdoOne_IExt */
     public PdoOne_IExt $service;
-    /** @var IPdoOneCache|null The service of cache [optional] */
-    public ?IPdoOneCache $cacheService;
+    /** @var mixed The service of cache [optional] */
+    public $cacheService;
     /** @var null|array it stores the values obtained by $this->tableDependency() */
     public ?array $tableDependencyArrayCol=null;
     public ?array $tableDependencyArray=null;
