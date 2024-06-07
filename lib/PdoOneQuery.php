@@ -446,7 +446,8 @@ class PdoOneQuery
      * **Example:**
      * ```
      *  $this->where( ['field'=>20] ) // associative array with automatic type
-     *  $this->where( ['/_field/subfield',20] ) // (for ORM) recursive query
+     *  $this->where( ['`/_field`.subfield',20] ) // (for ORM) recursive query
+     *                                   // ``=mysql []=sql server,""=others
      *                                   //, where _field is a relational column (alias).
      *  $this->where('field=20') // literal value
      *  $this->where('field=?',[20]) // positional argument.
