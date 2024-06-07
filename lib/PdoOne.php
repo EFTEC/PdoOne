@@ -29,11 +29,11 @@ use stdClass;
  * @package       eftec
  * @author        Jorge Castro Castillo
  * @copyright (c) Jorge Castro C. Dual Licence: MIT and Commercial License  https://github.com/EFTEC/PdoOne
- * @version       4.6.2
+ * @version       4.7
  */
 class PdoOne
 {
-    public const VERSION = '4.6.2';
+    public const VERSION = '4.7';
     /** @var int We need this value because null and false could be a valid value. */
     public const NULL = PHP_INT_MAX;
     /** @var string Prefix of the related columns. It is used for ORM */
@@ -339,7 +339,7 @@ class PdoOne
     /**
      * We clean a sql that it could contain columns<br>
      * **Example:**
-     * ```php
+     * ```
      * PdoOne::cleanColumns("col1,col2"); // col1,col2
      * PdoOne::cleanColumns("col1';,col2"); // col1;,col2
      * ```
@@ -468,7 +468,7 @@ class PdoOne
     /**
      * It converts a date (as string) into another format or false if it fails.<br>
      * Example:
-     * ```php
+     * ```
      * $pdoOne->dateConvert('01/01/2019','human','sql'); // 2019-01-01
      * ```
      * <b>iso</b> it is the standard format used for transporting<br>
@@ -545,7 +545,7 @@ class PdoOne
      * It converts a date and time value (expressed in different means) into a DateTime object or false if the operation
      * fails.<br>
      * **Example:**
-     * ```php
+     * ```
      * $r=PdoOne::dateConvertInput('01/12/2020','human',$ms,$time); // it depends on the fields self::$date*HumanFormat
      * $r=PdoOne::dateConvertInput('2020-12-01','iso',$ms,$time); // it depends on the fields self::$date*Format
      * $r=PdoOne::dateConvertInput('2020-12-01','sql',$ms,$time); // it depends on the database
@@ -832,7 +832,7 @@ class PdoOne
      * It converts a name to singular. This method is used automatically for the generation of the repository
      * classes<br>
      * **Example:**
-     * ```php
+     * ```
      * self::singularTable('categories'); // category
      * self::singularTable('churches'); // church
      * self::singularTable('prices'); // pric (it fail with this kind of cases)
@@ -943,7 +943,7 @@ class PdoOne
      * <li><b>sql</b>: the sql syntax of the column</li>
      * </ul>
      * **Example:**
-     * ```php
+     * ```
      * $this->getDefTable('tablename',$conversion);
      * // ['col1'=>['alias'=>'','phptype'=>'int','conversion'=>null,'type'=>'int','size'=>null
      * // ,'null'=>false,'identity'=>true,'sql'='int not null auto_increment'
@@ -1002,7 +1002,7 @@ class PdoOne
     /**
      * It converts a sql type into a 'php type' and a pdo::param type<br>
      * **Example:**
-     * ```php
+     * ```
      * $this->dbTypeToPHP('varchar'); // ['string',PDO::PARAM_STR]
      * $this->dbTypeToPHP('int'); // ['int',PDO::PARAM_INT]
      * ```
@@ -1095,7 +1095,7 @@ class PdoOne
      * <b>is_primary_key</b>: Is 1 if the value is a primary key, otherwise 0<br>
      * <b>TYPE</b>: returns PRIMARY KEY, UNIQUE KEY or KEY depending on the type of the key<br>
      * **Example:**
-     * ```php
+     * ```
      * $this->getDefTableKeys('table1');
      * // ["IndexName"=>'',"ColumnName"=>'',"is_unique"=>0,"is_primary_key"=>0,"TYPE"=>'']
      * ```
@@ -1142,7 +1142,7 @@ class PdoOne
      * The results of the table depend on the kind of database. For example, sqlsrv returns the schema used (dbo),
      * while mysql returns the current schema (database).
      * **Example:**
-     * ```php
+     * ```
      * $this->getDefTableExtended('table'); // ['name','engine','schema','collation','description']
      * $this->getDefTableExtended('table',true); // "some description of the table"
      *
@@ -1582,7 +1582,7 @@ class PdoOne
      * It adds a delimiter to a text based in the type of database (` for mysql
      * and [] for sql server)
      * **Example:**
-     * ```php
+     * ```
      * $pdoOne->addDelimiter('hello world'); // `hello` world<br>
      * $pdoOne->addDelimiter('hello.world'); // `hello`.`world`<br>
      * $pdoOne->addDelimiter('hello=value'); // `hello`=value<br>
@@ -1629,7 +1629,7 @@ class PdoOne
     /**
      * It runs a raw query
      * **Example:**
-     * ```php
+     * ```
      * $values=$con->runRawQuery('select * from table where id=?',[20],true); // with parameter
      * $values=$con->runRawQuery('select * from table where id=:name',['name'=>20],true); // with named parameter
      * $values=$con->runRawQuery('select * from table,[]',true); // without parameter.
@@ -1785,7 +1785,7 @@ class PdoOne
     /**
      * It returns the sql command (in lower case) or the type (family) of sql command of a query<br>
      * Example:<br>
-     * ```php
+     * ```
      * $this->queryCommand("select * from table") // returns "select"
      * $this->queryCommand("select * from table",true) // returns "dql"
      * ```
@@ -2353,7 +2353,7 @@ class PdoOne
     /**
      * It returns an array with all the tables of the schema, also the foreign key and references  of each table<br>
      * **Example:**
-     * ```php
+     * ```
      * $this->tableDependency();
      * // ['table'=>['city','country'],
      * //    'after'=>['city'=>['country'],'country=>[]],
@@ -2459,9 +2459,13 @@ class PdoOne
      * It gets the current date and time from the database.
      * @return string|null The value is returned in SQL format.
      */
-    public function now(): string
+    public function now(): ?string
     {
-        return (new PdoOneQuery($this))->now();
+        try {
+            return (new PdoOneQuery($this))->now();
+        } catch(Exception $e) {
+            return null;
+        }
     }
 
     /**
@@ -2745,7 +2749,7 @@ class PdoOne
     /**
      * It returns a field, column or table, the quotes defined by the current database type. It doesn't consider points
      * or space<br>
-     * ```php
+     * ```
      * $this->addQuote("aaa"); // [aaa] (sqlserver) `aaa` (mysql)
      * $this->addQuote("[aaa]"); // [aaa] (sqlserver, unchanged)
      * ```
@@ -2903,7 +2907,7 @@ class PdoOne
      * For example, if we always want to convert <b>tinyint</b> into <b>boolean</b>, then we could use this function
      * , instead of specify per each column.<br>
      * **Example:**
-     * ```php
+     * ```
      * $this->parent->generateCodeClassConversions(
      *      ['datetime'=>'datetime2'
      *      ,'tinyint'=>'bool' // converts tinyint as boolean
@@ -2992,7 +2996,7 @@ class PdoOne
      * If the old content few more [EDIT] blocks than the new content, then it keeps the block in new content<br>
      * <b>Example</b>
      * newcontent:<br>
-     * ```php
+     * ```
      * init
      * // [EDIT:c1]
      * ccc
@@ -3000,7 +3004,7 @@ class PdoOne
      * end
      * ```
      * filename content:<br>
-     * ```php
+     * ```
      * init modified
      * // [EDIT:c1]
      * modified
@@ -3008,7 +3012,7 @@ class PdoOne
      * end modified
      * ```
      * result:<br>
-     * ```php
+     * ```
      * init
      * // [EDIT:c1]
      * modified
@@ -3358,7 +3362,7 @@ class PdoOne
     /**
      * It calls a store procedure.<br>
      * **Example:**
-     * ```php
+     * ```
      * $this->callProcedure('procexample',['in_name'=>'aa','in_description'=>'bbb'],['in_description])
      * ```<br>
      * <b>Note:<b>sqlsrv could return an associative array.
@@ -3434,7 +3438,7 @@ class PdoOne
     /**
      * It creates a store procedure<br>
      * **Example:**
-     * ```php
+     * ```
      * // arg1 and arg2 are "in" arguments:
      * $this->createProcedure('proc1','in arg1 int,in arg2 varchar(50)','//body here');
      * // arg1 and arg2 are "in" arguments:
@@ -3476,7 +3480,7 @@ class PdoOne
     /**
      * Create a table<br>
      * **Example:**
-     * ```php
+     * ```
      * // no universal (false indicates native sql)
      * createTable('products',['id'=>'int not null','name'=>'varchar(50) null'],'id','','',false);
      * // universal (true indicates universal)
@@ -3532,7 +3536,7 @@ class PdoOne
     /**
      * It adds a columns to a table<br>
      * **Example:**
-     * ```php
+     * ```
      * $this->addColumn("customer",['id'=>'int']);
      * $this->addColumn("customer",['id'=>'int not null default 0']); // mysql/sql/oracle
      * ```
@@ -3555,7 +3559,7 @@ class PdoOne
     /**
      * It deletes a column/s to a table<br>
      * **Example:**
-     * ```php
+     * ```
      * $this->deleteColumn("customer",'col1');
      * $this->deleteColumn("customer",['col1','col2']);
      * ```
@@ -3579,7 +3583,7 @@ class PdoOne
      * it converts a natural definition of table to a specific definition of table.<br>
      * This definition is simplified ("column type null extra") and it doesn't contain all the definitions<br>
      * **Example:**
-     * ```php
+     * ```
      * "name string(20) null" -> "name varchar(20) null"
      * "creationDate datetime null" -> "creationDate date null"
      * "id int" -> "id int not null"
@@ -3610,7 +3614,7 @@ class PdoOne
     /**
      * Run multiples unprepared query added as an array or separated by ;<br>
      * **Example:**
-     * ```php
+     * ```
      * $this->runMultipleRawQuery("insert into() values(1); insert into() values(2)");
      * $this->runMultipleRawQuery(["insert into() values(1)","insert into() values(2)"]);
      * ```
@@ -3673,7 +3677,7 @@ class PdoOne
     /**
      * It adds foreign keys to a table<br>
      * **Example:**
-     * ```php
+     * ```
      * $this->createFK('table',['col'=>"FOREIGN KEY REFERENCES`tableref`(`colref`)"]); // mysql
      * $this->createFK('table',['col'=>"FOREIGN KEY REFERENCES[tableref]([colref])"]); // sqlsrv
      * $this->createFK('table',['col'=>"FOREIGN KEY REFERENCES TABLE1(COL1)"]); // oci
@@ -3707,7 +3711,7 @@ class PdoOne
     /**
      * It creates indexes. It doesn't replace previous indexes. The definition could depend on the type of database<br>
      * **Example:**
-     * ```php
+     * ```
      * $this->createIndex('table',['col1'=>'INDEX','col2=>'UNIQUE INDEX']);
      * ```
      *
@@ -4220,7 +4224,7 @@ class PdoOne
     /**
      * Generates and execute an insert command.<br>
      * **Example:**
-     * ```php
+     * ```
      * insert('table',['col1',10,'col2','hello world']); // simple array: name1,value1,name2,value2..
      * insert('table',null,['col1'=>10,'col2'=>'hello world']); // definition is obtained from the values
      * insert('table',['col1'=>10,'col2'=>'hello world']); // definition is obtained from the values
@@ -4313,7 +4317,7 @@ class PdoOne
     /**
      * It generates a query for "count". It is a macro of select()
      * **Example:**
-     * ```php
+     * ```
      * ->from('table')->count('') // select count(*) from
      * table<br>
      * ->count('from table')->firstScalar() // select count(*) from table<br>
@@ -4402,7 +4406,7 @@ class PdoOne
      * Adds a from for a query. It could be used by select,insert,update and
      * delete.<br>
      * **Example:**
-     * ```php
+     * ```
      *      from('table')
      *      from('table alias')
      *      from('table alias','dbo') // from dbo.table alias
@@ -4470,7 +4474,7 @@ class PdoOne
     /**
      * Generate and run an update in the database.
      * **Example:**
-     * ```php
+     * ```
      *      update('table',['col1',10,'col2','hello world'],['wherecol',10]);
      *      update('table',['col1','col2'],[10,'hello world'],['wherecol'],[10]);
      *      $this->from("producttype")
@@ -4523,7 +4527,7 @@ class PdoOne
      * Adds a left join to the pipeline. It is possible to chain more than one
      * join<br>
      * **Example:**
-     * ```php
+     * ```
      *      left('table on t1.c1=t2.c2')
      *      left('table on table.c1=t2.c2').left('table2 on
      * table1.c1=table2.c2')
@@ -4601,7 +4605,7 @@ class PdoOne
     /**
      * It generates an inner join<br>
      * **Example:**
-     * ```php
+     * ```
      *          join('tablejoin on t1.field=t2.field')<br>
      *          join('tablejoin','t1.field=t2.field')<br>
      * ```
@@ -4635,7 +4639,7 @@ class PdoOne
     /**
      * It adds an "order by" in a query.<br>
      * **Example:**
-     * ```php
+     * ```
      *      ->select("")->order("column")->toList();
      *      ->select("")->order("col1,col2")->toList();
      * ```
@@ -4655,7 +4659,7 @@ class PdoOne
     /**
      * It adds a "limit" in a query. It depends on the type of database<br>
      * **Example:**
-     * ```php
+     * ```
      *      ->select("")->limit("10,20")->toList();
      * ```
      *
@@ -4673,7 +4677,7 @@ class PdoOne
     /**
      * Adds a distinct to the query. The value is ignored if the select() is
      * written complete.<br>
-     * ```php
+     * ```
      *      ->select("*")->distinct() // works
      *      ->select("select *")->distinct() // distinct is ignored.
      *</pre>
@@ -4691,7 +4695,7 @@ class PdoOne
     /**
      * It sets a recursive array.<br>
      * **Example:**
-     * ```php
+     * ```
      * $this->recursive(['field1','field2']);
      * ```
      *
@@ -4718,7 +4722,7 @@ class PdoOne
      * It sets to use cache for the current pipelines. It is disabled at the end of the pipeline<br>
      * It only works if we set the cacheservice<br>
      * <b>Example</b><br>
-     * ```php
+     * ```
      * $this->setCacheService($instanceCache);
      * $this->useCache()->select()..; // The cache never expires
      * $this->useCache(60)->select()..; // The cache lasts 60 seconds.

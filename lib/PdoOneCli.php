@@ -13,7 +13,7 @@ use RuntimeException;
  * It is the CLI interface for PdoOne.<br>
  * <b>How to execute it?</b><br>
  * In the command line, runs the next line:<br>
- * ```php
+ * ```
  * php vendor/eftec/PdoOne/lib/pdoonecli
  * or
  * vendor/bin/pdoonecli (Linux/macOS) / vendor/bin/pdoonecli.bat (Windows)
@@ -85,7 +85,11 @@ class PdoOneCli
             if ($this->cli->getSTDIN() === null) {
                 $this->showLogo();
             }
-            $this->cli->evalMenu('mainmenu', $this);
+            try {
+                $this->cli->evalMenu('mainmenu', $this);
+            } catch(Exception $e) {
+
+            }
         }
     }
 
@@ -448,7 +452,11 @@ PdoOne: $v  Cli: $vc
 <yellow>Syntax:php " . basename(__FILE__) . " <command> <flags></yellow>
 
 ");
-        $this->cli->showParamSyntax2();
+        try {
+            $this->cli->showParamSyntax2();
+        } catch (Exception $ex) {
+
+        }
     }
 
     /**

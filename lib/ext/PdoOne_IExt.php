@@ -62,7 +62,7 @@ interface PdoOne_IExt
      * The results of the table depend on the kind of database. For example, sqlsrv returns the schema used (dbo),
      * while mysql returns the current schema (database).
      * <b>Example:</b><br>
-     * ```php
+     * ```
      * $this->getDefTableExtended('table'); // ['name','engine','schema','collation','description']
      * $this->getDefTableExtended('table',true); // "some description of the table"
      *
@@ -79,7 +79,7 @@ interface PdoOne_IExt
     /**
      * Returns an associative array with the definition of a table (columns of the table).<br>
      * <b>Example:</b><br>
-     * ```php
+     * ```
      * $this->getDefTable('table');
      * // ['col1'=>'int not null','col2'=>'varchar(50)']
      * ```
@@ -175,7 +175,7 @@ interface PdoOne_IExt
     /**
      * It creates a store procedure<br>
      * <b>Example:</b><br>
-     * ```php
+     * ```
      * // arg1 and arg2 are "in" arguments:
      * $this->createProcedure('proc1','in arg1 int,in arg2 varchar(50)','//body here');
      * // arg1 and arg2 are "in" arguments:
@@ -212,7 +212,7 @@ interface PdoOne_IExt
     /**
      * DCL command. It creates a database.<br>
      * <b>Example:</b>
-     * ```php
+     * ```
      * $this->createtable("customer"
      *      ,['id'=>'int','name'=>'varchar(50)']
      *      ,'id');
@@ -243,7 +243,7 @@ interface PdoOne_IExt
     /**
      * DCL command. It adds a column in a table.<br>
      * <b>Example:</b>
-     * ```php
+     * ```
      * $this->addColumn("customer",['id'=>'int']);
      * $this->addColumn("customer",['id'=>'int not null']);
      * ```
@@ -278,7 +278,7 @@ interface PdoOne_IExt
     /**
      * It adds a limit operation for the query. It depends on the type of the database.
      * <b>Example:</b><br>
-     * ```php
+     * ```
      *      ->select("")->limit("10,20")->toList();
      *      ->select("")->limit(10,20)->toList();
      * ```

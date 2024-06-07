@@ -1863,6 +1863,8 @@ In a nutshell:
 >
 > Every decimal version means that it patches/fixes/refactoring a previous functionality i.e. 1.5.0 -> 1.5.1 (fix)
 
+* 4.7 2024-06-07
+  * Update phpdoc using markdown without "php" because PHPStorm is not compatible with it.
 * 4.6.2 2024-03-02
   * [fix]PdoOne::$cacheService is now mixed.
 * 4.6.1 2024-03-02
