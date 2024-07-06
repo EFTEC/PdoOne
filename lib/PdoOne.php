@@ -29,11 +29,11 @@ use stdClass;
  * @package       eftec
  * @author        Jorge Castro Castillo
  * @copyright (c) Jorge Castro C. Dual Licence: MIT and Commercial License  https://github.com/EFTEC/PdoOne
- * @version       4.7
+ * @version       4.8
  */
 class PdoOne
 {
-    public const VERSION = '4.7';
+    public const VERSION = '4.8';
     /** @var int We need this value because null and false could be a valid value. */
     public const NULL = PHP_INT_MAX;
     /** @var string Prefix of the related columns. It is used for ORM */
@@ -107,14 +107,14 @@ class PdoOne
     /** @var string It is generated and set automatically by the type of database */
     public string $database_identityName = 'identity';
     /** @var string server ip. Ex. 127.0.0.1 127.0.0.1:3306 */
-    public string $server='';
-    public ?string $user=null;
+    public string $server = '';
+    public ?string $user = null;
     /** @var null|string the unique id generate by sha256or $hashtype and based in the query, arguments, type
      * and methods
      */
-    public ?string $uid=null;
+    public ?string $uid = null;
     public array $lastBindParam = [];
-    public ?string $pwd=null;
+    public ?string $pwd = null;
     /** @var string The name of the database/schema */
     public string $db;
     /** @var string the name of the locker */
@@ -134,9 +134,9 @@ class PdoOne
     public array $traceBlackList = []; //['PdoOne.php', 'PdoOneQuery.php', 'PdoOne_Mysql.php', 'PdoOne.Sqlsrv.php', 'PdoOne.Oci.php'
     //, 'PdoOneTestMockup.php', '_BasePdoOneRepo.php'];
     /** @var  PDO|null */
-    public ?PDO $conn1=null;
+    public ?PDO $conn1 = null;
     /** @var  bool|null True if the transaction is open */
-    public ?bool $transactionOpen=null;
+    public ?bool $transactionOpen = null;
     /** @var bool if the database is in READ ONLY mode or not. If true then we must avoid to write in the database. */
     public bool $readonly = false;
     /** @var boolean if true then it logs the file using the php log file (if enabled) */
@@ -154,7 +154,7 @@ class PdoOne
      */
     public int $logLevel = 0;
     /** @var string|null last query executed */
-    public ?string $lastQuery=null;
+    public ?string $lastQuery = null;
     public ?array $lastParam = [];
     /** @var array the tables used in the queries and added by the methods from() and join() */
     public array $tables = [];
@@ -174,14 +174,14 @@ class PdoOne
     /** @var mixed The service of cache [optional] */
     public $cacheService;
     /** @var null|array it stores the values obtained by $this->tableDependency() */
-    public ?array $tableDependencyArrayCol=null;
-    public ?array $tableDependencyArray=null;
+    public ?array $tableDependencyArrayCol = null;
+    public ?array $tableDependencyArray = null;
     /** @var null|array $partition is an associative array [column=>value] with a fixed and pre-established conditions */
-    public ?array $partition=null;
+    public ?array $partition = null;
     /** @var MessageContainer|null it stores the messages. */
     private ?MessageContainer $messageContainer;
     /** @var PdoOne|null */
-    protected static ?PdoOne $instance=null;
+    protected static ?PdoOne $instance = null;
     protected string $tableKV = '';
     protected string $defaultTableKV = '';
 
@@ -1636,18 +1636,20 @@ class PdoOne
      ** $values=$con->runRawQuery('select * from table where id=?,[[1,20,PDO::PARAM_INT]]',true); // a full parameter.
      * </pr>
      *
-     * @param string               $rawSql      The query to execute
-     * @param array|null           $params      [type1,value1,type2,value2] or [name1=>value,name2=value2]
-     * @param bool                 $returnArray if true then it returns an array. If false then it returns a
-     *                                          PDOStatement
-     * @param bool                 $useCache    if true then it uses cache (only if the service is available).
-     * @param null|string|string[] $cacheFamily if cache is used, then it is used to set the family or group of the
-     *                                          cache.
+     * @param string               $rawSql        The query to execute
+     * @param array|null           $params        [type1,value1,type2,value2] or [name1=>value,name2=value2]
+     * @param bool                 $returnArray   if true then it returns an array. If false then it returns a
+     *                                            PDOStatement
+     * @param bool                 $useCache      if true then it uses cache (only if the service is available).
+     * @param null|string|string[] $cacheFamily   if cache is used, then it is used to set the family or group of the
+     *                                            cache.
+     * @param int                  $fetchMode     The mode to fetch
+     * @param null                 $fetchArgument The argument of the fetch model
      * @return bool|PDOStatement|array an array of associative or a pdo statement. False is the operation fails
-     * @throws Exception
+     * @throws JsonException
      * @test equals [0=>[1=>1]],this('select 1',null,true)
      */
-    public function runRawQuery(string $rawSql, ?array $params = null, ?bool $returnArray = true, bool $useCache = false, $cacheFamily = null)
+    public function runRawQuery(string $rawSql, ?array $params = null, ?bool $returnArray = true, bool $useCache = false, $cacheFamily = null, int $fetchMode = PDO::FETCH_ASSOC, $fetchArgument = null)
     {
         $this->beginTry();
         if (!$this->isOpen) {
@@ -1687,7 +1689,7 @@ class PdoOne
         $this->lastQuery = $rawSql;
         $this->storeInfo("[INFO]\t$rawSql");
         if ($params === null) {
-            $rows = $this->runRawQueryParamLess($rawSql, $returnArray);
+            $rows = $this->runRawQueryParamLess($rawSql, $returnArray, $fetchMode, $fetchArgument);
             if ($uid !== false && $returnArray) {
                 $this->internalCache[$uid] = $rows;
             }
@@ -1762,7 +1764,11 @@ class PdoOne
             return false;
         }
         if ($returnArray && $stmt instanceof PDOStatement) {
-            $rows = ($stmt->columnCount() > 0) ? $stmt->fetchAll(PDO::FETCH_ASSOC) : [];
+            if ($fetchMode === PDO::FETCH_COLUMN || $fetchMode === PDO::FETCH_CLASS || $fetchMode === PDO::FETCH_FUNC) {
+                $rows = ($stmt->columnCount() > 0) ? $stmt->fetchAll($fetchMode, $fetchArgument) : [];
+            } else {
+                $rows = ($stmt->columnCount() > 0) ? $stmt->fetchAll($fetchMode) : [];
+            }
             $this->affected_rows = $stmt->rowCount();
             $stmt = null;
             if ($uid !== false) {
@@ -1814,14 +1820,15 @@ class PdoOne
     /**
      * Internal Use: It runs a raw query
      *
-     * @param string $rawSql
-     * @param bool   $returnArray
-     *
+     * @param string $rawSql        The raw sql query to execute.
+     * @param bool   $returnArray   If true then it returns an array (or a value determined by fetchMode)
+     * @param int    $fetchMode     Indicates the mode to fetch. Example: PDO::FETCH_ASSOC
+     * @param null   $fetchArgument The argument of the fetchMode.
      * @return array|bool|PDOStatement
-     * @throws Exception
+     * @throws JsonException
      * @see PdoOne::runRawQuery
      */
-    private function runRawQueryParamLess(string $rawSql, bool $returnArray)
+    private function runRawQueryParamLess(string $rawSql, bool $returnArray, int $fetchMode = PDO::FETCH_ASSOC, $fetchArgument = null)
     {
         $this->beginTry();
         // the "where" chain doesn't have parameters.
@@ -1836,7 +1843,11 @@ class PdoOne
         }
         if ($returnArray && $rows instanceof PDOStatement) {
             if ($rows->columnCount() > 0) {
-                $result = @$rows->fetchAll(PDO::FETCH_ASSOC);
+                if ($fetchMode === PDO::FETCH_COLUMN || $fetchMode === PDO::FETCH_CLASS || $fetchMode === PDO::FETCH_FUNC) {
+                    $result = @$rows->fetchAll($fetchMode, $fetchArgument);
+                } else {
+                    $result = @$rows->fetchAll($fetchMode);
+                }
                 $this->affected_rows = $rows->rowCount();
                 $this->endTry();
                 return $result;
@@ -2269,6 +2280,37 @@ class PdoOne
     }
 
     /**
+     * @param int  $mode
+     *                            Controls the contents of the returned array as documented in
+     *                            <b>PDOStatement::fetch</b>.
+     *                            Defaults to value of <b>PDO::ATTR_DEFAULT_FETCH_MODE</b>
+     *                            (which defaults to <b>PDO::FETCH_BOTH</b>)
+     *                            </p>
+     *                            <p>
+     *                            To return an array consisting of all values of a single column from
+     *                            the result set, specify <b>PDO::FETCH_COLUMN</b>. You
+     *                            can specify which column you want with the
+     *                            <i>column-index</i> parameter.
+     *                            </p>
+     *                            <p>
+     *                            To fetch only the unique values of a single column from the result set,
+     *                            bitwise-OR <b>PDO::FETCH_COLUMN</b> with
+     *                            <b>PDO::FETCH_UNIQUE</b>.
+     *                            </p>
+     *                            <p>
+     *                            To return an associative array grouped by the values of a specified
+     *                            column, bitwise-OR <b>PDO::FETCH_COLUMN</b> with
+     *                            <b>PDO::FETCH_GROUP</b>.
+     *                            </p>
+     * @param null $fetchArgument The argument of th fetch mode
+     * @return PdoOneQuery
+     */
+    public function setFechMode(int $mode = PDO::FETCH_ASSOC, $fetchArgument = null): PdoOneQuery
+    {
+        return (new PdoOneQuery($this))->setFechMode($mode, $fetchArgument);
+    }
+
+    /**
      * This function is used to generate a list of recursive fields.
      * @param array  $getDefTable
      * @param array  $classRelations
@@ -2463,7 +2505,7 @@ class PdoOne
     {
         try {
             return (new PdoOneQuery($this))->now();
-        } catch(Exception $e) {
+        } catch (Exception $e) {
             return null;
         }
     }
@@ -3705,7 +3747,7 @@ class PdoOne
      */
     protected function isArrayItems(array $items): bool
     {
-        return(isset($items[0]) && is_array($items[0]));
+        return (isset($items[0]) && is_array($items[0]));
     }
 
     /**
@@ -4143,7 +4185,7 @@ class PdoOne
             $tmpArr = $r;
             $r = [];
             foreach ($tmpArr as $v) {
-                $row=[];
+                $row = [];
                 $row['colname'] = $v['cid'];
                 $row['coltype'] = $v['type'];
                 $row['colsize'] = null;
@@ -4152,7 +4194,7 @@ class PdoOne
                 $row['iskey'] = $v['pk'];
                 $row['isidentity'] = null;
                 $row['isnullable'] = $v['notnull'];
-                $r[]=$row;
+                $r[] = $row;
             }
         }
         $this->endTry();
@@ -4177,11 +4219,11 @@ class PdoOne
             $r = [];
             foreach ($tmpR as $v) {
                 $row = [];
-                $row['collocal']=$v['from'];
-                $row['tablerem']=$v['table'];
-                $row['colrem']=$v['to'];
-                $row['fk_name']=$row['tablerem'].'_'.$row['colrem'];
-                $r[]=$row;
+                $row['collocal'] = $v['from'];
+                $row['tablerem'] = $v['table'];
+                $row['colrem'] = $v['to'];
+                $row['fk_name'] = $row['tablerem'] . '_' . $row['colrem'];
+                $r[] = $row;
             }
         }
         $this->endTry();

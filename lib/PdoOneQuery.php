@@ -16,13 +16,14 @@ use RuntimeException;
 /**
  * Class PdoOneQuery
  *
- * @version       4.2
+ * @version       4.8
  * @package       eftec
  * @author        Jorge Castro Castillo
  * @copyright (c) Jorge Castro C. Dual Licence: MIT and Commercial License  https://github.com/EFTEC/PdoOne
  */
 class PdoOneQuery
 {
+    public const VERSION = '4.8';
     //<editor-fold desc="query builder fields">
     /** @var PdoOne */
     public PdoOne $parent;
@@ -30,6 +31,9 @@ class PdoOneQuery
     public $ormClass;
     /** @var array parameters for the having. [paramvar,value,type,size] */
     public array $havingParamAssoc = [];
+    public int $fetchMode = PDO::FETCH_ASSOC;
+    /** @var mixed|null */
+    public $fetchArgument;
     public int $whereCounter = 1;
     /**
      * @var null|int $ttl If <b>0</b> then the cache never expires.<br>
@@ -49,7 +53,7 @@ class PdoOneQuery
     protected string $order = '';
     /** @var bool if true then builderReset will not reset (unless it is force), if false then it will reset */
     protected bool $noReset = false;
-    protected ?string $uid=null;
+    protected ?string $uid = null;
     /** @var array */
     protected array $where = [];
     /** @var array parameters for the set. [paramvar,value,type,size] */
@@ -117,7 +121,7 @@ class PdoOneQuery
                 }
             }
             /** @var PDOStatement $stmt */
-            $stmt = $this->parent->runRawQuery($sql, $args, false, $this->useCache !== false, $this->cacheFamily);
+            $stmt = $this->runRawQuery($sql, $args, false, $this->useCache !== false, $this->cacheFamily, $this->fetchMode, $this->fetchArgument);
         }
         if ($stmt instanceof PDOStatement === false) {
             $stmt = null;
@@ -1066,9 +1070,9 @@ class PdoOneQuery
         if ($stmt === null) {
             return null;
         }
-        $numRow=0;
+        $numRow = 0;
         while ($row = $stmt->fetch($pdoMode)) {
-            $result[] = $callable($row,$numRow);
+            $result[] = $callable($row, $numRow);
             $numRow++;
         }
         $stmt = null;
@@ -1868,7 +1872,7 @@ class PdoOneQuery
             $param[] = [':ID_' . $identityColumn, '0', 1, null];
             $sql .= ' returning ' . $identityColumn . ' into :ID_' . $identityColumn;
         }
-        $this->parent->runRawQuery($sql, $param, true, $this->useCache !== false, $this->cacheFamily);
+        $this->runRawQuery($sql, $param, true, $this->useCache !== false, $this->cacheFamily, $this->fetchMode, $this->fetchArgument);
         $this->builderReset(true);
         if ($this->endtry() === false) {
             return false;
@@ -1881,6 +1885,50 @@ class PdoOneQuery
             return null;
         }
         return $this->parent->insert_id();
+    }
+
+    /**
+     * It sets the mode to fetch the values. By default it uses PDO::FETCH_ASSOC
+     * @param int        $fetchMode Example: PDO::FETCH_BOTH
+     * @param mixed|null $fetchArgument the argument of the fetch_mode
+     * @return PdoOneQuery
+     * @see https://www.php.net/manual/en/pdostatement.fetch.php
+     */
+    public function setFechMode(int $fetchMode, $fetchArgument = null): PdoOneQuery
+    {
+        $this->fetchMode = $fetchMode;
+        $this->fetchArgument = $fetchArgument;
+        return $this;
+    }
+
+    /**
+     * It runs a raw query
+     * **Example:**
+     * ```
+     * $values=$con->runRawQuery('select * from table where id=?',[20],true); // with parameter
+     * $values=$con->runRawQuery('select * from table where id=:name',['name'=>20],true); // with named parameter
+     * $values=$con->runRawQuery('select * from table,[]',true); // without parameter.
+     * $values=$con->runRawQuery('select * from table where id=?,[[1,20,PDO::PARAM_INT]]',true); // a full parameter.
+     * ```
+     *
+     * @param string               $rawSql        The query to execute
+     * @param array|null           $params        [type1,value1,type2,value2] or [name1=>value,name2=value2]
+     * @param bool                 $returnArray   if true then it returns an array. If false then it returns a
+     *                                            PDOStatement
+     * @param bool                 $useCache      if true then it uses cache (only if the service is available).
+     * @param null|string|string[] $cacheFamily   if cache is used, then it is used to set the family or group of the
+     *                                            cache.
+     * @param int|null             $fetchMode     The mode to fetch. By default is PDO::FETCH_ASSOC
+     * @param null                 $fetchArgument The argument of the fetch mode
+     * @return bool|PDOStatement|array an array of associative or a pdo statement. False is the operation fails
+     * @throws Exception
+     * @test equals [0=>[1=>1]],this('select 1',null,true)
+     */
+    public function runRawQuery(string $rawSql, ?array $params = null, ?bool $returnArray = true,
+                                bool   $useCache = false, $cacheFamily = null, ?int $fetchMode = null, $fetchArgument = null)
+    {
+        return $this->parent->runRawQuery($rawSql, $params, $returnArray, $useCache, $cacheFamily,
+            $fetchMode ?? $this->fetchMode, $fetchArgument ?? $this->fetchArgument);
     }
 
     /**
@@ -2030,7 +2078,7 @@ class PdoOneQuery
         $sql .= $this->constructWhere();
         $param = $this->whereParamAssoc;
         $this->beginTry();
-        $stmt = $this->parent->runRawQuery($sql, $param, false, $this->useCache !== false, $this->cacheFamily);
+        $stmt = $this->runRawQuery($sql, $param, false, $this->useCache !== false, $this->cacheFamily, $this->fetchMode, $this->fetchArgument);
         $this->builderReset(true);
         if ($this->endtry() === false) {
             return false;
@@ -2082,7 +2130,7 @@ class PdoOneQuery
     {
         $sql = $this->parent->service->now();
         try {
-            $r = $this->parent->runRawQuery($sql);
+            $r = $this->runRawQuery($sql, null, true, false, null, $this->fetchMode, $this->fetchArgument);
         } catch (Exception $e) {
             $this->parent->throwError('Unable to read now() ' . $e->getMessage(), $sql);
         }
@@ -2178,7 +2226,7 @@ class PdoOneQuery
         $param = array_merge($this->setParamAssoc, $this->whereParamAssoc); // the order matters.
         // $this->builderReset();
         $this->beginTry();
-        $stmt = $this->parent->runRawQuery($sql, $param, false, $this->useCache !== false, $this->cacheFamily);
+        $stmt = $this->runRawQuery($sql, $param, false, $this->useCache !== false, $this->cacheFamily, $this->fetchMode, $this->fetchArgument);
         $this->builderReset(true);
         if ($this->endtry() === false) {
             return false;

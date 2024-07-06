@@ -19,7 +19,11 @@ use eftec\MessageContainer;
 use eftec\PdoOne;
 use eftec\PdoOneQuery;
 use Exception;
+use PDO;
 use PHPUnit\Framework\TestCase;
+class SomeClass {
+    public $abc;
+}
 
 /**
  * Class CacheServicesmysql
@@ -108,7 +112,7 @@ class PdoOne_mysql_Test extends TestCase
 
     public function setUp(): void
     {
-        $this->pdoOne = new PdoOne('mysql', '127.0.0.1', 'travis', '', 'travisdb');
+        $this->pdoOne = new PdoOne('mysql', '127.0.0.1', 'travis', 'travis', 'travisdb');
         $this->pdoOne->connect();
         $this->pdoOne->logLevel = 3;
         $cache = new CacheServicesmysql();
@@ -134,7 +138,7 @@ class PdoOne_mysql_Test extends TestCase
         //$this->pdoOne->conn1->setAttribute(\PDO::MYSQL_ATTR_USE_BUFFERED_QUERY,false);
         $result=$this->pdoOne
             ->select('select * from table_city')
-            ->fetchLoop(static function($row) {return($row);},\PDO::FETCH_ASSOC);
+            ->fetchLoop(static function($row) {return($row);}, PDO::FETCH_ASSOC);
        // var_dump($result);
         $x2=memory_get_usage();
         var_dump($x2);
@@ -1087,6 +1091,14 @@ class PdoOne_mysql_Test extends TestCase
     public function test_runRawQuery(): void
     {
         self::assertEquals([0 => [1 => 1]], $this->pdoOne->runRawQuery('select 1'));
+        self::assertIsObject($this->pdoOne->setFechMode(PDO::FETCH_CLASS,'stdClass')->runRawQuery('select 1')[0]);
+        self::assertIsObject($this->pdoOne->runRawQuery('select 1',null,true,false,null,PDO::FETCH_CLASS,'stdClass')[0]);
+        //$x=$this->pdoOne->setFechMode(PDO::FETCH_CLASS,'SomeClass')->runRawQuery('select ?',['1'])[0];
+        //var_dump($x);
+        $x=$this->pdoOne->setFechMode(PDO::FETCH_CLASS,SomeClass::class)->runRawQuery('select ? as abc',['1'])[0];
+        self::assertInstanceOf(SomeClass::class,$x);
+        self::assertEquals("1",$x->abc);
+
     }
 
     /**
