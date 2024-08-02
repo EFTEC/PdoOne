@@ -31,10 +31,10 @@
   "require": {
     "php": ">=7.4",
     "ext-json": "*",
-    "eftec/clione": "^1.32",
+    "eftec/clione": "^1.33",
     "ext-pdo": "*",
     "ext-readline": "*",
-    "eftec/messagecontainer": "^2.8"
+    "eftec/messagecontainer": "^2.9"
   },
   "bin": [
     "lib/pdoonecli"

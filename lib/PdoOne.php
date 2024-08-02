@@ -1557,7 +1557,6 @@ class PdoOne
      *
      * @param string $txt
      *
-     * @throws Exception
      */
     public function storeInfo(string $txt): void
     {
@@ -1646,7 +1645,7 @@ class PdoOne
      * @param int                  $fetchMode     The mode to fetch
      * @param null                 $fetchArgument The argument of the fetch model
      * @return bool|PDOStatement|array an array of associative or a pdo statement. False is the operation fails
-     * @throws JsonException
+     * @throws Exception
      * @test equals [0=>[1=>1]],this('select 1',null,true)
      */
     public function runRawQuery(string $rawSql, ?array $params = null, ?bool $returnArray = true, bool $useCache = false, $cacheFamily = null, int $fetchMode = PDO::FETCH_ASSOC, $fetchArgument = null)
@@ -2525,9 +2524,21 @@ class PdoOne
         return $this->service->typeDict($row);
     }
 
-    public static function camelize($input, $separator = '_')
+    /**
+     * It transform a string into a camel case format<br>
+     * **Example:**
+     * ```
+     * $value=PdoOne::camelize('camel_format'); //CamelFormat
+     * $value=PdoOne::camelize('camel-format'); //CamelFormat
+     * ```
+     *
+     * @param string $input
+     * @param string $separator (optional)
+     * @return array|string|string[]
+     */
+    public static function camelize(string $input,string $separator = '_-')
     {
-        return str_replace($separator, '', ucwords($input, $separator));
+        return str_replace(str_split($separator), '', ucwords($input, $separator));
     }
 
     public static function varExport($input, $indent = "\t"): ?string
@@ -2838,9 +2849,11 @@ class PdoOne
     /**
      * It sets a value into the query (insert or update)<br>
      * **Example:**
-     *      ->from("table")->set('field1=?',20),set('field2=?','hello')->insert()<br>
-     *      ->from("table")->set("type=?",[6])->where("i=1")->update()<br>
-     *      set("type=?",6) // automatic<br>
+     * ```
+     * $this->from("table")->set('field1=?',20),set('field2=?','hello')->insert();
+     * $this->from("table")->set("type=?",[6])->where("i=1")->update();
+     * $this->>set("type=?",6); // automatic
+     * ```
      *
      * @param string|array $sqlOrArray
      * @param array|mixed  $param

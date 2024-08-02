@@ -1,5 +1,5 @@
-<?php /** @noinspection PhpMissingParamTypeInspection */
-
+<?php /** @noinspection UnknownInspectionInspection */
+/** @noinspection PhpMissingParamTypeInspection */
 /** @noinspection AccessModifierPresentedInspection */
 
 namespace eftec;

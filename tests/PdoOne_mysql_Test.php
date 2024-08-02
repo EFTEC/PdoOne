@@ -1098,7 +1098,11 @@ class PdoOne_mysql_Test extends TestCase
         $x=$this->pdoOne->setFechMode(PDO::FETCH_CLASS,SomeClass::class)->runRawQuery('select ? as abc',['1'])[0];
         self::assertInstanceOf(SomeClass::class,$x);
         self::assertEquals("1",$x->abc);
-
+    }
+    public function test_camel():void {
+        self::assertEquals('CamelFormat',PdoOne::camelize('camel_format'));
+        self::assertEquals('CamelFormat',PdoOne::camelize('camel-format'));
+        self::assertEquals('CamelFormat',PdoOne::camelize('camelFormat'));
     }
 
     /**

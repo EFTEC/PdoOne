@@ -1876,7 +1876,9 @@ In a nutshell:
 > Every minor version means that it adds a new functionality i.e. 1.5 -> 1.6 (new methods)
 >
 > Every decimal version means that it patches/fixes/refactoring a previous functionality i.e. 1.5.0 -> 1.5.1 (fix)
-
+* 4.9 2024-08-02
+  * [update] camelize update to consider "-" and "\_" and not only "\_"
+  * [update] update dependencies.
 * 4.8 2024-07-06
   * [upd] added fetchMode for runRawQuery()
   * [new] added setFetchMode()
