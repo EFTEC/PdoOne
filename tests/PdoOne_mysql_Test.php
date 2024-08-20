@@ -542,6 +542,7 @@ class PdoOne_mysql_Test extends TestCase
             self::assertEquals(true, $r, 'Drop failed');
         } catch (Exception $e) {
             $r = false;
+
             // drops silently
         }
         $sqlT2 = 'CREATE TABLE `product_category` (
@@ -553,13 +554,14 @@ class PdoOne_mysql_Test extends TestCase
         } catch (Exception $e) {
             echo $e->getMessage() . '<br>';
         }
+
         self::assertEquals(true, $r, 'failed to create table');
         $this->pdoOne->getCacheService()->cacheCounter = 0;
         self::assertGreaterThan(1, count($this->pdoOne->objectList()));
         // we add some values
+        $this->pdoOne->insert('product_category', ['id_category', 'catname'], ['id_category'=>2, 'catname' =>'cheap']);
         $this->pdoOne->set(['id_category' => 123, 'catname' => 'cheap'])->from('product_category')->insert();
-        $this->pdoOne->insert('product_category', ['id_category', 'catname'],
-            ['id_category' => 2, 'catname' => 'cheap']);
+
         $this->pdoOne->insert('product_category', ['id_category' => 3, 'catname' => 'cheap']);
         $this->pdoOne->insert('product_category', ['id_category' => 4, 'catname' => 'cheap4']);
         $this->pdoOne->insert('product_category', ['id_category', '5', 'catname', 'cheap']);
@@ -1124,6 +1126,16 @@ class PdoOne_mysql_Test extends TestCase
         $this->assertEquals([0=>['id_category' => 4, 'catname' => null]],
             $this->pdoOne->select('*')->from('product_category')->where(['catname'=>null])->toList());
 
+        $this->assertEquals([0=>['id_category' => 4, 'catname' => null]],
+            $this->pdoOne->select('*')->from('product_category')->where('catname',[null])->toList());
+        $this->assertEquals([0=>['id_category' => 4, 'catname' => null]],
+            $this->pdoOne->select('*')->from('product_category')->where('catname=?',[null])->toList());
+        $this->assertEquals([0=>['id_category' => 3, 'catname' => 'cheap']],
+            $this->pdoOne->select('*')->from('product_category')->where('catname<>?',[null])->toList());
+        $this->assertEquals([0=>['id_category' => 4, 'catname' => null]],
+            $this->pdoOne->select('*')->from('product_category')->where('catname=:catname',['catname'=>null])->toList());
+        $this->assertEquals([0=>['id_category' =>3, 'catname' => 'cheap']],
+            $this->pdoOne->select('*')->from('product_category')->where('catname<>:catname',['catname'=>null])->toList());
     }
 
     /**

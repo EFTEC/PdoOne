@@ -16,14 +16,14 @@ use RuntimeException;
 /**
  * Class PdoOneQuery
  *
- * @version       4.9.1
+ * @version       4.9.2
  * @package       eftec
  * @author        Jorge Castro Castillo
  * @copyright (c) Jorge Castro C. Dual Licence: MIT and Commercial License  https://github.com/EFTEC/PdoOne
  */
 class PdoOneQuery
 {
-    public const VERSION = '4.9.1';
+    public const VERSION = '4.9.2';
     //<editor-fold desc="query builder fields">
     /** @var PdoOne */
     public PdoOne $parent;
@@ -655,11 +655,21 @@ class PdoOneQuery
             }
         }
         $i = -1;
+
         foreach ($queryEnd as $k => $v) {
             $i++;
             if (($type === 'where' || $type === 'having') && isset($pars[$k]) && $pars[$k][1] === null) {
                 // where('column',[null])
-                $v = "$v is null";
+                if(strpos($v,'<>') ===false){
+                    // where('column=?',[null'])
+                    $v=str_replace(['=','?',':'.$named[$i]],'',$v);
+                    $v = "$v is null";
+                    unset($named[$i]);
+                } else if(strpos($v,'=') === false) {
+                    $v=str_replace(['<>','?',':'.$named[$i]],'',$v);
+                    $v = "$v is not null";
+                    unset($named[$i]);
+                }
                 unset($pars[$k]);
             } else if ($named[$i] !== '' && strpos($v, '?') === false && strpos($v, $named[$i]) === false) {
                 $v .= '=' . $named[$i];
@@ -677,6 +687,7 @@ class PdoOneQuery
                     break;
             }
         }
+
         switch ($type) {
             case 'where':
                 $this->whereParamAssoc = array_merge($this->whereParamAssoc, $pars);

@@ -1877,8 +1877,10 @@ In a nutshell:
 >
 > Every decimal version means that it patches/fixes/refactoring a previous functionality i.e. 1.5.0 -> 1.5.1 (fix)
 
+* 4.9.2 2024-08-20
+  * **[fix]** added more fixed to where(), now considering "is not null" where field<>:value (and :value is null) 
 * 4.9.1 2024-08-20
-  * **[fix]** fixed a bug with where, where the value is null.
+  * **[fix]** fixed a bug in where(), where the value is null.
     * 4.9: $this->...->where('col',null); // select * from table where col=null (invalid query)
     * 4.9.1: $this->...->where('col',null); // select * from table where col is null (valid)
 * 4.9 2024-08-02
