@@ -1104,6 +1104,27 @@ class PdoOne_mysql_Test extends TestCase
         self::assertEquals('CamelFormat',PdoOne::camelize('camel-format'));
         self::assertEquals('CamelFormat',PdoOne::camelize('camelFormat'));
     }
+    public function test_null():void {
+        try {
+            $r = $this->pdoOne->runRawQuery('drop table product_category');
+            self::assertEquals(true, $r, 'Drop failed');
+        } catch (Exception $e) {
+            $r = false;
+            // drops silently
+        }
+        $sqlT2 = 'CREATE TABLE `product_category` (`id_category` INT NOT NULL,`catname` 
+                VARCHAR(45) NULL, PRIMARY KEY (`id_category`));';
+        try {
+            $r = $this->pdoOne->runRawQuery($sqlT2);
+        } catch (Exception $e) {
+            echo $e->getMessage() . '<br>';
+        }
+        $this->pdoOne->insert('product_category', ['id_category' => 3, 'catname' => 'cheap']);
+        $this->pdoOne->insert('product_category', ['id_category' => 4, 'catname' => null]);
+        $this->assertEquals([0=>['id_category' => 4, 'catname' => null]],
+            $this->pdoOne->select('*')->from('product_category')->where(['catname'=>null])->toList());
+
+    }
 
     /**
      * @throws Exception

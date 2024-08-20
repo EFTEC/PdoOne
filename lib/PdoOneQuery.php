@@ -16,14 +16,14 @@ use RuntimeException;
 /**
  * Class PdoOneQuery
  *
- * @version       4.8
+ * @version       4.9.1
  * @package       eftec
  * @author        Jorge Castro Castillo
  * @copyright (c) Jorge Castro C. Dual Licence: MIT and Commercial License  https://github.com/EFTEC/PdoOne
  */
 class PdoOneQuery
 {
-    public const VERSION = '4.8';
+    public const VERSION = '4.9.1';
     //<editor-fold desc="query builder fields">
     /** @var PdoOne */
     public PdoOne $parent;
@@ -530,7 +530,7 @@ class PdoOneQuery
         $named = [];
         $pars = [];
         if ($params === PdoOne::NULL || $params === null) {
-            if (is_array($where)) {
+            if (is_array($where)) { // where( ['field'=>20] )  without argument.
                 $numeric = isset($where[0]) || $this->numericArgument;
                 if ($numeric) {
                     $this->numericArgument = true;
@@ -588,10 +588,10 @@ class PdoOneQuery
             }
         } else {
             // where and params are not empty
-            if (!is_array($params)) {
+            if (!is_array($params)) { //where( 'field=?',20 )
                 $params = [$params];
             }
-            if (!is_array($where)) {
+            if (!is_array($where)) { // where( ['field=?',[20]] )
                 $queryEnd[] = $where;
                 $numeric = isset($params[0]);
                 if ($numeric) {
@@ -657,7 +657,11 @@ class PdoOneQuery
         $i = -1;
         foreach ($queryEnd as $k => $v) {
             $i++;
-            if ($named[$i] !== '' && strpos($v, '?') === false && strpos($v, $named[$i]) === false) {
+            if (($type === 'where' || $type === 'having') && isset($pars[$k]) && $pars[$k][1] === null) {
+                // where('column',[null])
+                $v = "$v is null";
+                unset($pars[$k]);
+            } else if ($named[$i] !== '' && strpos($v, '?') === false && strpos($v, $named[$i]) === false) {
                 $v .= '=' . $named[$i];
                 $queryEnd[$k] = $v;
             }
@@ -1889,7 +1893,7 @@ class PdoOneQuery
 
     /**
      * It sets the mode to fetch the values. By default it uses PDO::FETCH_ASSOC
-     * @param int        $fetchMode Example: PDO::FETCH_BOTH
+     * @param int        $fetchMode     Example: PDO::FETCH_BOTH
      * @param mixed|null $fetchArgument the argument of the fetch_mode
      * @return PdoOneQuery
      * @see https://www.php.net/manual/en/pdostatement.fetch.php

@@ -1876,22 +1876,27 @@ In a nutshell:
 > Every minor version means that it adds a new functionality i.e. 1.5 -> 1.6 (new methods)
 >
 > Every decimal version means that it patches/fixes/refactoring a previous functionality i.e. 1.5.0 -> 1.5.1 (fix)
+
+* 4.9.1 2024-08-20
+  * **[fix]** fixed a bug with where, where the value is null.
+    * 4.9: $this->...->where('col',null); // select * from table where col=null (invalid query)
+    * 4.9.1: $this->...->where('col',null); // select * from table where col is null (valid)
 * 4.9 2024-08-02
-  * [update] camelize update to consider "-" and "\_" and not only "\_"
-  * [update] update dependencies.
+  * **[upd]** camelize update to consider "-" and "\_" and not only "\_"
+  * **[upd]** update dependencies.
 * 4.8 2024-07-06
-  * [upd] added fetchMode for runRawQuery()
-  * [new] added setFetchMode()
-  * [new] PdoOneQuery added runRawQuery() which is a wrapper of PdoOne::runRawQuery()
+  * **[upd]** added fetchMode for runRawQuery()
+  * **[new]** added setFetchMode()
+  * **[new]** PdoOneQuery added runRawQuery() which is a wrapper of PdoOne::runRawQuery()
 * 4.7.1 2024-06-07
-  * [fix] ixed a phpdoc in PdoOneQuery::where() 
+  * **[fix]** Fixed a phpdoc in PdoOneQuery::where() 
 * 4.7 2024-06-07
-  * [upd] Update phpdoc using markdown without "php" because PHPStorm is not compatible with it.
+  * **[upd]** Update phpdoc using markdown without "php" because PHPStorm is not compatible with it.
 * 4.6.2 2024-03-02
-  * [fix]PdoOne::$cacheService is now mixed.
+  * **[fix]** PdoOne::$cacheService is now mixed.
 * 4.6.1 2024-03-02
-  * [fix]PdoOne::$instance is null by default (instead of undefined)  
-  * [upd] updated CliOne dependency.
+  * **[fix]** PdoOne::$instance is null by default (instead of undefined)  
+  * **[upd]** updated CliOne dependency.
 * 4.6 2024-03-02
   * Updating dependency to PHP 7.4. The extended support of PHP 7.2 ended 3 years ago.
   * Added more type hinting in the code.
@@ -2032,41 +2037,41 @@ it as a PHP file.
       class.**
 
 * 2.26 2022-02-19
-    * **[core]** **[new]** added more type hiting for the arguments for safety and stability of the tool.
+    * **[core]** ****[new]**** added more type hiting for the arguments for safety and stability of the tool.
     * **[cli]** now the CLI is located a different file called pdoonecli Also the CLI has more features than before,
       including the generation of the OOP classes.
 
 * 2.25 2022-02-01
-    * **[core]** **[new]** Key-Value functionalities:setKvDefaultTable(),kv(),createTableKV(),dropTableKV(),getKV()
+    * **[core]** ****[new]**** Key-Value functionalities:setKvDefaultTable(),kv(),createTableKV(),dropTableKV(),getKV()
       ,setKV(),garbageCollectorKV(),delKV(),flushKV(),existKV()
-    * **[core]** **[new]** createIndex()
+    * **[core]** ****[new]**** createIndex()
 
 * 2.24.1 2022-02-06
 
-    * **[core]** **[fix]** Now, most generation of classes are defined in templates instead of the code. It will keep
+    * **[core]** ****[fix]**** Now, most generation of classes are defined in templates instead of the code. It will keep
       the code clean while it will also save a few bits of memories (old: 6446 lines, current: 5963 lines).
 
 * 2.24 2022-02-06
 
     * **[repo]** Now the library allows multiple connections using different repository class bases.
     * **[_BasePdoOne]** Updated to version 7. **You must rebuild the repository classes to rebuild the base class.**
-    * **[core]** **[new]** Now **MessageContainer** is injected automatically
-    * **[core]** **[new]** You can obtain an instance of PdoOne using the static method PdoOne::instance()
-    * **[core]** **[fix]** Method lastError() always returns a string (empty if not error) instead of a NULL.
+    * **[core]** ****[new]**** Now **MessageContainer** is injected automatically
+    * **[core]** ****[new]**** You can obtain an instance of PdoOne using the static method PdoOne::instance()
+    * **[core]** ****[fix]**** Method lastError() always returns a string (empty if not error) instead of a NULL.
     * **[core]** **[change]** <u>Method getMessages() rename to getMessageContainer()</u>
-    * **[core]** **[new]** Method getMessages() returns all the messages.
-    * **[core]** **[new]** Method getErrors(),getFirstError(),getLastError(),hasError() return error messages.
-    * **[core]** **[new]** Method getInfos(),getFirstInfo(),getLastInfo() return info messages.
+    * **[core]** ****[new]**** Method getMessages() returns all the messages.
+    * **[core]** ****[new]**** Method getErrors(),getFirstError(),getLastError(),hasError() return error messages.
+    * **[core]** ****[new]**** Method getInfos(),getFirstInfo(),getLastInfo() return info messages.
 
 * 2.23 2022-02-04
 
-    * **[PdoOneQuery]** **[PdoOne]** **[fix]** Fixed compatibility with PHP 8.1. PHP 8.1 deprecates a lot of
+    * **[PdoOneQuery]** **[PdoOne]** ****[fix]**** Fixed compatibility with PHP 8.1. PHP 8.1 deprecates a lot of
       functionalities.
-    * **[new]** update dependency to php>=7.2.5 to stay in sync with Composer. If you have trouble, then you can use an
+    * ****[new]**** update dependency to php>=7.2.5 to stay in sync with Composer. If you have trouble, then you can use an
       old version of the library
 
 * 2.22.2 2022-02-01
-    * **[PdoOneQuery]** **[fix]** when the argument of a method is empty or zero. Now, it throws an exception.
+    * **[PdoOneQuery]** ****[fix]**** when the argument of a method is empty or zero. Now, it throws an exception.
 
 * 2.22.1 2022-01-03
     * **[core]** **[edit]** generateAllClasses() now returns errors and warnings.
@@ -2077,38 +2082,38 @@ it as a PHP file.
     * **[_BasePdoOne]** **[edit]** the method page() allows to specify the size of the page.
 
 * 2.21 2022-01-28
-    * **[core]** **[fix]** method singularTable() is now more exact to convert plural names to singular.
+    * **[core]** ****[fix]**** method singularTable() is now more exact to convert plural names to singular.
     *               However, it is far from perfect.
     * **[_BasePdoOne]** [fixed] now several methods store the last error.
 
 * 2.20 2022-01-04
-    * **[new]** update dependency to php>=7.1.3. PHP 5.6 was discontinued 3 years ago.
+    * ****[new]**** update dependency to php>=7.1.3. PHP 5.6 was discontinued 3 years ago.
 
 * 2.19
-    * **[new]** **[core]** callProcedure() could return a value other than true or false (SQL server only)
-    * **[new]** **[sqlsrv]** implemented callProcedure() and createProcedure()
+    * ****[new]**** **[core]** callProcedure() could return a value other than true or false (SQL server only)
+    * ****[new]**** **[sqlsrv]** implemented callProcedure() and createProcedure()
 
 * 2.18
-    * **[new]** [oci] added oci (oracle) as a new driver.
-    * **[fix]** **[core]** dbTypeToPHP() and datesql2Text()
-    * **[new]** **[core]** clearError(),removeDoubleQuotes() and a new argument for connect()
+    * ****[new]**** [oci] added oci (oracle) as a new driver.
+    * ****[fix]**** **[core]** dbTypeToPHP() and datesql2Text()
+    * ****[new]**** **[core]** clearError(),removeDoubleQuotes() and a new argument for connect()
 
 * 2.16
-    * **[fix]** **[sqlsrv]** fixed the format of the date-time of sql.
-    * **[fix]** **[sqlsrv]** columnTable() returns distinct values.
+    * ****[fix]**** **[sqlsrv]** fixed the format of the date-time of sql.
+    * ****[fix]**** **[sqlsrv]** columnTable() returns distinct values.
 
 * 2.15 2021-07-24
 
 * 2.14.3 2021-06-15
-    * **[fix]** **[orm]** setCache()::first() and setCache()::count() didn't work correctly. fixed.
+    * ****[fix]**** **[orm]** setCache()::first() and setCache()::count() didn't work correctly. fixed.
     * Query now supports factoryNull()
 
 * 2.14.2 2021-06-13
-    * **[fix]** **[orm]** useCache() and setRelation() do not chain correctly, fixed.
-    * **[fix]** **[orm]** useCache() doubled the cache. fixed.
+    * ****[fix]**** **[orm]** useCache() and setRelation() do not chain correctly, fixed.
+    * ****[fix]**** **[orm]** useCache() doubled the cache. fixed.
 
 * 2.14.1 2021-06-09
-    * **[fix]** custom_exception_handler when the error returned does not have an argument, or the argument is not an
+    * ****[fix]**** custom_exception_handler when the error returned does not have an argument, or the argument is not an
       array.
 
 * 2.14 2021-06-04
@@ -2116,9 +2121,9 @@ it as a PHP file.
 *
     * **_BasePdoOneRepo** now works more closely with the class **PdoOneQuery**, so each query is a different instance.
 
-    * **[fix]** **PdoOne** dateConvertInput() does not crash when the value is not a date.
+    * ****[fix]**** **PdoOne** dateConvertInput() does not crash when the value is not a date.
 
-    * **[fix]** **PdoOne** throwError() does not stack errors but still triggers the last error (if any).
+    * ****[fix]**** **PdoOne** throwError() does not stack errors but still triggers the last error (if any).
 
     * [changes] ❗ **PdoOne** aggregate functions (sum,min,max,avg) now returns a value instead of generating a query.
 
@@ -2128,7 +2133,7 @@ it as a PHP file.
       ```
 
 
-* **[fix]** **PdoOne**  generateCodeArray() used for the generation of classes, returns the correct name when it is set.
+* ****[fix]**** **PdoOne**  generateCodeArray() used for the generation of classes, returns the correct name when it is set.
 
 * [changes] **_BasePdoOneRepo**: reset(),getQuery(),dropTable(),useCache(),limit(),newQuery(),order(),innerjoin(),left()
   ,right()
@@ -2138,7 +2143,7 @@ it as a PHP file.
 
 * 2.13.1 2021-05-22
 
-    * **[fix]** **[orm]** the method where() and limit() generated a new query every time, so the command
+    * ****[fix]**** **[orm]** the method where() and limit() generated a new query every time, so the command
       ClaseRepo::recursive()::where() failed generated two queries instead of one.
 
 * 2.13 2021-04-17
@@ -2150,8 +2155,8 @@ it as a PHP file.
       (it could be disabled with setting $this->customError=false)
 
 * 2.11.1 2021-04-17
-    * **[fix]** Mysql extension now knows the type int24 (plus other types of variables).
-    * **[fix]** Regresion, some removed { } caused a bug when they are followed by []
+    * ****[fix]**** Mysql extension now knows the type int24 (plus other types of variables).
+    * ****[fix]**** Regresion, some removed { } caused a bug when they are followed by []
     * [code]
 
 * 2.11 2021-04-17
@@ -2159,7 +2164,7 @@ it as a PHP file.
     * [code] Lots of cleanups. Removed unneeding { }. Merged common code in branches.
 
 * 2.10.3 2021-04-14
-    * **[fix]** BasePdoOne fixed method getRecursive(), it generated a new query, and now it reuses a query (if any).
+    * ****[fix]**** BasePdoOne fixed method getRecursive(), it generated a new query, and now it reuses a query (if any).
     * It also returns the query
 
 * 2.10.2 2021-04-06
