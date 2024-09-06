@@ -16,14 +16,14 @@ use RuntimeException;
 /**
  * Class PdoOneQuery
  *
- * @version       4.9.2
+ * @version       4.10
  * @package       eftec
  * @author        Jorge Castro Castillo
  * @copyright (c) Jorge Castro C. Dual Licence: MIT and Commercial License  https://github.com/EFTEC/PdoOne
  */
 class PdoOneQuery
 {
-    public const VERSION = '4.9.2';
+    public const VERSION = '4.10';
     //<editor-fold desc="query builder fields">
     /** @var PdoOne */
     public PdoOne $parent;

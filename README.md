@@ -1877,6 +1877,8 @@ In a nutshell:
 >
 > Every decimal version means that it patches/fixes/refactoring a previous functionality i.e. 1.5.0 -> 1.5.1 (fix)
 
+* 4.10 2024-09-06
+  * **[upd]** constructor now allow to use an array 
 * 4.9.2 2024-08-20
   * **[fix]** added more fixed to where(), now considering "is not null" where field<>:value (and :value is null) 
 * 4.9.1 2024-08-20

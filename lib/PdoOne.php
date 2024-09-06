@@ -29,11 +29,11 @@ use stdClass;
  * @package       eftec
  * @author        Jorge Castro Castillo
  * @copyright (c) Jorge Castro C. Dual Licence: MIT and Commercial License  https://github.com/EFTEC/PdoOne
- * @version       4.9.2
+ * @version       4.10
  */
 class PdoOne
 {
-    public const VERSION = '4.9.2';
+    public const VERSION = '4.10';
     /** @var int We need this value because null and false could be a valid value. */
     public const NULL = PHP_INT_MAX;
     /** @var string Prefix of the related columns. It is used for ORM */
@@ -188,34 +188,38 @@ class PdoOne
     /**
      * PdoOne constructor.  It doesn't open the connection to the database.
      *
-     * @param string      $databaseType =['mysql','sqlsrv','oci','sqlite','test'][$i]
-     * @param string      $server       server ip. Ex. 127.0.0.1 127.0.0.1:3306<br>
-     *                                  In 'oci' it could be 'orcl' or 'localhost/orcl' (instance name) or <br>
-     *                                  (DESCRIPTION=(ADDRESS=(PROTOCOL=TCP)(HOST=localhost)(PORT=1521))<br>
-     *                                  (CONNECT_DATA=(SERVICE_NAME=ORCL)))
-     * @param string      $user         Ex. root.  In 'oci' the user is set in uppercase.
-     * @param string      $pwd          Ex. 12345
-     * @param string      $db           Ex. mybase. In 'oci' this value is ignored, and it uses $user
-     * @param bool        $logFile      if true then it stores the error in the php log file (if any)
-     * @param string|null $charset      Example utf8mb4
-     * @param int         $nodeId       It is the id of the node (server). It is used
-     *                                  for sequence. Form 0 to 1023
+     * @param string|array $databaseType =['mysql','sqlsrv','oci','sqlite','test'][$i] <br>
+     *                                   If the value is array, then you can set all the values.
+     * @param string       $server       server ip. Ex. 127.0.0.1 127.0.0.1:3306<br>
+     *                                   In 'oci' it could be 'orcl' or 'localhost/orcl' (instance name) or <br>
+     *                                   (DESCRIPTION=(ADDRESS=(PROTOCOL=TCP)(HOST=localhost)(PORT=1521))<br>
+     *                                   (CONNECT_DATA=(SERVICE_NAME=ORCL)))
+     * @param string       $user         Ex. root.  In 'oci' the user is set in uppercase.
+     * @param string       $pwd          Ex. 12345
+     * @param string       $db           Ex. mybase. In 'oci' this value is ignored, and it uses $user
+     * @param bool         $logFile      if true then it stores the error in the php log file (if any)
+     * @param string|null  $charset      Example utf8mb4
+     * @param int          $nodeId       It is the id of the node (server). It is used
+     *                                   for sequence. Form 0 to 1023
      *
      * @see          PdoOne::connect()
      * @noinspection ClassConstantCanBeUsedInspection
      */
     public function __construct(
-        string  $databaseType,
-        string  $server,
-        string  $user = '',
-        string  $pwd = '',
-        string  $db = '',
-        bool    $logFile = false,
+        $databaseType,
+        string $server = '',
+        string $user = '',
+        string $pwd = '',
+        string $db = '',
+        bool $logFile = false,
         ?string $charset = null,
-        int     $nodeId = 1,
-        string  $tableKV = ''
+        int $nodeId = 1,
+        string $tableKV = ''
     )
     {
+        if(is_array($databaseType)) {
+            [$databaseType, $server, $user, $pwd, $db, $logFile, $charset, $nodeId, $tableKV] = $databaseType;
+        }
         $this->construct($databaseType, $server, $user, $pwd, $db, $logFile, $charset, $nodeId, $tableKV);
         if (class_exists('eftec\MessageContainer')) {
             // autowire MessageContainer if the method exists.
@@ -2536,7 +2540,7 @@ class PdoOne
      * @param string $separator (optional)
      * @return array|string|string[]
      */
-    public static function camelize(string $input,string $separator = '_-')
+    public static function camelize(string $input, string $separator = '_-')
     {
         return str_replace(str_split($separator), '', ucwords($input, $separator));
     }
