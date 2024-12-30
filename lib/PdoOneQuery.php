@@ -297,8 +297,12 @@ class PdoOneQuery
         } else {
             $sql = $this->select; // the query already constains "select", so we don't want "select * from".
         }
-        if (!in_array('from', $words, true)) {
-            $sql .= ' from ' . $this->from;
+        if (!in_array('from', $words, true)) { // is from missing?
+            if($this->from) {
+                $sql .= ' from ' . $this->from;
+            } else if($this->parent->databaseType==='oci') {
+                $sql .= ' from dual ';
+            }
         } else {
             $sql .= $this->from;
         }
@@ -813,7 +817,7 @@ class PdoOneQuery
      * $this->select('col1,col2')->from('table') // "select col1,col2 from table"
      * $this->select('select *')->from('table') // "select * from table"
      * $this->select('select * from table') // "select * from table"
-     * * $this->select('select * from table')->where(['id'],[1]) // "select * from table where id=1"
+     * $this->select('select * from table')->where(['id'],[1]) // "select * from table where id=1"
      * $this->select('select * from table where id=1') // "select * from table where id=1"
      * ```
      *
@@ -836,14 +840,14 @@ class PdoOneQuery
 
     /**
      * Adds a from for a query. It could be used by select,insert,update and delete.<br>
-     * <b>Note:</b> The prefix (PdoOne->$prefixTable) is considered only if the table is defined alone.
+     * <b>Note:</b> The prefix (PdoOne->$prefixTable) is considered only if the table is defined alone.<br>
      * **Example:**
      * ```
-     *      from('table')
-     *      from('table alias')
-     *      from('table1,table2')
-     *      from('table1,table2','dbo')
-     *      from('table1 inner join table2 on table1.c=table2.c')
+     * $this->from('table')
+     * $this->from('table alias')
+     * $this->from('table1,table2')
+     * $this->from('table1,table2','dbo')
+     * $this->from('table1 inner join table2 on table1.c=table2.c')
      * ```
      *
      * @param string|null $sqlOrTableName Input SQL query
@@ -1196,13 +1200,10 @@ class PdoOneQuery
      * It generates a query for "count". It is a macro of select()
      * **Example:**
      * ```
-     * ->from('table')->count('') // select count(*) from
-     * table<br>
-     * ->count('from table') // select count(*) from table<br>
-     * ->count('from table where condition=1') // select count(*)
-     * from table where condition=1<br>
-     * ->count('from table','col') // select count(col) from
-     * table<br>
+     * $this->from('table')->count('') // select count(*) from table
+     * $this->count('from table') // select count(*) from table
+     * $this->count('from table where condition=1') // select count(*) from table where condition=1
+     * $this->count('from table','col') // select count(col) from table
      * ```
      *
      * @param string|null $sql [optional]
@@ -1308,12 +1309,11 @@ class PdoOneQuery
     /**
      * It generates a query for "sum". It is a macro of select()
      * **Example:**
-     * ->sum('from table','col')->firstScalar() // select sum(col) from
-     * table<br>
-     * ->sum('col')->from('table')->firstScalar() // select sum(col) from
-     * table<br>
-     * ->sum('','col')->from('table')->firstScalar() // select sum(col) from
-     * table<br>
+     * ```
+     * $this->sum('from table','col')->firstScalar() // select sum(col) from table
+     * $this->sum('col')->from('table')->firstScalar() // select sum(col) from table
+     * $this->sum('','col')->from('table')->firstScalar() // select sum(col) from table
+     * ```
      *
      * @param string $sql     [optional] it could be the name of column or part
      *                        of the query ("from table...")
@@ -1330,13 +1330,11 @@ class PdoOneQuery
     /**
      * It generates a query for "min". It is a macro of select()
      * **Example:**
-     * ->min('from table','col') // select min(col) from
-     * table<br>
-     * ->from('table')->min('col') // select min(col) from
-     * table<br>
-     * ->from('table')->min('','col') // select min(col) from
-     * table<br>
-     *
+     * ```
+     * $this->min('from table','col') // select min(col) from table
+     * $this->from('table')->min('col') // select min(col) from table
+     * $this->from('table')->min('','col') // select min(col) from table
+     * ```
      * @param string $sql
      * @param string $arg
      *
@@ -1354,12 +1352,11 @@ class PdoOneQuery
     /**
      * It generates a query for "max". It is a macro of select()
      * **Example:**
-     * ->max('from table','col')->firstScalar() // select max(col) from
-     * table<br>
-     * ->max('col')->from('table')->firstScalar() // select max(col) from
-     * table<br>
-     * ->max('','col')->from('table')->firstScalar() // select max(col) from
-     * table<br>
+     * ```
+     * $this->max('from table','col')->firstScalar() // select max(col) from table
+     * $this->max('col')->from('table')->firstScalar() // select max(col) from table
+     * $this->max('','col')->from('table')->firstScalar() // select max(col) from table
+     * ```
      *
      * @param string $sql
      * @param string $arg
@@ -1375,12 +1372,11 @@ class PdoOneQuery
     /**
      * It generates a query for "avg". It is a macro of select()
      * **Example:**
-     * ->avg('from table','col')->firstScalar() // select avg(col) from
-     * table<br>
-     * ->avg('col')->from('table')->firstScalar() // select avg(col) from
-     * table<br>
-     * ->avg('','col')->from('table')->firstScalar() // select avg(col) from
-     * table<br>
+     * ```
+     * $this->avg('from table','col')->firstScalar() // select avg(col) from table
+     * $this->avg('col')->from('table')->firstScalar() // select avg(col) from table
+     * $this->avg('','col')->from('table')->firstScalar() // select avg(col) from table
+     * ```
      *
      * @param string $sql
      * @param string $arg
@@ -1654,9 +1650,11 @@ class PdoOneQuery
     /**
      * It sets a value into the query (insert or update)<br>
      * **Example:**
-     *      ->from("table")->set('field1=?',20),set('field2=?','hello')->insert()<br>
-     *      ->from("table")->set("type=?",[6])->where("i=1")->update()<br>
-     *      set("type=?",6) // automatic<br>
+     * ```
+     * $this->from("table")->set('field1=?',20),set('field2=?','hello')->insert()
+     * $this->from("table")->set("type=?",[6])->where("i=1")->update()
+     * $this->from("table")->set("type=?",6) // automatic
+     * ```
      *
      * @param string|array $sqlOrArray
      * @param array|mixed  $param
@@ -1685,8 +1683,9 @@ class PdoOneQuery
     /**
      * It groups by a condition.<br>
      * **Example:**
-     * ->select('col1,count(*)')->from('table')->group('col1')->toList();
-     *
+     * ```
+     * $this->select('col1,count(*)')->from('table')->group('col1')->toList();
+     * ```
      * @param ?string $sql Input SQL query
      *
      * @return PdoOneQuery
@@ -1887,7 +1886,12 @@ class PdoOneQuery
             $param[] = [':ID_' . $identityColumn, '0', 1, null];
             $sql .= ' returning ' . $identityColumn . ' into :ID_' . $identityColumn;
         }
-        $this->runRawQuery($sql, $param, true, $this->useCache !== false, $this->cacheFamily, $this->fetchMode, $this->fetchArgument);
+        if($this->parent->databaseType === 'pgsql' && $identityColumn !== null) {
+            //$param[] = [':ID_' . $identityColumn, '0', 1, null];
+            $sql .= ' returning ' . $identityColumn;
+        }
+        $resultInsert=$this->runRawQuery($sql, $param, true, $this->useCache !== false, $this->cacheFamily, $this->fetchMode, $this->fetchArgument);
+
         $this->builderReset(true);
         if ($this->endtry() === false) {
             return false;
@@ -1898,6 +1902,9 @@ class PdoOneQuery
                 throw new RuntimeException('Insert with identity: Not defined for OCI');
             }
             return null;
+        }
+        if($this->parent->databaseType === 'pgsql') {
+            return $identityColumn === null ? null : $resultInsert[0][$identityColumn];
         }
         return $this->parent->insert_id();
     }
@@ -2156,14 +2163,14 @@ class PdoOneQuery
      * Generate and run an update in the database.<br>
      * **Example:**
      * ```
-     * update('table',['col1',10,'col2','hello world'],['wherecol',10]);
-     * update('table',['col1'=>10=>'col2'=>'hello world'],['wherecol'=>10]);
-     * update('table',['col1','col2'],[10,'hello world'],['wherecol'],[10]);
+     * $this->update('table',['col1',10,'col2','hello world'],['wherecol',10]);
+     * $this->update('table',['col1'=>10=>'col2'=>'hello world'],['wherecol'=>10]);
+     * $this->update('table',['col1','col2'],[10,'hello world'],['wherecol'],[10]);
      * $this->from("producttype")
      *     ->set("name=?",['Captain-Crunch'])
      *     ->where('idproducttype=?',[6])
      *     ->update();
-     * update('product_category set col1=10 where idproducttype=1')
+     * $this->update('product_category set col1=10 where idproducttype=1')
      * ```
      * **Example ORM:**
      * If <b>$entity</b> has a missing field, then the missing field will not be updated.<br>

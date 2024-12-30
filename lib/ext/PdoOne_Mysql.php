@@ -10,6 +10,7 @@ namespace eftec\ext;
 use eftec\PdoOne;
 use Exception;
 use PDO;
+use const Dom\VALIDATION_ERR;
 
 /**
  * Class PdoOne_Mysql
@@ -128,8 +129,9 @@ class PdoOne_Mysql implements PdoOne_IExt
     {
         $query = "SELECT table_name as `table`,engine as `engine`, table_schema as `schema`," .
             " table_collation as `collation`, table_comment as `description` " .
-            "FROM information_schema.tables WHERE table_schema = '?' and table_name='?'";
+            "FROM information_schema.tables WHERE table_schema = ? and table_name=?";
         $result = $this->parent->runRawQuery($query, [$this->parent->db, $table]);
+        $result= array_change_key_case($result[0],0); // CASE_LOWER
         if ($onlyDescription) {
             return $result['description'];
         }
@@ -149,6 +151,7 @@ class PdoOne_Mysql implements PdoOne_IExt
             /*if ($col['Key'] === 'PRI') {
                 $pk = $col['Field'];
             }*/
+
             $type = $col['Type'];
             $type = str_replace('int(11)', 'int', $type);
             $value = $type;
@@ -165,7 +168,7 @@ class PdoOne_Mysql implements PdoOne_IExt
         return $result;
     }
 
-    public function getDefTableFK(string $table, bool $returnSimple, string $filter = null, bool $assocArray = false): array
+    public function getDefTableFK(string $table, bool $returnSimple, ?string $filter = null, bool $assocArray = false): array
     {
         $columns = [];
         /** @var array $result =array(["CONSTRAINT_NAME"=>'',"COLUMN_NAME"=>'',"REFERENCED_TABLE_NAME"=>''
@@ -333,15 +336,16 @@ class PdoOne_Mysql implements PdoOne_IExt
     public function foreignKeyTable($tableName): string
     {
         return "SELECT 
-							column_name collocal,
-						    REFERENCED_TABLE_NAME tablerem,
-						    REFERENCED_COLUMN_NAME colrem
-						 FROM information_schema.KEY_COLUMN_USAGE
-						where table_name='$tableName' and constraint_schema='{$this->parent->db}'
-						and referenced_table_name is not null;";
+                    column_name collocal,
+                    REFERENCED_TABLE_NAME tablerem,
+                    REFERENCED_COLUMN_NAME colrem,
+                    constraint_name fk_name
+                 FROM information_schema.KEY_COLUMN_USAGE
+                where table_name='$tableName' and constraint_schema='{$this->parent->db}'
+                and referenced_table_name is not null;";
     }
 
-    public function createSequence(string $tableSequence = null, string $method = 'snowflake'): array
+    public function createSequence(?string $tableSequence = null, string $method = 'snowflake'): array
     {
         $ok = $this->parent->createTable($tableSequence, [
             'id' => 'bigint(20) unsigned NOT NULL AUTO_INCREMENT',
@@ -631,7 +635,7 @@ class PdoOne_Mysql implements PdoOne_IExt
         }
     }
 
-    public function getDefTableKeys(string $table, bool $returnSimple, string $filter = null): array
+    public function getDefTableKeys(string $table, bool $returnSimple, ?string $filter = null): array
     {
         $columns = [];
         /** @var array $indexArr =array(["Table"=>'',"Non_unique"=>0,"Key_name"=>'',"Seq_in_index"=>0

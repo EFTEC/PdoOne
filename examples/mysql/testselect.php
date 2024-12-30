@@ -16,14 +16,18 @@ $dao->customError=true;
 try {
     echo "<h1>Connection. The instance {$dao->server}, base:{$dao->db}  user:{$dao->user} and password:{$dao->pwd} must exists</h1>";
     $dao->connect();
-    $dao->conn1->setAttribute(PDO::ATTR_CASE,PDO::CASE_UPPER);
+    //$dao->conn1->setAttribute(PDO::ATTR_CASE,PDO::CASE_UPPER);
     echo "Connected A-OK!<br>";
 } catch (Exception $e) {
     echo "<h2>connection error:</h2>";
     echo $dao->lastError()."-".$e->getMessage()." FIN<br>";
     die(1);
 }
-new \dBug\dBug($dao->select('*')->from('actor')->toMeta());
+echo "<pre>";
+var_dump($dao->getDefTable('actor'));
+echo "</pre>";
+
+//new \dBug\dBug($dao->select('*')->from('actor')->toMeta());
 
 die(1);
 
@@ -93,7 +97,7 @@ try {
 	$results = $dao->runRawQuery("select * from producttype where name=?",[PDO::PARAM_STR, 'Coca-Cola'],true);
 	echo $dao->lastQuery;
 	echo Collection::generateTable($results);
-	
+
     echo "<hr>toList:";
     $results = $dao->select("*")->from("producttype")
         ->where('name=?', [PDO::PARAM_STR, 'Coca-Cola'])
@@ -266,9 +270,9 @@ function build_table($array){
             if(is_array($value2)) {
                 $html .= '<td>' . json_encode($value2,JSON_PRETTY_PRINT) . '</td>';
             } else {
-                $html .= '<td>' . htmlspecialchars($value2) . '</td>';    
+                $html .= '<td>' . htmlspecialchars($value2) . '</td>';
             }
-            
+
         }
         $html .= '</tr>';
     }

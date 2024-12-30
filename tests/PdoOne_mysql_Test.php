@@ -134,20 +134,30 @@ class PdoOne_mysql_Test extends TestCase
             $id = $this->pdoOne->insert('city', ['id' => $i, 'name' => 'city'.$i]);
             $this->assertTrue($id > 0);
         }
-        var_dump($this->pdoOne);
+        //var_dump($this->pdoOne);
         //$this->pdoOne->conn1->setAttribute(\PDO::MYSQL_ATTR_USE_BUFFERED_QUERY,false);
         $result=$this->pdoOne
             ->select('select * from table_city')
             ->fetchLoop(static function($row) {return($row);}, PDO::FETCH_ASSOC);
-       // var_dump($result);
+        $this->assertGreaterThanOrEqual(1,count($result));
+
+
+
         $x2=memory_get_usage();
-        var_dump($x2);
-        var_dump($x2-$x1);
+        //var_dump($x2);
+        //var_dump($x2-$x1);
         /*
          $this->pdoOne->select('select * from table_city')->toPdoStatement();
           while ($row=$stat->fetch(\PDO::FETCH_NUM)) {
             var_dump($row);
         }*/
+    }
+    public function test_nofrom():void
+    {
+        $this->pdoOne->logLevel=4;
+        $result=$this->pdoOne->select('sysdate(6)')->firstScalar();
+        $d=new DateTime();
+        $this->assertStringContainsString($d->format('y'),$result);
     }
 
     public function test_prefix_table(): void

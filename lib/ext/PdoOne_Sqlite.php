@@ -166,7 +166,7 @@ class PdoOne_Sqlite implements PdoOne_IExt
     }
 
 
-    public function getDefTableFK(string $table, bool $returnSimple, string $filter = null, bool $assocArray = false): array
+    public function getDefTableFK(string $table, bool $returnSimple, ?string $filter = null, bool $assocArray = false): array
     {
         throw new RuntimeException('pendiente');
         $columns = [];
@@ -316,7 +316,7 @@ class PdoOne_Sqlite implements PdoOne_IExt
 
     }
 
-    public function createSequence(string $tableSequence = null, string $method = 'snowflake'): array
+    public function createSequence(?string $tableSequence = null, string $method = 'snowflake'): array
     {
         $ok = $this->parent->createTable($tableSequence, [
             'id' => 'bigint(20) unsigned NOT NULL AUTO_INCREMENT',
@@ -585,7 +585,7 @@ class PdoOne_Sqlite implements PdoOne_IExt
         }
     }
 
-    public function getDefTableKeys(string $table, bool $returnSimple, string $filter = null): array
+    public function getDefTableKeys(string $table, bool $returnSimple, ?string $filter = null): array
     {
         $columns = [];
         /** @var array $indexArr =array(["Table"=>'',"Non_unique"=>0,"Key_name"=>'',"Seq_in_index"=>0

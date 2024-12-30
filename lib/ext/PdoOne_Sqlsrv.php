@@ -163,7 +163,7 @@ class PdoOne_Sqlsrv implements PdoOne_IExt
      * @return array
      * @throws Exception
      */
-    public function getDefTableKeys(string $table, bool $returnSimple, string $filter = null): array
+    public function getDefTableKeys(string $table, bool $returnSimple, ?string $filter = null): array
     {
         $columns = [];
         /** @var array $result =array(["IndexName"=>'',"ColumnName"=>'',"is_unique"=>0,"is_primary_key"=>0,"TYPE"=>0]) */
@@ -201,7 +201,7 @@ class PdoOne_Sqlsrv implements PdoOne_IExt
      * @return array
      * @throws Exception
      */
-    public function getDefTableFK(string $table, bool $returnSimple, string $filter = null, bool $assocArray = false): array
+    public function getDefTableFK(string $table, bool $returnSimple, ?string $filter = null, bool $assocArray = false): array
     {
         $columns = [];
         /** @var array $fkArr =array(["foreign_key_name"=>'',"referencing_table_name"=>'',"COLUMN_NAME"=>''
@@ -372,7 +372,7 @@ class PdoOne_Sqlsrv implements PdoOne_IExt
 					where obj.name='$tableName' ";
     }
 
-    public function createSequence(string $tableSequence = null, string $method = 'snowflake'): array
+    public function createSequence(?string $tableSequence = null, string $method = 'snowflake'): array
     {
         $sql = [];
         $sql[] = "CREATE SEQUENCE [$tableSequence]

@@ -83,6 +83,18 @@ interface PdoOne_IExt
      * $this->getDefTable('table');
      * // ['col1'=>'int not null','col2'=>'varchar(50)']
      * ```
+     * ```
+     * array(4) {
+     * ["actor_id"]=>
+     * string(41) "smallint unsigned not null auto_increment"
+     * ["first_name"]=>
+     * string(20) "varchar(45) not null"
+     * ["last_name"]=>
+     * string(20) "varchar(45) not null"
+     * ["last_update"]=>
+     * string(72) "timestamp not null default CURRENT_TIMESTAMP on update CURRENT_TIMESTAMP"
+     * }
+     * ```
      *
      * @param string $table
      *
@@ -105,7 +117,7 @@ interface PdoOne_IExt
      * @return array=["IndexName"=>'',"ColumnName"=>'',"is_unique"=>0,"is_primary_key"=>0,"TYPE"=>0]
      * @throws Exception
      */
-    public function getDefTableKeys(string $table, bool $returnSimple, string $filter = null): array;
+    public function getDefTableKeys(string $table, bool $returnSimple, ?string $filter = null): array;
 
     /**
      * Returns an associative array with the definition of foreign keys of a table.<br>
@@ -122,7 +134,7 @@ interface PdoOne_IExt
      * @return array
      * @throws Exception
      */
-    public function getDefTableFK(string $table, bool $returnSimple, string $filter = null, bool $assocArray = false): array;
+    public function getDefTableFK(string $table, bool $returnSimple, ?string $filter = null, bool $assocArray = false): array;
 
     public function db($dbname);
 
@@ -159,8 +171,36 @@ interface PdoOne_IExt
      */
     public function objectList(string $type = 'table', bool $onlyName = false);
 
-    public function columnTable(string $tableName);
+    /**
+     * ```
+     * $result=[
+     *  [
+     *  'colname'=>'idChamber', // the name of the column
+     *  'coltype'=>'int', // the type is not converted.
+     *  'colsize'=>NULL, // example 50 for varchar(50)
+     *  'colpres'=>'10', // the precision, 10 digits (no decimals) is 10
+     *  'colscale'=>0, // the scale, 2 decimals is 2
+     *  'iskey'=>'1', // 1 if the column is key (example PK)
+     *  'isidentity'=>'1', // 1 if the column is identity
+     *  'isnullable'=>'1' // 1 if the columns is nullable or not
+     *  ]
+     * ];
+     * ```
+     * @param string $tableName
+     * @return string
+     */
+    public function columnTable(string $tableName): string;
 
+    /**
+     * It returns all the foreign keys of a table<br>
+     * **Example**
+     * ```
+     * $this->foreignKeyTable('table1);
+     * //[['collocal'=>'col1',tablerem=>'table1',colrem=>'col1','fk_name'=>'table_fk1']]
+     * ```
+     * @param string $tableName
+     * @return mixed
+     */
     public function foreignKeyTable(string $tableName);
 
     /**
@@ -170,7 +210,7 @@ interface PdoOne_IExt
      * @return array the sql command to create a sequence
      * @throws Exception
      */
-    public function createSequence(string $tableSequence = null, string $method = 'snowflake'): array;
+    public function createSequence(?string $tableSequence = null, string $method = 'snowflake'): array;
 
     /**
      * It creates a store procedure<br>
@@ -297,6 +337,11 @@ interface PdoOne_IExt
 
     /**
      * It gets a primary key based in a query.<br>
+     * **Example**
+     * ```
+     * $this->getPk('table');
+     * //[0=>['id']]
+     * ```
      *
      * @param string       $query query (only for MYSQL) or name of the table
      * @param string|array $pk    Previous primary key (if the key is not found)

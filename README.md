@@ -8,10 +8,10 @@ in the bare metal of the PDO library, but it also allows to create an ORM using 
 
 [![Packagist](https://img.shields.io/packagist/v/eftec/PdoOne.svg)](https://packagist.org/packages/eftec/PdoOne)
 [![Total Downloads](https://poser.pugx.org/eftec/PdoOne/downloads)](https://packagist.org/packages/eftec/PdoOne)
-[![Maintenance](https://img.shields.io/maintenance/yes/2024.svg)]()
+[![Maintenance](https://img.shields.io/maintenance/yes/2025.svg)]()
 [![composer](https://img.shields.io/badge/composer-%3E1.6-blue.svg)]()
-[![php](https://img.shields.io/badge/php-7.1-green.svg)]()
-[![php](https://img.shields.io/badge/php-8.x-green.svg)]()
+[![php](https://img.shields.io/badge/php-7.4-green.svg)]()
+[![php](https://img.shields.io/badge/php-8.4-green.svg)]()
 [![CocoaPods](https://img.shields.io/badge/docs-70%25-yellow.svg)]()
 
 Turn this
@@ -1877,9 +1877,15 @@ In a nutshell:
 >
 > Every decimal version means that it patches/fixes/refactoring a previous functionality i.e. 1.5.0 -> 1.5.1 (fix)
 
+* 4.12 2024-12-30 
+  * Compatibility with PHP 8.4
+  * Some preliminary work with Sqlite and PostgreSQL
+* 4.11 2024-10-08 (not yet released)
+  * sqlGen() now allows empty "from".
+    * Note: on "oci" (Oracle), it uses "from dual"
 * 4.10 2024-09-06
-  * **[upd]** constructor now allow to use an array 
-* 4.9.2 2024-08-20
+  * **[upd]** constructor now allows to use of an array 
+* * 4.9.2 2024-08-20
   * **[fix]** added more fixed to where(), now considering "is not null" where field<>:value (and :value is null) 
 * 4.9.1 2024-08-20
   * **[fix]** fixed a bug in where(), where the value is null.

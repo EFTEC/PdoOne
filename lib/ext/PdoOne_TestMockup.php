@@ -109,7 +109,7 @@ class PdoOne_TestMockup implements PdoOne_IExt
         return $result;
     }
 
-    public function getDefTableKeys(string $table, bool $returnSimple, string $filter = null): array
+    public function getDefTableKeys(string $table, bool $returnSimple, ?string $filter = null): array
     {
         if ($returnSimple) {
             $columns = ['col1' => 'PRIMARY KEY'];
@@ -119,7 +119,7 @@ class PdoOne_TestMockup implements PdoOne_IExt
         return $this->parent->filterKey($filter, $columns, $returnSimple);
     }
 
-    public function getDefTableFK(string $table, bool $returnSimple, string $filter = null, bool $assocArray = false): array
+    public function getDefTableFK(string $table, bool $returnSimple, ?string $filter = null, bool $assocArray = false): array
     {
         if ($returnSimple) {
             $columns = ['col1' => 'FOREIGN KEY REFERENCES col [tableref](colref)'];
@@ -214,7 +214,7 @@ class PdoOne_TestMockup implements PdoOne_IExt
 					where obj.name='$tableName' ";
     }
 
-    public function createSequence(string $tableSequence = null, string $method = 'snowflake'): array
+    public function createSequence(?string $tableSequence = null, string $method = 'snowflake'): array
     {
         return ['CREATE TABLE'];
     }
