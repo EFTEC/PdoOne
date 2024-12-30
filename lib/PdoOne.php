@@ -30,11 +30,11 @@ use stdClass;
  * @package       eftec
  * @author        Jorge Castro Castillo
  * @copyright (c) Jorge Castro C. Dual Licence: MIT and Commercial License  https://github.com/EFTEC/PdoOne
- * @version       4.10.1
+ * @version       4.12.1
  */
 class PdoOne
 {
-    public const VERSION = '4.10.1';
+    public const VERSION = '4.12.1';
     /** @var int We need this value because null and false could be a valid value. */
     public const NULL = PHP_INT_MAX;
     /** @var string Prefix of the related columns. It is used for ORM */
@@ -180,7 +180,7 @@ class PdoOne
     /** @var null|array $partition is an associative array [column=>value] with a fixed and pre-established conditions */
     public ?array $partition = null;
     /** @var MessageContainer|null it stores the messages. */
-    private ?MessageContainer $messageContainer;
+    private ?MessageContainer $messageContainer = null;
     /** @var PdoOne[] */
     protected static array $instance = [];
     protected string $tableKV = '';
