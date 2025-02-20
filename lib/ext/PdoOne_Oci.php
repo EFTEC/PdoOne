@@ -266,7 +266,7 @@ class PdoOne_Oci implements PdoOne_IExt
                     , $item['referenced_table_name']
                     , $extra
                     , $item['foreign_key_name']); // fk_name
-                $columns[PdoOne::$prefixBase . $item['COLUMN_NAME']] = PdoOne::newColFK(
+                $columns[PdoOne::addPrefix($item['COLUMN_NAME'])] = PdoOne::newColFK(
                     'MANYTOONE'
                     , $item['referenced_column_name']
                     , $item['referenced_table_name']

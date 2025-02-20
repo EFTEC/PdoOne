@@ -119,6 +119,8 @@ class PdoOneCli
         $this->cli->evalParam('charset', true);
         $this->cli->evalParam('nodeId', true);
         $this->cli->evalParam('tableKV', true);
+        $this->cli->evalParam('prefix', true);
+        $this->cli->evalParam('postfix', true);
     }
 
     /** @noinspection PhpMissingReturnTypeInspection
@@ -291,6 +293,21 @@ class PdoOneCli
                 ->setCurrentAsDefault()
                 ->setInput()
                 ->evalParam(true);
+            $this->cli->createOrReplaceParam('prefix', [], 'longflag')
+                ->setRequired(false)
+                ->setDefault('_')
+                ->setDescription('The prefix', '', ['Example: <dim>_</dim>'])
+                ->setCurrentAsDefault()
+                ->setInput()
+                ->evalParam(true);
+            $this->cli->createOrReplaceParam('postfix', [], 'longflag')
+                ->setRequired(false)
+                ->setDefault("")
+                ->setAllowEmpty()
+                ->setDescription('Select the postfix', '', ['Example: <dim>Def</dim>'])
+                ->setCurrentAsDefault()
+                ->setInput()
+                ->evalParam(true);
             $this->cli->downLevel();
             try {
                 $pdo = $this->createPdoInstance();
@@ -314,7 +331,7 @@ class PdoOneCli
     public function pdoGetConfigArray():array
     {
         $r= $this->cli->getValueAsArray(
-            ['databaseType','server','user','pwd','database','logFile','charset','nodeId','tableKV']);
+            ['databaseType','server','user','pwd','database','logFile','charset','nodeId','tableKV','prefix','postfix']);
         $r['logFile']= $r['logFile']==='yes';
         return $r;
     }
@@ -322,7 +339,7 @@ class PdoOneCli
     {
         $backup=$this->cli->getValue('logFile'); //yes|no
         $this->cli->setParam('logFile',$array['logFile']?'yes':'no',false,true); //true|false
-        $this->cli->setParamUsingArray($array,['databaseType','server','user','pwd','database','logFile','charset','nodeId','tableKV']);
+        $this->cli->setParamUsingArray($array,['databaseType','server','user','pwd','database','logFile','charset','nodeId','tableKV','prefix','postfix']);
         $this->cli->setParam('logFile',$backup);//yes|no
     }
 

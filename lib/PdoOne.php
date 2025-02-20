@@ -30,15 +30,16 @@ use stdClass;
  * @package       eftec
  * @author        Jorge Castro Castillo
  * @copyright (c) Jorge Castro C. Dual Licence: MIT and Commercial License  https://github.com/EFTEC/PdoOne
- * @version       4.12.1
+ * @version       4.13
  */
 class PdoOne
 {
-    public const VERSION = '4.12.1';
+    public const VERSION = '4.13';
     /** @var int We need this value because null and false could be a valid value. */
     public const NULL = PHP_INT_MAX;
     /** @var string Prefix of the related columns. It is used for ORM */
     public static string $prefixBase = '_';
+    public static string $postfixBase = '';
     /** @var string the prefix of every table, example "t_" */
     public string $prefixTable = '';
     /** @var int Used for the method page() */
@@ -221,7 +222,9 @@ class PdoOne
         ?string $charset = null,
         int $nodeId = 1,
         string $tableKV = '',
-        string $instanceName = "0"
+        string $instanceName = "0",
+        string $prefix = '_',
+        string $postfix = ''
     )
     {
         if(is_array($databaseType)) {
@@ -236,10 +239,12 @@ class PdoOne
             $nodeId=$cp['nodeId']??1;
             $tableKV=$cp['tableKV']??'';
             $instanceName=$cp['$instanceName']??'0';
+            self::$prefixBase = $cp['prefix']??'_';
+            self::$postfixBase = $cp['postfix']??'';
 
         }
         $this->construct($databaseType, $server, $user, $pwd, $db, $logFile,
-            $charset, $nodeId, $tableKV);
+            $charset, $nodeId, $tableKV,$prefix,$postfix);
         if (class_exists('eftec\MessageContainer')) {
             // autowire MessageContainer if the method exists.
             $this->messageContainer = MessageContainer::instance();
@@ -259,6 +264,35 @@ class PdoOne
         $this->functionDQL=$functionDQL;
         $this->functionDML=$functionDML;
     }
+    public static function addPrefix(string $columnName): string
+    {
+        return self::$prefixBase . $columnName.self::$postfixBase;
+    }
+    public static function removePrefix(string $columnName): string
+    {
+        if(self::hasPrefix($columnName)) {
+            return substr($columnName,strlen(self::$prefixBase),strlen($columnName)-strlen(self::$prefixBase)-strlen(self::$postfixBase));
+        }
+        return $columnName;
+    }
+    public static function hasPrefix(string $columnName):bool {
+        return self::startsWith($columnName, self::$prefixBase) && self::endsWith($columnName, self::$postfixBase);
+    }
+    public static function startsWith($haystack, $needle): bool
+    {
+        if($needle === '' || $needle===null) {
+            return true;
+        }
+        return substr_compare($haystack, $needle, 0, strlen($needle)) === 0;
+    }
+    public static function endsWith($haystack, $needle): bool
+    {
+        if($needle === '' || $needle===null) {
+            return true;
+        }
+        return substr_compare($haystack, $needle, -strlen($needle)) === 0;
+    }
+
 
     /**
      * It generates an instance using an array.<br>
@@ -315,7 +349,9 @@ class PdoOne
         $logFile = false,
         $charset = null,
         $nodeId = 1,
-        $tableKV = ''
+        $tableKV = '',
+        $prefix = '_',
+        $postfix = ''
     ): void
     {
         $this->databaseType = $databaseType;
@@ -343,6 +379,8 @@ class PdoOne
             default:
                 throw new RuntimeException('no database type selected');
         }
+        self::$prefixBase = $prefix??'_';
+        self::$postfixBase = $postfix??'';
         $charset = $this->service->construct($charset, []);
         $this->server = $server;
         $this->user = $user;
@@ -2255,9 +2293,10 @@ class PdoOne
                     if (isset($before[$table][$name])) {
                         foreach ($before[$table][$name] as $v3) {
                             if ($v3[1]
-                                && $v3[0][0] !== self::$prefixBase
+                                && self::hasPrefix($v3[0]) // $v3[0][0] !== self::$prefixBase //todo: revisar
                             ) { // before is defined as [colremote,tableremote]
-                                $colName = self::$prefixBase . $v3[1];
+
+                                $colName = self::addPrefix($v3[1]);
                                 if (!$defaultNull) {
                                     $default = '(in_array($recursivePrefix.\'' . $colName . '\',$recursive,true))
                             ? [] 
@@ -2300,12 +2339,12 @@ class PdoOne
                             } else {
                                 $className = $classRelations[$after[$table][$name]];
                             }
-                            $default = '(in_array($recursivePrefix.\'' . self::$prefixBase . $alias . '\',$recursive,true)) 
-                            ? ' . $className . '::factory(null,$recursivePrefix.\'' . self::$prefixBase . $alias . '\') 
+                            $default = '(in_array($recursivePrefix.\'' . self::addPrefix( $alias) . '\',$recursive,true)) 
+                            ? ' . $className . '::factory(null,$recursivePrefix.\'' . self::addPrefix($alias) . '\') 
                             : null';
                         }
                         if (!in_array($name, $norepeat, true)) {
-                            $namep = self::$prefixBase . $alias;
+                            $namep = self::addPrefix($alias);
                             if (isset($relation[$namep])) {
                                 /*array(5) {
                                     ["key"]=>
@@ -2390,7 +2429,7 @@ class PdoOne
         }
         $result = [];
         foreach ($values as $k => $v) {
-            if (strpos($k, '_') === 0) {
+            if (self::hasPrefix($k)) {
                 $result[] = '/' . $k;
             }
         }
@@ -2661,7 +2700,7 @@ class PdoOne
         if (is_array($after) && is_array($before)) {
             foreach ($before as $key => $rows) { // $value is [relcol,table]
                 foreach ($rows as $value) {
-                    $relation[self::$prefixBase . $value[1]] = [
+                    $relation[self::addPrefix($value[1])] = [
                         'key' => 'ONETOMANY',
                         'col' => $key,
                         'reftable' => $value[1],
@@ -2675,21 +2714,21 @@ class PdoOne
             if ($rel['key'] === 'ONETOMANY') {
                 $pkref = null;
                 $pkref = $this->service->getPK($rel['reftable'], $pkref);
-                if (self::$prefixBase . $pkref[0] === $rel['refcol'] && count($pkref) === 1) {
+                if (self::addPrefix($pkref[0]) === $rel['refcol'] && count($pkref) === 1) {
                     $relation[$k]['key'] = 'ONETOONE';
-                    $relation[$k]['refcol'] = ltrim($relation[$k]['refcol'], self::$prefixBase);
+                    $relation[$k]['refcol'] = self::removePrefix($relation[$k]['refcol']);
                 }
             }
             if ($rel['key'] === 'MANYTOONE') {
                 $pkref = null;
                 $pkref = $this->service->getPK($rel['reftable'], $pkref);
                 if ($pkref[0] === $rel['refcol'] && count($pkref) === 1
-                    && (strcasecmp($k, self::$prefixBase . $pkFirst) === 0)
+                    && (strcasecmp($k, self::hasPrefix($pkFirst)) === 0)
                 ) {
                     // if they are linked by the pks and the pks are only 1.
                     $relation[$k]['key'] = 'ONETOONE';
                     $relation[$k]['col'] = $pkFirst;
-                    $relation[$k]['refcol'] = ltrim($relation[$k]['refcol'], self::$prefixBase);
+                    $relation[$k]['refcol'] = self::removePrefix($relation[$k]['refcol']);
                 }
             }
         }
@@ -2708,7 +2747,7 @@ class PdoOne
                         /** @noinspection PhpConditionAlreadyCheckedInspection */
                         if ($pks !== false || count($pks) === 2) {
                             $relation[$k]['key'] = 'MANYTOMANY';
-                            $refcol2 = (self::$prefixBase . $pks[0] === $relation[$k]['refcol']) ? $pks[1] : $pks[0];
+                            $refcol2 = (self::addPrefix( $pks[0]) === $relation[$k]['refcol']) ? $pks[1] : $pks[0];
                             try {
                                 $defsFK = $this->service->getDefTableFK($relation[$k]['reftable'], false);
                             } catch (Exception $e) {
@@ -2722,7 +2761,7 @@ class PdoOne
                                 $this->endTry();
                                 return ['Error: Unable read table dependencies' . $e->getMessage(), null];
                             }
-                            $relation[$k]['refcol2'] = self::$prefixBase . $refcol2;
+                            $relation[$k]['refcol2'] = self::addPrefix( $refcol2);
                             if (count($keys2) > 0) {
                                 $keys2 = array_keys($keys2);
                                 $relation[$k]['col2'] = $keys2[0];
@@ -2738,14 +2777,14 @@ class PdoOne
         }
         $linked = '';
         foreach ($relation as $k => $v) {
-            $ksimple = ltrim($k, self::$prefixBase); // remove the _ from the beginner
+            $ksimple = self::removePrefix($k); // remove the _ from the beginner
             $alias = ($aliases[$k] ?? $k);
-            $aliasCol = self::$prefixBase . ($aliases[$ksimple] ?? $ksimple);
-            $col = ltrim($aliasCol, self::$prefixBase);
-            $refcol = ltrim($v['refcol'], self::$prefixBase);
-            $refcol2 = isset($v['refcol2']) ? ltrim($v['refcol2'], self::$prefixBase) : null;
+            $aliasCol = self::addPrefix( ($aliases[$ksimple] ?? $ksimple));
+            $col = self::removePrefix($aliasCol);
+            $refcol = self::removePrefix(ltrim($v['refcol']));
+            $refcol2 = isset($v['refcol2']) ? self::removePrefix($v['refcol2']) : null;
             $col2 = $v['col2'] ?? null;
-            $aliasRef = self::$prefixBase . @$aliasesAllTables[$v['reftable']][$refcol] ?? $refcol;
+            $aliasRef = self::addPrefix(@$aliasesAllTables[$v['reftable']][$refcol] ?? $refcol);
             $relation[$k]['alias'] = $alias;
             if (isset($v['col'])) {
                 $relation[$k]['colalias'] = $aliases[$v['col']] ?? $v['col'];
@@ -2828,7 +2867,7 @@ class PdoOne
         if (is_array($after) && is_array($before)) {
             foreach ($before as $key => $rows) { // $value is [relcol,table]
                 foreach ($rows as $value) {
-                    $relation[self::$prefixBase . $value[1]] = [
+                    $relation[self::addPrefix($value[1])] = [
                         'key' => 'ONETOMANY',
                         'col' => $key,
                         'reftable' => $value[1],
@@ -2842,21 +2881,21 @@ class PdoOne
             if ($rel['key'] === 'ONETOMANY') {
                 $pkref = null;
                 $pkref = $this->service->getPK($rel['reftable'], $pkref);
-                if (self::$prefixBase . $pkref[0] === $rel['refcol'] && count($pkref) === 1) {
+                if (self::addPrefix($pkref[0]) === $rel['refcol'] && count($pkref) === 1) {
                     $relation[$k]['key'] = 'ONETOONE';
-                    $relation[$k]['refcol'] = ltrim($relation[$k]['refcol'], self::$prefixBase);
+                    $relation[$k]['refcol'] =self::removePrefix($relation[$k]['refcol']);
                 }
             }
             if ($rel['key'] === 'MANYTOONE') {
                 $pkref = null;
                 $pkref = $this->service->getPK($rel['reftable'], $pkref);
                 if ($pkref[0] === $rel['refcol'] && count($pkref) === 1
-                    && (strcasecmp($k, self::$prefixBase . $pkFirst) === 0)
+                    && (strcasecmp($k, self::addPrefix($pkFirst)) === 0)
                 ) {
                     // if they are linked by the pks and the pks are only 1.
                     $relation[$k]['key'] = 'ONETOONE';
                     $relation[$k]['col'] = $pkFirst;
-                    $relation[$k]['refcol'] = ltrim($relation[$k]['refcol'], self::$prefixBase);
+                    $relation[$k]['refcol'] = self::removePrefix($relation[$k]['refcol']);
                 }
             }
         }
@@ -4075,10 +4114,8 @@ class PdoOne
         $this->beginTry();
         $query = $this->service->objectExist($type);
         switch ($this->databaseType) {
-            case 'oci':
-                $arr = $this->runRawQuery($query, [$objectName, $this->db]);
-                break;
             case 'pgsql':
+            case 'oci':
                 $arr = $this->runRawQuery($query, [$objectName, $this->db]);
                 break;
             default:
@@ -4363,7 +4400,7 @@ class PdoOne
      * @param string|null       $tableName
      * @param string[]|null     $tableDef
      * @param string[]|int|null $values
-     *
+     * @param null              $identityColumn
      * @return false|int|string Returns the identity (if any) or false if the operation fails.
      * @throws Exception
      */
@@ -4371,7 +4408,7 @@ class PdoOne
         ?string $tableName = null,
         ?array  $tableDef = null,
                 $values = PdoOne::NULL,
-        $identityColumn=null
+                $identityColumn=null
     )
     {
         $this->beginTry();

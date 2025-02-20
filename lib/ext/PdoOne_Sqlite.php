@@ -219,7 +219,7 @@ class PdoOne_Sqlite implements PdoOne_IExt
                 } else {
                     $columns[$item['COLUMN_NAME']] = PdoOne::newColFK('FOREIGN KEY', $item['REFERENCED_COLUMN_NAME'],
                         $item['REFERENCED_TABLE_NAME'], $extra, $item['CONSTRAINT_NAME']);
-                    $columns[PdoOne::$prefixBase . $item['COLUMN_NAME']] = PdoOne::newColFK('MANYTOONE', $item['REFERENCED_COLUMN_NAME'],
+                    $columns[PdoOne::addPrefix($item['COLUMN_NAME'])] = PdoOne::newColFK('MANYTOONE', $item['REFERENCED_COLUMN_NAME'],
                         $item['REFERENCED_TABLE_NAME'], $extra, $item['CONSTRAINT_NAME']);
                 }
             }

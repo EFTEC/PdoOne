@@ -236,7 +236,7 @@ class PdoOne_Sqlsrv implements PdoOne_IExt
                     , $item['referenced_table_name']
                     , $extra
                     , $item['fk_name']);
-                $columns[PdoOne::$prefixBase . $item['COLUMN_NAME']] = PdoOne::newColFK(
+                $columns[PdoOne::addPrefix($item['COLUMN_NAME'])] = PdoOne::newColFK(
                     'MANYTOONE'
                     , $item['referenced_column_name']
                     , $item['referenced_table_name']

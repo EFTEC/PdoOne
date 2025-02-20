@@ -1877,6 +1877,8 @@ In a nutshell:
 >
 > Every decimal version means that it patches/fixes/refactoring a previous functionality i.e. 1.5.0 -> 1.5.1 (fix)
 
+* 4.13 2025-02-02
+  * Added prefix and postfix to the referential columns. 
 * 4.12 2024-12-30 
   * Compatibility with PHP 8.4
   * Some preliminary work with Sqlite and PostgreSQL

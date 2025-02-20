@@ -74,7 +74,7 @@ class PdoOneCli_Test extends TestCase
     {
         chdir(__DIR__);
         CliOne::testUserInput(['connect', 'configure', 'mysql', '127.0.0.1', 'root', 'abc.123',
-            'sakila', 'no', '', 1, '', 'save', 'yes', 'tmp/c1', '', '']);
+            'sakila', 'no', '', 1, '','_','', 'save', 'yes', 'tmp/c1', '', '']);
         CliOne::testArguments(['program.php',
             '-i']);
         $p = new PdoOneCli();
@@ -88,7 +88,9 @@ class PdoOneCli_Test extends TestCase
             'logFile' => false,
             'charset' => null,
             'nodeId' => 1,
-            'tableKV' => ''
+            'tableKV' => '',
+            'prefix' => '_',
+            'postfix' => ''
         ], $p->getCli()->readDataPHPFormat('tmp/c1')[1]);
     }
 
@@ -111,10 +113,12 @@ class PdoOneCli_Test extends TestCase
             'database' => 'sakila',
             'databaseType' => 'mysql',
             'pwd' => 'abc.123',
-            'logFile' => true,
+            'logFile' => false,
             'charset' => null,
             'nodeId' => 1,
-            'tableKV' => ''
+            'tableKV' => '',
+            'prefix' => '_',
+            'postfix' => ''
         ], $p->getCli()->readDataPHPFormat('tmp/c1')[1]);
     }
 }
