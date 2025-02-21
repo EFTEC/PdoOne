@@ -306,15 +306,18 @@ class PdoOne
     public static function factoryFromArray(array $array): PdoOne
     {
         if (isset($array['databaseType'])) {
-            return new self($array['databaseType'] ?? '',
-                $array['server'] ?? '',
-                $array['user'] ?? '',
-                $array['pwd'] ?? '',
-                $array['database'] ?? '',
-                $array['logFile'] ?? false,
-                $array['charset'] ?? null,
-                $array['nodeId'] ?? 1,
-                $array['tableKV'] ?? ""
+            return new self($array['databaseType'] ?? '', //0
+                $array['server'] ?? '', //1
+                $array['user'] ?? '', //2
+                $array['pwd'] ?? '', //3
+                $array['database'] ?? '', //4
+                $array['logFile'] ?? false, //5
+                $array['charset'] ?? null, //6
+                $array['nodeId'] ?? 1, //7
+                $array['tableKV'] ?? "", //8
+                $array['instanceName'] ?? "0", //9
+                $array['prefix'] ?? self::$prefixBase, //10
+                $array['postfix'] ?? self::$postfixBase, //11
             );
         }
         return new self($array[0] ?? '',
@@ -325,7 +328,10 @@ class PdoOne
             $array[5] ?? false,
             $array[6] ?? null,
             $array[7] ?? 1,
-            $array[8] ?? ""
+            $array[8] ?? "",
+            $array[9] ?? "0",
+            $array[10] ?? self::$prefixBase,
+            $array[11] ?? self::$postfixBase,
         );
     }
 

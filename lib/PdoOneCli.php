@@ -23,16 +23,16 @@ use RuntimeException;
  * @package       eftec
  * @author        Jorge Castro Castillo
  * @copyright (c) Jorge Castro C. Dual Licence: MIT and Commercial License  https://github.com/EFTEC/PdoOne
- * @version       2.5
+ * @version       2.6
  */
 class PdoOneCli
 {
-    public const VERSION = '2.5';
+    public const VERSION = '2.6';
     /** @var CliOne|null */
-    public ?CliOne $cli=null;
+    public ?CliOne $cli = null;
     //protected $help;
     /** @var ?PdoOneCli the current instance */
-    public static ?PdoOneCli $instance=null;
+    public static ?PdoOneCli $instance = null;
 
     public static function instance(bool $run = true): PdoOneCli
     {
@@ -41,9 +41,10 @@ class PdoOneCli
         }
         return self::$instance;
     }
+
     public function __construct(bool $run = true)
     {
-        self::$instance=$this;
+        self::$instance = $this;
         $this->cli = CliOne::instance();
         $this->cli->setErrorType();
         $this->cli->addMenu('mainmenu',
@@ -87,8 +88,7 @@ class PdoOneCli
             }
             try {
                 $this->cli->evalMenu('mainmenu', $this);
-            } catch(Exception $e) {
-
+            } catch (Exception $e) {
             }
         }
     }
@@ -170,7 +170,7 @@ class PdoOneCli
         if ($sg->value === 'yes') {
             $saveconfig = $this->cli->getParameter('fileconnect')->setInput()->evalParam(true);
             if ($saveconfig->value) {
-                $arr=$this->pdoGetConfigArray();
+                $arr = $this->pdoGetConfigArray();
                 $r = $this->cli->saveDataPHPFormat($this->cli->getValue('fileconnect'), $arr);
                 if ($r === '') {
                     $this->cli->showCheck('OK', 'green', 'file saved correctly');
@@ -179,8 +179,6 @@ class PdoOneCli
         }
         $this->cli->downLevel();
     }
-
-
 
     public function menuConnectQuery(): void
     {
@@ -268,7 +266,7 @@ class PdoOneCli
                 ->setDefault('no')
                 ->setDescription('Do you want to log into a file?', '', ['Example: <dim>yes</dim>'])
                 ->setCurrentAsDefault()
-                ->setInput(true, 'optionshort',['yes','no'])
+                ->setInput(true, 'optionshort', ['yes', 'no'])
                 ->evalParam(true);
             $this->cli->createOrReplaceParam('charset', [], 'longflag')
                 ->setRequired(false)
@@ -283,7 +281,7 @@ class PdoOneCli
                 ->setDefault(1)
                 ->setDescription('Select  the node id used by snowflake, (or empty for default)', '', ['Example: <dim>1</dim>'])
                 ->setCurrentAsDefault()
-                ->setInput(true,'number')
+                ->setInput(true, 'number')
                 ->evalParam(true);
             $this->cli->createOrReplaceParam('tableKV', [], 'longflag')
                 ->setRequired(false)
@@ -296,6 +294,7 @@ class PdoOneCli
             $this->cli->createOrReplaceParam('prefix', [], 'longflag')
                 ->setRequired(false)
                 ->setDefault('_')
+                ->setAllowEmpty()
                 ->setDescription('The prefix', '', ['Example: <dim>_</dim>'])
                 ->setCurrentAsDefault()
                 ->setInput()
@@ -328,20 +327,22 @@ class PdoOneCli
             }
         }
     }
-    public function pdoGetConfigArray():array
+
+    public function pdoGetConfigArray(): array
     {
-        $r= $this->cli->getValueAsArray(
-            ['databaseType','server','user','pwd','database','logFile','charset','nodeId','tableKV','prefix','postfix']);
-        $r['logFile']= $r['logFile']==='yes';
+        $r = $this->cli->getValueAsArray(
+            ['databaseType', 'server', 'user', 'pwd', 'database', 'logFile', 'charset', 'nodeId', 'tableKV', 'prefix', 'postfix']);
+        $r['logFile'] = $r['logFile'] === 'yes';
         return $r;
     }
+
     public function pdoSetConfigArray(array $array): void
     {
-        $lf=$array['logFile']??'false';
-        $backup=$this->cli->getValue('logFile'); //yes|no
-        $this->cli->setParam('logFile',$lf?'yes':'no',false,true); //true|false
-        $this->cli->setParamUsingArray($array,['databaseType','server','user','pwd','database','logFile','charset','nodeId','tableKV','prefix','postfix']);
-        $this->cli->setParam('logFile',$backup);//yes|no
+        $lf = $array['logFile'] ?? 'false';
+        $backup = $this->cli->getValue('logFile'); //yes|no
+        $this->cli->setParam('logFile', $lf ? 'yes' : 'no', false, true); //true|false
+        $this->cli->setParamUsingArray($array, ['databaseType', 'server', 'user', 'pwd', 'database', 'logFile', 'charset', 'nodeId', 'tableKV', 'prefix', 'postfix']);
+        $this->cli->setParam('logFile', $backup);//yes|no
     }
 
     public function doReadConfig(): void
@@ -351,7 +352,8 @@ class PdoOneCli
             $this->cli->showCheck('OK', 'green', 'file read correctly');
             $this->cli->setVariable('connect', '<green>ok</green>');
             $this->pdoSetConfigArray($r[1]);
-            PdoOne::$prefixBase=$this->cli->getValue('prefix');
+            PdoOne::$prefixBase = $this->cli->getValue('prefix') ?? '_';
+            PdoOne::$postfixBase = $this->cli->getValue('postfix') ?? '';
         } else {
             $this->cli->showCheck('ERROR', 'red', 'unable to read file ' . $this->cli->getValue('fileconnect') . ", cause " . $r[1]);
         }
@@ -372,8 +374,8 @@ class PdoOneCli
             ) {
                 throw new RuntimeException('No configuration');
             }
-            $r=$this->pdoGetConfigArray();
-            $r=array_values($r);
+            $r = $this->pdoGetConfigArray();
+            $r = array_values($r);
             $pdo = new PdoOne(...$r);
             $pdo->logLevel = 1;
             $pdo->connect();
@@ -474,7 +476,6 @@ PdoOne: $v  Cli: $vc
         try {
             $this->cli->showParamSyntax2();
         } catch (Exception $ex) {
-
         }
     }
 
