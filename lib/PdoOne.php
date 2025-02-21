@@ -30,11 +30,11 @@ use stdClass;
  * @package       eftec
  * @author        Jorge Castro Castillo
  * @copyright (c) Jorge Castro C. Dual Licence: MIT and Commercial License  https://github.com/EFTEC/PdoOne
- * @version       4.13
+ * @version       4.13.1
  */
 class PdoOne
 {
-    public const VERSION = '4.13';
+    public const VERSION = '4.13.1';
     /** @var int We need this value because null and false could be a valid value. */
     public const NULL = PHP_INT_MAX;
     /** @var string Prefix of the related columns. It is used for ORM */
@@ -209,8 +209,9 @@ class PdoOne
      *                                   for sequence. Form 0 to 1023
      * @param string       $tableKV      (optional), the name of the table key-value
      * @param string       $instanceName (optional, default "0"), the name of the instance
+     * @param string|null  $prefix       The prefix of the associative column. By default is "_". Null keeps the value
+     * @param string|null  $postfix      The postfix of the associative column. Null keeps the value.
      * @see          PdoOne::connect()
-     * @noinspection ClassConstantCanBeUsedInspection
      */
     public function __construct(
         $databaseType,
@@ -223,8 +224,8 @@ class PdoOne
         int $nodeId = 1,
         string $tableKV = '',
         string $instanceName = "0",
-        string $prefix = '_',
-        string $postfix = ''
+        ?string $prefix = null,
+        ?string $postfix = null
     )
     {
         if(is_array($databaseType)) {
@@ -239,12 +240,14 @@ class PdoOne
             $nodeId=$cp['nodeId']??1;
             $tableKV=$cp['tableKV']??'';
             $instanceName=$cp['$instanceName']??'0';
-            self::$prefixBase = $cp['prefix']??'_';
-            self::$postfixBase = $cp['postfix']??'';
+
+            self::$prefixBase = $cp['prefix']??self::$prefixBase;
+            self::$postfixBase = $cp['postfix']??self::$postfixBase;
 
         }
         $this->construct($databaseType, $server, $user, $pwd, $db, $logFile,
             $charset, $nodeId, $tableKV,$prefix,$postfix);
+        /** @noinspection ClassConstantCanBeUsedInspection */
         if (class_exists('eftec\MessageContainer')) {
             // autowire MessageContainer if the method exists.
             $this->messageContainer = MessageContainer::instance();
@@ -350,8 +353,8 @@ class PdoOne
         $charset = null,
         $nodeId = 1,
         $tableKV = '',
-        $prefix = '_',
-        $postfix = ''
+        $prefix = null,
+        $postfix = null
     ): void
     {
         $this->databaseType = $databaseType;
@@ -379,8 +382,8 @@ class PdoOne
             default:
                 throw new RuntimeException('no database type selected');
         }
-        self::$prefixBase = $prefix??'_';
-        self::$postfixBase = $postfix??'';
+        self::$prefixBase = $prefix??self::$prefixBase;
+        self::$postfixBase = $postfix??self::$postfixBase;
         $charset = $this->service->construct($charset, []);
         $this->server = $server;
         $this->user = $user;

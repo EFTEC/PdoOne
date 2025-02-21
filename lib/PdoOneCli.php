@@ -337,8 +337,9 @@ class PdoOneCli
     }
     public function pdoSetConfigArray(array $array): void
     {
+        $lf=$array['logFile']??'false';
         $backup=$this->cli->getValue('logFile'); //yes|no
-        $this->cli->setParam('logFile',$array['logFile']?'yes':'no',false,true); //true|false
+        $this->cli->setParam('logFile',$lf?'yes':'no',false,true); //true|false
         $this->cli->setParamUsingArray($array,['databaseType','server','user','pwd','database','logFile','charset','nodeId','tableKV','prefix','postfix']);
         $this->cli->setParam('logFile',$backup);//yes|no
     }
@@ -350,6 +351,7 @@ class PdoOneCli
             $this->cli->showCheck('OK', 'green', 'file read correctly');
             $this->cli->setVariable('connect', '<green>ok</green>');
             $this->pdoSetConfigArray($r[1]);
+            PdoOne::$prefixBase=$this->cli->getValue('prefix');
         } else {
             $this->cli->showCheck('ERROR', 'red', 'unable to read file ' . $this->cli->getValue('fileconnect') . ", cause " . $r[1]);
         }
